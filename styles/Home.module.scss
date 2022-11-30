@@ -1,3 +1,6 @@
+$color-primary: #fff000;
+@import "mixins";
+
 .container {
   padding: 0 2rem;
 }
@@ -29,7 +32,7 @@
 }
 
 .title a {
-  color: #0070f3;
+  color: $color-primary;
   text-decoration: none;
 }
 

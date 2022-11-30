@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useReducer } from "react";
-import {Game} from "../util/GameManager"
+import {Game} from "../util/chess/GameManager"
 
-export default const useChess => {
-    
-}
+//Offline / vs Computer implementation of game logic as a react hook
+

@@ -1,8 +1,21 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import Image from "next/image";
+import { useEffect, useState, useContext } from "react";
+import { SocketContext } from "../context/socket";
+import styles from "../styles/Home.module.scss";
 
 export default function Home() {
+  const [connected, setConnected] = useState(false);
+  const socket = useContext(SocketContext);
+  useEffect(() => {
+    socket.on("connect", () => {
+      setConnected(socket.connected);
+    });
+    setConnected(socket.connected);
+    return () => {
+      socket.off("connect");
+    };
+  }, []);
   return (
     <div className={styles.container}>
       <Head>
@@ -17,7 +30,7 @@ export default function Home() {
         </h1>
 
         <p className={styles.description}>
-          Get started by editing{' '}
+          Get started by editing{" "}
           <code className={styles.code}>pages/index.tsx</code>
         </p>
 
@@ -60,12 +73,12 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
+  );
 }

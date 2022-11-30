@@ -1,24 +1,40 @@
-import express, { Request, Response } from "express";
-import next from "next";
+import express, { Express, Request, Response } from "express";
 
-const dev = process.env.NODE_ENV !== "production";
-const app = next({ dev });
-const handle = app.getRequestHandler();
-const port = process.env.PORT || 3000;
+//Load environment variables before starting the custom server
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig("./", process.env.NODE_ENV !== "production");
 
-(async () => {
-  try {
-    await app.prepare();
-    const server = express();
-    server.all("*", (req: Request, res: Response) => {
-      return handle(req, res);
+import * as http from "http";
+import next, { NextApiHandler } from "next";
+import * as socketio from "socket.io";
+import redis from "../util/db/redis";
+const port: number = parseInt(process.env.PORT || "3000", 10);
+const dev: boolean = process.env.NODE_ENV !== "production";
+const nextApp = next({ dev });
+const nextHandler: NextApiHandler = nextApp.getRequestHandler();
+
+nextApp.prepare().then(async () => {
+  const app: Express = express();
+  const server: http.Server = http.createServer(app);
+  const io: socketio.Server = new socketio.Server();
+  io.attach(server);
+
+  app.get("/hello", async (_: Request, res: Response) => {
+    res.send("Hello World");
+  });
+
+  io.on("connection", (socket: socketio.Socket) => {
+    console.log("connection");
+    socket.emit("status", "Hello from Socket.io");
+
+    socket.on("disconnect", () => {
+      console.log("client disconnected");
     });
-    server.listen(port, (err?: any) => {
-      if (err) throw err;
-      console.log(`> Ready on localhost:${port} - env ${process.env.NODE_ENV}`);
-    });
-  } catch (e) {
-    console.error(e);
-    process.exit(1);
-  }
-})();
+  });
+
+  app.all("*", (req: any, res: any) => nextHandler(req, res));
+
+  server.listen(port, () => {
+    console.log(`> Ready on http://localhost:${port}`);
+  });
+});
