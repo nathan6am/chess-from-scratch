@@ -1,3 +1,4 @@
+import { UserContext } from "@/context/user";
 import Head from "next/head";
 import Image from "next/image";
 import { useEffect, useState, useContext } from "react";
@@ -7,6 +8,7 @@ import styles from "../styles/Home.module.scss";
 export default function Home() {
   const [connected, setConnected] = useState(false);
   const socket = useContext(SocketContext);
+  const user = useContext(UserContext);
   useEffect(() => {
     socket.on("connect", () => {
       setConnected(socket.connected);
@@ -28,7 +30,7 @@ export default function Home() {
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
-
+        {user && <p>{user.id}</p>}
         <p className={styles.description}>
           Get started by editing{" "}
           <code className={styles.code}>pages/index.tsx</code>
