@@ -17,6 +17,7 @@ import { socket } from "@/context/socket";
 
 declare module "http" {
   interface IncomingMessage {
+    user?: any;
     session: Session & {
       authenticated: boolean;
       passport?: {
@@ -52,6 +53,8 @@ nextApp.prepare().then(async () => {
   io.attach(server);
 
   app.use(sessionMiddleware);
+  app.use(passport.initialize());
+  app.use(passport.session());
   app.use(passport.authenticate("session"));
   app.get("/hello", async (_: Request, res: Response) => {
     res.send("Hello World");
@@ -59,9 +62,8 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //wrap middleware for socket.io
-  const wrap =
-    (middleware: any) => (socket: socketio.Socket, next: NextFunction) =>
-      middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
     sessionMiddleware(
@@ -70,7 +72,11 @@ nextApp.prepare().then(async () => {
       next as NextFunction
     );
   });
+  io.use(wrap(passport.initialize()));
+  io.use(wrap(passport.session()));
+
   io.use((socket, next) => {
+    console.log(socket.request.user);
     const passportUser = socket.request.session?.passport?.user;
     if (passportUser) {
       const user = JSON.parse(passportUser);
