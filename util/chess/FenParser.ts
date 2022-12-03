@@ -143,6 +143,10 @@ export function fenToGameState(fen: string): GameState | false {
   };
 }
 
+export function trimMoveCounts(fen: string): string {
+  return fen.split(" ").slice(0, 4).join(" ");
+}
+
 /*------------------------------------------------------
 Export to FEN
 ------------------------------------------------------*/

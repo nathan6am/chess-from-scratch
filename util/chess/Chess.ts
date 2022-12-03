@@ -8,7 +8,14 @@ import {
   Position,
   GameState,
   Color,
+  MoveHistory,
+  Outcome,
+  HalfMove,
 } from "./ChessTypes";
+
+import _ from "lodash";
+import { trimMoveCounts, fenToGameState, gameStateToFen } from "./FenParser";
+import { moveToPgn } from "./PGN";
 /*---------------------------------------------------------
 Type Definitions
 ---------------------------------------------------------*/
@@ -319,8 +326,8 @@ export function getMaterialCount(position: Position): Record<Color, number> {
 }
 //Determine if a give move results in a check
 function moveIsCheck(game: GameState, move: Move): boolean {
-  const updated = executeMove(game, move);
-  const position = new Map(updated.game.position);
+  const { updatedGameState } = executeMove(game, move);
+  const position = new Map(updatedGameState.position);
   const color = position.get(move.end)?.color as Color;
 
   for (let [square, piece] of position) {
@@ -490,7 +497,7 @@ function getCastles(
 export function executeMove(
   game: GameState,
   move: Move
-): { game: GameState; capturedPiece: Piece | null } {
+): { updatedGameState: GameState; capturedPiece: Piece | null } {
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
@@ -572,7 +579,164 @@ export function executeMove(
   };
 
   return {
-    game: updatedGame,
+    updatedGameState: updatedGame,
     capturedPiece: capture,
   };
 }
+interface GameConfig {
+  startPosition: string;
+  timeControls: Array<TimeControl> | null;
+  handicap?: Array<TimeControl>;
+}
+
+type TimeControl = {
+  timeSeconds: number;
+  incrementSeconds: number;
+  moves?: number;
+};
+
+export interface Game {
+  gameState: GameState;
+  moveHistory: MoveHistory;
+  capturedPieces: Array<Piece>;
+  legalMoves: Array<Move>;
+  outcome: Outcome;
+  config: GameConfig;
+}
+
+export class Game implements Game {
+  constructor(gameConfig: GameConfig) {
+    const initialGameState = fenToGameState(gameConfig.startPosition);
+    if (!initialGameState)
+      throw new Error(
+        "Config is invalid: Invalid FEN passed to start position"
+      );
+    this.gameState = initialGameState;
+    this.legalMoves = getMoves(initialGameState);
+    this.moveHistory = [];
+    this.capturedPieces = [];
+    this.config = gameConfig;
+  }
+}
+
+export function createGame(
+  options: GameConfig = {
+    startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    timeControls: null,
+  }
+): Game {
+  const game = new Game(options);
+  return game;
+}
+
+function isThreeFoldRepetition(
+  moveHistory: MoveHistory,
+  gameState: GameState
+): boolean {
+  var repetitions = 0;
+  const fenA = trimMoveCounts(gameStateToFen(gameState));
+  moveHistory.forEach((fullMove) => {
+    fullMove.forEach((move) => {
+      if (!move) return;
+      const fenB = trimMoveCounts(move.fen);
+      if (fenA === fenB) repetitions += 1;
+    });
+  });
+
+  if (repetitions >= 2) return true;
+  return false;
+}
+
+//execute a move and return the updated game
+export function move(
+  game: Game,
+  move: Move,
+  elapsedTimeSeconds?: number
+): Game {
+  var outcome = game.outcome;
+  //verify the move is listed as one of the available moves
+  const moveIsLegal = game.legalMoves.some((availableMove) =>
+    _.isEqual(move, availableMove)
+  );
+  const updatedMoveHistory = Array.from(game.moveHistory);
+  if (!moveIsLegal) throw new Error("Move is not in available moves");
+
+  //execute the move and update the gameState and captured pieces
+  const { updatedGameState, capturedPiece } = executeMove(game.gameState, move);
+  const capturedPieces = game.capturedPieces;
+  if (capturedPiece) capturedPieces.push(capturedPiece);
+
+  // CHECK FOR GAME OUTCOMES
+
+  //update the legal moves
+  let updatedLegalMoves = getMoves(updatedGameState);
+
+  //If there are no legal moves, result is checkmate or stalemate
+  if (updatedLegalMoves.length === 0) {
+    if (move.isCheck) {
+      outcome = { result: game.gameState.activeColor, by: "checkmate" };
+
+      //set move.isCheckmate for PGN parser
+      move.isCheckMate = true;
+    } else {
+      outcome = { result: "d", by: "stalemate" };
+    }
+
+    //TODO: Check for insufficient Material
+    const { position } = updatedGameState;
+
+    //Check for repitition
+    if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
+      outcome = { result: "d", by: "repitition" };
+    }
+
+    //Check for 50 move rule
+    if (updatedGameState.halfMoveCount >= 100) {
+      outcome = { result: "d", by: "50-move-rule" };
+    }
+  }
+
+  //Push to move history
+  const halfMove: HalfMove = {
+    move: move,
+    PGN: moveToPgn(move, game.gameState.position, game.legalMoves),
+    fen: gameStateToFen(updatedGameState),
+    elapsedTimeSeconds,
+  };
+
+  if (game.gameState.activeColor === "b") {
+    const moveIdx = updatedMoveHistory.length - 1;
+    updatedMoveHistory[moveIdx][1] = halfMove;
+  } else {
+    updatedMoveHistory.push([halfMove, null]);
+  }
+
+  //return the updated game
+  const updatedGame: Game = {
+    ...game,
+    gameState: updatedGameState,
+    moveHistory: updatedMoveHistory,
+    legalMoves: updatedLegalMoves,
+    capturedPieces,
+    outcome,
+  };
+  return updatedGame;
+}
+
+//export function takeback(game: Game): Game {}
+
+export function exportPGN() {}
+
+export function exportFEN() {}
+
+export function serializeMoves(moves: Array<Move>): Array<String> {
+  return moves.map(
+    (move) =>
+      `${move.start}:${move.end}:${move.capture || "-"}:${
+        move.isCheck ? "+" : ""
+      }${move.promotion ? ":=" + move.promotion : ""}`
+  );
+}
+// export function deserializeMove(move: string): Move {
+//   move.split(":")
+// }

@@ -1,10 +1,20 @@
 import { squareToCoordinates } from "./Chess";
-import { Move, Position, FileEnum } from "./ChessTypes";
+import {
+  Move,
+  Position,
+  FileEnum,
+  HalfMove,
+  FullMove,
+  MoveHistory,
+} from "./ChessTypes";
 import _ from "lodash";
+import { fenToGameState } from "./FenParser";
+
+//Returns the PGN notation of a move given the move and the current position
 export function moveToPgn(
   move: Move,
   position: Position,
-  potentialMoves: Array<Move>
+  potentialMoves: Array<Move> // Pass potential moves here to prevent from having to recalculate
 ): string {
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move or position");
@@ -60,7 +70,7 @@ export function moveToPgn(
       notation = notation + move.end;
     }
   }
-  if (move.isCheck) notation = notation + "+";
+  if (move.isCheck && !move.isCheckMate) notation = notation + "+";
   if (move.isCheckMate) notation = notation + "#";
 
   return notation;
@@ -76,7 +86,6 @@ function disambiguateMoves(
   let notation = piece.type.toUpperCase();
 
   //Attempt file disambiguation
-
   if (
     alternateMoves.every((altMove) => {
       let fileA = FileEnum[squareToCoordinates(move.start)[0]];
@@ -100,4 +109,6 @@ function disambiguateMoves(
   }
 }
 
-//TODO: Export to PGN
+//TODO: Export Game to PGN
+
+//TODO: Pgn to Game Object

@@ -10,6 +10,31 @@ export type Piece = { color: Color; type: PieceType };
 
 export type Position = Map<Square, Piece>;
 
+export type HalfMove = {
+  move: Move;
+  PGN: string;
+  fen: string;
+  elapsedTimeSeconds?: number;
+};
+export type Outcome =
+  | {
+      result: Color | "d";
+      by:
+        | "agreement"
+        | "resignation"
+        | "timeout"
+        | "timeout-w-insufficient"
+        | "insufficient"
+        | "repitition"
+        | "checkmate"
+        | "stalemate"
+        | "abandonment"
+        | "50-move-rule";
+    }
+  | undefined;
+export type FullMove = [HalfMove, HalfMove | null];
+export type MoveHistory = Array<FullMove>;
+
 export interface GameState {
   position: Position;
   activeColor: Color;
