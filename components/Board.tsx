@@ -38,19 +38,33 @@ export default function Board({
   const [selectedPiece, setSelectedPiece] = useState<PieceWithMetadata | null>(
     null
   );
+
+  const onSelectTarget = useCallback(
+    (end: Square) => {
+      if (selectedPiece?.targets?.includes(end)) {
+        const targetMove = game.legalMoves.find(
+          (move) => move.start === selectedPiece.square && move.end === end
+        );
+        if (targetMove) {
+          move(targetMove);
+          setSelectedPiece(null);
+        }
+      }
+    },
+    [selectedPiece]
+  );
   const onDrop = useCallback(
     (start: Square) => {
       if (x > 7 || x < 0 || y > 7 || y < 0) {
         return;
       } else {
         const mouseOverSquare = chess.toSquare([x, 7 - y]);
-        console.log(mouseOverSquare);
-        console.log(selectedPiece?.targets);
+
         if (selectedPiece?.targets?.includes(mouseOverSquare)) {
           const targetMove = game.legalMoves.find(
             (move) => move.start === start && move.end === mouseOverSquare
           );
-          console.log(targetMove);
+
           if (targetMove) {
             move(targetMove);
             setSelectedPiece(null);
@@ -68,6 +82,7 @@ export default function Board({
           {boardMap.map((row) => {
             return row.map((square) => (
               <BoardSquare
+                onSelectTarget={onSelectTarget}
                 key={square}
                 square={square}
                 hasPiece={game.gameState.position.has(square)}
@@ -107,12 +122,14 @@ interface SquareProps {
   isLastMove: boolean;
   isPremoved?: boolean;
   color: Color;
+  onSelectTarget: any;
 }
 
 function BoardSquare({
   hasPiece,
   isTarget,
   isSelected,
+  onSelectTarget,
   square,
   isLastMove,
   isPremoved,
@@ -121,9 +138,15 @@ function BoardSquare({
   return (
     <div
       className={styles.square}
-      style={{ backgroundColor: color === "w" ? "#FFFDD0" : " #9CAF88" }}
+      style={{ backgroundColor: color === "w" ? "#FFFDD0" : "#015d2d" }}
     >
       <div
+        onClick={() => {
+          if (isTarget) {
+            onSelectTarget(square);
+          }
+        }}
+        className={`${isTarget ? "target" : ""}${isSelected ? "selected" : ""}`}
         style={{
           display: "flex",
           justifyContent: "center",
@@ -133,9 +156,6 @@ function BoardSquare({
           left: 0,
           width: "100%",
           height: "100%",
-          backgroundColor: isSelected
-            ? "rgba(255, 0, 255, 0.5)"
-            : "transparent",
         }}
       >
         {isTarget && <div className={hasPiece ? "ring" : "dot"} />}
@@ -152,13 +172,15 @@ interface PieceProps {
 }
 //function RenderPiece({ type, color, square }) {}
 function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
-  if (!piece.square) return <></>;
-  const coordinates = chess.squareToCoordinates(piece.square);
   const nodeRef = React.useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<[number, number]>([0, 0]);
   const [dragging, setDragging] = useState(false);
+  if (!piece.square) return <></>;
+  const coordinates = chess.squareToCoordinates(piece.square);
   return (
     <Draggable
+      nodeRef={nodeRef}
+      bounds="parent"
       position={{ x: position[0], y: position[1] }}
       onMouseDown={(e) => {
         setDragging(true);
@@ -167,13 +189,12 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
           nodeRef?.current?.getBoundingClientRect().x,
           nodeRef?.current?.getBoundingClientRect().y,
         ];
-        console.log(pointer);
 
         setPosition([
           pointer[0] - ((piecePos[0] || 0) + 40),
           pointer[1] - ((piecePos[1] || 0) + 40),
         ]);
-        console.log(piece);
+
         setSelectedPiece(piece);
       }}
       onStop={() => {
@@ -184,7 +205,13 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
     >
       <div
         style={{
-          pointerEvents: disabled ? "none" : "auto",
+          cursor: "grab",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: 80,
+          height: 80,
+          pointerEvents: disabled || dragging ? "none" : "auto",
           position: "absolute",
           bottom: coordinates[1] * 80,
           left: coordinates[0] * 80,
@@ -193,9 +220,10 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
         ref={nodeRef}
       >
         <img
+          className={styles.piece}
           src={`/assets/${piece.color}${piece.type}.png`}
-          height={80}
-          width={80}
+          height={69}
+          width={69}
           style={{ pointerEvents: "none" }}
         />
       </div>

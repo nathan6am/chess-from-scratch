@@ -8,13 +8,10 @@ import * as http from "http";
 import next, { NextApiHandler } from "next";
 import * as socketio from "socket.io";
 import redisClient from "./redis/sessionClient";
-import { Client } from "redis-om";
 import connectRedis from "connect-redis";
 let RedisStore = connectRedis(session);
 import passport from "passport";
 import authRouter from "./routes/auth";
-import { Socket } from "socket.io-client";
-import { socket } from "../context/socket";
 import { gameStateToFen } from "../util/chess/FenParser";
 
 declare module "http" {

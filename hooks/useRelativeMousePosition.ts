@@ -17,7 +17,7 @@ const useRelativeMousePosition = () => {
             (ref?.current ? ref.current?.getBoundingClientRect().y : 0)
         ),
       });
-    }, 16);
+    }, 100);
 
     window.addEventListener("pointermove", handleMouseMove);
 

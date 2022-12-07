@@ -36,7 +36,6 @@ $square-dark: #1f3d0c;
   margin-inline: auto;
   position: relative;
   .square {
-    border: 1px solid #333;
     background-color: #fff;
     position: relative;
   }
@@ -44,4 +43,12 @@ $square-dark: #1f3d0c;
 
 .board__square_black {
   background-color: #333;
+}
+
+.piece {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
 }

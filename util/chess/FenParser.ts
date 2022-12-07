@@ -177,7 +177,7 @@ export function gameStateToFen(gameState: GameState): string {
   if (castleRightsString.length === 0) castleRightsString = "-";
   const targetSquare = gameState.enPassantTarget || "-";
 
-  return `${positionString} ${gameState.activeColor} ${castleRightsString} ${gameState.halfMoveCount} ${gameState.fullMoveCount}`;
+  return `${positionString} ${gameState.activeColor} ${castleRightsString} ${targetSquare} ${gameState.halfMoveCount} ${gameState.fullMoveCount}`;
 }
 
 function positionToFen(position: Position): string {

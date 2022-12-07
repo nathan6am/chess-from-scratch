@@ -501,8 +501,7 @@ export function executeMove(
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
-  console.log(move);
-  console.log(piece);
+
   const capture = move.capture ? position.get(move.capture) || null : null;
 
   // Switch color and increment the move counters
@@ -561,14 +560,10 @@ export function executeMove(
         castleRights.kingSide = false;
     }
     if (piece.type === "k") {
-      console.log("removing castle rights: king move");
       castleRights.kingSide = false;
       castleRights.queenSide = false;
     }
   }
-
-  console.log(castleRights);
-  console.log(game.castleRights);
 
   const updatedGame: GameState = {
     activeColor,
@@ -732,7 +727,8 @@ function isThreeFoldRepetition(
     fullMove.forEach((move) => {
       if (!move) return;
       const fenB = trimMoveCounts(move.fen);
-      if (fenA === fenB) repetitions += 1;
+
+      if (fenA === fenB) repetitions = repetitions + 1;
     });
   });
 
@@ -757,7 +753,7 @@ export function move(
   //execute the move and update the gameState and captured pieces
   console.log("executing move");
   const { updatedGameState, capturedPiece } = executeMove(game.gameState, move);
-  console.log(updatedGameState);
+
   const capturedPieces = game.capturedPieces;
   if (capturedPiece) capturedPieces.push(capturedPiece);
 
@@ -776,19 +772,18 @@ export function move(
     } else {
       outcome = { result: "d", by: "stalemate" };
     }
+  }
+  //TODO: Check for insufficient Material
+  const { position } = updatedGameState;
 
-    //TODO: Check for insufficient Material
-    const { position } = updatedGameState;
+  //Check for repitition
+  if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
+    outcome = { result: "d", by: "repitition" };
+  }
 
-    //Check for repitition
-    if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
-      outcome = { result: "d", by: "repitition" };
-    }
-
-    //Check for 50 move rule
-    if (updatedGameState.halfMoveCount >= 100) {
-      outcome = { result: "d", by: "50-move-rule" };
-    }
+  //Check for 50 move rule
+  if (updatedGameState.halfMoveCount >= 100) {
+    outcome = { result: "d", by: "50-move-rule" };
   }
 
   //Push to move history
