@@ -90,6 +90,7 @@ export default function Board({
                 isLastMove={false}
                 color={getSquareColor(square)}
                 isSelected={selectedPiece?.square === square}
+                isHovered={chess.toSquare([x, 7 - y]) === square}
               />
             ));
           })}
@@ -123,6 +124,7 @@ interface SquareProps {
   isPremoved?: boolean;
   color: Color;
   onSelectTarget: any;
+  isHovered: boolean;
 }
 
 function BoardSquare({
@@ -134,6 +136,7 @@ function BoardSquare({
   isLastMove,
   isPremoved,
   color,
+  isHovered,
 }: SquareProps) {
   return (
     <div
@@ -146,7 +149,9 @@ function BoardSquare({
             onSelectTarget(square);
           }
         }}
-        className={`${isTarget ? "target" : ""}${isSelected ? "selected" : ""}`}
+        className={`${
+          isTarget ? "target" + (isHovered ? " target-hover" : "") : ""
+        }${isSelected ? "selected" : ""}`}
         style={{
           display: "flex",
           justifyContent: "center",
@@ -205,13 +210,13 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
     >
       <div
         style={{
-          cursor: "grab",
+          cursor: dragging ? "grabbing" : "grab",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           width: 80,
           height: 80,
-          pointerEvents: disabled || dragging ? "none" : "auto",
+          pointerEvents: disabled ? "none" : "auto",
           position: "absolute",
           bottom: coordinates[1] * 80,
           left: coordinates[0] * 80,
