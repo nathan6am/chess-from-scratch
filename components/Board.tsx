@@ -89,6 +89,7 @@ export default function Board({
                   setSelectedPiece={setSelectedPiece}
                   key={keyExtractor()}
                   piece={piece}
+                  disabled={piece.color !== game.gameState.activeColor}
                 />
               );
             })}
@@ -147,17 +148,20 @@ interface PieceProps {
   piece: PieceWithMetadata;
   setSelectedPiece: any;
   onDrop: any;
+  disabled: boolean;
 }
 //function RenderPiece({ type, color, square }) {}
-function TestPiece({ piece, setSelectedPiece, onDrop }: PieceProps) {
+function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
   if (!piece.square) return <></>;
   const coordinates = chess.squareToCoordinates(piece.square);
   const nodeRef = React.useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<[number, number]>([0, 0]);
+  const [dragging, setDragging] = useState(false);
   return (
     <Draggable
       position={{ x: position[0], y: position[1] }}
       onMouseDown={(e) => {
+        setDragging(true);
         const pointer = [e.clientX, e.clientY];
         const piecePos = [
           nodeRef?.current?.getBoundingClientRect().x,
@@ -175,13 +179,16 @@ function TestPiece({ piece, setSelectedPiece, onDrop }: PieceProps) {
       onStop={() => {
         onDrop(piece.square);
         setPosition([0, 0]);
+        setDragging(false);
       }}
     >
       <div
         style={{
+          pointerEvents: disabled ? "none" : "auto",
           position: "absolute",
           bottom: coordinates[1] * 80,
           left: coordinates[0] * 80,
+          zIndex: dragging ? 100 : 10,
         }}
         ref={nodeRef}
       >
