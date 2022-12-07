@@ -24,3 +24,55 @@ a {
     background: black;
   }
 }
+
+.dot {
+  height: 30%;
+  width: 30%;
+  background-color: #1f1f1f;
+  opacity: 30%;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.corners {
+  background: radial-gradient(
+    transparent 0%,
+    transparent 79%,
+    rgba(20, 20, 20, 0.5) 60%
+  );
+  height: 100%;
+  width: 100%;
+}
+
+.ring {
+  height: 100%;
+  width: 100%;
+  opacity: 30%;
+  border-radius: 50%;
+  display: inline-block;
+  border: 0.8vw solid #1f1f1f;
+}
+.target {
+  box-sizing: border-box;
+}
+
+.target:hover {
+  border: 3px solid #fff;
+}
+
+.pointer-none {
+  pointer-events: none;
+}
+
+.piece-icon {
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.test:hover {
+  background-color: #ff00ff;
+}

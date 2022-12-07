@@ -151,19 +151,18 @@ export function trimMoveCounts(fen: string): string {
 Export to FEN
 ------------------------------------------------------*/
 
-const boardMap: Array<Array<Square>> = Array.from([0, 1, 2, 3, 4, 5, 6, 7]).map(
-  (n, idx) => {
-    const rank = 8 - n;
-    const row = [0, 1, 2, 3, 4, 5, 6, 7].map((file, index) => {
-      const fileStr = FileEnum[file];
-      const square = `${fileStr}${rank}`;
-      if (!isValidSquare(square))
-        throw new Error("Invalid square on board map");
-      return square;
-    });
-    return row;
-  }
-);
+export const boardMap: Array<Array<Square>> = Array.from([
+  0, 1, 2, 3, 4, 5, 6, 7,
+]).map((n, idx) => {
+  const rank = 8 - n;
+  const row = [0, 1, 2, 3, 4, 5, 6, 7].map((file, index) => {
+    const fileStr = FileEnum[file];
+    const square = `${fileStr}${rank}`;
+    if (!isValidSquare(square)) throw new Error("Invalid square on board map");
+    return square;
+  });
+  return row;
+});
 
 export function gameStateToFen(gameState: GameState): string {
   const position = gameState.position;

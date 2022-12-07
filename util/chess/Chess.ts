@@ -326,7 +326,7 @@ export function getMaterialCount(position: Position): Record<Color, number> {
 }
 //Determine if a give move results in a check
 function moveIsCheck(game: GameState, move: Move): boolean {
-  const { updatedGameState } = executeMove(game, move);
+  const { updatedGameState } = testMove(game, move);
   const position = new Map(updatedGameState.position);
   const color = position.get(move.end)?.color as Color;
 
@@ -501,6 +501,100 @@ export function executeMove(
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
+  console.log(move);
+  console.log(piece);
+  const capture = move.capture ? position.get(move.capture) || null : null;
+
+  // Switch color and increment the move counters
+  const activeColor: Color = game.activeColor === "w" ? "b" : "w";
+  const fullMoveCount = game.fullMoveCount + (game.activeColor === "b" ? 1 : 0);
+  //Reset half move count on a pawn push or capture
+  const halfMoveCount =
+    piece.type === "p" || move.capture !== null ? 0 : game.halfMoveCount + 1;
+  var enPassantTarget: Square | null = null;
+
+  const castleMap: Partial<Record<Square, [Square, Square]>> = {
+    g1: ["h1", "f1"],
+    c1: ["a1", "d1"],
+    g8: ["h8", "f8"],
+    c8: ["a8", "d8"],
+  };
+
+  var castleRights = { ...game.castleRights[game.activeColor] };
+
+  if (move.isCastle) {
+    let [start, end] = castleMap[move.end] as [Square, Square];
+    let rook = position.get(start);
+    if (!rook) throw new Error("Move is invalid.");
+    position.set(end, rook);
+    position.delete(start);
+    position.set(move.end, piece);
+    position.delete(move.start);
+
+    //remove castle rights
+    castleRights.kingSide = false;
+    castleRights.queenSide = false;
+  } else if (move.promotion) {
+    if (move.capture) position.delete(move.capture);
+    position.set(move.end, { ...piece, type: move.promotion });
+    position.delete(move.start);
+  } else {
+    //remove the captured piece, execute the move
+    if (move.capture) position.delete(move.capture);
+    position.set(move.end, piece);
+    position.delete(move.start);
+
+    //Set the en passant target is the pawn is double pushed
+    if (piece.type === "p" && isDoublePush(move)) {
+      enPassantTarget = getTargetSquare(move);
+    }
+
+    //Remove corresponding castle rights on rook or king move
+    if (
+      piece.type === "r" &&
+      (castleRights.kingSide || castleRights.queenSide)
+    ) {
+      const coords = squareToCoordinates(move.start);
+      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.queenSide = false;
+      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.kingSide = false;
+    }
+    if (piece.type === "k") {
+      console.log("removing castle rights: king move");
+      castleRights.kingSide = false;
+      castleRights.queenSide = false;
+    }
+  }
+
+  console.log(castleRights);
+  console.log(game.castleRights);
+
+  const updatedGame: GameState = {
+    activeColor,
+    position,
+    enPassantTarget,
+    halfMoveCount,
+    fullMoveCount,
+    castleRights: {
+      ...game.castleRights,
+      [game.activeColor]: castleRights,
+    },
+  };
+
+  return {
+    updatedGameState: updatedGame,
+    capturedPiece: capture,
+  };
+}
+
+export function testMove(
+  game: GameState,
+  move: Move
+): { updatedGameState: GameState; capturedPiece: Piece | null } {
+  const position = new Map(game.position);
+  const piece = position.get(move.start);
+  if (!piece) throw new Error("Invalid move");
 
   const capture = move.capture ? position.get(move.capture) || null : null;
 
@@ -519,7 +613,7 @@ export function executeMove(
     c8: ["a8", "f8"],
   };
 
-  var castleRights = game.castleRights[activeColor];
+  var castleRights = { ...game.castleRights[game.activeColor] };
 
   if (move.isCastle) {
     let [start, end] = castleMap[move.end] as [Square, Square];
@@ -531,7 +625,6 @@ export function executeMove(
     position.delete(move.start);
 
     //remove castle rights
-
     castleRights.kingSide = false;
     castleRights.queenSide = false;
   } else if (move.promotion) {
@@ -662,7 +755,9 @@ export function move(
   if (!moveIsLegal) throw new Error("Move is not in available moves");
 
   //execute the move and update the gameState and captured pieces
+  console.log("executing move");
   const { updatedGameState, capturedPiece } = executeMove(game.gameState, move);
+  console.log(updatedGameState);
   const capturedPieces = game.capturedPieces;
   if (capturedPiece) capturedPieces.push(capturedPiece);
 

@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "@node-redis/json": "^1.0.2",
     "@types/connect-redis": "^0.0.19",
     "@types/express-session": "^1.17.5",
@@ -24,6 +27,7 @@
     "eslint-config-next": "13.0.3",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
+    "framer-motion": "^7.6.19",
     "lodash": "^4.17.21",
     "mongoose": "^6.7.5",
     "nanoid": "^4.0.0",
@@ -33,6 +37,8 @@
     "passport-google-oauth20": "^2.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-draggable": "^4.4.5",
+    "react-resize-detector": "^7.1.2",
     "redis": "^4.5.1",
     "redis-om": "^0.3.6",
     "sass": "^1.56.1",
