@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Color, Square, Position, Piece } from "@/util/chess/ChessTypes";
-import useRelativeMousePosition from "@/hooks/useRelativeMousePosition";
+
 import usePointerCoordinates from "@/hooks/usePointerCoordinates";
-import useCursorPosition from "@/hooks/useCursorPosition";
+
 import styles from "@/styles/Board.module.scss";
 import { boardMap } from "@/util/chess/FenParser";
 import Draggable from "react-draggable";
-import { motion, useDragControls } from "framer-motion";
+
 import * as chess from "@/util/chess/Chess";
 import useChessLocal, { PieceWithMetadata } from "@/hooks/useChessLocal";
 interface Props {
@@ -76,7 +76,15 @@ export default function Board({
   );
   return (
     <>
-      <p>{`x:${x}y:${y}${selectedPiece?.type}`}</p>
+      {game.outcome && (
+        <p>
+          {game.outcome.result === "d"
+            ? `Draw by ${game.outcome.by}`
+            : `${game.outcome.result === "w" ? "White" : "Black"} wins by ${
+                game.outcome.by
+              }`}
+        </p>
+      )}
       <div style={{ minWidth: "90vw" }}>
         <div className={styles.board} ref={ref}>
           {boardMap.map((row) => {
@@ -87,7 +95,10 @@ export default function Board({
                 square={square}
                 hasPiece={game.gameState.position.has(square)}
                 isTarget={selectedPiece?.targets.includes(square) || false}
-                isLastMove={false}
+                isLastMove={
+                  square === game.lastMove?.start ||
+                  square === game.lastMove?.end
+                }
                 color={getSquareColor(square)}
                 isSelected={selectedPiece?.square === square}
                 isHovered={chess.toSquare([x, 7 - y]) === square}
@@ -149,10 +160,13 @@ function BoardSquare({
             onSelectTarget(square);
           }
         }}
-        className={`${
-          isTarget ? "target" + (isHovered ? " target-hover" : "") : ""
-        }${isSelected ? "selected" : ""}`}
+        className={` ${
+          isLastMove && !(isHovered && isTarget) ? "last-move" : ""
+        } ${isTarget ? "target" + (isHovered ? " target-hover" : "") : ""}${
+          isSelected ? "selected" : ""
+        }`}
         style={{
+          cursor: isTarget ? "pointer" : "default",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -178,7 +192,6 @@ interface PieceProps {
 //function RenderPiece({ type, color, square }) {}
 function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
   const nodeRef = React.useRef<HTMLDivElement>(null);
-
   const coordinates = piece.square
     ? chess.squareToCoordinates(piece.square)
     : [0, 0];
@@ -207,17 +220,14 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
           nodeRef?.current?.getBoundingClientRect().y,
         ];
         setDragging(true);
-        console.log(position);
+
         setPosition((position) => [
-          position[0] + pointer[0] - ((piecePos[0] || 0) + 40),
-          position[1] + pointer[1] - ((piecePos[1] || 0) + 40),
-        ]);
-        console.log([
           position[0] + pointer[0] - ((piecePos[0] || 0) + 40),
           position[1] + pointer[1] - ((piecePos[1] || 0) + 40),
         ]);
       }}
       onStop={(e, data) => {
+        setPosition([data.x, data.y]);
         onDrop(piece.square);
         setDragging(false);
       }}
@@ -238,73 +248,6 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
           transform: `translate(${coordinates[0] * 80}px, ${
             coordinates[1] * 80
           }px)`,
-          zIndex: dragging ? 100 : 10,
-        }}
-        ref={nodeRef}
-      >
-        <img
-          draggable={false}
-          className={styles.piece}
-          src={`/assets/${piece.color}${piece.type}.png`}
-          height={69}
-          width={69}
-          style={{ pointerEvents: "none" }}
-        />
-      </div>
-    </Draggable>
-  );
-}
-
-function MotionPiece({
-  piece,
-  setSelectedPiece,
-  onDrop,
-  disabled,
-}: PieceProps) {
-  const nodeRef = React.useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<[number, number]>([0, 0]);
-  const [dragging, setDragging] = useState(false);
-  if (!piece.square) return <></>;
-  const coordinates = chess.squareToCoordinates(piece.square);
-  return (
-    <Draggable
-      nodeRef={nodeRef}
-      bounds="parent"
-      position={{ x: position[0], y: position[1] }}
-      onMouseDown={(e) => {
-        setDragging(true);
-        const pointer = [e.clientX, e.clientY];
-        const piecePos = [
-          nodeRef?.current?.getBoundingClientRect().x,
-          nodeRef?.current?.getBoundingClientRect().y,
-        ];
-
-        setPosition([
-          pointer[0] - ((piecePos[0] || 0) + 40),
-          pointer[1] - ((piecePos[1] || 0) + 40),
-        ]);
-
-        setSelectedPiece(piece);
-      }}
-      onStop={() => {
-        onDrop(piece.square);
-        setPosition([0, 0]);
-        setDragging(false);
-      }}
-    >
-      <div
-        style={{
-          transition: dragging ? "" : `transform 0.3s`,
-          cursor: dragging ? "grabbing" : "grab",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          width: 80,
-          height: 80,
-          pointerEvents: disabled ? "none" : "auto",
-          position: "absolute",
-          bottom: coordinates[1] * 80,
-          left: coordinates[0] * 80,
           zIndex: dragging ? 100 : 10,
         }}
         ref={nodeRef}

@@ -50,7 +50,7 @@ a {
   opacity: 30%;
   border-radius: 50%;
   display: inline-block;
-  border: 0.6vw solid #1f1f1f;
+  border: 0.5vw solid #1f1f1f;
 }
 
 .selected {
@@ -75,4 +75,8 @@ a {
 
 .test:hover {
   background-color: #ff00ff;
+}
+
+.last-move {
+  background-color: rgba(230, 230, 0, 0.4);
 }

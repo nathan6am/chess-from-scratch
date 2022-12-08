@@ -732,7 +732,7 @@ function isThreeFoldRepetition(
     });
   });
 
-  if (repetitions >= 2) return true;
+  if (repetitions > 2) return true;
   return false;
 }
 

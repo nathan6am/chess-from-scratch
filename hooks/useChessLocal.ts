@@ -8,8 +8,6 @@ import {
   Position,
   Square,
 } from "@/util/chess/ChessTypes";
-import { useTimer } from "use-timer";
-import { indexOf } from "lodash";
 
 interface Game extends chess.Game {
   previousPosition?: Position;
@@ -31,7 +29,7 @@ function getBoardState(
   prevGame?: Game
 ): Array<PieceWithMetadata> {
   const boardState = [];
-  const { gameState, previousPosition, legalMoves } = game;
+  const { gameState, legalMoves } = game;
   for (let [square, piece] of gameState.position) {
     const getPreviousSquare = () => {
       if (!lastMove) {
@@ -42,8 +40,8 @@ function getBoardState(
       } else if (lastMove.isCastle) {
         const kingSquares = ["g1", "g8", "c1", "c8"];
         const rookSquares = [
-          ["f1", "a1"],
-          ["f8", "a8"],
+          ["f1", "h1"],
+          ["f8", "h8"],
           ["d1", "a1"],
           ["d8", "a8"],
         ];
@@ -78,18 +76,6 @@ function getBoardState(
     boardState.push(pieceWithMetadata);
   }
 
-  if (lastMove?.capture && previousPosition) {
-    const capturedPiece = previousPosition.get(lastMove.capture);
-    if (capturedPiece) {
-      boardState.push({
-        ...capturedPiece,
-        square: null,
-        previousSquare: lastMove.capture as Square,
-        targets: [],
-        key: "a0",
-      });
-    }
-  }
   return boardState;
 }
 
