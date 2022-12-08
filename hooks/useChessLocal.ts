@@ -23,15 +23,17 @@ export interface PieceWithMetadata {
   targets: Array<Square>;
   type: PieceType;
   color: Color;
+  key: string;
 }
 function getBoardState(
   game: Game,
-  lastMove: Move | null
+  lastMove: Move | null,
+  prevGame?: Game
 ): Array<PieceWithMetadata> {
   const boardState = [];
   const { gameState, previousPosition, legalMoves } = game;
   for (let [square, piece] of gameState.position) {
-    const previousSquare = () => {
+    const getPreviousSquare = () => {
       if (!lastMove) {
         return null;
       }
@@ -51,10 +53,24 @@ function getBoardState(
       }
       return square;
     };
+    const previousSquare = (getPreviousSquare() as Square) || null;
+    const getKey = () => {
+      if (!previousSquare || !prevGame) {
+        return square;
+      } else {
+        const prevPiece = prevGame.boardState?.find(
+          (piece) => piece.square === previousSquare
+        );
+        if (!prevPiece) throw new Error("previous board state not defined");
+        return prevPiece.key;
+      }
+    };
+
     const pieceWithMetadata = {
       ...piece,
       square: square,
-      previousSquare: previousSquare() as Square,
+      previousSquare,
+      key: getKey(),
       targets: legalMoves
         .filter((move) => move.start === square)
         .map((move) => move.end),
@@ -70,6 +86,7 @@ function getBoardState(
         square: null,
         previousSquare: lastMove.capture as Square,
         targets: [],
+        key: "a0",
       });
     }
   }
@@ -89,7 +106,7 @@ function chessReducer(
       return {
         ...updatedGame,
         previousPosition: game.gameState.position,
-        boardState: getBoardState(updatedGame, move),
+        boardState: getBoardState(updatedGame, move, game),
         lastMove: move,
       };
     }

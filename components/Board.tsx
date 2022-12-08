@@ -1,14 +1,14 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Color, Square, Position, Piece } from "@/util/chess/ChessTypes";
 import useRelativeMousePosition from "@/hooks/useRelativeMousePosition";
 import usePointerCoordinates from "@/hooks/usePointerCoordinates";
+import useCursorPosition from "@/hooks/useCursorPosition";
 import styles from "@/styles/Board.module.scss";
 import { boardMap } from "@/util/chess/FenParser";
 import Draggable from "react-draggable";
 import { motion, useDragControls } from "framer-motion";
 import * as chess from "@/util/chess/Chess";
 import useChessLocal, { PieceWithMetadata } from "@/hooks/useChessLocal";
-
 interface Props {
   orientation?: Color;
   position?: Position;
@@ -103,7 +103,7 @@ export default function Board({
                 <TestPiece
                   onDrop={onDrop}
                   setSelectedPiece={setSelectedPiece}
-                  key={keyExtractor()}
+                  key={piece.key}
                   piece={piece}
                   disabled={piece.color !== game.gameState.activeColor}
                 />
@@ -178,6 +178,90 @@ interface PieceProps {
 //function RenderPiece({ type, color, square }) {}
 function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
   const nodeRef = React.useRef<HTMLDivElement>(null);
+
+  const coordinates = piece.square
+    ? chess.squareToCoordinates(piece.square)
+    : [0, 0];
+  const [position, setPosition] = useState<[number, number]>([
+    coordinates[0] * 80,
+    coordinates[1] * -80,
+  ]);
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    if (piece.square && !dragging) {
+      setPosition([coordinates[0] * 80, coordinates[1] * -80]);
+    }
+  }, [piece.square, dragging]);
+  if (!piece.square) return <></>;
+
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      bounds="parent"
+      position={{ x: position[0], y: position[1] }}
+      onMouseDown={(e) => {
+        setSelectedPiece(piece);
+        const pointer = [e.clientX, e.clientY];
+        const piecePos = [
+          nodeRef?.current?.getBoundingClientRect().x,
+          nodeRef?.current?.getBoundingClientRect().y,
+        ];
+        setDragging(true);
+        console.log(position);
+        setPosition((position) => [
+          position[0] + pointer[0] - ((piecePos[0] || 0) + 40),
+          position[1] + pointer[1] - ((piecePos[1] || 0) + 40),
+        ]);
+        console.log([
+          position[0] + pointer[0] - ((piecePos[0] || 0) + 40),
+          position[1] + pointer[1] - ((piecePos[1] || 0) + 40),
+        ]);
+      }}
+      onStop={(e, data) => {
+        onDrop(piece.square);
+        setDragging(false);
+      }}
+    >
+      <div
+        style={{
+          transition: dragging ? "" : `all 0.2s `,
+          cursor: dragging ? "grabbing" : "grab",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: 80,
+          height: 80,
+          pointerEvents: disabled ? "none" : "auto",
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          transform: `translate(${coordinates[0] * 80}px, ${
+            coordinates[1] * 80
+          }px)`,
+          zIndex: dragging ? 100 : 10,
+        }}
+        ref={nodeRef}
+      >
+        <img
+          draggable={false}
+          className={styles.piece}
+          src={`/assets/${piece.color}${piece.type}.png`}
+          height={69}
+          width={69}
+          style={{ pointerEvents: "none" }}
+        />
+      </div>
+    </Draggable>
+  );
+}
+
+function MotionPiece({
+  piece,
+  setSelectedPiece,
+  onDrop,
+  disabled,
+}: PieceProps) {
+  const nodeRef = React.useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<[number, number]>([0, 0]);
   const [dragging, setDragging] = useState(false);
   if (!piece.square) return <></>;
@@ -210,6 +294,7 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
     >
       <div
         style={{
+          transition: dragging ? "" : `transform 0.3s`,
           cursor: dragging ? "grabbing" : "grab",
           display: "flex",
           justifyContent: "center",
@@ -225,6 +310,7 @@ function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
         ref={nodeRef}
       >
         <img
+          draggable={false}
           className={styles.piece}
           src={`/assets/${piece.color}${piece.type}.png`}
           height={69}

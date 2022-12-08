@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { throttle } from "lodash";
 
-const useRelativeMousePosition = () => {
+const useRelativeMousePosition = (ref: React.RefObject<HTMLDivElement>) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = throttle((event: PointerEvent) => {
@@ -17,7 +16,7 @@ const useRelativeMousePosition = () => {
             (ref?.current ? ref.current?.getBoundingClientRect().y : 0)
         ),
       });
-    }, 100);
+    }, 16);
 
     window.addEventListener("pointermove", handleMouseMove);
 
@@ -26,10 +25,7 @@ const useRelativeMousePosition = () => {
     };
   }, []);
 
-  return {
-    ref,
-    position,
-  };
+  return position;
 };
 
 export default useRelativeMousePosition;
