@@ -11,6 +11,7 @@ import {
   MoveHistory,
   Outcome,
   HalfMove,
+  Board,
 } from "./ChessTypes";
 
 import _ from "lodash";
@@ -133,7 +134,7 @@ function getMovementRules(piece: Piece, start: Square): Array<MovementRule> {
         [1, 1],
         [1, -1],
         [-1, 1],
-        [1, -1],
+        [-1, -1],
         [1, 0],
         [-1, 0],
         [0, 1],
@@ -375,6 +376,7 @@ function verifyMove(move: Move, position: Position): boolean {
   return true;
 }
 
+//Returns an array of all the legal moves in a position
 export function getMoves(game: GameState): Array<Move> {
   const { activeColor, position, enPassantTarget, castleRights } = game;
 
@@ -425,7 +427,6 @@ export function getMoves(game: GameState): Array<Move> {
   }
 
   const castles = getCastles(game, opponentControlledSquares);
-
   castles.forEach((move) => {
     let isCheck = moveIsCheck(game, move);
     if (isCheck) {
@@ -435,10 +436,10 @@ export function getMoves(game: GameState): Array<Move> {
     }
   });
 
-  //Return an array of the legal castling moves
   return moves;
 }
 
+//Return an array of the legal castling moves
 function getCastles(
   game: GameState,
   opponentControlledSquares: Array<Square>
@@ -683,13 +684,14 @@ type TimeControl = {
   moves?: number;
 };
 
-export interface Game {
-  gameState: GameState;
+export interface Game extends Omit<GameState, "position"> {
+  board: Board;
   moveHistory: MoveHistory;
   capturedPieces: Array<Piece>;
   legalMoves: Array<Move>;
   outcome: Outcome;
   config: GameConfig;
+  lastMove: Move | null;
 }
 
 export class Game implements Game {
@@ -699,11 +701,27 @@ export class Game implements Game {
       throw new Error(
         "Config is invalid: Invalid FEN passed to start position"
       );
-    this.gameState = initialGameState;
+    const {
+      castleRights,
+      position,
+      activeColor,
+      halfMoveCount,
+      fullMoveCount,
+      enPassantTarget,
+    } = initialGameState;
+    Object.assign(this, {
+      castleRights,
+      activeColor,
+      halfMoveCount,
+      fullMoveCount,
+      enPassantTarget,
+    });
     this.legalMoves = getMoves(initialGameState);
     this.moveHistory = [];
     this.capturedPieces = [];
     this.config = gameConfig;
+    this.lastMove = null;
+    this.board = positionToBoard(position);
   }
 }
 
@@ -752,7 +770,23 @@ export function move(
 
   //execute the move and update the gameState and captured pieces
   console.log("executing move");
-  const { updatedGameState, capturedPiece } = executeMove(game.gameState, move);
+  const {
+    castleRights,
+    activeColor,
+    halfMoveCount,
+    fullMoveCount,
+    enPassantTarget,
+  } = game;
+  const position = boardToPosition(game.board);
+  const gameState = {
+    position,
+    castleRights,
+    activeColor,
+    halfMoveCount,
+    fullMoveCount,
+    enPassantTarget,
+  };
+  const { updatedGameState, capturedPiece } = executeMove(gameState, move);
 
   const capturedPieces = game.capturedPieces;
   if (capturedPiece) capturedPieces.push(capturedPiece);
@@ -765,16 +799,16 @@ export function move(
   //If there are no legal moves, result is checkmate or stalemate
   if (updatedLegalMoves.length === 0) {
     if (move.isCheck) {
-      outcome = { result: game.gameState.activeColor, by: "checkmate" };
+      outcome = { result: activeColor, by: "checkmate" };
 
-      //set move.isCheckmate for PGN parser
+      //set move.isCheckmate for Move history/pgn
       move.isCheckMate = true;
     } else {
       outcome = { result: "d", by: "stalemate" };
     }
   }
   //TODO: Check for insufficient Material
-  const { position } = updatedGameState;
+  const { position: updatedPosition, ...rest } = updatedGameState;
 
   //Check for repitition
   if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
@@ -789,12 +823,12 @@ export function move(
   //Push to move history
   const halfMove: HalfMove = {
     move: move,
-    PGN: moveToPgn(move, game.gameState.position, game.legalMoves),
+    PGN: moveToPgn(move, position, game.legalMoves),
     fen: gameStateToFen(updatedGameState),
     elapsedTimeSeconds,
   };
 
-  if (game.gameState.activeColor === "b") {
+  if (activeColor === "b") {
     const moveIdx = updatedMoveHistory.length - 1;
     updatedMoveHistory[moveIdx][1] = halfMove;
   } else {
@@ -804,9 +838,11 @@ export function move(
   //return the updated game
   const updatedGame: Game = {
     ...game,
-    gameState: updatedGameState,
+    ...rest,
+    board: positionToBoard(updatedPosition),
     moveHistory: updatedMoveHistory,
     legalMoves: updatedLegalMoves,
+    lastMove: move,
     capturedPieces,
     outcome,
   };
@@ -830,3 +866,11 @@ export function serializeMoves(moves: Array<Move>): Array<String> {
 // export function deserializeMove(move: string): Move {
 //   move.split(":")
 // }
+
+function positionToBoard(position: Position): Board {
+  return Array.from(position.entries());
+}
+
+function boardToPosition(board: Board): Position {
+  return new Map(board);
+}

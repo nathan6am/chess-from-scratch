@@ -6,7 +6,12 @@ export type PieceType = "k" | "q" | "n" | "r" | "b" | "p";
 export type Color = "w" | "b";
 
 export type Coordinates = [number, number];
-export type Piece = { color: Color; type: PieceType };
+export interface Piece {
+  color: Color;
+  type: PieceType;
+  key: string;
+  targets?: Array<Square>;
+}
 
 export type Position = Map<Square, Piece>;
 
@@ -43,6 +48,8 @@ export interface GameState {
   halfMoveCount: number;
   fullMoveCount: number;
 }
+
+export type Board = Array<[Square, Piece]>;
 
 export type Move = {
   start: Square;

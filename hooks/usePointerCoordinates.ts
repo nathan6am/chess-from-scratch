@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { throttle } from "lodash";
 
-const useRelativeMousePosition = () => {
+const usePointerCoordinates = (gridSize: number) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const ref = useRef<HTMLDivElement>(null);
 
@@ -9,17 +9,15 @@ const useRelativeMousePosition = () => {
     const handleMouseMove = throttle((event: PointerEvent) => {
       setPosition({
         x: Math.floor(
-          (event.clientX -
-            (ref?.current ? ref.current?.getBoundingClientRect().x : 0)) /
-            (ref.current ? ref.current.getBoundingClientRect()?.width / 8 : 1)
+          (event.clientX - (ref?.current ? ref.current?.getBoundingClientRect().x : 0)) /
+            (ref.current ? ref.current.getBoundingClientRect()?.width / gridSize : 1)
         ),
         y: Math.floor(
-          (event.clientY -
-            (ref?.current ? ref.current?.getBoundingClientRect().y : 0)) /
-            (ref.current ? ref.current.getBoundingClientRect()?.height / 8 : 1)
+          (event.clientY - (ref?.current ? ref.current?.getBoundingClientRect().y : 0)) /
+            (ref.current ? ref.current.getBoundingClientRect()?.height / gridSize : 1)
         ),
       });
-    }, 100);
+    }, 32);
 
     window.addEventListener("pointermove", handleMouseMove);
 
@@ -34,4 +32,4 @@ const useRelativeMousePosition = () => {
   };
 };
 
-export default useRelativeMousePosition;
+export default usePointerCoordinates;

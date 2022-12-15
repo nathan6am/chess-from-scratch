@@ -1,23 +1,26 @@
 import { UserContext } from "@/context/user";
 import Head from "next/head";
 import Image from "next/image";
+import Game from "@/components/GameLocal";
 import { useEffect, useState, useContext } from "react";
 import { SocketContext } from "../context/socket";
 import styles from "../styles/Home.module.scss";
 import Board from "@/components/Board";
+import { Color } from "@/util/chess";
 export default function Home() {
-  const [connected, setConnected] = useState(false);
-  const socket = useContext(SocketContext);
-  const user = useContext(UserContext);
-  useEffect(() => {
-    socket.on("connect", () => {
-      setConnected(socket.connected);
-    });
-    setConnected(socket.connected);
-    return () => {
-      socket.off("connect");
-    };
-  }, []);
+  // const [connected, setConnected] = useState(false);
+  // const socket = useContext(SocketContext);
+  // const user = useContext(UserContext);
+  // useEffect(() => {
+  //   socket.on("connect", () => {
+  //     setConnected(socket.connected);
+  //   });
+  //   setConnected(socket.connected);
+  //   return () => {
+  //     socket.off("connect");
+  //   };
+  // }, []);
+
   return (
     <div className={styles.container}>
       <Head>
@@ -26,7 +29,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <Board />
+        <Game />
       </main>
     </div>
   );

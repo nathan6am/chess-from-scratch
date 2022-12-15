@@ -1,125 +1,218 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Color, Square, Position, Piece } from "@/util/chess/ChessTypes";
-
-import usePointerCoordinates from "@/hooks/usePointerCoordinates";
-
+import React, { useCallback, useState, useEffect, useContext, useMemo, useRef } from "react";
+import { SettingsContext } from "@/context/settings";
 import styles from "@/styles/Board.module.scss";
-import { boardMap } from "@/util/chess/FenParser";
+import * as Chess from "@/util/chess";
+import { AnimSpeedEnum } from "@/context/settings";
+import usePointerCoordinates from "@/hooks/usePointerCoordinates";
+import { useResizeDetector } from "react-resize-detector";
 import Draggable from "react-draggable";
+import Image from "next/image";
 
-import * as chess from "@/util/chess/Chess";
-import useChessLocal, { PieceWithMetadata } from "@/hooks/useChessLocal";
 interface Props {
-  orientation?: Color;
-  position?: Position;
-  activePiece?: Square;
-  targets?: Array<Square>;
-  activeColor?: Color;
+  orientation: Chess.Color;
+  pieces: Chess.Board;
+  legalMoves: Array<Chess.Move>;
+  lastMove: Chess.Move | undefined | null;
+  activeColor: Chess.Color;
+  moveable: Chess.Color | "both";
+  preMoveable: boolean;
+  animationSpeed: "slow" | "fast" | "normal" | "disabled";
+  showTargets: boolean;
+  showHighlights: boolean;
+  autoQueen: boolean;
+  onMove: (move: Chess.Move) => void;
+  onPremove: (start: Chess.Square, end: Chess.Square) => void;
+  premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
 }
 
-function getSquareColor(square: Square): Color {
-  const coordinates = chess.squareToCoordinates(square);
-  const testColor = coordinates[0] % 2 === coordinates[1] % 2;
-  return testColor ? "b" : "w";
-}
-export default function Board({
-  orientation,
-  position,
-  activePiece,
-  targets,
-  activeColor,
-}: Props) {
+// Hook to track the current square of the pointer
+function useCurrentSquare(orientation: Chess.Color): {
+  boardRef: React.RefObject<HTMLDivElement>;
+  currentSquare: Chess.Square | null;
+} {
+  const [currentSquare, setCurrentSquare] = useState<Chess.Square | null>(null);
   const {
     ref,
     position: { x, y },
-  } = usePointerCoordinates();
+  } = usePointerCoordinates(8);
+  useEffect(() => {
+    // Only accept coordinated within the board
+    if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
+      const coordinates: [number, number] = orientation === "w" ? [x, 7 - y] : [7 - x, y];
+      setCurrentSquare(Chess.toSquare(coordinates));
+    } else {
+      //Set the current square to null if the pointer is outside the board
+      setCurrentSquare(null);
+    }
+  }, [x, y]);
 
-  const { move, game } = useChessLocal();
-  const [selectedPiece, setSelectedPiece] = useState<PieceWithMetadata | null>(
-    null
-  );
+  return {
+    boardRef: ref,
+    currentSquare,
+  };
+}
 
-  const onSelectTarget = useCallback(
-    (end: Square) => {
-      if (selectedPiece?.targets?.includes(end)) {
-        const targetMove = game.legalMoves.find(
-          (move) => move.start === selectedPiece.square && move.end === end
-        );
-        if (targetMove) {
-          move(targetMove);
-          setSelectedPiece(null);
-        }
+export default function Board({
+  orientation,
+  pieces,
+  legalMoves,
+  lastMove,
+  activeColor,
+  moveable,
+  preMoveable,
+  autoQueen,
+  animationSpeed,
+  showTargets,
+  showHighlights,
+  onMove,
+  onPremove,
+}: Props) {
+  //Get the current the app settings from the settings context
+  function getSquareColor(square: Chess.Square): Chess.Color {
+    const coordinates = Chess.squareToCoordinates(square);
+    const testColor = coordinates[0] % 2 === coordinates[1] % 2;
+    return testColor ? "b" : "w";
+  }
+  // Track the current square of the pointer
+  const { boardRef, currentSquare } = useCurrentSquare(orientation);
+
+  //TODO: Clear selected piece when clicking outside the board
+  const [selectedPiece, setSelectedPiece] = useState<[Chess.Square, Chess.Piece] | null>(null);
+
+  //Show Promotion Menu
+  const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
+
+  /* Callback to execute when a selected piece is dropped on a square; 
+  if the drop square is a valid move, it calls the passed `onMove` prop, passing it the 
+  selected piece and the target square */
+  const onDrop = useCallback(() => {
+    if (!currentSquare || !selectedPiece) {
+      return;
+    } else {
+      const [square, piece] = selectedPiece;
+
+      //Just in case, guard against non moveable pieces
+      if (piece.color !== moveable && moveable !== "both") return;
+
+      //Queue premove if the piece isn't of the active turn color and do not continue
+      if (piece.color !== activeColor && preMoveable) {
+        onPremove(square, currentSquare);
       }
-    },
-    [selectedPiece]
-  );
-  const onDrop = useCallback(
-    (start: Square) => {
-      if (x > 7 || x < 0 || y > 7 || y < 0) {
+
+      if (piece.color !== activeColor) return;
+
+      // Find the corresponding legal move - should be unique unless there is a promotion
+      const move = legalMoves.find((move) => move.start === square && move.end === currentSquare);
+      //Return if no legal move is found
+      if (!move) return;
+
+      //Call onMove if the move is not a promotion
+      if (!move.promotion) onMove(move);
+
+      // Auto promote to queen if enabled in settings, otherwise show the promotion menu
+      if (move.promotion && autoQueen) {
+        onMove({ ...move, promotion: "q" });
+      } else if (move.promotion) {
+        setShowPromotionMenu(true);
+      }
+      setSelectedPiece(null);
+    }
+  }, [currentSquare, selectedPiece, autoQueen, legalMoves]);
+
+  /* Callback to execute when a valid target is clicked for the selected piece
+  it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
+  selected piece and the target square */
+  const onSelectTarget = useCallback(
+    (targetSquare: Chess.Square) => {
+      if (!selectedPiece) {
         return;
       } else {
-        const mouseOverSquare = chess.toSquare([x, 7 - y]);
+        const [square, piece] = selectedPiece;
 
-        if (selectedPiece?.targets?.includes(mouseOverSquare)) {
-          const targetMove = game.legalMoves.find(
-            (move) => move.start === start && move.end === mouseOverSquare
-          );
+        //Just in case, guard against non moveable pieces
+        if (piece.color !== moveable && moveable !== "both") return;
 
-          if (targetMove) {
-            move(targetMove);
-            setSelectedPiece(null);
-          }
+        //Queue premove if the piece isn't of the active turn color and do not continue
+        if (piece.color !== activeColor && preMoveable) {
+          onPremove(square, targetSquare);
         }
+
+        if (piece.color !== activeColor) return;
+
+        // Find the corresponding legal move - should be unique unless there is a promotion
+        const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+        //Return if no legal move is found
+        if (!move) return;
+
+        //Call onMove if the move is not a promotion
+        if (!move.promotion) onMove(move);
+
+        // Auto promote to queen if enabled in settings, otherwise show the promotion menu
+        if (move.promotion && autoQueen) {
+          onMove({ ...move, promotion: "q" });
+        } else if (move.promotion) {
+          setShowPromotionMenu(true);
+        }
+        setSelectedPiece(null);
       }
     },
-    [x, y]
+    [selectedPiece, autoQueen, legalMoves]
   );
+  useEffect(() => {
+    setSelectedPiece(null);
+  }, [lastMove]);
+  const clearSelection = () => {
+    setSelectedPiece(null);
+  };
+
+  //Array of rows representing the squares on the board
+  const boardMap = orientation === "w" ? Chess.boardMap : Chess.boardMapReverse;
+
+  //Track the dimensions of the board/squares on resize events
+  const { width } = useResizeDetector({ targetRef: boardRef });
+  const squareSize = (width || 0) / 8;
+
   return (
     <>
-      {game.outcome && (
-        <p>
-          {game.outcome.result === "d"
-            ? `Draw by ${game.outcome.by}`
-            : `${game.outcome.result === "w" ? "White" : "Black"} wins by ${
-                game.outcome.by
-              }`}
-        </p>
-      )}
-      <div style={{ minWidth: "90vw" }}>
-        <div className={styles.board} ref={ref}>
-          {boardMap.map((row) => {
-            return row.map((square) => (
-              <BoardSquare
-                onSelectTarget={onSelectTarget}
+      <div style={{ minWidth: "100vw" }}>
+        <div className={styles.board} ref={boardRef}>
+          {boardMap.map((row) =>
+            row.map((square) => (
+              <RenderSquare
                 key={square}
+                hasPiece={pieces.some((piece) => piece[0] === square)}
+                isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                isSelected={(selectedPiece && selectedPiece[0] === square) || false}
                 square={square}
-                hasPiece={game.gameState.position.has(square)}
-                isTarget={selectedPiece?.targets.includes(square) || false}
-                isLastMove={
-                  square === game.lastMove?.start ||
-                  square === game.lastMove?.end
-                }
                 color={getSquareColor(square)}
-                isSelected={selectedPiece?.square === square}
-                isHovered={chess.toSquare([x, 7 - y]) === square}
+                onSelectTarget={() => {
+                  onSelectTarget(square);
+                }}
+                isPremoved={false}
+                showTargets={showTargets}
+                showHighlights={showHighlights}
+                clearSelection={clearSelection}
+                squareSize={squareSize}
+                hovered={currentSquare === square}
+                isLastMove={lastMove?.start === square || lastMove?.end === square}
               />
-            ));
-          })}
-          {game.boardState &&
-            game.boardState.map((piece) => {
-              const keyExtractor = () => {
-                return `${piece.previousSquare || "-"}:${piece.square}`;
-              };
-              return (
-                <TestPiece
-                  onDrop={onDrop}
-                  setSelectedPiece={setSelectedPiece}
-                  key={piece.key}
-                  piece={piece}
-                  disabled={piece.color !== game.gameState.activeColor}
-                />
-              );
-            })}
+            ))
+          )}
+          {pieces.map(([square, piece]) => (
+            <Piece
+              animationSpeed={AnimSpeedEnum[animationSpeed]}
+              setSelectedPiece={setSelectedPiece}
+              key={piece.key}
+              piece={piece}
+              square={square}
+              disabled={
+                (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+              }
+              orientation={orientation}
+              onDrop={onDrop}
+              squareSize={squareSize}
+            />
+          ))}
         </div>
       </div>
     </>
@@ -127,140 +220,166 @@ export default function Board({
 }
 
 interface SquareProps {
+  squareSize: number;
   hasPiece: boolean;
   isTarget: boolean;
   isSelected: boolean;
-  square: Square;
+  square: Chess.Square;
   isLastMove: boolean;
-  isPremoved?: boolean;
-  color: Color;
+  isPremoved: boolean;
+  color: Chess.Color;
   onSelectTarget: any;
-  isHovered: boolean;
+  hovered: boolean;
+  showTargets: boolean;
+  showHighlights: boolean;
+  clearSelection: () => void;
 }
 
-function BoardSquare({
-  hasPiece,
+function RenderSquare({
+  squareSize,
   isTarget,
   isSelected,
-  onSelectTarget,
   square,
   isLastMove,
   isPremoved,
+  hasPiece,
   color,
-  isHovered,
+  onSelectTarget,
+  hovered,
+  showTargets,
+  showHighlights,
+  clearSelection,
 }: SquareProps) {
   return (
     <div
-      className={styles.square}
-      style={{ backgroundColor: color === "w" ? "#FFFDD0" : "#015d2d" }}
+      onClick={() => {
+        if (isTarget) onSelectTarget();
+      }}
+      className={`${styles.square} ${color === "w" ? styles.light : styles.dark} `}
     >
       <div
-        onClick={() => {
-          if (isTarget) {
-            onSelectTarget(square);
-          }
-        }}
-        className={` ${
-          isLastMove && !(isHovered && isTarget) ? "last-move" : ""
-        } ${isTarget ? "target" + (isHovered ? " target-hover" : "") : ""}${
-          isSelected ? "selected" : ""
-        }`}
-        style={{
-          cursor: isTarget ? "pointer" : "default",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-        }}
+        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.hover} ${
+          isSelected && styles.selected
+        } ${isLastMove && showHighlights && styles.lastmove}`}
       >
-        {isTarget && <div className={hasPiece ? "ring" : "dot"} />}
+        {isTarget && showTargets && <div className={hasPiece ? styles.ring : styles.dot} />}
       </div>
     </div>
   );
 }
 
 interface PieceProps {
-  piece: PieceWithMetadata;
-  setSelectedPiece: any;
-  onDrop: any;
+  piece: Chess.Piece;
+  setSelectedPiece: (piece: [Chess.Square, Chess.Piece]) => void;
+  onDrop: () => void;
   disabled: boolean;
+  squareSize: number;
+  orientation: Chess.Color;
+  square: Chess.Square;
+  animationSpeed: number;
 }
-//function RenderPiece({ type, color, square }) {}
-function TestPiece({ piece, setSelectedPiece, onDrop, disabled }: PieceProps) {
+export function Piece({
+  piece,
+  setSelectedPiece,
+  onDrop,
+  disabled,
+  square,
+  squareSize,
+  orientation,
+  animationSpeed,
+}: PieceProps) {
+  //Prevent strict mode error from deprecated findDomNode
   const nodeRef = React.useRef<HTMLDivElement>(null);
-  const coordinates = piece.square
-    ? chess.squareToCoordinates(piece.square)
-    : [0, 0];
-  const [position, setPosition] = useState<[number, number]>([
-    coordinates[0] * 80,
-    coordinates[1] * -80,
-  ]);
-  const [dragging, setDragging] = useState(false);
+  const [dragging, setDragging] = useState(true);
+  const touchedRef = useRef(false);
+  //Calculate coordinates from square & orientation
+  const coordinates = useMemo<[number, number]>(() => {
+    const [x, y] = Chess.squareToCoordinates(square);
+    return orientation === "w" ? [x, y * -1] : [7 - x, (7 - y) * -1];
+  }, [square, orientation]);
+  //Controlled position for draggable; only set on start, drop, or square/coordinates change
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: coordinates[0], y: coordinates[1] });
+
+  useEffect(() => {}, [coordinates]);
+
   useEffect(() => {
-    if (piece.square && !dragging) {
-      setPosition([coordinates[0] * 80, coordinates[1] * -80]);
+    setDragging(true);
+    setPosition({ x: coordinates[0] * squareSize, y: coordinates[1] * squareSize });
+    setTimeout(() => {
+      setDragging(false);
+    }, animationSpeed * 1000);
+  }, [orientation, squareSize]);
+  useEffect(() => {
+    if (square && !dragging) {
+      setPosition({ x: coordinates[0] * squareSize, y: coordinates[1] * squareSize });
     }
-  }, [piece.square, dragging]);
-  if (!piece.square) return <></>;
+  }, [square, dragging]);
 
   return (
     <Draggable
+      scale={1}
+      grid={[1, 1]}
       nodeRef={nodeRef}
+      allowAnyClick={false}
       bounds="parent"
-      position={{ x: position[0], y: position[1] }}
-      onMouseDown={(e) => {
-        setSelectedPiece(piece);
-        const pointer = [e.clientX, e.clientY];
-        const piecePos = [
-          nodeRef?.current?.getBoundingClientRect().x,
-          nodeRef?.current?.getBoundingClientRect().y,
-        ];
-        setDragging(true);
-
-        setPosition((position) => [
-          position[0] + pointer[0] - ((piecePos[0] || 0) + 40),
-          position[1] + pointer[1] - ((piecePos[1] || 0) + 40),
-        ]);
-      }}
+      position={position}
       onStop={(e, data) => {
-        setPosition([data.x, data.y]);
-        onDrop(piece.square);
+        setPosition({ x: data.x, y: data.y });
+        onDrop();
         setDragging(false);
+        touchedRef.current = false;
+      }}
+      onStart={(e, data) => {
+        console.log(data);
       }}
     >
       <div
+        onPointerDown={(e) => {
+          if (disabled) return;
+          touchedRef.current = true;
+          setDragging(true);
+          setTimeout(() => {
+            console.log(touchedRef.current);
+          }, 3000);
+          setSelectedPiece([square, piece]);
+          const pointer = [e.clientX, e.clientY];
+          const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
+          //Snap to cursor
+          setPosition((position) => ({
+            x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
+            y: position.y + pointer[1] - ((piecePos[1] || 0) + squareSize / 2),
+          }));
+        }}
         style={{
-          transition: dragging ? "" : `all 0.2s `,
+          transition: dragging ? "" : `all ${animationSpeed}s`,
           cursor: dragging ? "grabbing" : "grab",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          width: 80,
-          height: 80,
+          width: squareSize,
+          height: squareSize,
           pointerEvents: disabled ? "none" : "auto",
           position: "absolute",
           bottom: 0,
           left: 0,
-          transform: `translate(${coordinates[0] * 80}px, ${
-            coordinates[1] * 80
-          }px)`,
+
           zIndex: dragging ? 100 : 10,
         }}
         ref={nodeRef}
       >
-        <img
-          draggable={false}
-          className={styles.piece}
+        <Image
           src={`/assets/${piece.color}${piece.type}.png`}
-          height={69}
-          width={69}
-          style={{ pointerEvents: "none" }}
+          alt={`${piece.color}${piece.type}`}
+          height={squareSize * 0.9}
+          className={styles.piece}
+          width={squareSize * 0.9}
+          style={{
+            pointerEvents: "none",
+          }}
         />
       </div>
     </Draggable>
   );
 }
+
+function PromotionMenu() {}

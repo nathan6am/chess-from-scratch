@@ -50,7 +50,7 @@ a {
   opacity: 30%;
   border-radius: 50%;
   display: inline-block;
-  border: 0.5vw solid #1f1f1f;
+  border: 15px solid #1f1f1f;
 }
 
 .selected {

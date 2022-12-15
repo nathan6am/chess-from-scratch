@@ -7,12 +7,12 @@ import useUser from "@/hooks/useUser";
 import React from "react";
 
 export default function App({ Component, pageProps }: AppProps) {
-  const { user, error } = useUser();
+  //const { user, error } = useUser();
   return (
-    <UserContext.Provider value={user}>
-      <SocketContext.Provider value={socket}>
-        <Component {...pageProps} />
-      </SocketContext.Provider>
+    <UserContext.Provider value={undefined}>
+      {/* <SocketContext.Provider value={socket}> */}
+      <Component {...pageProps} />
+      {/* </SocketContext.Provider> */}
     </UserContext.Provider>
   );
 }

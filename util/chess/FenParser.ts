@@ -88,6 +88,7 @@ function parseBoard(board: string): Position {
         position.set(toSquare([x, y]), {
           type: char.toLowerCase() as PieceType, // this is safe to do, since we've already validated the board string
           color: char === char.toLowerCase() ? "b" : "w",
+          key: toSquare([x, y]),
         });
         x++;
       }
@@ -164,6 +165,18 @@ export const boardMap: Array<Array<Square>> = Array.from([
   return row;
 });
 
+export const boardMapReverse: Array<Array<Square>> = Array.from([
+  7, 6, 5, 4, 3, 2, 1, 0,
+]).map((n, idx) => {
+  const rank = 8 - n;
+  const row = [7, 6, 5, 4, 3, 2, 1, 0].map((file, index) => {
+    const fileStr = FileEnum[file];
+    const square = `${fileStr}${rank}`;
+    if (!isValidSquare(square)) throw new Error("Invalid square on board map");
+    return square;
+  });
+  return row;
+});
 export function gameStateToFen(gameState: GameState): string {
   const position = gameState.position;
   const positionString = positionToFen(position);
