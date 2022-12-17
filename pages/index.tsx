@@ -7,6 +7,7 @@ import { SocketContext } from "../context/socket";
 import styles from "../styles/Home.module.scss";
 import Board from "@/components/Board";
 import { Color } from "@/util/chess";
+import NonSSRWrapper from "@/components/NonSSRWrapper";
 export default function Home() {
   // const [connected, setConnected] = useState(false);
   // const socket = useContext(SocketContext);
@@ -29,7 +30,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <Game />
+        <NonSSRWrapper>
+          <Game />
+        </NonSSRWrapper>
       </main>
     </div>
   );

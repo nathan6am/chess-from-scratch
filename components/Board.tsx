@@ -44,7 +44,7 @@ function useCurrentSquare(orientation: Chess.Color): {
       //Set the current square to null if the pointer is outside the board
       setCurrentSquare(null);
     }
-  }, [x, y]);
+  }, [x, y, orientation]);
 
   return {
     boardRef: ref,
@@ -117,7 +117,7 @@ export default function Board({
       }
       setSelectedPiece(null);
     }
-  }, [currentSquare, selectedPiece, autoQueen, legalMoves]);
+  }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
 
   /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -156,7 +156,7 @@ export default function Board({
         setSelectedPiece(null);
       }
     },
-    [selectedPiece, autoQueen, legalMoves]
+    [selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]
   );
   useEffect(() => {
     setSelectedPiece(null);
@@ -198,21 +198,31 @@ export default function Board({
               />
             ))
           )}
-          {pieces.map(([square, piece]) => (
-            <Piece
-              animationSpeed={AnimSpeedEnum[animationSpeed]}
-              setSelectedPiece={setSelectedPiece}
-              key={piece.key}
-              piece={piece}
-              square={square}
-              disabled={
-                (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
-              }
-              orientation={orientation}
-              onDrop={onDrop}
-              squareSize={squareSize}
-            />
-          ))}
+          {pieces.map(([square, piece]) =>
+            moveable === "both" || moveable === piece.color ? (
+              <Piece
+                animationSpeed={AnimSpeedEnum[animationSpeed]}
+                setSelectedPiece={setSelectedPiece}
+                key={piece.key}
+                piece={piece}
+                square={square}
+                disabled={
+                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                }
+                orientation={orientation}
+                onDrop={onDrop}
+                squareSize={squareSize}
+              />
+            ) : (
+              <StaticPiece
+                piece={piece}
+                square={square}
+                squareSize={squareSize}
+                key={piece.key}
+                orientation={orientation}
+              />
+            )
+          )}
         </div>
       </div>
     </>
@@ -277,6 +287,7 @@ interface PieceProps {
   orientation: Chess.Color;
   square: Chess.Square;
   animationSpeed: number;
+  moveable?: boolean;
 }
 export function Piece({
   piece,
@@ -287,11 +298,11 @@ export function Piece({
   squareSize,
   orientation,
   animationSpeed,
+  moveable,
 }: PieceProps) {
   //Prevent strict mode error from deprecated findDomNode
   const nodeRef = React.useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(true);
-  const touchedRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
   //Calculate coordinates from square & orientation
   const coordinates = useMemo<[number, number]>(() => {
     const [x, y] = Chess.squareToCoordinates(square);
@@ -300,25 +311,33 @@ export function Piece({
   //Controlled position for draggable; only set on start, drop, or square/coordinates change
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: coordinates[0], y: coordinates[1] });
 
-  useEffect(() => {}, [coordinates]);
+  //Callback to reset the position to the current coordinates
+  // const resetPosition = useCallback(() => {
+  //   setPosition({ x: coordinates[0] * squareSize, y: coordinates[1] * squareSize });
+  // }, [coordinates, squareSize]);
 
   useEffect(() => {
     setDragging(true);
-    setPosition({ x: coordinates[0] * squareSize, y: coordinates[1] * squareSize });
+    const [x, y] = Chess.squareToCoordinates(square);
+    const coords = orientation === "w" ? [x, y * -1] : [7 - x, (7 - y) * -1];
+    setPosition({ x: coords[0] * squareSize, y: coords[1] * squareSize });
     setTimeout(() => {
       setDragging(false);
     }, animationSpeed * 1000);
   }, [orientation, squareSize]);
+
   useEffect(() => {
     if (square && !dragging) {
-      setPosition({ x: coordinates[0] * squareSize, y: coordinates[1] * squareSize });
+      const [x, y] = Chess.squareToCoordinates(square);
+      const coords = orientation === "w" ? [x, y * -1] : [7 - x, (7 - y) * -1];
+      setPosition({ x: coords[0] * squareSize, y: coords[1] * squareSize });
     }
   }, [square, dragging]);
 
   return (
     <Draggable
-      scale={1}
-      grid={[1, 1]}
+      // scale={1}
+      // grid={[1, 1]}
       nodeRef={nodeRef}
       allowAnyClick={false}
       bounds="parent"
@@ -327,20 +346,13 @@ export function Piece({
         setPosition({ x: data.x, y: data.y });
         onDrop();
         setDragging(false);
-        touchedRef.current = false;
-      }}
-      onStart={(e, data) => {
-        console.log(data);
       }}
     >
       <div
         onPointerDown={(e) => {
           if (disabled) return;
-          touchedRef.current = true;
+          if (e.button === 2) return;
           setDragging(true);
-          setTimeout(() => {
-            console.log(touchedRef.current);
-          }, 3000);
           setSelectedPiece([square, piece]);
           const pointer = [e.clientX, e.clientY];
           const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
@@ -362,7 +374,7 @@ export function Piece({
           position: "absolute",
           bottom: 0,
           left: 0,
-
+          transform: `translate(${coordinates[0] * squareSize}px, ${coordinates[1]}px)`,
           zIndex: dragging ? 100 : 10,
         }}
         ref={nodeRef}
@@ -383,3 +395,63 @@ export function Piece({
 }
 
 function PromotionMenu() {}
+
+interface StaticPieceProps {
+  piece: Chess.Piece;
+  square: Chess.Square;
+  orientation: Chess.Color;
+  squareSize: number;
+}
+
+function StaticPiece({ piece, square, orientation, squareSize }: StaticPieceProps) {
+  const previousSquare = useRef(square);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const [x, y] = Chess.squareToCoordinates(square);
+    const coords = orientation === "w" ? [x, y * -1] : [7 - x, (7 - y) * -1];
+    const position = { x: coords[0] * squareSize, y: coords[1] * squareSize };
+    if (square !== previousSquare.current) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!ref.current) return;
+          ref.current.style.transform = `translate(${position.x}px, ${position.y}px)`;
+        });
+      });
+      previousSquare.current = square;
+    } else {
+      if (!ref.current) return;
+      ref.current.style.transform = `translate(${position.x}px, ${position.y}px)`;
+    }
+  }, [square, orientation, squareSize]);
+
+  return (
+    <div
+      style={{
+        transition: `all 0.3s`,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        width: squareSize,
+        height: squareSize,
+        pointerEvents: "none",
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        zIndex: 10,
+      }}
+      ref={ref}
+    >
+      <Image
+        src={`/assets/${piece.color}${piece.type}.png`}
+        alt={`${piece.color}${piece.type}`}
+        height={squareSize * 0.9}
+        className={styles.piece}
+        width={squareSize * 0.9}
+        style={{
+          pointerEvents: "none",
+        }}
+      />
+    </div>
+  );
+}

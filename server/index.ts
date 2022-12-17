@@ -32,10 +32,12 @@ declare module "socket.io" {
     userID?: string;
   }
 }
-
+const hostname = process.env.HOSTNAME || "localhost";
 const port: number = parseInt(process.env.PORT || "3000", 10);
+console.log(process.env.NODE_ENV);
 const dev: boolean = process.env.NODE_ENV !== "production";
-const nextApp = next({ dev });
+console.log(dev);
+const nextApp = next({ dev, hostname, port });
 const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || "keyboard cat",
@@ -50,7 +52,12 @@ nextApp.prepare().then(async () => {
   const server: http.Server = http.createServer(app);
   const io: socketio.Server = new socketio.Server();
   io.attach(server);
-
+  //Cross origin isoalte for workers
+  app.use((req, res, next) => {
+    res.header("Cross-Origin-Embedder-Policy", "require-corp");
+    res.header("Cross-Origin-Opener-Policy", "same-origin");
+    next();
+  });
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
@@ -71,15 +78,10 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) =>
-    middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
