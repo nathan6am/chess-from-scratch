@@ -13,6 +13,7 @@ let RedisStore = connectRedis(session);
 import passport from "passport";
 import authRouter from "./routes/auth";
 import { gameStateToFen } from "../util/chess/FenParser";
+import cors from "cors";
 
 declare module "http" {
   interface IncomingMessage {
@@ -53,11 +54,16 @@ nextApp.prepare().then(async () => {
   const io: socketio.Server = new socketio.Server();
   io.attach(server);
   //Cross origin isoalte for workers
+
   app.use((req, res, next) => {
     res.header("Cross-Origin-Embedder-Policy", "require-corp");
     res.header("Cross-Origin-Opener-Policy", "same-origin");
+    res.header("Cross-Origin-Resource-Policy", "cross-origin");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "*");
     next();
   });
+  app.use(cors());
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
@@ -78,10 +84,15 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
-    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
+    sessionMiddleware(
+      socket.request as Request,
+      {} as Response,
+      next as NextFunction
+    );
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
