@@ -740,11 +740,13 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
   }
 
   const fen = gameStateToFen(updatedGameState);
+  const updatedBoard = positionToBoard(updatedPosition);
   //Push to move history
   const halfMove: HalfMove = {
     move: move,
     PGN: moveToPgn(move, position, game.legalMoves),
     fen: gameStateToFen(updatedGameState),
+    board: updatedBoard,
     elapsedTimeSeconds,
   };
 
@@ -759,7 +761,7 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
   const updatedGame: Game = {
     ...game,
     ...rest,
-    board: positionToBoard(updatedPosition),
+    board: updatedBoard,
     moveHistory: updatedMoveHistory,
     legalMoves: updatedLegalMoves,
     lastMove: move,
@@ -788,10 +790,16 @@ export function serializeMoves(moves: Array<Move>): Array<String> {
 //   move.split(":")
 // }
 
-function positionToBoard(position: Position): Board {
+export function positionToBoard(position: Position): Board {
   return Array.from(position.entries());
 }
 
 function boardToPosition(board: Board): Position {
   return new Map(board);
+}
+
+export function getSquareColor(square: Square): Color {
+  const coordinates = squareToCoordinates(square);
+  const testColor = coordinates[0] % 2 === coordinates[1] % 2;
+  return testColor ? "b" : "w";
 }

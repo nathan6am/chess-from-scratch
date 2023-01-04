@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -78,7 +67,6 @@ var express_session_1 = __importDefault(require("express-session"));
 //Load environment variables before starting the custom server
 var env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
-var Chess_1 = require("../util/chess/Chess");
 var http = __importStar(require("http"));
 var next_1 = __importDefault(require("next"));
 var socketio = __importStar(require("socket.io"));
@@ -87,7 +75,7 @@ var connect_redis_1 = __importDefault(require("connect-redis"));
 var RedisStore = (0, connect_redis_1.default)(express_session_1.default);
 var passport_1 = __importDefault(require("passport"));
 var auth_1 = __importDefault(require("./routes/auth"));
-var FenParser_1 = require("../util/chess/FenParser");
+var cors_1 = __importDefault(require("cors"));
 var hostname = process.env.HOSTNAME || "localhost";
 var port = parseInt(process.env.PORT || "3000", 10);
 console.log(process.env.NODE_ENV);
@@ -113,8 +101,12 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
         app.use(function (req, res, next) {
             res.header("Cross-Origin-Embedder-Policy", "require-corp");
             res.header("Cross-Origin-Opener-Policy", "same-origin");
+            res.header("Cross-Origin-Resource-Policy", "cross-origin");
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "*");
             next();
         });
+        app.use((0, cors_1.default)());
         app.use(sessionMiddleware);
         app.use(passport_1.default.initialize());
         app.use(passport_1.default.session());
@@ -125,23 +117,10 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                 return [2 /*return*/];
             });
         }); });
-        app.get("/test", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-            var gameJSON, game;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        gameJSON = (0, Chess_1.createGame)();
-                        return [4 /*yield*/, sessionClient_1.default.json.set("lobbyid", "$", __assign(__assign({}, gameJSON), { gameState: (0, FenParser_1.gameStateToFen)(gameJSON.gameState), legalMoves: (0, Chess_1.serializeMoves)(gameJSON.legalMoves) }))];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, sessionClient_1.default.json.get("lobbyid")];
-                    case 2:
-                        game = _a.sent();
-                        res.status(200).json(game);
-                        return [2 /*return*/];
-                }
-            });
-        }); });
+        // app.get("/", async (req, res, next) => {
+        //   if (!req.user) res.redirect("/login");
+        //   next();
+        // });
         app.use("/", auth_1.default);
         wrap = function (middleware) { return function (socket, next) { return middleware(socket.request, {}, next); }; };
         io.use(function (socket, next) {

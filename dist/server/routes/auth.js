@@ -37,6 +37,7 @@ passport_1.default.use(new passportFacebook.Strategy({
     clientSecret: facebookClientSecret,
     callbackURL: facebookCallbackURL,
 }, function (accessToken, refreshToken, profile, done) {
+    console.log(profile);
     var user = { id: profile.id, name: profile.displayName };
     return done(null, user);
 }));

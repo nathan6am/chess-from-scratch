@@ -19,6 +19,7 @@ export type HalfMove = {
   move: Move;
   PGN: string;
   fen: string;
+  board: Board
   elapsedTimeSeconds?: number;
 };
 export type Outcome =

@@ -9,7 +9,7 @@ import React from "react";
 export default function App({ Component, pageProps }: AppProps) {
   const { user, error } = useUser();
   return (
-    <UserContext.Provider value={undefined}>
+    <UserContext.Provider value={user}>
       <SocketContext.Provider value={socket}>
         <Component {...pageProps} />
       </SocketContext.Provider>

@@ -52,7 +52,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 var ChessTypes_1 = require("./ChessTypes");
 var lodash_1 = __importDefault(require("lodash"));
 var FenParser_1 = require("./FenParser");
@@ -750,11 +750,13 @@ function move(game, move, elapsedTimeSeconds) {
         outcome = { result: "d", by: "50-move-rule" };
     }
     var fen = (0, FenParser_1.gameStateToFen)(updatedGameState);
+    var updatedBoard = positionToBoard(updatedPosition);
     //Push to move history
     var halfMove = {
         move: move,
         PGN: (0, PGN_1.moveToPgn)(move, position, game.legalMoves),
         fen: (0, FenParser_1.gameStateToFen)(updatedGameState),
+        board: updatedBoard,
         elapsedTimeSeconds: elapsedTimeSeconds,
     };
     if (activeColor === "b") {
@@ -765,7 +767,7 @@ function move(game, move, elapsedTimeSeconds) {
         updatedMoveHistory.push([halfMove, null]);
     }
     //return the updated game
-    var updatedGame = __assign(__assign(__assign({}, game), rest), { board: positionToBoard(updatedPosition), moveHistory: updatedMoveHistory, legalMoves: updatedLegalMoves, lastMove: move, capturedPieces: capturedPieces, outcome: outcome, fen: fen });
+    var updatedGame = __assign(__assign(__assign({}, game), rest), { board: updatedBoard, moveHistory: updatedMoveHistory, legalMoves: updatedLegalMoves, lastMove: move, capturedPieces: capturedPieces, outcome: outcome, fen: fen });
     return updatedGame;
 }
 exports.move = move;
@@ -786,6 +788,13 @@ exports.serializeMoves = serializeMoves;
 function positionToBoard(position) {
     return Array.from(position.entries());
 }
+exports.positionToBoard = positionToBoard;
 function boardToPosition(board) {
     return new Map(board);
 }
+function getSquareColor(square) {
+    var coordinates = squareToCoordinates(square);
+    var testColor = coordinates[0] % 2 === coordinates[1] % 2;
+    return testColor ? "b" : "w";
+}
+exports.getSquareColor = getSquareColor;

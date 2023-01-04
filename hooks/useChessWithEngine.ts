@@ -59,7 +59,7 @@ export default function useChessLocal(playerColor: chess.Color, config?: { start
       const bestmove = messageParams[1];
       setBestMove((_) => bestmove);
     }
-    console.log(e);
+    //console.log(e);
   }, []);
 
   useLayoutEffect(() => {

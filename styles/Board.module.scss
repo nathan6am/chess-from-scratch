@@ -13,6 +13,7 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
+  height: 100%;
   max-width: 1200px;
   max-height: 80vh;
   aspect-ratio: 1;

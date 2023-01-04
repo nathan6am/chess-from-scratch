@@ -2,13 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "downlevelIteration": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "es2015.collection",
-      "es2015.iterable"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "es2015.collection", "es2015.iterable"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,7 +21,8 @@
       "@/context/*": ["context/*"],
       "@/util/*": ["util/*"],
       "@/hooks/*": ["hooks/*"],
-      "@/styles/*": ["styles/*"]
+      "@/styles/*": ["styles/*"],
+      "@/public/*": ["public/*"]
     }
   },
   "ts-node": {

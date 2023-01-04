@@ -1,13 +1,5 @@
 import { toSquare } from "./Chess";
-import {
-  FileEnum,
-  Color,
-  Square,
-  Position,
-  PieceType,
-  GameState,
-  Piece,
-} from "./ChessTypes";
+import { FileEnum, Color, Square, Position, PieceType, GameState, Piece } from "./ChessTypes";
 
 /*------------------------------------------------------
 Type Guards and Validators
@@ -20,9 +12,7 @@ function isValidColor(arg: string): arg is Color {
 function isValidSquare(arg: string): arg is Square {
   if (arg.length !== 2) return false;
   return (
-    ["a", "b", "c", "d", "e", "f", "g", "h"].some(
-      (char) => char === arg.charAt(0)
-    ) &&
+    ["a", "b", "c", "d", "e", "f", "g", "h"].some((char) => char === arg.charAt(0)) &&
     parseInt(arg.charAt(1)) > 0 &&
     parseInt(arg.charAt(1)) <= 8
   );
@@ -103,25 +93,13 @@ export function fenToGameState(fen: string): GameState | false {
   const sections = fen.trim().split(" ");
   if (sections.length !== 6) return false;
 
-  const [
-    board,
-    activeColor,
-    castleRights,
-    enPassantTarget,
-    halfMoveCount,
-    fullMoveCount,
-  ] = sections;
+  const [board, activeColor, castleRights, enPassantTarget, halfMoveCount, fullMoveCount] = sections;
 
   // Some guards to validate each section of the string before parsing them
   if (!isValidColor(activeColor)) return false;
-  if (
-    !(/^[KkQq]+$/.test(castleRights) && castleRights.length <= 4) &&
-    castleRights !== "-"
-  )
-    return false;
+  if (!(/^[KkQq]+$/.test(castleRights) && castleRights.length <= 4) && castleRights !== "-") return false;
   if (!isValidSquare(enPassantTarget) && enPassantTarget !== "-") return false;
-  if (!/^\d+$/.test(halfMoveCount) || !/^\d+$/.test(fullMoveCount))
-    return false;
+  if (!/^\d+$/.test(halfMoveCount) || !/^\d+$/.test(fullMoveCount)) return false;
   if (!validateBoard(board)) return false;
 
   return {
@@ -137,8 +115,7 @@ export function fenToGameState(fen: string): GameState | false {
         queenSide: castleRights.includes("q"),
       },
     },
-    enPassantTarget:
-      enPassantTarget === "-" ? null : (enPassantTarget as Square),
+    enPassantTarget: enPassantTarget === "-" ? null : (enPassantTarget as Square),
     halfMoveCount: parseInt(halfMoveCount),
     fullMoveCount: parseInt(fullMoveCount),
   };
@@ -152,9 +129,7 @@ export function trimMoveCounts(fen: string): string {
 Export to FEN
 ------------------------------------------------------*/
 
-export const boardMap: Array<Array<Square>> = Array.from([
-  0, 1, 2, 3, 4, 5, 6, 7,
-]).map((n, idx) => {
+export const boardMap: Array<Array<Square>> = Array.from([0, 1, 2, 3, 4, 5, 6, 7]).map((n, idx) => {
   const rank = 8 - n;
   const row = [0, 1, 2, 3, 4, 5, 6, 7].map((file, index) => {
     const fileStr = FileEnum[file];
@@ -165,9 +140,7 @@ export const boardMap: Array<Array<Square>> = Array.from([
   return row;
 });
 
-export const boardMapReverse: Array<Array<Square>> = Array.from([
-  7, 6, 5, 4, 3, 2, 1, 0,
-]).map((n, idx) => {
+export const boardMapReverse: Array<Array<Square>> = Array.from([7, 6, 5, 4, 3, 2, 1, 0]).map((n, idx) => {
   const rank = 8 - n;
   const row = [7, 6, 5, 4, 3, 2, 1, 0].map((file, index) => {
     const fileStr = FileEnum[file];
@@ -199,8 +172,7 @@ function positionToFen(position: Position): string {
     let emptySquares = 0;
     row.forEach((square, idx) => {
       if (position.has(square)) {
-        if (emptySquares !== 0)
-          positionString = positionString + emptySquares.toString();
+        if (emptySquares !== 0) positionString = positionString + emptySquares.toString();
         emptySquares = 0;
         const piece = position.get(square);
         if (!piece) throw new Error("invalid position");
@@ -209,8 +181,7 @@ function positionToFen(position: Position): string {
         emptySquares++;
       }
       if (idx === 7) {
-        if (emptySquares !== 0)
-          positionString = positionString + emptySquares.toString();
+        if (emptySquares !== 0) positionString = positionString + emptySquares.toString();
         if (rowIdx !== 7) positionString = positionString + "/";
       }
     });

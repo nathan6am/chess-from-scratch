@@ -71,28 +71,17 @@ nextApp.prepare().then(async () => {
   app.get("/hello", async (_: Request, res: Response) => {
     res.send("Hello World");
   });
-  app.get("/test", async (req, res) => {
-    const gameJSON = createGame() as any;
-    await redisClient.json.set("lobbyid", "$", {
-      ...gameJSON,
-      gameState: gameStateToFen(gameJSON.gameState),
-      legalMoves: serializeMoves(gameJSON.legalMoves),
-    });
-    const game = await redisClient.json.get("lobbyid");
-    res.status(200).json(game);
-  });
+  // app.get("/", async (req, res, next) => {
+  //   if (!req.user) res.redirect("/login");
+  //   next();
+  // });
   app.use("/", authRouter);
 
   //wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) =>
-    middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));

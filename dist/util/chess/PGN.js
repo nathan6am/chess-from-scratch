@@ -17,7 +17,8 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
     var notation = "";
     if (move.isCastle) {
         var coords = (0, Chess_1.squareToCoordinates)(move.end);
-        if (coords[0] === 1) {
+        console.log(coords);
+        if (coords[0] === 6) {
             notation = "O-O";
         }
         else {
@@ -29,8 +30,7 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
         //Add notation for pawn moves, captures and promotions
         if (type === "p") {
             if (move.capture) {
-                notation =
-                    ChessTypes_1.FileEnum[(0, Chess_1.squareToCoordinates)(move.start)[0]] + "x" + move.end;
+                notation = ChessTypes_1.FileEnum[(0, Chess_1.squareToCoordinates)(move.start)[0]] + "x" + move.end;
             }
             else {
                 notation = move.end;
@@ -49,8 +49,7 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
                 if (move.end !== potentialMove.end)
                     return false;
                 //filter out moves with a different piece type
-                if (((_a = position.get(move.start)) === null || _a === void 0 ? void 0 : _a.type) !==
-                    ((_b = position.get(potentialMove.start)) === null || _b === void 0 ? void 0 : _b.type))
+                if (((_a = position.get(move.start)) === null || _a === void 0 ? void 0 : _a.type) !== ((_b = position.get(potentialMove.start)) === null || _b === void 0 ? void 0 : _b.type))
                     return false;
                 return true;
             });

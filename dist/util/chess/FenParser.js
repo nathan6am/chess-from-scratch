@@ -105,8 +105,7 @@ function fenToGameState(fen) {
     // Some guards to validate each section of the string before parsing them
     if (!isValidColor(activeColor))
         return false;
-    if (!(/^[KkQq]+$/.test(castleRights) && castleRights.length <= 4) &&
-        castleRights !== "-")
+    if (!(/^[KkQq]+$/.test(castleRights) && castleRights.length <= 4) && castleRights !== "-")
         return false;
     if (!isValidSquare(enPassantTarget) && enPassantTarget !== "-")
         return false;
@@ -140,9 +139,7 @@ exports.trimMoveCounts = trimMoveCounts;
 /*------------------------------------------------------
 Export to FEN
 ------------------------------------------------------*/
-exports.boardMap = Array.from([
-    0, 1, 2, 3, 4, 5, 6, 7,
-]).map(function (n, idx) {
+exports.boardMap = Array.from([0, 1, 2, 3, 4, 5, 6, 7]).map(function (n, idx) {
     var rank = 8 - n;
     var row = [0, 1, 2, 3, 4, 5, 6, 7].map(function (file, index) {
         var fileStr = ChessTypes_1.FileEnum[file];
@@ -153,9 +150,7 @@ exports.boardMap = Array.from([
     });
     return row;
 });
-exports.boardMapReverse = Array.from([
-    7, 6, 5, 4, 3, 2, 1, 0,
-]).map(function (n, idx) {
+exports.boardMapReverse = Array.from([7, 6, 5, 4, 3, 2, 1, 0]).map(function (n, idx) {
     var rank = 8 - n;
     var row = [7, 6, 5, 4, 3, 2, 1, 0].map(function (file, index) {
         var fileStr = ChessTypes_1.FileEnum[file];

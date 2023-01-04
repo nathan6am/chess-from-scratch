@@ -2,8 +2,11 @@ import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } 
 import useChessLocal from "./useChessLocal";
 import * as commands from "@/util/chess/UciCmds";
 
-export default function useStockfish() {
+export default function useLocalEval() {
   const [error, setError] = useState<Error | null>(null);
+  const [inProgress, setInProgress] = useState(false);
+  const [evaluation, setEvaluation] = useState<any>(null);
+  const [finished, setFinished] = useState<boolean>(false);
   var wasmSupported =
     typeof WebAssembly === "object" &&
     WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
@@ -40,27 +43,39 @@ export default function useStockfish() {
     };
   }, []);
 
-  const onMessage = (e: MessageEvent) => {
-    console.log(e.data);
+  const getEvaluation = async (
+    options = { depth: 10, useNNUE: false, fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }
+  ) => {
+    const cb = (evaluation: any) => {
+      setEvaluation(evaluation);
+    };
+    if (!isReady || !stockfishRef.current) {
+      setError(new Error("Eval engine not yet initialized"));
+    } else {
+      const evaler = stockfishRef.current;
+      if (inProgress) {
+        const stopped = await commands.stop(evaler);
+        console.log(stopped);
+      }
+      setInProgress(true);
+      setFinished(false);
+      commands
+        .getEvaluation(evaler, options, cb)
+        .then((result) => {
+          setEvaluation(result);
+          setInProgress(false);
+          setFinished(true);
+        })
+        .catch((e) => setError(e));
+    }
   };
 
-  // //Initialize and ready
-  useEffect(() => {
-    if (!window.Worker || !stockfishRef.current) return;
-    if (!isReady) return;
-    const stockfish = stockfishRef.current;
-
-    stockfish.addEventListener("message", onMessage);
-
-    stockfish.postMessage("setoption name Use NNUE value true");
-    stockfish.postMessage("setoption name UCI_AnalyseMode value true");
-    //stockfish.postMessage("setoption name MultiPV value 3");
-    stockfish.postMessage("ucinewgame");
-    stockfish.postMessage("go depth 30");
-    //stockfish.postMessage("eval");
-
-    return () => {
-      stockfish.removeEventListener("message", onMessage);
-    };
-  }, [isReady]);
+  return {
+    isReady,
+    evaluation,
+    getEvaluation,
+    error,
+    inProgress,
+    finished,
+  };
 }

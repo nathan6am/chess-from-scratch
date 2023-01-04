@@ -1,12 +1,5 @@
 import { squareToCoordinates } from "./Chess";
-import {
-  Move,
-  Position,
-  FileEnum,
-  HalfMove,
-  FullMove,
-  MoveHistory,
-} from "./ChessTypes";
+import { Move, Position, FileEnum, HalfMove, FullMove, MoveHistory } from "./ChessTypes";
 import _ from "lodash";
 import { fenToGameState } from "./FenParser";
 
@@ -22,8 +15,8 @@ export function moveToPgn(
   var notation = "";
   if (move.isCastle) {
     let coords = squareToCoordinates(move.end);
-
-    if (coords[0] === 1) {
+    console.log(coords);
+    if (coords[0] === 6) {
       notation = "O-O";
     } else {
       notation = "O-O-O";
@@ -34,13 +27,11 @@ export function moveToPgn(
     //Add notation for pawn moves, captures and promotions
     if (type === "p") {
       if (move.capture) {
-        notation =
-          FileEnum[squareToCoordinates(move.start)[0]] + "x" + move.end;
+        notation = FileEnum[squareToCoordinates(move.start)[0]] + "x" + move.end;
       } else {
         notation = move.end;
       }
-      if (move.promotion)
-        notation = `${notation}=${move.promotion.toUpperCase()}`;
+      if (move.promotion) notation = `${notation}=${move.promotion.toUpperCase()}`;
     } else {
       //For non pawn moves, find potential ambiguous moves (pieces of the same type with the same end square)
       const ambiguousMoves = potentialMoves.filter((potentialMove) => {
@@ -51,11 +42,7 @@ export function moveToPgn(
         if (move.end !== potentialMove.end) return false;
 
         //filter out moves with a different piece type
-        if (
-          position.get(move.start)?.type !==
-          position.get(potentialMove.start)?.type
-        )
-          return false;
+        if (position.get(move.start)?.type !== position.get(potentialMove.start)?.type) return false;
 
         return true;
       });
@@ -76,11 +63,7 @@ export function moveToPgn(
   return notation;
 }
 
-function disambiguateMoves(
-  move: Move,
-  position: Position,
-  alternateMoves: Array<Move>
-): string {
+function disambiguateMoves(move: Move, position: Position, alternateMoves: Array<Move>): string {
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move or position");
   let notation = piece.type.toUpperCase();

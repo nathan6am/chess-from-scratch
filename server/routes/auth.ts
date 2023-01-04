@@ -15,6 +15,7 @@ passport.use(
       callbackURL: facebookCallbackURL,
     },
     function (accessToken, refreshToken, profile, done) {
+      console.log(profile);
       const user = { id: profile.id, name: profile.displayName };
       return done(null, user);
     }
