@@ -29,7 +29,7 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
     }
   }, [throttledValue, scoreType]);
   return (
-    <div className="h-full w-[60px] rounded-sm overflow-hidden relative">
+    <div className="h-full w-[60px] rounded-sm overflow-hidden relative mx-2">
       {orientation === "w" ? (
         <span
           className={`z-10 w-full absolute text-center left-0 text-xs py-2 ${

@@ -52,8 +52,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.nodeFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNode = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 var ChessTypes_1 = require("./ChessTypes");
+var uuid_1 = require("uuid");
 var lodash_1 = __importDefault(require("lodash"));
 var FenParser_1 = require("./FenParser");
 var PGN_1 = require("./PGN");
@@ -659,6 +660,8 @@ var Game = /** @class */ (function () {
         if (!initialGameState)
             throw new Error("Config is invalid: Invalid FEN passed to start position");
         var castleRights = initialGameState.castleRights, position = initialGameState.position, activeColor = initialGameState.activeColor, halfMoveCount = initialGameState.halfMoveCount, fullMoveCount = initialGameState.fullMoveCount, enPassantTarget = initialGameState.enPassantTarget;
+        var legalMoves = getMoves(initialGameState);
+        var board = positionToBoard(position);
         Object.assign(this, {
             castleRights: castleRights,
             activeColor: activeColor,
@@ -666,12 +669,12 @@ var Game = /** @class */ (function () {
             fullMoveCount: fullMoveCount,
             enPassantTarget: enPassantTarget,
         });
-        this.legalMoves = getMoves(initialGameState);
+        this.legalMoves = legalMoves;
         this.moveHistory = [];
         this.capturedPieces = [];
         this.config = gameConfig;
         this.lastMove = null;
-        this.board = positionToBoard(position);
+        this.board = injectTargets(board, legalMoves);
         this.fen = gameConfig.startPosition;
     }
     return Game;
@@ -756,7 +759,7 @@ function move(game, move, elapsedTimeSeconds) {
         move: move,
         PGN: (0, PGN_1.moveToPgn)(move, position, game.legalMoves),
         fen: (0, FenParser_1.gameStateToFen)(updatedGameState),
-        board: updatedBoard,
+        board: injectTargets(updatedBoard, updatedLegalMoves),
         elapsedTimeSeconds: elapsedTimeSeconds,
     };
     if (activeColor === "b") {
@@ -767,10 +770,18 @@ function move(game, move, elapsedTimeSeconds) {
         updatedMoveHistory.push([halfMove, null]);
     }
     //return the updated game
-    var updatedGame = __assign(__assign(__assign({}, game), rest), { board: updatedBoard, moveHistory: updatedMoveHistory, legalMoves: updatedLegalMoves, lastMove: move, capturedPieces: capturedPieces, outcome: outcome, fen: fen });
+    var updatedGame = __assign(__assign(__assign({}, game), rest), { board: injectTargets(updatedBoard, updatedLegalMoves), moveHistory: updatedMoveHistory, legalMoves: updatedLegalMoves, lastMove: move, capturedPieces: capturedPieces, outcome: outcome, fen: fen });
     return updatedGame;
 }
 exports.move = move;
+function injectTargets(board, legalMoves) {
+    var withTargets = board.map(function (entry) {
+        var _a = __read(entry, 2), square = _a[0], piece = _a[1];
+        var targets = legalMoves.filter(function (move) { return move.start === square; }).map(function (move) { return move.end; });
+        return [square, __assign(__assign({}, piece), { targets: targets })];
+    });
+    return withTargets;
+}
 //export function takeback(game: Game): Game {}
 function exportPGN() { }
 exports.exportPGN = exportPGN;
@@ -798,3 +809,48 @@ function getSquareColor(square) {
     return testColor ? "b" : "w";
 }
 exports.getSquareColor = getSquareColor;
+//Create a new game object from a tree node and it's given line
+function gameFromNode(node, moves) {
+    var board = node.board;
+    var fen = node.fen;
+    var game = createGame({ startPosition: fen, timeControls: null });
+    var moveHistory = [];
+    //convert the line into move history
+    if (moves) {
+        var halfMoves = moves.map(function (node) {
+            var id = node.id, children = node.children, uci = node.uci, evaluation = node.evaluation, moveCount = node.moveCount, rest = __rest(node, ["id", "children", "uci", "evaluation", "moveCount"]);
+            return __assign({}, rest);
+        });
+        var history_1 = [];
+        while (halfMoves.length > 0)
+            history_1.push(halfMoves.splice(0, 2));
+        moveHistory = history_1.map(function (fullmove) {
+            if (fullmove.length === 2) {
+                return fullmove;
+            }
+            else {
+                return [fullmove[0], null];
+            }
+        });
+    }
+    return __assign(__assign({}, game), { board: board, moveHistory: moveHistory, lastMove: node.move });
+}
+exports.gameFromNode = gameFromNode;
+//Generate a new tree node from a halfmove
+function halfMoveToNode(moveCount, halfMove) {
+    return __assign({ moveCount: moveCount, uci: MoveToUci(halfMove.move), id: (0, uuid_1.v4)(), children: [], comments: [] }, halfMove);
+}
+exports.halfMoveToNode = halfMoveToNode;
+function MoveToUci(move) {
+    return "".concat(move.start).concat(move.end).concat(move.promotion ? move.promotion : "");
+}
+exports.MoveToUci = MoveToUci;
+function nodeFromMove(game, moveToExecute, currentMoveCount) {
+    var updatedGame = move(game, moveToExecute);
+    var lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
+    var lastHalfMove = lastMove[1] || lastMove[0];
+    var moveCount = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
+    var partialNode = halfMoveToNode(moveCount, lastHalfMove);
+    return __assign(__assign({}, partialNode), { outcome: updatedGame.outcome });
+}
+exports.nodeFromMove = nodeFromMove;

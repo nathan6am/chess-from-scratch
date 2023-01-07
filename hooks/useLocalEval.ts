@@ -2,7 +2,18 @@ import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } 
 import useChessLocal from "./useChessLocal";
 import * as commands from "@/util/chess/UciCmds";
 
-export default function useLocalEval() {
+interface Options {
+  multiPV: number;
+  useNNUE: boolean;
+  depth: number;
+}
+const defaultOptions = {
+  multiPV: 3,
+  useNNUE: true,
+  depth: 18,
+};
+export default function useLocalEval(initialOptions?: Partial<Options>) {
+  const [options, setOptions] = useState<Options>({ ...initialOptions, ...defaultOptions });
   const [error, setError] = useState<Error | null>(null);
   const [inProgress, setInProgress] = useState(false);
   const [evaluation, setEvaluation] = useState<any>(null);
@@ -43,12 +54,11 @@ export default function useLocalEval() {
     };
   }, []);
 
-  const getEvaluation = async (
-    options = { depth: 10, useNNUE: false, fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }
-  ) => {
+  const getEvaluation = async (fen: string) => {
     const cb = (evaluation: any) => {
       setEvaluation(evaluation);
     };
+
     if (!isReady || !stockfishRef.current) {
       setError(new Error("Eval engine not yet initialized"));
     } else {
@@ -60,7 +70,7 @@ export default function useLocalEval() {
       setInProgress(true);
       setFinished(false);
       commands
-        .getEvaluation(evaler, options, cb)
+        .getEvaluation(evaler, { fen, ...options }, cb)
         .then((result) => {
           setEvaluation(result);
           setInProgress(false);

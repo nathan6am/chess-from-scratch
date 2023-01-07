@@ -1,3 +1,4 @@
+import { Evaluation } from "./UciCmds";
 export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type File = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 export type Square = `${File}${Rank}`;
@@ -15,13 +16,13 @@ export interface Piece {
 
 export type Position = Map<Square, Piece>;
 
-export type HalfMove = {
+export interface HalfMove {
   move: Move;
   PGN: string;
   fen: string;
-  board: Board
+  board: Board;
   elapsedTimeSeconds?: number;
-};
+}
 export type Outcome =
   | {
       result: Color | "d";
@@ -74,4 +75,14 @@ export enum FileEnum {
   f,
   g,
   h,
+}
+
+export interface TreeNode extends HalfMove {
+  id: string;
+  children: Array<TreeNode>;
+  comments: string[];
+  uci: string;
+  evaluation?: Evaluation;
+  moveCount: [number, 0 | 1];
+  outcome: Outcome;
 }

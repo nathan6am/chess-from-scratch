@@ -19,6 +19,10 @@ interface Props {
   moveHistory: Chess.MoveHistory;
   usePieceIcons: boolean;
   onFlipBoard: any;
+  controls: {
+    onStepForward: () => void;
+    onStepBackward: () => void;
+  };
 }
 
 import {
@@ -41,7 +45,7 @@ const AlwaysScrollToBottom = () => {
   });
   return <div ref={elementRef} />;
 };
-export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard }: Props) {
+export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard, controls }: Props) {
   return (
     <div className="h-full w-[500px] flex flex-col justify-center mx-4">
       <div className="h-[85%] w-full  flex flex-col">
@@ -83,10 +87,16 @@ export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard }:
             <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
               <AiOutlineFastBackward className="text-2xl mx-auto" />
             </button>
-            <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+            <button
+              onClick={controls.onStepBackward}
+              className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+            >
               <AiOutlineStepBackward className="text-xl mx-auto" />
             </button>
-            <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+            <button
+              onClick={controls.onStepForward}
+              className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+            >
               <AiOutlineStepForward className="text-xl mx-auto" />
             </button>
             <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">

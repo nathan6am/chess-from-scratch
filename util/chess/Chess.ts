@@ -12,7 +12,11 @@ import {
   Outcome,
   HalfMove,
   Board,
+  TreeNode,
+  FullMove,
 } from "./ChessTypes";
+
+import { v4 as uuidv4 } from "uuid";
 
 import _ from "lodash";
 import { trimMoveCounts, fenToGameState, gameStateToFen } from "./FenParser";
@@ -643,6 +647,8 @@ export class Game implements Game {
     const initialGameState = fenToGameState(gameConfig.startPosition);
     if (!initialGameState) throw new Error("Config is invalid: Invalid FEN passed to start position");
     const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = initialGameState;
+    const legalMoves = getMoves(initialGameState);
+    const board = positionToBoard(position);
     Object.assign(this, {
       castleRights,
       activeColor,
@@ -650,12 +656,12 @@ export class Game implements Game {
       fullMoveCount,
       enPassantTarget,
     });
-    this.legalMoves = getMoves(initialGameState);
+    this.legalMoves = legalMoves;
     this.moveHistory = [];
     this.capturedPieces = [];
     this.config = gameConfig;
     this.lastMove = null;
-    this.board = positionToBoard(position);
+    this.board = injectTargets(board, legalMoves);
     this.fen = gameConfig.startPosition;
   }
 }
@@ -746,7 +752,7 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
     move: move,
     PGN: moveToPgn(move, position, game.legalMoves),
     fen: gameStateToFen(updatedGameState),
-    board: updatedBoard,
+    board: injectTargets(updatedBoard, updatedLegalMoves),
     elapsedTimeSeconds,
   };
 
@@ -761,7 +767,7 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
   const updatedGame: Game = {
     ...game,
     ...rest,
-    board: updatedBoard,
+    board: injectTargets(updatedBoard, updatedLegalMoves),
     moveHistory: updatedMoveHistory,
     legalMoves: updatedLegalMoves,
     lastMove: move,
@@ -770,6 +776,15 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
     fen,
   };
   return updatedGame;
+}
+
+function injectTargets(board: Board, legalMoves: Array<Move>): Board {
+  const withTargets: Board = board.map((entry) => {
+    const [square, piece] = entry;
+    const targets = legalMoves.filter((move) => move.start === square).map((move) => move.end);
+    return [square, { ...piece, targets }];
+  });
+  return withTargets;
 }
 
 //export function takeback(game: Game): Game {}
@@ -802,4 +817,70 @@ export function getSquareColor(square: Square): Color {
   const coordinates = squareToCoordinates(square);
   const testColor = coordinates[0] % 2 === coordinates[1] % 2;
   return testColor ? "b" : "w";
+}
+export interface Analysis {
+  rootPosition: string; // the root position as a fen string
+  moves: Array<TreeNode>; // annotated moves with recursive variations and eval caching
+  metaData?: {
+    event?: string;
+    site?: string;
+    date?: Date;
+    round?: string;
+    white?: string;
+    black?: string;
+    result?: string;
+  };
+}
+
+//Create a new game object from a tree node and it's given line
+export function gameFromNode(node: TreeNode, moves?: Array<TreeNode>): Game {
+  const board = node.board;
+  const fen = node.fen;
+  const game = createGame({ startPosition: fen, timeControls: null });
+  let moveHistory: MoveHistory = [];
+
+  //convert the line into move history
+  if (moves) {
+    const halfMoves = moves.map((node) => {
+      const { id, children, uci, evaluation, moveCount, ...rest } = node;
+      return { ...rest } as HalfMove;
+    });
+
+    const history = [];
+    while (halfMoves.length > 0) history.push(halfMoves.splice(0, 2));
+
+    moveHistory = history.map((fullmove) => {
+      if (fullmove.length === 2) {
+        return fullmove as FullMove;
+      } else {
+        return [fullmove[0], null] as FullMove;
+      }
+    });
+  }
+  return { ...game, board, moveHistory, lastMove: node.move };
+}
+
+//Generate a new tree node from a halfmove
+export function halfMoveToNode(moveCount: [number, 0 | 1], halfMove: HalfMove): Omit<TreeNode, "outcome"> {
+  return {
+    moveCount,
+    uci: MoveToUci(halfMove.move),
+    id: uuidv4(),
+    children: [],
+    comments: [],
+    ...halfMove,
+  };
+}
+
+export function MoveToUci(move: Move): string {
+  return `${move.start}${move.end}${move.promotion ? move.promotion : ""}`;
+}
+
+export function nodeFromMove(game: Game, moveToExecute: Move, currentMoveCount: [number, 0 | 1]): TreeNode {
+  const updatedGame = move(game, moveToExecute);
+  const lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
+  const lastHalfMove = lastMove[1] || lastMove[0];
+  const moveCount: [number, 0 | 1] = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
+  const partialNode = halfMoveToNode(moveCount, lastHalfMove);
+  return { ...partialNode, moveCount, outcome: updatedGame.outcome };
 }
