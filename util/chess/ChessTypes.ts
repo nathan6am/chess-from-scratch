@@ -77,9 +77,17 @@ export enum FileEnum {
   h,
 }
 
-export interface TreeNode extends HalfMove {
+export interface Node extends HalfMove {
   id: string;
-  children: Array<TreeNode>;
+  children: Array<Node>;
+  comments: string[];
+  uci: string;
+  evaluation?: Evaluation;
+  moveCount: [number, 0 | 1];
+  outcome: Outcome;
+}
+
+export interface NodeData extends HalfMove {
   comments: string[];
   uci: string;
   evaluation?: Evaluation;

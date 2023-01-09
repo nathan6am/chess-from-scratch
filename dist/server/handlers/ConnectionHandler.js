@@ -64,7 +64,7 @@ function default_1(io, socket) {
         return __generator(this, function (_a) {
             //
             if (!socket.userID) {
-                socket.emit("authenticate", false);
+                socket.emit("authenticated", false);
                 return [2 /*return*/];
             }
             rooms = socket.rooms;
@@ -75,7 +75,7 @@ function default_1(io, socket) {
             //Join room for all connections of the same user - allows broadcasting events to all sessions
             //for example to disable game if active on another conection
             socket.join(socket.userID);
-            socket.emit("authenticate", true);
+            socket.emit("authenticated", true);
             return [2 /*return*/];
         });
     }); });

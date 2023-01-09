@@ -52,9 +52,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nodeFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNode = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 var ChessTypes_1 = require("./ChessTypes");
-var uuid_1 = require("uuid");
 var lodash_1 = __importDefault(require("lodash"));
 var FenParser_1 = require("./FenParser");
 var PGN_1 = require("./PGN");
@@ -201,7 +200,8 @@ function evaluateRule(rule, position, start, enPassantTarget) {
     var i = 0;
     var promotions = ["r", "q", "n", "b"];
     //loop as long as current coordinates are still on the board or the range is reached
-    while (currentCoordinates.every(function (coord) { return coord >= 0 && coord <= 7; }) && (!range || i < range)) {
+    while (currentCoordinates.every(function (coord) { return coord >= 0 && coord <= 7; }) &&
+        (!range || i < range)) {
         //increment by the rule values and make sure the resulting coordinates are still on the board
         currentCoordinates = currentCoordinates.map(function (coord, idx) { return coord + increment[idx]; });
         i++;
@@ -209,7 +209,8 @@ function evaluateRule(rule, position, start, enPassantTarget) {
             break;
         // check the square for pieces
         var currentSquare = toSquare(currentCoordinates);
-        var isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
+        var isPromotion = piece.type === "p" &&
+            currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
         if (position.has(currentSquare)) {
             //break if the piece is of the same color or the piece can't capture in the given direction
             if (((_a = position.get(currentSquare)) === null || _a === void 0 ? void 0 : _a.color) === activeColor)
@@ -240,11 +241,16 @@ function evaluateRule(rule, position, start, enPassantTarget) {
         }
         else {
             // en passant capture
-            if (toSquare(currentCoordinates) === enPassantTarget && piece.type === "p" && canCapture) {
+            if (toSquare(currentCoordinates) === enPassantTarget &&
+                piece.type === "p" &&
+                canCapture) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
+                    capture: toSquare([
+                        currentCoordinates[0],
+                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
+                    ]),
                 });
             }
             else {
@@ -438,7 +444,9 @@ function getMoves(game) {
             var rules = getMovementRules(piece, start);
             rules.forEach(function (rule) {
                 var controlledSquares = evaluateRule(rule, position, start, enPassantTarget).controlledSquares;
-                controlledSquares.forEach(function (square) { return opponentControlledSquares.push(square); });
+                controlledSquares.forEach(function (square) {
+                    return opponentControlledSquares.push(square);
+                });
             });
         }
     };
@@ -472,14 +480,17 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     var activeColor = game.activeColor, position = game.position, castleRights = game.castleRights;
     var moves = [];
-    var squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    var squares = activeColor === "w"
+        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
+        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     var _a = castleRights[activeColor], kingSide = _a.kingSide, queenSide = _a.queenSide;
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every(function (square) {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) &&
+                !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -490,7 +501,8 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every(function (square) {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) &&
+                !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -552,7 +564,8 @@ function executeMove(game, move) {
             enPassantTarget = getTargetSquare(move);
         }
         //Remove corresponding castle rights on rook or king move
-        if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
+        if (piece.type === "r" &&
+            (castleRights.kingSide || castleRights.queenSide)) {
             var coords = squareToCoordinates(move.start);
             if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
                 castleRights.queenSide = false;
@@ -628,7 +641,8 @@ function testMove(game, move) {
             enPassantTarget = getTargetSquare(move);
         }
         //Remove corresponding castle rights on rook or king move
-        if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
+        if (piece.type === "r" &&
+            (castleRights.kingSide || castleRights.queenSide)) {
             var coords = squareToCoordinates(move.start);
             if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
                 castleRights.queenSide = false;
@@ -709,7 +723,9 @@ function isThreeFoldRepetition(moveHistory, gameState) {
 function move(game, move, elapsedTimeSeconds) {
     var outcome = game.outcome;
     //verify the move is listed as one of the available moves
-    var moveIsLegal = game.legalMoves.some(function (availableMove) { return lodash_1.default.isEqual(move, availableMove); });
+    var moveIsLegal = game.legalMoves.some(function (availableMove) {
+        return lodash_1.default.isEqual(move, availableMove);
+    });
     var updatedMoveHistory = Array.from(game.moveHistory);
     if (!moveIsLegal)
         throw new Error("Move is not in available moves");
@@ -777,7 +793,9 @@ exports.move = move;
 function injectTargets(board, legalMoves) {
     var withTargets = board.map(function (entry) {
         var _a = __read(entry, 2), square = _a[0], piece = _a[1];
-        var targets = legalMoves.filter(function (move) { return move.start === square; }).map(function (move) { return move.end; });
+        var targets = legalMoves
+            .filter(function (move) { return move.start === square; })
+            .map(function (move) { return move.end; });
         return [square, __assign(__assign({}, piece), { targets: targets })];
     });
     return withTargets;
@@ -810,15 +828,15 @@ function getSquareColor(square) {
 }
 exports.getSquareColor = getSquareColor;
 //Create a new game object from a tree node and it's given line
-function gameFromNode(node, moves) {
-    var board = node.board;
-    var fen = node.fen;
+function gameFromNodeData(data, moves) {
+    var board = data.board;
+    var fen = data.fen;
     var game = createGame({ startPosition: fen, timeControls: null });
     var moveHistory = [];
     //convert the line into move history
     if (moves) {
         var halfMoves = moves.map(function (node) {
-            var id = node.id, children = node.children, uci = node.uci, evaluation = node.evaluation, moveCount = node.moveCount, rest = __rest(node, ["id", "children", "uci", "evaluation", "moveCount"]);
+            var uci = node.uci, evaluation = node.evaluation, moveCount = node.moveCount, rest = __rest(node, ["uci", "evaluation", "moveCount"]);
             return __assign({}, rest);
         });
         var history_1 = [];
@@ -833,24 +851,26 @@ function gameFromNode(node, moves) {
             }
         });
     }
-    return __assign(__assign({}, game), { board: board, moveHistory: moveHistory, lastMove: node.move });
+    return __assign(__assign({}, game), { board: board, moveHistory: moveHistory, lastMove: data.move });
 }
-exports.gameFromNode = gameFromNode;
+exports.gameFromNodeData = gameFromNodeData;
 //Generate a new tree node from a halfmove
 function halfMoveToNode(moveCount, halfMove) {
-    return __assign({ moveCount: moveCount, uci: MoveToUci(halfMove.move), id: (0, uuid_1.v4)(), children: [], comments: [] }, halfMove);
+    return __assign({ moveCount: moveCount, uci: MoveToUci(halfMove.move), comments: [] }, halfMove);
 }
 exports.halfMoveToNode = halfMoveToNode;
 function MoveToUci(move) {
     return "".concat(move.start).concat(move.end).concat(move.promotion ? move.promotion : "");
 }
 exports.MoveToUci = MoveToUci;
-function nodeFromMove(game, moveToExecute, currentMoveCount) {
+function nodeDataFromMove(game, moveToExecute, currentMoveCount) {
     var updatedGame = move(game, moveToExecute);
     var lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
     var lastHalfMove = lastMove[1] || lastMove[0];
-    var moveCount = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
+    var moveCount = currentMoveCount[1]
+        ? [currentMoveCount[0] + 1, 0]
+        : [currentMoveCount[0], 1];
     var partialNode = halfMoveToNode(moveCount, lastHalfMove);
-    return __assign(__assign({}, partialNode), { outcome: updatedGame.outcome });
+    return __assign(__assign({}, partialNode), { moveCount: moveCount, outcome: updatedGame.outcome });
 }
-exports.nodeFromMove = nodeFromMove;
+exports.nodeDataFromMove = nodeDataFromMove;

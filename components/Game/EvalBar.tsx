@@ -7,7 +7,12 @@ interface Props {
   scale: number;
 }
 import useThrottledValue from "@/hooks/useThrottledValue";
-export default function EvalBar({ orientation, scoreType, value, scale }: Props) {
+export default function EvalBar({
+  orientation,
+  scoreType,
+  value,
+  scale,
+}: Props) {
   //Throttle value for smoother animation/fewer jumps
   const throttledValue = useThrottledValue({ value, throttleMs: 300 });
 
@@ -30,6 +35,7 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
   }, [throttledValue, scoreType]);
   return (
     <div className="h-full w-[60px] rounded-sm overflow-hidden relative mx-2">
+      <div className="left-0 w-full top-[50%] border-t border-red-600 z-10 opacity-50 border-2 absolute" />
       {orientation === "w" ? (
         <span
           className={`z-10 w-full absolute text-center left-0 text-xs py-2 ${
@@ -52,7 +58,9 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
         className={`h-full w-full bottom-0 left-0 absolute z-3 bg-white`}
         style={{
           transform:
-            orientation === "w" ? `translate3d(0px, ${percentage}%, 0px)` : `translate3d(0px, -${percentage}%, 0px)`,
+            orientation === "w"
+              ? `translate3d(0px, ${percentage}%, 0px)`
+              : `translate3d(0px, -${percentage}%, 0px)`,
           transition: `transform 1s ease-in`,
         }}
       ></div>

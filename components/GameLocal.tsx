@@ -10,9 +10,10 @@ import { positionToBoard } from "@/util/chess";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 export default function GameLocal() {
-  const { currentGame, onMove, evaluation, onStepForward, onStepBackward } = useAnalysisBoard(
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-  );
+  const { currentGame, onMove, evaluation, stepForward, stepBackward } =
+    useAnalysisBoard(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
   const [orientation, setOrientation] = useState<Chess.Color>("w");
 
   return (
@@ -43,7 +44,10 @@ export default function GameLocal() {
           onPremove={() => {}}
         />
         <MoveHistory
-          controls={{ onStepForward: onStepForward, onStepBackward: onStepBackward }}
+          controls={{
+            onStepForward: stepForward,
+            onStepBackward: stepBackward,
+          }}
           moveHistory={currentGame.moveHistory}
           usePieceIcons={true}
           onFlipBoard={() => {

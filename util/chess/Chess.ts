@@ -12,7 +12,8 @@ import {
   Outcome,
   HalfMove,
   Board,
-  TreeNode,
+  Node,
+  NodeData,
   FullMove,
 } from "./ChessTypes";
 
@@ -64,7 +65,8 @@ function getMovementRules(piece: Piece, start: Square): Array<MovementRule> {
   const y = coordinates[1];
 
   //Pawn on original rank can double push
-  const canDoublePush = (color === "w" && y === 1) || (color === "b" && y === 6);
+  const canDoublePush =
+    (color === "w" && y === 1) || (color === "b" && y === 6);
 
   switch (type) {
     case "p":
@@ -199,15 +201,22 @@ function evaluateRule(
   const promotions = ["r", "q", "n", "b"];
 
   //loop as long as current coordinates are still on the board or the range is reached
-  while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
+  while (
+    currentCoordinates.every((coord) => coord >= 0 && coord <= 7) &&
+    (!range || i < range)
+  ) {
     //increment by the rule values and make sure the resulting coordinates are still on the board
-    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [number, number];
+    currentCoordinates = currentCoordinates.map(
+      (coord, idx) => coord + increment[idx]
+    ) as [number, number];
     i++;
     if (!currentCoordinates.every((coord) => coord >= 0 && coord <= 7)) break;
 
     // check the square for pieces
     let currentSquare = toSquare(currentCoordinates);
-    let isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
+    let isPromotion =
+      piece.type === "p" &&
+      currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
     if (position.has(currentSquare)) {
       //break if the piece is of the same color or the piece can't capture in the given direction
       if (position.get(currentSquare)?.color === activeColor) break;
@@ -235,11 +244,18 @@ function evaluateRule(
       break;
     } else {
       // en passant capture
-      if (toSquare(currentCoordinates) === enPassantTarget && piece.type === "p" && canCapture) {
+      if (
+        toSquare(currentCoordinates) === enPassantTarget &&
+        piece.type === "p" &&
+        canCapture
+      ) {
         potentialMoves.push({
           start: start,
           end: toSquare(currentCoordinates),
-          capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
+          capture: toSquare([
+            currentCoordinates[0],
+            currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
+          ]),
         });
       } else {
         controlledSquares.push(toSquare(currentCoordinates));
@@ -338,7 +354,8 @@ function moveIsCheck(game: GameState, move: Move): boolean {
 function verifyMove(move: Move, position: Position): boolean {
   //first determine the active color and execute the move);
   const piece = position.get(move.start);
-  if (!piece) throw new Error("Invalid move: no piece exists on the starting square");
+  if (!piece)
+    throw new Error("Invalid move: no piece exists on the starting square");
   const activeColor = piece.color;
   const endPosition = new Map(position);
 
@@ -378,7 +395,12 @@ export function getMoves(game: GameState): Array<Move> {
     if (piece.color == activeColor) {
       const rules = getMovementRules(piece, start);
       rules.forEach((rule) => {
-        const { potentialMoves } = evaluateRule(rule, position, start, enPassantTarget);
+        const { potentialMoves } = evaluateRule(
+          rule,
+          position,
+          start,
+          enPassantTarget
+        );
         potentialMoves.forEach((move) => {
           if (verifyMove(move, position)) {
             let isCheck = moveIsCheck(game, move);
@@ -396,8 +418,15 @@ export function getMoves(game: GameState): Array<Move> {
       const rules = getMovementRules(piece, start);
 
       rules.forEach((rule) => {
-        const { controlledSquares } = evaluateRule(rule, position, start, enPassantTarget);
-        controlledSquares.forEach((square) => opponentControlledSquares.push(square));
+        const { controlledSquares } = evaluateRule(
+          rule,
+          position,
+          start,
+          enPassantTarget
+        );
+        controlledSquares.forEach((square) =>
+          opponentControlledSquares.push(square)
+        );
       });
     }
   }
@@ -416,11 +445,16 @@ export function getMoves(game: GameState): Array<Move> {
 }
 
 //Return an array of the legal castling moves
-function getCastles(game: GameState, opponentControlledSquares: Array<Square>): Array<Move> {
+function getCastles(
+  game: GameState,
+  opponentControlledSquares: Array<Square>
+): Array<Move> {
   const { activeColor, position, castleRights } = game;
   let moves: Array<Move> = [];
   let squares =
-    activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    activeColor === "w"
+      ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
+      : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
 
   const { kingSide, queenSide } = castleRights[activeColor];
   if (!kingSide && !queenSide) {
@@ -430,7 +464,10 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
   if (
     kingSide &&
     squares.k.every((square) => {
-      return !position.has(square as Square) && !opponentControlledSquares.includes(square as Square);
+      return (
+        !position.has(square as Square) &&
+        !opponentControlledSquares.includes(square as Square)
+      );
     })
   ) {
     moves.push({
@@ -444,7 +481,10 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
   if (
     queenSide &&
     squares.q.every((square) => {
-      return !position.has(square as Square) && !opponentControlledSquares.includes(square as Square);
+      return (
+        !position.has(square as Square) &&
+        !opponentControlledSquares.includes(square as Square)
+      );
     })
   ) {
     moves.push({
@@ -460,7 +500,10 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
 
 //Executes as move, returns the updated game state and the captured piece
 
-export function executeMove(game: GameState, move: Move): { updatedGameState: GameState; capturedPiece: Piece | null } {
+export function executeMove(
+  game: GameState,
+  move: Move
+): { updatedGameState: GameState; capturedPiece: Piece | null } {
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
@@ -471,7 +514,8 @@ export function executeMove(game: GameState, move: Move): { updatedGameState: Ga
   const activeColor: Color = game.activeColor === "w" ? "b" : "w";
   const fullMoveCount = game.fullMoveCount + (game.activeColor === "b" ? 1 : 0);
   //Reset half move count on a pawn push or capture
-  const halfMoveCount = piece.type === "p" || move.capture !== null ? 0 : game.halfMoveCount + 1;
+  const halfMoveCount =
+    piece.type === "p" || move.capture !== null ? 0 : game.halfMoveCount + 1;
   var enPassantTarget: Square | null = null;
 
   const castleMap: Partial<Record<Square, [Square, Square]>> = {
@@ -511,10 +555,15 @@ export function executeMove(game: GameState, move: Move): { updatedGameState: Ga
     }
 
     //Remove corresponding castle rights on rook or king move
-    if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
+    if (
+      piece.type === "r" &&
+      (castleRights.kingSide || castleRights.queenSide)
+    ) {
       const coords = squareToCoordinates(move.start);
-      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.queenSide = false;
-      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.kingSide = false;
+      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.queenSide = false;
+      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.kingSide = false;
     }
     if (piece.type === "k") {
       castleRights.kingSide = false;
@@ -540,7 +589,10 @@ export function executeMove(game: GameState, move: Move): { updatedGameState: Ga
   };
 }
 
-export function testMove(game: GameState, move: Move): { updatedGameState: GameState; capturedPiece: Piece | null } {
+export function testMove(
+  game: GameState,
+  move: Move
+): { updatedGameState: GameState; capturedPiece: Piece | null } {
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
@@ -551,7 +603,8 @@ export function testMove(game: GameState, move: Move): { updatedGameState: GameS
   const activeColor: Color = game.activeColor === "w" ? "b" : "w";
   const fullMoveCount = game.fullMoveCount + (game.activeColor === "b" ? 1 : 0);
   //Reset half move count on a pawn push or capture
-  const halfMoveCount = piece.type === "p" || move.capture !== null ? 0 : game.halfMoveCount + 1;
+  const halfMoveCount =
+    piece.type === "p" || move.capture !== null ? 0 : game.halfMoveCount + 1;
   var enPassantTarget: Square | null = null;
 
   const castleMap: Partial<Record<Square, [Square, Square]>> = {
@@ -591,10 +644,15 @@ export function testMove(game: GameState, move: Move): { updatedGameState: GameS
     }
 
     //Remove corresponding castle rights on rook or king move
-    if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
+    if (
+      piece.type === "r" &&
+      (castleRights.kingSide || castleRights.queenSide)
+    ) {
       const coords = squareToCoordinates(move.start);
-      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.queenSide = false;
-      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.kingSide = false;
+      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.queenSide = false;
+      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.kingSide = false;
     }
     if (piece.type === "k") {
       castleRights.kingSide = false;
@@ -645,8 +703,18 @@ export interface Game extends Omit<GameState, "position"> {
 export class Game implements Game {
   constructor(gameConfig: GameConfig) {
     const initialGameState = fenToGameState(gameConfig.startPosition);
-    if (!initialGameState) throw new Error("Config is invalid: Invalid FEN passed to start position");
-    const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = initialGameState;
+    if (!initialGameState)
+      throw new Error(
+        "Config is invalid: Invalid FEN passed to start position"
+      );
+    const {
+      castleRights,
+      position,
+      activeColor,
+      halfMoveCount,
+      fullMoveCount,
+      enPassantTarget,
+    } = initialGameState;
     const legalMoves = getMoves(initialGameState);
     const board = positionToBoard(position);
     Object.assign(this, {
@@ -676,7 +744,10 @@ export function createGame(
   return game;
 }
 
-function isThreeFoldRepetition(moveHistory: MoveHistory, gameState: GameState): boolean {
+function isThreeFoldRepetition(
+  moveHistory: MoveHistory,
+  gameState: GameState
+): boolean {
   var repetitions = 0;
   const fenA = trimMoveCounts(gameStateToFen(gameState));
   moveHistory.forEach((fullMove) => {
@@ -693,15 +764,27 @@ function isThreeFoldRepetition(moveHistory: MoveHistory, gameState: GameState): 
 }
 
 //execute a move and return the updated game
-export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game {
+export function move(
+  game: Game,
+  move: Move,
+  elapsedTimeSeconds?: number
+): Game {
   var outcome = game.outcome;
   //verify the move is listed as one of the available moves
-  const moveIsLegal = game.legalMoves.some((availableMove) => _.isEqual(move, availableMove));
+  const moveIsLegal = game.legalMoves.some((availableMove) =>
+    _.isEqual(move, availableMove)
+  );
   const updatedMoveHistory = Array.from(game.moveHistory);
   if (!moveIsLegal) throw new Error("Move is not in available moves");
 
   //execute the move and update the gameState and captured pieces
-  const { castleRights, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = game;
+  const {
+    castleRights,
+    activeColor,
+    halfMoveCount,
+    fullMoveCount,
+    enPassantTarget,
+  } = game;
   const position = boardToPosition(game.board);
   const gameState = {
     position,
@@ -781,7 +864,9 @@ export function move(game: Game, move: Move, elapsedTimeSeconds?: number): Game 
 function injectTargets(board: Board, legalMoves: Array<Move>): Board {
   const withTargets: Board = board.map((entry) => {
     const [square, piece] = entry;
-    const targets = legalMoves.filter((move) => move.start === square).map((move) => move.end);
+    const targets = legalMoves
+      .filter((move) => move.start === square)
+      .map((move) => move.end);
     return [square, { ...piece, targets }];
   });
   return withTargets;
@@ -796,9 +881,9 @@ export function exportFEN() {}
 export function serializeMoves(moves: Array<Move>): Array<String> {
   return moves.map(
     (move) =>
-      `${move.start}:${move.end}:${move.capture || "-"}:${move.isCheck ? "+" : ""}${
-        move.promotion ? ":=" + move.promotion : ""
-      }`
+      `${move.start}:${move.end}:${move.capture || "-"}:${
+        move.isCheck ? "+" : ""
+      }${move.promotion ? ":=" + move.promotion : ""}`
   );
 }
 // export function deserializeMove(move: string): Move {
@@ -820,7 +905,7 @@ export function getSquareColor(square: Square): Color {
 }
 export interface Analysis {
   rootPosition: string; // the root position as a fen string
-  moves: Array<TreeNode>; // annotated moves with recursive variations and eval caching
+  moves: Array<Node>; // annotated moves with recursive variations and eval caching
   metaData?: {
     event?: string;
     site?: string;
@@ -833,16 +918,19 @@ export interface Analysis {
 }
 
 //Create a new game object from a tree node and it's given line
-export function gameFromNode(node: TreeNode, moves?: Array<TreeNode>): Game {
-  const board = node.board;
-  const fen = node.fen;
+export function gameFromNodeData(
+  data: NodeData,
+  moves?: Array<NodeData>
+): Game {
+  const board = data.board;
+  const fen = data.fen;
   const game = createGame({ startPosition: fen, timeControls: null });
   let moveHistory: MoveHistory = [];
 
   //convert the line into move history
   if (moves) {
     const halfMoves = moves.map((node) => {
-      const { id, children, uci, evaluation, moveCount, ...rest } = node;
+      const { uci, evaluation, moveCount, ...rest } = node;
       return { ...rest } as HalfMove;
     });
 
@@ -857,16 +945,17 @@ export function gameFromNode(node: TreeNode, moves?: Array<TreeNode>): Game {
       }
     });
   }
-  return { ...game, board, moveHistory, lastMove: node.move };
+  return { ...game, board, moveHistory, lastMove: data.move };
 }
 
 //Generate a new tree node from a halfmove
-export function halfMoveToNode(moveCount: [number, 0 | 1], halfMove: HalfMove): Omit<TreeNode, "outcome"> {
+export function halfMoveToNode(
+  moveCount: [number, 0 | 1],
+  halfMove: HalfMove
+): Omit<NodeData, "outcome"> {
   return {
     moveCount,
     uci: MoveToUci(halfMove.move),
-    id: uuidv4(),
-    children: [],
     comments: [],
     ...halfMove,
   };
@@ -876,11 +965,17 @@ export function MoveToUci(move: Move): string {
   return `${move.start}${move.end}${move.promotion ? move.promotion : ""}`;
 }
 
-export function nodeFromMove(game: Game, moveToExecute: Move, currentMoveCount: [number, 0 | 1]): TreeNode {
+export function nodeDataFromMove(
+  game: Game,
+  moveToExecute: Move,
+  currentMoveCount: [number, 0 | 1]
+): NodeData {
   const updatedGame = move(game, moveToExecute);
   const lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
   const lastHalfMove = lastMove[1] || lastMove[0];
-  const moveCount: [number, 0 | 1] = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
+  const moveCount: [number, 0 | 1] = currentMoveCount[1]
+    ? [currentMoveCount[0] + 1, 0]
+    : [currentMoveCount[0], 1];
   const partialNode = halfMoveToNode(moveCount, lastHalfMove);
   return { ...partialNode, moveCount, outcome: updatedGame.outcome };
 }
