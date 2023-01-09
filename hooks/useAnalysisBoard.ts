@@ -2,7 +2,6 @@ import useVariationTree from "./useVariationTreeFinal";
 import * as Chess from "@/util/chess";
 import { useCallback, useMemo } from "react";
 import useLocalEval from "./useLocalEval";
-import { getEvaluation } from "@/util/chess";
 
 export default function useAnalysisBoard(startFen: string) {
   const evaler = useLocalEval();

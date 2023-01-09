@@ -17,8 +17,6 @@ import {
   FullMove,
 } from "./ChessTypes";
 
-import { v4 as uuidv4 } from "uuid";
-
 import _ from "lodash";
 import { trimMoveCounts, fenToGameState, gameStateToFen } from "./FenParser";
 import { moveToPgn } from "./PGN";
