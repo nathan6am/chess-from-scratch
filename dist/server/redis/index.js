@@ -35,28 +35,25 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-function default_1(io, socket) {
-    var _this = this;
-    socket.on("authenticate", function () { return __awaiter(_this, void 0, void 0, function () {
-        var rooms;
+exports.activeGameByUserID = void 0;
+var sessionClient_1 = __importDefault(require("../redis/sessionClient"));
+function activeGameByUserID(userID) {
+    return __awaiter(this, void 0, void 0, function () {
+        var game;
         return __generator(this, function (_a) {
-            //
-            if (!socket.userID) {
-                socket.emit("authenticated", false);
-                return [2 /*return*/];
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, sessionClient_1.default.get("".concat(userID, ":game"))];
+                case 1:
+                    game = _a.sent();
+                    if (game)
+                        return [2 /*return*/, game];
+                    return [2 /*return*/, null];
             }
-            rooms = socket.rooms;
-            rooms.forEach(function (room) {
-                if (room && room !== socket.id)
-                    socket.leave(room);
-            });
-            //Join room for all connections of the same user - allows broadcasting events to all sessions
-            //for example to disable game if active on another conection
-            socket.join(socket.userID);
-            socket.emit("authenticated", true);
-            return [2 /*return*/];
         });
-    }); });
+    });
 }
-exports.default = default_1;
+exports.activeGameByUserID = activeGameByUserID;

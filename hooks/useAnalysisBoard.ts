@@ -1,6 +1,6 @@
-import useVariationTree from "./useVariationTreeFinal";
+import useVariationTree from "./useVariationTree";
 import * as Chess from "@/util/chess";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import useLocalEval from "./useLocalEval";
 
 export default function useAnalysisBoard(startFen: string) {
@@ -14,8 +14,7 @@ export default function useAnalysisBoard(startFen: string) {
   }, []);
   const variationTree = useVariationTree();
 
-  const { currentNodeData, path, onStepBackward, onStepForward, continuation } =
-    variationTree;
+  const { currentNodeData, path, onStepBackward, onStepForward, continuation } = variationTree;
 
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNodeData === null) return initialGame;
@@ -24,21 +23,20 @@ export default function useAnalysisBoard(startFen: string) {
       path.map((node) => node.data)
     );
   }, [currentNodeData, initialGame]);
-
+  useEffect(() => {
+    if (evaler.isReady) {
+      evaler.getEvaluation(currentGame.fen);
+    }
+  }, [evaler.isReady]);
   const onMove = useCallback(
     (move: Chess.Move) => {
       const existingMoveKey = variationTree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
-        variationTree.setCurrentKey(existingMoveKey);
+        const next = variationTree.setCurrentKey(existingMoveKey);
+        if (next) evaler.getEvaluation(next.data.fen);
       } else {
-        const currentMoveCount: [number, 0 | 1] = currentNodeData
-          ? currentNodeData.moveCount
-          : [0, 1];
-        const nodeToInsert = Chess.nodeDataFromMove(
-          currentGame,
-          move,
-          currentMoveCount
-        );
+        const currentMoveCount: [number, 0 | 1] = currentNodeData ? currentNodeData.moveCount : [0, 1];
+        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, currentMoveCount);
         variationTree.addMove(nodeToInsert);
         evaler.getEvaluation(nodeToInsert.fen);
       }

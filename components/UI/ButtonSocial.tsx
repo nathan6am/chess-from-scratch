@@ -36,26 +36,20 @@ export default function ButtonSocial({ variant, onClick, href }: Props) {
 
     case "guest":
       return (
-        <button className={`group my-6 rounded-md w-full group flex flex-row`} onClick={onClick}>
-          <div className="group-hover:bg-google-800 bg-google-700 aspect-square h-full py-4 rounded-l-md flex items-center justify-center border-r-2 border-black/[0.1]">
-            <FaGoogle className="text-white text-2xl" />
-          </div>
-          <div className="text-white group-hover:bg-google-700 flex-grow bg-google-600 h-full py-4 pr-8 text-center w-full rounded-r-md text-lg">
+        <a href={href} className={`group my-6 rounded-md w-full group flex flex-row`}>
+          <div className="text-white group-hover:bg-neutral-700 w-full bg-neutral-600 h-full py-4 text-center w-full rounded-md text-lg">
             Continue as Guest
           </div>
-        </button>
+        </a>
       );
 
     default:
       return (
-        <button className={`group my-6 rounded-md w-full group flex flex-row`} onClick={onClick}>
-          <div className="group-hover:bg-google-800 bg-google-700 aspect-square h-full py-4 rounded-l-md flex items-center justify-center border-r-2 border-black/[0.1]">
-            <FaGoogle className="text-white text-2xl" />
-          </div>
-          <div className="text-white group-hover:bg-google-700 flex-grow bg-google-600 h-full py-4 pr-8 text-center w-full rounded-r-md text-lg">
+        <a href={href} className={`group my-6 rounded-md w-full group flex flex-row`}>
+          <div className="text-white group-hover:bg-neutral-700 w-full bg-neutral-600 h-full py-4 text-center w-full rounded-md text-lg">
             Continue with Google
           </div>
-        </button>
+        </a>
       );
   }
 }

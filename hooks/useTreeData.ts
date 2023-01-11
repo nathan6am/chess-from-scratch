@@ -1,3 +1,4 @@
+import { sign } from "crypto";
 import { useState, useMemo, useCallback } from "react";
 export type TreeNode<T> = {
   key: string;
@@ -10,51 +11,28 @@ type TreeHook<T> = {
   map: Map<string, TreeNode<T>>;
   treeArray: TreeNode<T>[];
   getNode: (key: string) => TreeNode<T> | undefined;
-  addNode: (
-    node: Omit<TreeNode<T>, "parentKey">,
-    parentKey: string | null
-  ) => void;
+  addNode: (node: Omit<TreeNode<T>, "parentKey">, parentKey: string | null) => void;
   updateNode: (key: string, data: Partial<T>) => void;
   deleteNode: (key: string) => void;
   getPath: (key: string) => TreeNode<T>[] | undefined;
   getSiblingIndex: (key: string) => number;
   getSiblings: (key: string) => TreeNode<T>[];
-  insertAfter: (
-    node: Omit<TreeNode<T>, "parentKey">,
-    insertKey: string | null
-  ) => void;
-  findNextNode: (
-    key: string | null,
-    cmp: (node: TreeNode<T>) => boolean
-  ) => string | undefined;
+  insertAfter: (node: Omit<TreeNode<T>, "parentKey">, insertKey: string | null) => void;
+  findNextNode: (key: string | null, cmp: (node: TreeNode<T>) => boolean) => string | undefined;
 };
 
-function useTreeData<T extends object>(
-  initialMap: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()
-): TreeHook<T> {
-  const map = useMemo(
-    () =>
-      initialMap instanceof Map
-        ? initialMap
-        : buildMapFromTreeArray(initialMap),
-    []
-  );
+function useTreeData<T extends object>(initialMap: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()): TreeHook<T> {
+  const map = useMemo(() => (initialMap instanceof Map ? initialMap : buildMapFromTreeArray(initialMap)), []);
   const [treeArray, setTreeArray] = useState(buildTreeArray(map));
-  const rootNodes = useMemo(
-    () => Array.from(map.values()).filter((node) => !node.parentKey),
-    [map]
-  );
+  const rootNodes = useMemo(() => Array.from(map.values()).filter((node) => !node.parentKey), [map]);
   function getNode(key: string): TreeNode<T> | undefined {
     return map.get(key);
   }
 
-  function addNode(
-    node: Omit<TreeNode<T>, "parentKey">,
-    parentKey: string | null
-  ): void {
+  function addNode(node: Omit<TreeNode<T>, "parentKey">, parentKey: string | null): void {
     const newNode = { ...node, parentKey: parentKey };
     map.set(node.key, newNode);
-
+    console.log(parentKey);
     if (parentKey) {
       const parentNode = map.get(parentKey);
       if (!parentNode) {
@@ -88,9 +66,7 @@ function useTreeData<T extends object>(
         console.log(`Error: parent node with key ${node.parentKey} not found`);
         return;
       }
-      parentNode.children = parentNode.children.filter(
-        (child) => child.key !== key
-      );
+      parentNode.children = parentNode.children.filter((child) => child.key !== key);
     }
     map.delete(key);
     setTreeArray(buildTreeArray(map));
@@ -107,13 +83,9 @@ function useTreeData<T extends object>(
       const i = parentNode.children.indexOf(node);
       parentNode.children.splice(i, parentNode.children.length - i);
     } else {
-      const rootNodes = Array.from(map.values()).filter(
-        (node) => node.parentKey === null
-      );
+      const rootNodes = Array.from(map.values()).filter((node) => node.parentKey === null);
       const i = rootNodes.indexOf(node);
-      rootNodes
-        .splice(i, rootNodes.length - i)
-        .forEach((n) => map.delete(n.key));
+      rootNodes.splice(i, rootNodes.length - i).forEach((n) => map.delete(n.key));
     }
     setTreeArray(buildTreeArray(map));
   }
@@ -129,9 +101,7 @@ function useTreeData<T extends object>(
     while (currentNode) {
       const parentKey = currentNode.parentKey;
       if (!parentKey) {
-        const siblings = Array.from(map.values()).filter(
-          (node) => node.parentKey === null
-        );
+        const siblings = Array.from(map.values()).filter((node) => node.parentKey === null);
         const index = siblings.indexOf(currentNode);
         if (index > 0) {
           path.unshift(...siblings.slice(0, index));
@@ -154,14 +124,9 @@ function useTreeData<T extends object>(
     return path.length > 0 ? path : undefined;
   }
 
-  function findNextNode(
-    key: string | null,
-    cmp: (node: TreeNode<T>) => boolean
-  ): string | undefined {
+  function findNextNode(key: string | null, cmp: (node: TreeNode<T>) => boolean): string | undefined {
     if (key === null) {
-      const rootNodes = Array.from(map.values()).filter(
-        (node) => !node.parentKey
-      );
+      const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       if (rootNodes.length) {
         const sibling = rootNodes[0];
         if (cmp(sibling)) {
@@ -192,9 +157,7 @@ function useTreeData<T extends object>(
         return undefined;
       }
     } else {
-      const rootNodes = Array.from(map.values()).filter(
-        (node) => !node.parentKey
-      );
+      const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       const index = rootNodes.indexOf(node);
       if (index < rootNodes.length - 1) {
         const sibling = rootNodes[index + 1];
@@ -209,10 +172,7 @@ function useTreeData<T extends object>(
     }
   }
 
-  function findNextDescendant(
-    node: TreeNode<T>,
-    cmp: (node: TreeNode<T>) => boolean
-  ): string | undefined {
+  function findNextDescendant(node: TreeNode<T>, cmp: (node: TreeNode<T>) => boolean): string | undefined {
     if (cmp(node)) {
       return node.key;
     } else if (node.children.length > 0) {
@@ -225,21 +185,14 @@ function useTreeData<T extends object>(
   /**Insert a node at the next index if the node of the given key if the node is a last child,
    * otherwise at the first leaf node of the first children of the next sibling
    * */
-  function insertAfter(
-    node: Omit<TreeNode<T>, "parentKey">,
-    prevKey: string | null
-  ): void {
-    const rootNodes = Array.from(map.values()).filter(
-      (node) => !node.parentKey
-    );
+  function insertAfter(node: Omit<TreeNode<T>, "parentKey">, prevKey: string | null): void {
+    const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
     if (prevKey && !map.get(prevKey)) {
       console.log(`Error: node with key ${prevKey} not found`);
       return;
     }
     const siblings = prevKey ? getSiblings(prevKey) : rootNodes;
-    if (siblings.length <= 1) {
-      addNode(node, prevKey);
-    }
+
     if (prevKey === null) {
       const nextSibling = siblings[0];
       if (!nextSibling) {
@@ -247,10 +200,7 @@ function useTreeData<T extends object>(
         setTreeArray(buildTreeArray(map));
         return;
       }
-      const insertKey = findNextDescendant(
-        nextSibling,
-        (descendant) => descendant.children.length === 0
-      );
+      const insertKey = findNextDescendant(nextSibling, (descendant) => descendant.children.length === 0);
       addNode(node, insertKey || null);
 
       setTreeArray(buildTreeArray(map));
@@ -264,14 +214,13 @@ function useTreeData<T extends object>(
     const index = siblings.indexOf(prevNode);
     if (index < siblings.length - 1) {
       const nextSibling = siblings[index + 1];
-      const insertKey = findNextDescendant(
-        nextSibling,
-        (descendant) => descendant.children.length === 0
-      );
+      const insertKey = findNextDescendant(nextSibling, (descendant) => descendant.children.length === 0);
       addNode(node, insertKey || null);
       setTreeArray(buildTreeArray(map));
       return;
     } else {
+      console.log("here");
+      console.log(prevNode.parentKey);
       addNode(node, prevNode.parentKey);
       setTreeArray(buildTreeArray(map));
       return;
@@ -285,9 +234,7 @@ function useTreeData<T extends object>(
       return -1;
     }
     if (node.parentKey === null) {
-      const rootNodes = Array.from(map.values()).filter(
-        (node) => !node.parentKey
-      );
+      const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       return rootNodes.indexOf(node);
     }
     const parentNode = map.get(node.parentKey);
@@ -303,9 +250,7 @@ function useTreeData<T extends object>(
       return [];
     }
     if (node.parentKey === null) {
-      const rootNodes = Array.from(map.values()).filter(
-        (node) => !node.parentKey
-      );
+      const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       return rootNodes;
     }
     const parentNode = map.get(node.parentKey);
@@ -330,10 +275,7 @@ function useTreeData<T extends object>(
   };
 }
 
-function buildTreeArray<T>(
-  map: Map<string, TreeNode<T>>,
-  parentKey: string | null = null
-): TreeNode<T>[] {
+function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -344,14 +286,9 @@ function buildTreeArray<T>(
   return parentNode.children;
 }
 
-function buildMapFromTreeArray<T>(
-  treeArray: TreeNode<T>[]
-): Map<string, TreeNode<T>> {
+function buildMapFromTreeArray<T>(treeArray: TreeNode<T>[]): Map<string, TreeNode<T>> {
   const map = new Map<string, TreeNode<T>>();
-  const buildMapRecursive = (
-    array: TreeNode<T>[],
-    parentKey: string | null
-  ): void => {
+  const buildMapRecursive = (array: TreeNode<T>[], parentKey: string | null): void => {
     array.forEach((node) => {
       map.set(node.key, node);
       node.parentKey = parentKey;
@@ -364,17 +301,42 @@ function buildMapFromTreeArray<T>(
 
 export default useTreeData;
 
-function treeArrayToString<T>(
-  treeArray: TreeNode<T>[],
-  separator: string = " "
-): string {
-  let str = "";
-  treeArray.forEach((node) => {
-    str += node.key;
-    if (node.children.length) {
-      str += `(${treeArrayToString(node.children, separator)})`;
-    }
-    str += separator;
-  });
-  return str;
-}
+// function rebuildTreeFromMap<T, U>(
+//   map: Map<string, TreeNode<T>>,
+//   callback: (node: TreeNode<T>, previousNode: TreeNode<U> | null, map: Map<string, TreeNode<U>>) => TreeNode<U>,
+//   parentKey: string | null = null
+// ): Map<string, TreeNode<U>> {
+//   const newMap = new Map<string, TreeNode<U>>();
+//   map.forEach((node, key) => {
+//     let previousNode: TreeNode<U> | null = null;
+//     if (parentKey) {
+//       const parent = newMap.get(parentKey);
+//       if (parent) {
+//         const index = parent.children.findIndex((child) => child.key === key);
+//         if (index > 0) {
+//           previousNode = parent.children[index - 1];
+//         } else if (parent.parentKey) {
+//           const next = newMap.get(parent.parentKey);
+//           if (!next) throw new Error(`Node with key:${parent.parentKey} does not exist`);
+//           previousNode = next;
+//           while (previousNode && previousNode.parentKey) {
+//             const index = previousNode.children.findIndex((child) => child.key === parent.key);
+//             if (index > 0) {
+//               previousNode = previousNode.children[index - 1];
+//               break;
+//             }
+//             const next = newMap.get(parent.parentKey);
+//             if (!next) throw new Error(`Node with key:${parent.parentKey} does not exist`);
+//             previousNode = next;
+//           }
+//         }
+//       }
+//     }
+//     const newNode = callback(node, previousNode, newMap);
+//     if (node.children.length) {
+//       newNode.children = buildTreeArray(rebuildTreeFromMap(map, callback, key));
+//     }
+//     newMap.set(key, newNode);
+//   });
+//   return newMap;
+// }

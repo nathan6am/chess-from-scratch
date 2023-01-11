@@ -63,7 +63,7 @@ export type Move = {
   isCastle?: boolean;
   promotion?: PieceType;
   isCheckMate?: boolean;
-  notation?: string;
+  PGN: string;
 };
 
 export enum FileEnum {

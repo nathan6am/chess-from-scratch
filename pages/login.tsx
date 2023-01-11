@@ -5,7 +5,6 @@ import Head from "next/head";
 import Image from "next/image";
 import Knight from "../public/assets/knight.svg";
 import { useRouter } from "next/router";
-import router from "server/routes/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,14 +57,7 @@ export default function LoginPage() {
               <ButtonSocial variant="facebook" href="/auth/facebook" />
 
               <p className="my-6 text-white opacity-50">or</p>
-              <button
-                onClick={() => {
-                  router.push("/");
-                }}
-                className="text-white bg-neutral-600 hover:bg-neutral-700 text-lg py-4 my-6 rounded-md w-full"
-              >
-                Continue as Guest
-              </button>
+              <ButtonSocial variant="guest" href="/auth/guest"></ButtonSocial>
               <p className="text-white/[0.25] text-center px-10 my-6">
                 By continuing or signing in, you agree to our{" "}
                 <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}

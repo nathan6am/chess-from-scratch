@@ -12,7 +12,8 @@ import connectRedis from "connect-redis";
 let RedisStore = connectRedis(session);
 import passport from "passport";
 import authRouter from "./routes/auth";
-import { gameStateToFen } from "../util/chess/FenParser";
+import ConnectionHandler from "./handlers/ConnectionHandler";
+import LobbyHandler from "./handlers/LobbyHandler";
 import cors from "cors";
 
 declare module "http" {
@@ -97,8 +98,13 @@ nextApp.prepare().then(async () => {
     next();
   });
 
+  const onConnection = (socket: socketio.Socket) => {
+    ConnectionHandler(io, socket);
+    LobbyHandler(io, socket);
+  };
+
   io.on("connection", (socket: socketio.Socket) => {
-    socket.emit("status", "Hello from Socket.io");
+    onConnection(socket);
     socket.on("disconnect", () => {
       console.log("client disconnected");
     });

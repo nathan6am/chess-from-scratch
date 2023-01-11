@@ -75,6 +75,8 @@ var connect_redis_1 = __importDefault(require("connect-redis"));
 var RedisStore = (0, connect_redis_1.default)(express_session_1.default);
 var passport_1 = __importDefault(require("passport"));
 var auth_1 = __importDefault(require("./routes/auth"));
+var ConnectionHandler_1 = __importDefault(require("./handlers/ConnectionHandler"));
+var LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
 var cors_1 = __importDefault(require("cors"));
 var hostname = process.env.HOSTNAME || "localhost";
 var port = parseInt(process.env.PORT || "3000", 10);
@@ -91,7 +93,7 @@ var sessionMiddleware = (0, express_session_1.default)({
     cookie: { secure: false },
 });
 nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var app, server, io, wrap;
+    var app, server, io, wrap, onConnection;
     return __generator(this, function (_a) {
         app = (0, express_1.default)();
         server = http.createServer(app);
@@ -139,8 +141,12 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
             }
             next();
         });
+        onConnection = function (socket) {
+            (0, ConnectionHandler_1.default)(io, socket);
+            (0, LobbyHandler_1.default)(io, socket);
+        };
         io.on("connection", function (socket) {
-            socket.emit("status", "Hello from Socket.io");
+            onConnection(socket);
             socket.on("disconnect", function () {
                 console.log("client disconnected");
             });

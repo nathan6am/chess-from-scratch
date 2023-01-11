@@ -2,7 +2,10 @@ import { access } from "fs";
 import passport from "passport";
 import * as passportFacebook from "passport-facebook";
 import express from "express";
-
+import passportCustom from "passport-custom";
+import { v4 as uuidv4 } from "uuid";
+import { customAlphabet } from "nanoid";
+const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
@@ -22,11 +25,23 @@ passport.use(
   )
 );
 
+passport.use(
+  "guest",
+  new passportCustom.Strategy((_req, done) => {
+    const uid = uuidv4();
+    const user = {
+      id: uid,
+      name: `Guest_${nanoid()}`,
+    };
+    return done(null, user);
+  })
+);
+
 passport.serializeUser((user, done) => {
   done(null, JSON.stringify(user));
 });
 
-passport.deserializeUser((req: any, id: string, done: any) => {
+passport.deserializeUser((_req: any, id: string, done: any) => {
   const user = JSON.parse(id);
   done(null, user);
 });
@@ -42,8 +57,13 @@ router.get(
   })
 );
 
+router.get("/auth/guest", passport.authenticate("guest", { failureRedirect: "/login" }), (req, res) => {
+  res.redirect("/");
+});
+
 router.get("/auth/user", function (req, res, next) {
   if (!req.user) {
+    console.log(req.sessionID);
     res.status(200).json({});
   } else {
     res.status(200).json(req.user);

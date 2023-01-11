@@ -3,9 +3,7 @@ import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/util/chess";
 import { v4 as uuidv4 } from "uuid";
 
-export default function useVariationTree(
-  initialTree?: TreeNode<Chess.NodeData>[]
-) {
+export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {
   const tree = useTreeData<Chess.NodeData>(initialTree || []);
 
   //Key of the selectedNode
@@ -17,6 +15,10 @@ export default function useVariationTree(
     if (!node) return null;
     return node.data;
   }, [currentKey, tree]);
+
+  const pgn = useMemo(() => {
+    return treeArrayToString(tree.treeArray);
+  }, [tree.treeArray]);
 
   // Current line up to the current node
   const path = useMemo<TreeNode<Chess.NodeData>[]>(() => {
@@ -80,13 +82,38 @@ export default function useVariationTree(
     return null;
   }
 
+  function treeArrayToString(treeArray: TreeNode<Chess.NodeData>[], separator: string = " "): string {
+    let str = "";
+    treeArray.forEach((node) => {
+      let notation = "";
+      const fullMoveCount = node.data.moveCount[0];
+      let index = tree.getSiblingIndex(node.key);
+      if (index === 0) {
+        notation = `${fullMoveCount}${node.data.moveCount[1] === 0 ? ". " : "... "}`;
+      } else if (node.data.moveCount[1] === 0) {
+        notation = `${fullMoveCount}. `;
+      }
+      notation = notation + node.data.move.PGN;
+
+      str += notation;
+      if (node.children.length) {
+        str += `(${treeArrayToString(node.children, separator)})`;
+      }
+      str += separator;
+    });
+    return str;
+  }
+
   return {
     findNextMove,
     addMove,
     path,
     continuation,
     currentNodeData,
-    setCurrentKey,
+    setCurrentKey: (key: string) => {
+      setCurrentKey(key);
+      return tree.getNode(key);
+    },
     onStepBackward: stepBackward,
     onStepForward: stepForward,
     treeArray: tree.treeArray,

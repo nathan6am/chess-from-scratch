@@ -5,9 +5,9 @@ import { fenToGameState } from "./FenParser";
 
 //Returns the PGN notation of a move given the move and the current position
 export function moveToPgn(
-  move: Move,
+  move: Omit<Move, "PGN">,
   position: Position,
-  potentialMoves: Array<Move> // Pass potential moves here to prevent from having to recalculate
+  potentialMoves: Array<Move> | Array<Omit<Move, "PGN">> // Pass potential moves here to prevent from having to recalculate
 ): string {
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move or position");
@@ -15,7 +15,6 @@ export function moveToPgn(
   var notation = "";
   if (move.isCastle) {
     let coords = squareToCoordinates(move.end);
-    console.log(coords);
     if (coords[0] === 6) {
       notation = "O-O";
     } else {
@@ -63,7 +62,11 @@ export function moveToPgn(
   return notation;
 }
 
-function disambiguateMoves(move: Move, position: Position, alternateMoves: Array<Move>): string {
+function disambiguateMoves(
+  move: Move | Omit<Move, "PGN">,
+  position: Position,
+  alternateMoves: Array<Move> | Array<Omit<Move, "PGN">>
+): string {
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move or position");
   let notation = piece.type.toUpperCase();
