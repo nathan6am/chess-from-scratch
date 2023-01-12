@@ -3,7 +3,13 @@ import session, { Session } from "express-session";
 //Load environment variables before starting the custom server
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
-import { createGame, serializeMoves } from "../util/chess/Chess";
+import {
+  InterServerEvents,
+  SocketData,
+  ClientToServerEvents,
+  ServerToClientEvents,
+  Socket,
+} from "./@types/socket";
 import * as http from "http";
 import next, { NextApiHandler } from "next";
 import * as socketio from "socket.io";
@@ -28,12 +34,12 @@ declare module "http" {
   }
 }
 
-declare module "socket.io" {
-  interface Socket {
-    sessionID?: string;
-    userID?: string;
-  }
-}
+// declare module "socket.io" {
+//   interface Socket {
+//     sessionID?: string;
+//     userID?: string;
+//   }
+// }
 const hostname = process.env.HOSTNAME || "localhost";
 const port: number = parseInt(process.env.PORT || "3000", 10);
 console.log(process.env.NODE_ENV);
@@ -52,7 +58,12 @@ const sessionMiddleware = session({
 nextApp.prepare().then(async () => {
   const app: Express = express();
   const server: http.Server = http.createServer(app);
-  const io: socketio.Server = new socketio.Server();
+  const io: socketio.Server = new socketio.Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >();
   io.attach(server);
   //Cross origin isoalte for workers
 
@@ -79,26 +90,30 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
-    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
+    sessionMiddleware(
+      socket.request as Request,
+      {} as Response,
+      next as NextFunction
+    );
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
 
-  io.use((socket, next) => {
-    console.log(socket.request.user);
+  io.use((socket: Socket, next) => {
     const passportUser = socket.request.session?.passport?.user;
     if (passportUser) {
       const user = JSON.parse(passportUser);
-      const id = user.id;
-      socket.userID = id;
+      socket.data.user = user;
+      socket.data.userid = user.id;
     }
     next();
   });
 
-  const onConnection = (socket: socketio.Socket) => {
+  const onConnection = (socket: Socket) => {
     ConnectionHandler(io, socket);
     LobbyHandler(io, socket);
   };
