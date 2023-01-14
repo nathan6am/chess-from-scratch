@@ -13,7 +13,9 @@ export default function Play() {
   }, []);
   const socket = useContext(SocketContext);
   const createLobby = useCallback(() => {
-    socket.emit("lobby:create", {});
+    socket.emit("lobby:create", { color: "random" }, (lobby: any) => {
+      console.log(lobby);
+    });
   }, [socket]);
   const [joinInput, setJoinInput] = useState("");
 
