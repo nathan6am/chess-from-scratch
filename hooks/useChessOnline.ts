@@ -1,7 +1,14 @@
-import react, { useState, useEffect, useCallback, useContext, useRef } from "react";
+import react, {
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useRef,
+} from "react";
 import { SocketContext } from "@/context/socket";
 import * as Chess from "@/util/chess";
 import { io, Socket } from "socket.io-client";
+import { Lobby } from "server/types/lobby";
 export default function useChessOnline(lobbyId: string) {
   const gameSocket = useRef<any>();
   const socket = useContext(SocketContext);
@@ -14,18 +21,24 @@ export default function useChessOnline(lobbyId: string) {
   useEffect(() => {
     setConnected(false);
     socketRef.current = io("/lobby");
+    console.log(socketRef.current);
     const socket = socketRef.current;
-    socket.emit("lobby:connect", lobbyId, (res: { connected: boolean; message?: string; lobby: any }) => {
-      if (res && res.connected) {
-        setConnected(true);
-        setLobby(res.lobby);
-      } else if (res && !res.connected) {
-        setConnected(false);
-        console.error(res.message);
-      } else {
-        console.error("");
+    socket.emit(
+      "lobby:connect",
+      lobbyId,
+      (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+        if (res && res.status) {
+          setConnected(true);
+          setLobby(res.data);
+        } else if (res && !res.status) {
+          setConnected(false);
+          console.log(res);
+          console.error(res.error?.message);
+        } else {
+          console.error("WTF");
+        }
       }
-    });
+    );
 
     const onMoveRecieved = (data: unknown) => {
       updateGame(data);
@@ -33,8 +46,10 @@ export default function useChessOnline(lobbyId: string) {
     socket.on("game:move", onMoveRecieved);
 
     return () => {
+      if (socket.connected) {
+        socket.disconnect();
+      }
       socket.off("game:move", onMoveRecieved);
-      socket.disconnect();
     };
   }, []);
 

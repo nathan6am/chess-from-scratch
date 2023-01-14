@@ -52,38 +52,72 @@ interface SocketResponse<T> {
   error: Error | null;
 }
 
-export interface SocketData {
+export interface LobbySocketData {
   userid: string;
   username: string;
   user: any;
   lastPing?: number;
 }
-export interface InterServerEvents {
+export interface LobbyInterServerEvents {
   ping: () => void;
 }
 
-export interface ServerToClientEvents {
+export interface LobbyServerToClientEvents {
   "lobby:chat": (chat: ChatMessage[]) => void;
   "lobby:update": (updates: Partial<Lobby>) => void;
-  "game:move": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
-  "game:outcome": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
+  "game:move": (
+    move: Chess.Move,
+    ack: (response: SocketResponse<Game>) => void
+  ) => void;
+  "game:outcome": (
+    move: Chess.Move,
+    ack: (response: SocketResponse<Game>) => void
+  ) => void;
 }
 
-export interface ClientToServerEvents {
+export interface LobbyClientToServerEvents {
   authenticate: (ack: (authenticated: boolean) => void) => void; //Called after connect to link client to correct user on server side
 
-  "lobby:create": (options: LobbyOptions, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:create": (
+    options: LobbyOptions,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:connect": (lobbyid: string, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:connect": (
+    lobbyid: string,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:refresh": (lobbyid: string, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:refresh": (
+    lobbyid: string,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:disconnect": (lobbyid: string, ack: (response: SocketResponse<string>) => void) => void;
+  "lobby:disconnect": (
+    lobbyid: string,
+    ack: (response: SocketResponse<string>) => void
+  ) => void;
 
-  "lobby:chat": (message: string, ack: (response: SocketResponse<ChatMessage[]>) => void) => void;
+  "lobby:chat": (
+    message: string,
+    ack: (response: SocketResponse<ChatMessage[]>) => void
+  ) => void;
 
-  "game:move": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
+  "game:move": (
+    move: Chess.Move,
+    ack: (response: SocketResponse<Game>) => void
+  ) => void;
 }
 
-export type Server = socketio.Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
-export type Socket = socketio.Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
+export type LobbyServer = socketio.Namespace<
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  LobbyInterServerEvents,
+  LobbySocketData
+>;
+export type LobbySocket = socketio.Socket<
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  LobbyInterServerEvents,
+  LobbySocketData
+>;

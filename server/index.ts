@@ -20,12 +20,21 @@ import {
   Socket,
   Server,
 } from "./types/socket";
+import {
+  LobbyInterServerEvents,
+  LobbySocketData,
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  LobbySocket,
+  LobbyServer,
+} from "./types/lobby";
 
 const redisClient = createClient();
 const sessionClient = createClient({ legacyMode: true });
 
 export type RedisClient = typeof redisClient;
 import cors from "cors";
+import LobbyHandler from "./handlers/LobbyHandler";
 
 declare module "http" {
   interface IncomingMessage {
@@ -93,10 +102,15 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   io.use((socket, next) => {
-    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
+    sessionMiddleware(
+      socket.request as Request,
+      {} as Response,
+      next as NextFunction
+    );
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
@@ -111,7 +125,12 @@ nextApp.prepare().then(async () => {
     next();
   });
 
-  const lobbyNsp = io.of("/lobby");
+  const lobbyNsp: socketio.Namespace<
+    LobbyClientToServerEvents,
+    LobbyServerToClientEvents,
+    LobbyInterServerEvents,
+    LobbySocketData
+  > = io.of("/lobby");
   lobbyNsp.use(wrap(passport.initialize()));
   lobbyNsp.use(wrap(passport.session()));
   lobbyNsp.use((socket: Socket, next) => {
@@ -128,8 +147,11 @@ nextApp.prepare().then(async () => {
     MainHandler(io, socket, redisClient);
   };
 
-  lobbyNsp.on("connection", (socket: Socket) => {
-    console.log(`${socket.data.userid} connected to lobby nsp`);
+  lobbyNsp.on("connection", (socket: LobbySocket) => {
+    LobbyHandler(io, lobbyNsp, socket, redisClient);
+    socket.on("disconnect", () => {
+      console.log("client disconnected");
+    });
   });
 
   io.on("connection", (socket: socketio.Socket) => {
