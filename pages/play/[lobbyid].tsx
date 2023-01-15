@@ -6,8 +6,18 @@ interface Props {
 }
 
 const Lobby: NextPage<Props> = ({ lobbyid }) => {
-  const chess = useChessOnline(lobbyid);
-  return <div>{chess ? "connected" : "false"}</div>;
+  const { connected, test, acknowledge } = useChessOnline(lobbyid);
+  return (
+    <div className="flex flex-col p-4">
+      <div>{connected ? "connected" : "false"}</div>
+      <button className="p-4 m-4 bg-red" onClick={test}>
+        Test Timeout
+      </button>
+      <button className="p-4 m-4 bg-red" onClick={acknowledge}>
+        TAcknowledge
+      </button>
+    </div>
+  );
 };
 
 interface Context extends NextPageContext {

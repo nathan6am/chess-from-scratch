@@ -41,7 +41,6 @@ passport_1.default.use(new passportFacebook.Strategy({
     clientSecret: facebookClientSecret,
     callbackURL: facebookCallbackURL,
 }, function (accessToken, refreshToken, profile, done) {
-    console.log(profile);
     var user = { id: profile.id, name: profile.displayName };
     return done(null, user);
 }));
@@ -51,6 +50,7 @@ passport_1.default.use("guest", new passport_custom_1.default.Strategy(function 
         id: uid,
         name: "Guest_".concat(nanoid()),
     };
+    console.log(user);
     return done(null, user);
 }));
 passport_1.default.serializeUser(function (user, done) {
@@ -66,12 +66,11 @@ router.get("/auth/facebook/callback", passport_1.default.authenticate("facebook"
     successReturnToOrRedirect: "/",
     failureRedirect: "/failure",
 }));
-router.get("/auth/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login" }), function (req, res) {
+router.get("/auth/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), function (req, res) {
     res.redirect("/");
 });
 router.get("/auth/user", function (req, res, next) {
     if (!req.user) {
-        console.log(req.sessionID);
         res.status(200).json({});
     }
     else {

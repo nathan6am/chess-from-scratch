@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36,78 +47,75 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var nanoid_1 = require("nanoid");
 var redisClientWrapper_1 = require("../util/redisClientWrapper");
-function LobbyHandler(io, nsp, socket, redisClient) {
+function default_1(io, socket, redisClient) {
     var _this = this;
     var cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
-    socket.on("disconnect", function () {
-        console.log("Client ".concat(socket.data.userid, " has disconnected"));
-    });
-    socket.on("test:timeout", function () { return __awaiter(_this, void 0, void 0, function () {
+    socket.on("authenticate", function (ack) { return __awaiter(_this, void 0, void 0, function () {
+        var rooms;
         return __generator(this, function (_a) {
-            console.log("testing");
-            socket.timeout(10000).emit("test:requestAck", "hello", function (err, arg) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    console.log(arg);
-                }
+            if (!socket.data.userid) {
+                ack(false);
+                return [2 /*return*/];
+            }
+            rooms = socket.rooms;
+            rooms.forEach(function (room) {
+                if (room && room !== socket.id)
+                    socket.leave(room);
             });
+            //Join room for all connections of the same user - allows broadcasting events to all sessions
+            //for example to disable game if active on another conection
+            socket.join(socket.data.userid);
+            ack(true);
             return [2 /*return*/];
         });
     }); });
-    socket.on("lobby:connect", function (lobbyid, ack) { return __awaiter(_this, void 0, void 0, function () {
-        var userid, lobby, player, lobby_1, game, err_1;
+    socket.on("lobby:create", function (options, ack) { return __awaiter(_this, void 0, void 0, function () {
+        var userid, lobby, created, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 6, , 7]);
                     userid = socket.data.userid;
-                    if (!userid)
-                        throw new Error("Unauthenticated");
-                    return [4 /*yield*/, cache.getLobbyById(lobbyid)];
-                case 1:
-                    lobby = _a.sent();
-                    if (!lobby)
-                        throw new Error("Lobby does not exist");
-                    if (!(lobby.reservedConnections.includes(userid) ||
-                        (lobby.reservedConnections.length < 2 && lobby.players.length < 2))) return [3 /*break*/, 5];
-                    player = {
-                        id: userid,
-                        score: 0,
-                        primaryClientSocketId: socket.id,
+                    if (!userid) {
+                        console.log("unauthenticated");
+                        ack({ status: false, error: new Error("Unauthenticated") });
+                        return [2 /*return*/];
+                    }
+                    lobby = {
+                        id: (0, nanoid_1.nanoid)(10),
+                        creator: userid,
+                        reservedConnections: [userid],
+                        currentGame: null,
+                        players: [],
+                        options: __assign({ rated: false, gameConfig: {
+                                startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                                timeControls: [{ timeSeconds: 300, incrementSeconds: 3 }],
+                            }, color: "random" }, options),
+                        chat: [],
                     };
-                    return [4 /*yield*/, cache.connectToLobby(lobbyid, player)];
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, cache.newLobby(lobby)];
                 case 2:
-                    lobby_1 = _a.sent();
-                    socket.join(lobbyid);
-                    //Start the game if both players are connected
-                    ack({ status: true, data: lobby_1, error: null });
-                    if (!(lobby_1.players.length === 2 && lobby_1.currentGame === null)) return [3 /*break*/, 4];
-                    return [4 /*yield*/, cache.newGame(lobbyid)];
+                    created = _a.sent();
+                    ack({ status: true, data: created, error: null });
+                    return [2 /*return*/];
                 case 3:
-                    game = _a.sent();
-                    console.log(game);
-                    nsp.to(lobbyid).emit("game:new", game);
-                    _a.label = 4;
-                case 4: return [2 /*return*/];
-                case 5:
-                    ack({ status: false, error: new Error("Lobby is full") });
-                    return [3 /*break*/, 7];
-                case 6:
                     err_1 = _a.sent();
-                    console.log(err_1);
                     if (err_1 instanceof Error) {
                         ack({ status: false, error: err_1 });
+                        return [2 /*return*/];
                     }
                     else {
-                        ack({ status: false, error: new Error("Unable to connect to lobby") });
+                        ack({ status: false, error: new Error("Error creating lobby") });
+                        return [2 /*return*/];
                     }
-                    return [3 /*break*/, 7];
-                case 7: return [2 /*return*/];
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
             }
         });
     }); });
 }
-exports.default = LobbyHandler;
+exports.default = default_1;

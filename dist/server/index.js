@@ -70,91 +70,123 @@ var env_1 = require("@next/env");
 var http = __importStar(require("http"));
 var next_1 = __importDefault(require("next"));
 var socketio = __importStar(require("socket.io"));
-var sessionClient_1 = __importDefault(require("./redis/sessionClient"));
 var connect_redis_1 = __importDefault(require("connect-redis"));
 var RedisStore = (0, connect_redis_1.default)(express_session_1.default);
 var passport_1 = __importDefault(require("passport"));
 var auth_1 = __importDefault(require("./routes/auth"));
-var ConnectionHandler_1 = __importDefault(require("./handlers/ConnectionHandler"));
-var LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
+var MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
+var redis_1 = require("redis");
+var redisClient = (0, redis_1.createClient)();
+var sessionClient = (0, redis_1.createClient)({ legacyMode: true });
 var cors_1 = __importDefault(require("cors"));
+var LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
 var hostname = process.env.HOSTNAME || "localhost";
 var port = parseInt(process.env.PORT || "3000", 10);
-console.log(process.env.NODE_ENV);
+console.log("Environment: ".concat(process.env.NODE_ENV));
 var dev = process.env.NODE_ENV !== "production";
-console.log(dev);
 var nextApp = (0, next_1.default)({ dev: dev, hostname: hostname, port: port });
 var nextHandler = nextApp.getRequestHandler();
-var sessionMiddleware = (0, express_session_1.default)({
-    secret: process.env.SESSION_SECRET || "keyboard cat",
-    store: new RedisStore({ client: sessionClient_1.default }),
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false },
-});
 nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var app, server, io, wrap, onConnection;
+    var app, server, sessionMiddleware, wrap, io, lobbyNsp, onConnection;
     return __generator(this, function (_a) {
-        app = (0, express_1.default)();
-        server = http.createServer(app);
-        io = new socketio.Server();
-        io.attach(server);
-        //Cross origin isoalte for workers
-        app.use(function (req, res, next) {
-            res.header("Cross-Origin-Embedder-Policy", "require-corp");
-            res.header("Cross-Origin-Opener-Policy", "same-origin");
-            res.header("Cross-Origin-Resource-Policy", "cross-origin");
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "*");
-            next();
-        });
-        app.use((0, cors_1.default)());
-        app.use(sessionMiddleware);
-        app.use(passport_1.default.initialize());
-        app.use(passport_1.default.session());
-        app.use(passport_1.default.authenticate("session"));
-        app.get("/hello", function (_, res) { return __awaiter(void 0, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                res.send("Hello World");
+        switch (_a.label) {
+            case 0:
+                app = (0, express_1.default)();
+                server = http.createServer(app);
+                //Create session client
+                return [4 /*yield*/, sessionClient.connect()];
+            case 1:
+                //Create session client
+                _a.sent();
+                console.log("Connected to session client");
+                //Create primary client
+                return [4 /*yield*/, redisClient.connect()];
+            case 2:
+                //Create primary client
+                _a.sent();
+                console.log("Connected to redis client");
+                sessionMiddleware = (0, express_session_1.default)({
+                    secret: process.env.SESSION_SECRET || "keyboard cat",
+                    store: new RedisStore({ client: sessionClient }),
+                    resave: false,
+                    saveUninitialized: true,
+                    cookie: {
+                        httpOnly: true,
+                        secure: false,
+                        maxAge: 1000 * 60 * 60 * 24 * 365,
+                    },
+                });
+                //Cross origin isolate for workers
+                app.use(function (req, res, next) {
+                    res.header("Cross-Origin-Embedder-Policy", "require-corp");
+                    res.header("Cross-Origin-Opener-Policy", "same-origin");
+                    res.header("Cross-Origin-Resource-Policy", "cross-origin");
+                    res.header("Access-Control-Allow-Origin", "*");
+                    res.header("Access-Control-Allow-Headers", "*");
+                    res.header("Pragma", "no-cache");
+                    res.header("Cache-Control", "no-store, must-revalidate");
+                    res.header("Expires", "0");
+                    next();
+                });
+                app.use((0, cors_1.default)());
+                app.use(sessionMiddleware);
+                app.use(passport_1.default.initialize());
+                app.use(passport_1.default.session());
+                app.use(passport_1.default.authenticate("session"));
+                app.use("/", auth_1.default);
+                wrap = function (middleware) { return function (socket, next) { return middleware(socket.request, {}, next); }; };
+                io = new socketio.Server();
+                io.attach(server);
+                io.use(function (socket, next) {
+                    sessionMiddleware(socket.request, {}, next);
+                });
+                io.use(wrap(passport_1.default.initialize()));
+                io.use(wrap(passport_1.default.session()));
+                io.use(function (socket, next) {
+                    var _a, _b;
+                    var passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+                    if (passportUser) {
+                        var user = JSON.parse(passportUser);
+                        socket.data.user = user;
+                        socket.data.userid = user.id;
+                    }
+                    next();
+                });
+                lobbyNsp = io.of("/lobby");
+                lobbyNsp.use(wrap(passport_1.default.initialize()));
+                lobbyNsp.use(wrap(passport_1.default.session()));
+                lobbyNsp.use(function (socket, next) {
+                    var _a, _b;
+                    var passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+                    if (passportUser) {
+                        var user = JSON.parse(passportUser);
+                        socket.data.user = user;
+                        socket.data.userid = user.id;
+                    }
+                    next();
+                });
+                onConnection = function (socket) {
+                    (0, MainHandler_1.default)(io, socket, redisClient);
+                };
+                lobbyNsp.on("connection", function (socket) {
+                    console.log("Client ".concat(socket.data.userid, " connected"));
+                    (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
+                    socket.on("disconnect", function () {
+                        console.log("client disconnected from lobby nsp");
+                    });
+                });
+                io.on("connection", function (socket) {
+                    console.log("Connected to primary nsp");
+                    onConnection(socket);
+                    socket.on("disconnect", function () {
+                        console.log("client disconnected");
+                    });
+                });
+                app.all("*", function (req, res) { return nextHandler(req, res); });
+                server.listen(port, function () {
+                    console.log("> Ready on http://localhost:".concat(port));
+                });
                 return [2 /*return*/];
-            });
-        }); });
-        // app.get("/", async (req, res, next) => {
-        //   if (!req.user) res.redirect("/login");
-        //   next();
-        // });
-        app.use("/", auth_1.default);
-        wrap = function (middleware) { return function (socket, next) { return middleware(socket.request, {}, next); }; };
-        io.use(function (socket, next) {
-            sessionMiddleware(socket.request, {}, next);
-        });
-        io.use(wrap(passport_1.default.initialize()));
-        io.use(wrap(passport_1.default.session()));
-        io.use(function (socket, next) {
-            var _a, _b;
-            console.log(socket.request.user);
-            var passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
-            if (passportUser) {
-                var user = JSON.parse(passportUser);
-                var id = user.id;
-                socket.userID = id;
-            }
-            next();
-        });
-        onConnection = function (socket) {
-            (0, ConnectionHandler_1.default)(io, socket);
-            (0, LobbyHandler_1.default)(io, socket);
-        };
-        io.on("connection", function (socket) {
-            onConnection(socket);
-            socket.on("disconnect", function () {
-                console.log("client disconnected");
-            });
-        });
-        app.all("*", function (req, res) { return nextHandler(req, res); });
-        server.listen(port, function () {
-            console.log("> Ready on http://localhost:".concat(port));
-        });
-        return [2 /*return*/];
+        }
     });
 }); });

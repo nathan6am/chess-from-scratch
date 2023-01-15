@@ -1,6 +1,9 @@
 import React from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import { LobbyClientToServerEvents, LobbyServerToClientEvents } from "../server/types/lobby";
+import { ServerToClientEvents, ClientToServerEvents } from "@/server/types/socket";
 
 //Create a context to resue socket connection throughout the app
-export const socket = io();
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io("http://localhost:3000/");
+
 export const SocketContext = React.createContext(socket);

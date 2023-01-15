@@ -18,7 +18,6 @@ passport.use(
       callbackURL: facebookCallbackURL,
     },
     function (accessToken, refreshToken, profile, done) {
-      console.log(profile);
       const user = { id: profile.id, name: profile.displayName };
       return done(null, user);
     }
@@ -33,6 +32,7 @@ passport.use(
       id: uid,
       name: `Guest_${nanoid()}`,
     };
+    console.log(user);
     return done(null, user);
   })
 );
@@ -57,13 +57,12 @@ router.get(
   })
 );
 
-router.get("/auth/guest", passport.authenticate("guest", { failureRedirect: "/login" }), (req, res) => {
+router.get("/auth/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
   res.redirect("/");
 });
 
 router.get("/auth/user", function (req, res, next) {
   if (!req.user) {
-    console.log(req.sessionID);
     res.status(200).json({});
   } else {
     res.status(200).json(req.user);

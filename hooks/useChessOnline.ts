@@ -1,65 +1,76 @@
-import react, {
-  useState,
-  useEffect,
-  useCallback,
-  useContext,
-  useRef,
-} from "react";
-import { SocketContext } from "@/context/socket";
+import react, { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
+import {
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  LobbySocketData,
+  LobbyInterServerEvents,
+} from "../server/types/lobby";
 import * as Chess from "@/util/chess";
 import { io, Socket } from "socket.io-client";
 import { Lobby } from "server/types/lobby";
 export default function useChessOnline(lobbyId: string) {
-  const gameSocket = useRef<any>();
-  const socket = useContext(SocketContext);
   const [connected, setConnected] = useState(false);
   const [lobby, setLobby] = useState<any>(null);
   const [game, updateGame] = useState<any>(null);
   const [pending, setPending] = useState<boolean>(true);
-
-  const socketRef = useRef<Socket>();
+  const socket = useMemo<
+    Socket<LobbyServerToClientEvents<false, false>, LobbyClientToServerEvents<false, true>>
+  >(() => {
+    return io("/lobby");
+  }, []);
+  const callbackRef = useRef<(...args: any[]) => void>();
   useEffect(() => {
-    setConnected(false);
-    socketRef.current = io("/lobby");
-    console.log(socketRef.current);
-    const socket = socketRef.current;
-    socket.emit(
-      "lobby:connect",
-      lobbyId,
-      (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+    if (!socket.connected) socket.connect();
+    const onConnect = () => {
+      console.log("connected");
+      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
         if (res && res.status) {
-          setConnected(true);
+          console.log(res.data);
           setLobby(res.data);
         } else if (res && !res.status) {
           setConnected(false);
           console.log(res);
           console.error(res.error?.message);
         } else {
-          console.error("WTF");
+          console.log("why am i here");
         }
-      }
-    );
-
+      });
+      setConnected(true);
+    };
+    const onConnectError = (err: unknown) => {
+      console.log(err);
+    };
+    socket.on("connect", onConnect);
+    socket.on("connect_error", onConnectError);
     const onMoveRecieved = (data: unknown) => {
       updateGame(data);
     };
     socket.on("game:move", onMoveRecieved);
+    const onTest = (response: string, ack: (arg: string) => void) => {
+      console.log(response);
+      callbackRef.current = ack;
+    };
+    socket.on("test:requestAck", onTest);
 
     return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
+      socket.disconnect();
+      socket.off("connect", onConnect);
       socket.off("game:move", onMoveRecieved);
+      socket.off("test:requestAck", onTest);
+      socket.off("connect_error", onConnectError);
     };
   }, []);
 
-  const move = useCallback(
-    (move: Chess.Move) => {
-      if (!lobby) return;
-      socket.emit("game:move", lobby.id);
-    },
-    [socket]
-  );
+  const test = () => {
+    socket.emit("test:timeout");
+  };
 
-  return connected;
+  const acknowledge = () => {
+    const ack = callbackRef.current;
+    if (ack) {
+      ack("Holy shit");
+    }
+  };
+
+  return { connected: connected, test: test, acknowledge: acknowledge };
 }

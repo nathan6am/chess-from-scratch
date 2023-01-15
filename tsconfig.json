@@ -22,7 +22,8 @@
       "@/util/*": ["util/*"],
       "@/hooks/*": ["hooks/*"],
       "@/styles/*": ["styles/*"],
-      "@/public/*": ["public/*"]
+      "@/public/*": ["public/*"],
+      "@/server/*": ["server/*"]
     }
   },
   "ts-node": {

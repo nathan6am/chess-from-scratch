@@ -26,6 +26,7 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
   socket.on("lobby:create", async (options, ack) => {
     const userid = socket.data.userid;
     if (!userid) {
+      console.log("unauthenticated");
       ack({ status: false, error: new Error("Unauthenticated") });
       return;
     }
