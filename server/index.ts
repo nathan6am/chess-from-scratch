@@ -89,7 +89,7 @@ nextApp.prepare().then(async () => {
     res.header("Expires", "0");
     next();
   });
-  app.use(cors({ origin: "http://localhost:3000" }));
+  app.use(cors({ origin: process.env.BASE_URL }));
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
@@ -107,7 +107,7 @@ nextApp.prepare().then(async () => {
     SocketData
   >(server, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: process.env.BASE_URL,
       methods: ["GET", "POST"],
     },
   });
