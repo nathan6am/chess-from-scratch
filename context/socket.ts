@@ -4,6 +4,6 @@ import { LobbyClientToServerEvents, LobbyServerToClientEvents } from "../server/
 import { ServerToClientEvents, ClientToServerEvents } from "@/server/types/socket";
 
 //Create a context to resue socket connection throughout the app
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(process.env.BASE_URL + "/");
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io();
 
 export const SocketContext = React.createContext(socket);
