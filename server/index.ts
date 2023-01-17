@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import session, { Session } from "express-session";
+import path from "path";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
 import * as http from "http";
@@ -76,6 +77,7 @@ nextApp.prepare().then(async () => {
   });
 
   //Cross origin isolate for shared-array-buffer
+  app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
   app.use((req, res, next) => {
     res.header("Cross-Origin-Embedder-Policy", "require-corp");
     res.header("Cross-Origin-Opener-Policy", "same-origin");
