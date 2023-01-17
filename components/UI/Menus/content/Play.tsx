@@ -6,9 +6,9 @@ export default function Play() {
   const router = useRouter();
   const socket = useContext(SocketContext);
   const createLobby = useCallback(() => {
-    socket.emit("lobby:create", { color: "random" }, (lobby: any) => {
-      if (lobby) {
-        router.push(`/play/${lobby.id}`);
+    socket.emit("lobby:create", { color: "random" }, (response) => {
+      if (response && response.data) {
+        router.push(`/play/${response.data.id}`);
       }
     });
   }, [socket, router]);
