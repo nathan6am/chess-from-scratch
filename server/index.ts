@@ -87,7 +87,7 @@ nextApp.prepare().then(async () => {
     res.header("Expires", "0");
     next();
   });
-  app.use(cors());
+  app.use(cors({ origin: "http://localhost:3000" }));
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
@@ -96,22 +96,22 @@ nextApp.prepare().then(async () => {
   app.use("/", authRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) =>
-    middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
 
   const io: socketio.Server = new socketio.Server<
     ClientToServerEvents,
     ServerToClientEvents,
     InterServerEvents,
     SocketData
-  >(server);
+  >(server, {
+    cors: {
+      origin: "http://localhost:3000",
+      methods: ["GET", "POST"],
+    },
+  });
 
   io.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
@@ -131,11 +131,7 @@ nextApp.prepare().then(async () => {
     LobbySocketData
   > = io.of("/lobby");
   lobbyNsp.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   lobbyNsp.use(wrap(passport.initialize()));
   lobbyNsp.use(wrap(passport.session()));

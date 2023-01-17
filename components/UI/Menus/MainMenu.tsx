@@ -22,10 +22,8 @@ export default function MainMenu() {
         <div className="flex flex-col h-fit lg:py-20 rounded-l-md col-span-5 lg:col-span-1 lg:h-full w-full items-end justify-start  bg-[#1f1f1f]">
           <MenuSideBar activeKey={activeTab} onChange={onChange} tabs={tabs} />
         </div>
-        <div className="h-full w-full grow lg:col-span-4 grid grid-cols-3">
-          <div className="h-full col-span-1 w-full ml-8 py-8 flex flex-col justify-between">
-            <MenuContent activeTab={activeTab} />
-          </div>
+        <div className="h-full w-full grow lg:col-span-4">
+          <MenuContent activeTab={activeTab} />
         </div>
       </div>
     </div>

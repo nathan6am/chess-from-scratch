@@ -1,11 +1,4 @@
-import React, {
-  useReducer,
-  useRef,
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
 import useChessLocal from "./useChessLocal";
 import * as commands from "@/util/chess/UciCmds";
 
@@ -29,22 +22,16 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
   const [inProgress, setInProgress] = useState(false);
   const [evaluation, setEvaluation] = useState<any>(null);
   const [finished, setFinished] = useState<boolean>(false);
-  var wasmSupported =
+  const wasmSupported =
     typeof WebAssembly === "object" &&
-    WebAssembly.validate(
-      Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
-    );
+    WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
 
   //Intialize worker
   const stockfishRef = useRef<Worker>();
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(
-      wasmSupported
-        ? "/stockfishNNUE/src/stockfish.js"
-        : "/stockfish/stockfish.js"
-    );
+    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
   }, []);
 
   //Verify engine is ready
@@ -106,5 +93,6 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
     error,
     inProgress,
     finished,
+    wasmSupported,
   };
 }

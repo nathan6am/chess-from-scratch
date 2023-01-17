@@ -10,16 +10,16 @@ import { positionToBoard } from "@/util/chess";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 export default function GameLocal() {
-  const { currentGame, onMove, evaluation, stepForward, stepBackward } =
-    useAnalysisBoard(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    );
+  const { currentGame, onMove, evaluation, stepForward, stepBackward, wasm } = useAnalysisBoard(
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+  );
   const [orientation, setOrientation] = useState<Chess.Color>("w");
 
   return (
     <div className="flex flex-col h-full w-full justify-center">
       <p>eval: {evaluation && evaluation.score?.value}</p>
       <p>depth: {evaluation && evaluation.depth}</p>
+      <p>wasm supported: {wasm ? "supported" : "not-supported"}</p>
       <div className="flex flex-row items-center">
         <EvalBar
           scoreType={evaluation?.score?.type || "cp"}

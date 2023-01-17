@@ -1,12 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { DateTime, Duration } from "luxon";
-import { run } from "node:test";
 function useInterval(callback: (...args: any[]) => void, delay: number | null) {
   const callbackRef = useRef<(...args: any[]) => void>();
 
@@ -37,21 +30,15 @@ const defaultOptions: Options = {
   autoStart: true,
   resolution: "s",
 };
-export function useTimer(
-  initialRemainingMs: number,
-  initialOptions?: Partial<Options>
-) {
+export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Options>) {
   const [options, setOptions] = useState<Options>(() => ({
     ...defaultOptions,
     ...initialOptions,
   }));
-  const [endTime, setEndTime] = useState<DateTime>(() =>
-    DateTime.now().plus(initialRemainingMs)
-  );
+  const [endTime, setEndTime] = useState<DateTime>(() => DateTime.now().plus(initialRemainingMs));
 
   const [running, setRunning] = useState<boolean>(options.autoStart);
-  const [timeRemainingRaw, setTimeRemainingRaw] =
-    useState<number>(initialRemainingMs);
+  const [timeRemainingRaw, setTimeRemainingRaw] = useState<number>(initialRemainingMs);
   const delay = useMemo(() => {
     if (!running) return null;
     switch (options.resolution) {
@@ -76,30 +63,25 @@ export function useTimer(
   }, delay);
 
   const start = () => {
+    setEndTime(DateTime.now().plus(timeRemainingRaw));
     setRunning(true);
   };
   const pause = () => {
     setRunning(false);
   };
-  const restart = useCallback(
-    (newTimeRemaining: number, autoStart: boolean = true) => {
-      setRunning(false);
-      const newEndTime = DateTime.now().plus(newTimeRemaining);
-      setEndTime(newEndTime);
-      setTimeout(() => {
-        setTimeRemainingRaw(newTimeRemaining);
-      }, 10);
-      setOptions((options) => ({ ...options, autoStart: autoStart }));
+  const restart = useCallback((newTimeRemaining: number, autoStart: boolean = true) => {
+    setRunning(false);
+    const newEndTime = DateTime.now().plus(newTimeRemaining);
+    setEndTime(newEndTime);
+    setTimeout(() => {
+      setTimeRemainingRaw(newTimeRemaining);
+    }, 10);
+    setOptions((options) => ({ ...options, autoStart: autoStart }));
 
-      if (autoStart) setRunning(true);
-    },
-    []
-  );
+    if (autoStart) setRunning(true);
+  }, []);
   const timeRemaining = useMemo(
-    () =>
-      Duration.fromMillis(timeRemainingRaw)
-        .shiftTo("hours", "minutes", "seconds", "milliseconds")
-        .toObject(),
+    () => Duration.fromMillis(timeRemainingRaw).shiftTo("hours", "minutes", "seconds", "milliseconds").toObject(),
     [timeRemainingRaw]
   );
   return {

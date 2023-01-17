@@ -60,5 +60,6 @@ export default function useAnalysisBoard(startFen: string) {
     stepBackward,
     stepForward,
     variations: variationTree.treeArray,
+    wasm: evaler.wasmSupported,
   };
 }
