@@ -9,9 +9,14 @@ export interface LobbyOptions {
 export interface Game {
   id: string;
   data: Chess.Game; //Raw game data of the game
-  lastMoveTimeISO: string | null; //Rime of the last recieved move as an ISO string
-  timeRemainingMs: Record<Chess.Color, number>; //Clock time remaining for each color
+  clock: Clock; //Clock time remaining for each color
   players: Record<Chess.Color, string>; //Player ids of each color
+}
+
+export interface Clock {
+  incrementMs: number; //Current increment per move in ms
+  lastMoveTimeISO: string | null; //Time of the last recieved move as an ISO string
+  timeRemainingMs: Record<Chess.Color, number>; //Clock time remaining for each color
 }
 
 export interface Player {
@@ -46,7 +51,11 @@ interface ChatMessage {
     id: string;
   };
 }
-type WithTimeoutAck<isServer extends boolean, isSender extends boolean, args extends any[]> = isSender extends true
+type WithTimeoutAck<
+  isServer extends boolean,
+  isSender extends boolean,
+  args extends any[]
+> = isSender extends true
   ? isServer extends true
     ? [Error, [...args]]
     : [Error, ...args]
@@ -70,29 +79,60 @@ export interface LobbyInterServerEvents {
   ping: () => void;
 }
 
-export interface LobbyServerToClientEvents<isServer extends boolean = false, isSender extends boolean = false> {
+export interface LobbyServerToClientEvents<
+  isServer extends boolean = false,
+  isSender extends boolean = false
+> {
   "lobby:chat": (chat: ChatMessage[]) => void;
   "lobby:update": (updates: Partial<Lobby>) => void;
-  "game:move": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
-  "game:outcome": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
+  "game:move": (game: Game) => void;
+  "game:outcome": (game: Game) => void;
   "game:new": (game: Game) => void;
-  "test:requestAck": (arg: string, ack: (...args: WithTimeoutAck<isServer, isSender, [string]>) => void) => void;
+  "test:requestAck": (
+    arg: string,
+    ack: (...args: WithTimeoutAck<isServer, isSender, [string]>) => void
+  ) => void;
+  "game:request-move": (
+    timeoutSeconds: number,
+    ack: (...args: WithTimeoutAck<isServer, isSender, [Chess.Move]>) => void
+  ) => void;
 }
 
-export interface LobbyClientToServerEvents<isServer extends boolean = false, isSender extends boolean = false> {
+export interface LobbyClientToServerEvents<
+  isServer extends boolean = false,
+  isSender extends boolean = false
+> {
   authenticate: (ack: (authenticated: boolean) => void) => void; //Called after connect to link client to correct user on server side
 
-  "lobby:create": (options: LobbyOptions, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:create": (
+    options: LobbyOptions,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:connect": (lobbyid: string, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:connect": (
+    lobbyid: string,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:refresh": (lobbyid: string, ack: (response: SocketResponse<Lobby>) => void) => void;
+  "lobby:refresh": (
+    lobbyid: string,
+    ack: (response: SocketResponse<Lobby>) => void
+  ) => void;
 
-  "lobby:disconnect": (lobbyid: string, ack: (response: SocketResponse<string>) => void) => void;
+  "lobby:disconnect": (
+    lobbyid: string,
+    ack: (response: SocketResponse<string>) => void
+  ) => void;
 
-  "lobby:chat": (message: string, ack: (response: SocketResponse<ChatMessage[]>) => void) => void;
+  "lobby:chat": (
+    message: string,
+    ack: (response: SocketResponse<ChatMessage[]>) => void
+  ) => void;
 
-  "game:move": (move: Chess.Move, ack: (response: SocketResponse<Game>) => void) => void;
+  "game:move": (
+    args: { move: Chess.Move; lobbyid: string },
+    ack: (response: SocketResponse<Game>) => void
+  ) => void;
 
   "test:timeout": () => void;
 }

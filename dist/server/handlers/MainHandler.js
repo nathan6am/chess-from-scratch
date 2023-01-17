@@ -90,7 +90,7 @@ function default_1(io, socket, redisClient) {
                         players: [],
                         options: __assign({ rated: false, gameConfig: {
                                 startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                                timeControls: [{ timeSeconds: 300, incrementSeconds: 3 }],
+                                timeControls: [{ timeSeconds: 300, incrementSeconds: 5 }],
                             }, color: "random" }, options),
                         chat: [],
                     };

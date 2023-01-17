@@ -64,7 +64,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
 var express_session_1 = __importDefault(require("express-session"));
-//Load environment variables before starting the custom server
 var env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
 var http = __importStar(require("http"));
@@ -87,22 +86,18 @@ var dev = process.env.NODE_ENV !== "production";
 var nextApp = (0, next_1.default)({ dev: dev, hostname: hostname, port: port });
 var nextHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var app, server, sessionMiddleware, wrap, io, lobbyNsp, onConnection;
+    var app, server, sessionMiddleware, wrap, io, lobbyNsp;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 app = (0, express_1.default)();
                 server = http.createServer(app);
-                //Create session client
                 return [4 /*yield*/, sessionClient.connect()];
             case 1:
-                //Create session client
                 _a.sent();
                 console.log("Connected to session client");
-                //Create primary client
                 return [4 /*yield*/, redisClient.connect()];
             case 2:
-                //Create primary client
                 _a.sent();
                 console.log("Connected to redis client");
                 sessionMiddleware = (0, express_session_1.default)({
@@ -112,11 +107,12 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                     saveUninitialized: true,
                     cookie: {
                         httpOnly: true,
-                        secure: false,
+                        secure: dev ? false : "auto",
+                        sameSite: dev ? "lax" : "strict",
                         maxAge: 1000 * 60 * 60 * 24 * 365,
                     },
                 });
-                //Cross origin isolate for workers
+                //Cross origin isolate for shared-array-buffer
                 app.use(function (req, res, next) {
                     res.header("Cross-Origin-Embedder-Policy", "require-corp");
                     res.header("Cross-Origin-Opener-Policy", "same-origin");
@@ -135,8 +131,7 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                 app.use(passport_1.default.authenticate("session"));
                 app.use("/", auth_1.default);
                 wrap = function (middleware) { return function (socket, next) { return middleware(socket.request, {}, next); }; };
-                io = new socketio.Server();
-                io.attach(server);
+                io = new socketio.Server(server);
                 io.use(function (socket, next) {
                     sessionMiddleware(socket.request, {}, next);
                 });
@@ -153,6 +148,9 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                     next();
                 });
                 lobbyNsp = io.of("/lobby");
+                lobbyNsp.use(function (socket, next) {
+                    sessionMiddleware(socket.request, {}, next);
+                });
                 lobbyNsp.use(wrap(passport_1.default.initialize()));
                 lobbyNsp.use(wrap(passport_1.default.session()));
                 lobbyNsp.use(function (socket, next) {
@@ -165,11 +163,8 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                     }
                     next();
                 });
-                onConnection = function (socket) {
-                    (0, MainHandler_1.default)(io, socket, redisClient);
-                };
                 lobbyNsp.on("connection", function (socket) {
-                    console.log("Client ".concat(socket.data.userid, " connected"));
+                    console.log("Client ".concat(socket.data.userid, " connected to lobby nsp"));
                     (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
                     socket.on("disconnect", function () {
                         console.log("client disconnected from lobby nsp");
@@ -177,7 +172,7 @@ nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, fu
                 });
                 io.on("connection", function (socket) {
                     console.log("Connected to primary nsp");
-                    onConnection(socket);
+                    (0, MainHandler_1.default)(io, socket, redisClient);
                     socket.on("disconnect", function () {
                         console.log("client disconnected");
                     });

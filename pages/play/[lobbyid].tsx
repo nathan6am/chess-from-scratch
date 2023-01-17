@@ -1,21 +1,21 @@
 import React from "react";
 import { NextPage, NextPageContext } from "next";
-import useChessOnline from "@/hooks/useChessOnline";
+import GameOnline from "@/components/GameOnline";
+import NonSSRWrapper from "@/components/NonSSRWrapper";
 interface Props {
   lobbyid: string;
 }
 
 const Lobby: NextPage<Props> = ({ lobbyid }) => {
-  const { connected, test, acknowledge } = useChessOnline(lobbyid);
   return (
-    <div className="flex flex-col p-4">
-      <div>{connected ? "connected" : "false"}</div>
-      <button className="p-4 m-4 bg-red" onClick={test}>
-        Test Timeout
-      </button>
-      <button className="p-4 m-4 bg-red" onClick={acknowledge}>
-        TAcknowledge
-      </button>
+    <div className="h-screen w-screen justify-center items-center flex bg-[#181818]">
+      <main className="flex container justify-center items-center w-full h-full">
+        <div className="md:h-full w-full w-full flex justify-center items-center  ">
+          <NonSSRWrapper>
+            <GameOnline lobbyid={lobbyid} />
+          </NonSSRWrapper>
+        </div>
+      </main>
     </div>
   );
 };

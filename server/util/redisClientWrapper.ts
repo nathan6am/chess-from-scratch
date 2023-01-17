@@ -144,8 +144,11 @@ export class Redis implements Redis {
       id: uuidv4(),
       data: gameData,
       players,
-      timeRemainingMs,
-      lastMoveTimeISO: null,
+      clock: {
+        timeRemainingMs,
+        lastMoveTimeISO: null,
+        incrementMs: control.incrementSeconds * 1000,
+      },
     };
 
     const gameJSON = indexed(game);

@@ -1,4 +1,38 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,12 +69,27 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var redisClientWrapper_1 = require("../util/redisClientWrapper");
+var Chess = __importStar(require("../../util/chess"));
+var clockFunctions_1 = require("../util/clockFunctions");
 function LobbyHandler(io, nsp, socket, redisClient) {
     var _this = this;
     var cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     socket.on("disconnect", function () {
+        //Find the active game if applicable and set a timeout for reconnection
+        //or, abort the game if it has not yet started
         console.log("Client ".concat(socket.data.userid, " has disconnected"));
     });
     socket.on("test:timeout", function () { return __awaiter(_this, void 0, void 0, function () {
@@ -57,6 +106,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             return [2 /*return*/];
         });
     }); });
+    /*
+     *  Connects a player to a lobby, and starts the game if both players are
+     *  connected
+     * */
     socket.on("lobby:connect", function (lobbyid, ack) { return __awaiter(_this, void 0, void 0, function () {
         var userid, lobby, player, lobby_1, game, err_1;
         return __generator(this, function (_a) {
@@ -82,13 +135,12 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 case 2:
                     lobby_1 = _a.sent();
                     socket.join(lobbyid);
-                    //Start the game if both players are connected
+                    //Return the lobby to the client and start the game if both players are connected and
                     ack({ status: true, data: lobby_1, error: null });
                     if (!(lobby_1.players.length === 2 && lobby_1.currentGame === null)) return [3 /*break*/, 4];
                     return [4 /*yield*/, cache.newGame(lobbyid)];
                 case 3:
                     game = _a.sent();
-                    console.log(game);
                     nsp.to(lobbyid).emit("game:new", game);
                     _a.label = 4;
                 case 4: return [2 /*return*/];
@@ -97,7 +149,8 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     return [3 /*break*/, 7];
                 case 6:
                     err_1 = _a.sent();
-                    console.log(err_1);
+                    //Log any errors and pass them in the response to the client
+                    console.error(err_1);
                     if (err_1 instanceof Error) {
                         ack({ status: false, error: err_1 });
                     }
@@ -109,5 +162,99 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             }
         });
     }); });
+    var socketInstanceById = function (socketId) { return __awaiter(_this, void 0, void 0, function () {
+        var sockets, sockets_1, sockets_1_1, socket_1;
+        var e_1, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0: return [4 /*yield*/, io.in(socketId).fetchSockets()];
+                case 1:
+                    sockets = _b.sent();
+                    try {
+                        for (sockets_1 = __values(sockets), sockets_1_1 = sockets_1.next(); !sockets_1_1.done; sockets_1_1 = sockets_1.next()) {
+                            socket_1 = sockets_1_1.value;
+                            if (socket_1.id === socketId)
+                                return [2 /*return*/, socket_1];
+                        }
+                    }
+                    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                    finally {
+                        try {
+                            if (sockets_1_1 && !sockets_1_1.done && (_a = sockets_1.return)) _a.call(sockets_1);
+                        }
+                        finally { if (e_1) throw e_1.error; }
+                    }
+                    return [2 /*return*/];
+            }
+        });
+    }); };
+    function startGame(lobbyid) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function () {
+            var lobby, game, playerW, playerWhiteSocketId;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, cache.getLobbyById(lobbyid)];
+                    case 1:
+                        lobby = _b.sent();
+                        if (!lobby)
+                            throw new Error("Lobby does not exist");
+                        return [4 /*yield*/, cache.newGame(lobbyid)];
+                    case 2:
+                        game = _b.sent();
+                        if (!game)
+                            throw new Error("Unable to start game");
+                        playerW = game.players.w;
+                        playerWhiteSocketId = (_a = lobby.players.find(function (player) { return player.id === playerW; })) === null || _a === void 0 ? void 0 : _a.primaryClientSocketId;
+                        if (!playerWhiteSocketId)
+                            throw new Error("Conection mismatch");
+                        nsp
+                            .to(playerWhiteSocketId)
+                            .timeout(30000)
+                            .emit("game:request-move", 30000, function (err, response) {
+                            if (err) {
+                                console.error(err);
+                            }
+                            else {
+                                console.log(response[0]);
+                                nsp.to(lobbyid).emit;
+                            }
+                        });
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    socket.on("game:move", function (_a, ack) {
+        var move = _a.move, lobbyid = _a.lobbyid;
+        return __awaiter(_this, void 0, void 0, function () {
+            var moveRecievedISO, lobby, game, updatedGameData, updatedClock, updated;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        moveRecievedISO = (0, clockFunctions_1.currentISO)();
+                        return [4 /*yield*/, cache.getLobbyById(lobbyid)];
+                    case 1:
+                        lobby = _b.sent();
+                        if (!lobby)
+                            throw new Error("Lobby does not exist");
+                        game = lobby.currentGame;
+                        if (game === null)
+                            throw new Error("no active game");
+                        if (!lobby.reservedConnections.some(function (id) { return id === socket.data.userid; }))
+                            throw new Error("Player is not in lobby");
+                        updatedGameData = Chess.move(game.data, move);
+                        updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
+                        return [4 /*yield*/, cache.updateGame(lobbyid, __assign(__assign({}, game), { data: updatedGameData, clock: updatedClock }))];
+                    case 2:
+                        updated = _b.sent();
+                        //Return the updated game data to the client and emit to the opponent
+                        ack({ status: true, data: updated, error: null });
+                        socket.to(lobbyid).emit("game:move", updated);
+                        return [2 /*return*/];
+                }
+            });
+        });
+    });
 }
 exports.default = LobbyHandler;

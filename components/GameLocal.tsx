@@ -43,17 +43,6 @@ export default function GameLocal() {
           onMove={onMove}
           onPremove={() => {}}
         />
-        <MoveHistory
-          controls={{
-            onStepForward: stepForward,
-            onStepBackward: stepBackward,
-          }}
-          moveHistory={currentGame.moveHistory}
-          usePieceIcons={true}
-          onFlipBoard={() => {
-            setOrientation((cur) => (cur === "w" ? "b" : "w"));
-          }}
-        />
       </div>
     </div>
   );

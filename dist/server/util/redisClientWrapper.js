@@ -256,8 +256,11 @@ var Redis = /** @class */ (function () {
                             id: (0, uuid_1.v4)(),
                             data: gameData,
                             players: players,
-                            timeRemainingMs: timeRemainingMs,
-                            lastMoveTimeISO: null,
+                            clock: {
+                                timeRemainingMs: timeRemainingMs,
+                                lastMoveTimeISO: null,
+                                incrementMs: control.incrementSeconds * 1000,
+                            },
                         };
                         gameJSON = indexed(game);
                         return [4 /*yield*/, this.client.json.set("lobby:".concat(lobbyid), ".currentGame", gameJSON)];

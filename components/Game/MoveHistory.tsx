@@ -14,8 +14,9 @@ enum PieceChars {
   wr = "♜",
   wp = "♟",
 }
-
+import { DurationObjectUnits } from "luxon";
 interface Props {
+  orientation: Chess.Color;
   moveHistory: Chess.MoveHistory;
   usePieceIcons: boolean;
   onFlipBoard: any;
@@ -23,6 +24,7 @@ interface Props {
     onStepForward: () => void;
     onStepBackward: () => void;
   };
+  timeRemaining: Record<Chess.Color, DurationObjectUnits>;
 }
 
 import {
@@ -45,14 +47,29 @@ const AlwaysScrollToBottom = () => {
   });
   return <div ref={elementRef} />;
 };
-export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard, controls }: Props) {
+export default function MoveHistory({
+  moveHistory,
+  orientation,
+  usePieceIcons,
+  onFlipBoard,
+  controls,
+  timeRemaining,
+}: Props) {
   return (
     <div className="h-full w-[500px] flex flex-col justify-center mx-4">
-      <div className="h-[85%] w-full  flex flex-col">
-        <div className="py-4 bg-black rounded text-3xl px-10 w-fit mb-10">3:00</div>
+      <div className="h-full w-full  flex flex-col">
+        <div className="mb-10">
+          <CountdownClock
+            timeRemaining={timeRemaining[orientation === "w" ? "b" : "w"]}
+            color={orientation === "w" ? "b" : "w"}
+          />
+        </div>
         <div className="bg-[#1f1f1f] flex flex-col h-full">
           <div className="flex flex-row justify-around px-4">
-            <button className="p-4 text-white/[0.7] hover:text-white  grow w-full" onClick={onFlipBoard}>
+            <button
+              className="p-4 text-white/[0.7] hover:text-white  grow w-full"
+              onClick={onFlipBoard}
+            >
               <FiRepeat className="text-3xl mx-auto" />
             </button>
             <button className="p-4 text-white/[0.7] hover:text-red-500 grow w-full">
@@ -71,9 +88,17 @@ export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard, c
                     return (
                       <tr key={idx} className="border-b border-white/[0.1]">
                         <td className="p-2 px-4 w-20">{`${idx + 1}.`}</td>
-                        <td className="p-2">{usePieceIcons ? parsePGN(fullMove[0].PGN, "w") : fullMove[0].PGN}</td>
                         <td className="p-2">
-                          {fullMove[1]?.PGN ? (usePieceIcons ? parsePGN(fullMove[1].PGN, "b") : fullMove[1].PGN) : "-"}
+                          {usePieceIcons
+                            ? parsePGN(fullMove[0].PGN, "w")
+                            : fullMove[0].PGN}
+                        </td>
+                        <td className="p-2">
+                          {fullMove[1]?.PGN
+                            ? usePieceIcons
+                              ? parsePGN(fullMove[1].PGN, "b")
+                              : fullMove[1].PGN
+                            : "-"}
                         </td>
                       </tr>
                     );
@@ -104,7 +129,12 @@ export default function MoveHistory({ moveHistory, usePieceIcons, onFlipBoard, c
             </button>
           </div>
         </div>
-        <h3 className="py-4 bg-[#919191] text-black/[0.7] text-3xl px-10 w-fit mt-10 rounded">3:00</h3>
+        <div className="mt-10">
+          <CountdownClock
+            timeRemaining={timeRemaining[orientation]}
+            color={orientation}
+          />
+        </div>
       </div>
     </div>
   );
@@ -120,4 +150,27 @@ function parsePGN(pgn: string, color: Chess.Color): string {
   } else {
     return pgn;
   }
+}
+
+interface ClockProps {
+  color: Chess.Color;
+  timeRemaining: DurationObjectUnits;
+}
+const zeroPad = (num: number, places: number) =>
+  String(num).padStart(places, "0");
+
+function CountdownClock({ color, timeRemaining }: ClockProps) {
+  return (
+    <h3
+      className={`py-4 rounded text-3xl px-10 w-fit ${
+        color === "w" ? "bg-[#919191] text-black/[0.7]" : "bg-black text-white"
+      }`}
+    >
+      {`${timeRemaining.hours || 0 > 0 ? timeRemaining.hours + ":" : ""}${
+        timeRemaining.hours || 0 > 0
+          ? zeroPad(timeRemaining.minutes || 0, 2)
+          : timeRemaining.minutes
+      }:${zeroPad(timeRemaining.seconds || 0, 2)}`}
+    </h3>
+  );
 }
