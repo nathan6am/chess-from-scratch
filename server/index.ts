@@ -84,9 +84,6 @@ nextApp.prepare().then(async () => {
     res.header("Cross-Origin-Resource-Policy", "cross-origin");
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "*");
-    res.header("Pragma", "no-cache");
-    res.header("Cache-Control", "no-store, must-revalidate");
-    res.header("Expires", "0");
     next();
   });
   app.use(cors({ origin: process.env.BASE_URL }));

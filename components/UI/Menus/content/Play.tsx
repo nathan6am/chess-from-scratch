@@ -1,19 +1,23 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { SocketContext } from "@/context/socket";
+import { useRouter } from "next/router";
 import Button from "../../Button";
 export default function Play() {
+  const router = useRouter();
   const socket = useContext(SocketContext);
   const createLobby = useCallback(() => {
     socket.emit("lobby:create", { color: "random" }, (lobby: any) => {
-      console.log(lobby);
+      if (lobby) {
+        router.push(`/play/${lobby.id}`);
+      }
     });
-  }, [socket]);
+  }, [socket, router]);
   const [joinInput, setJoinInput] = useState("");
 
   return (
     <div className="flex flex-col items-center">
       <div className="max-w-[800px] w-full p-10 grid md:grid-cols-2 gap-4">
-        <Button>
+        <Button onClick={createLobby}>
           <p>Play with a Friend</p>
         </Button>
         <Button>
