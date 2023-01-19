@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 enum PieceChars {
   bq = "♕",
   bk = "♔",
@@ -16,13 +16,17 @@ enum PieceChars {
 }
 import { DurationObjectUnits } from "luxon";
 interface Props {
+  currentOffset: number;
   orientation: Chess.Color;
   moveHistory: Chess.MoveHistory;
   usePieceIcons: boolean;
   onFlipBoard: any;
   controls: {
-    onStepForward: () => void;
-    onStepBackward: () => void;
+    stepForward: () => void;
+    stepBackward: () => void;
+    jumpForward: () => void;
+    jumpBackward: () => void;
+    jumpToOffset: (offset: number) => void;
   };
   timeRemaining: Record<Chess.Color, DurationObjectUnits>;
 }
@@ -54,6 +58,7 @@ export default function MoveHistory({
   onFlipBoard,
   controls,
   timeRemaining,
+  currentOffset,
 }: Props) {
   return (
     <div className="h-full w-[500px] flex flex-col justify-center mx-4">
@@ -66,10 +71,7 @@ export default function MoveHistory({
         </div>
         <div className="bg-[#1f1f1f] flex flex-col h-full">
           <div className="flex flex-row justify-around px-4">
-            <button
-              className="p-4 text-white/[0.7] hover:text-white  grow w-full"
-              onClick={onFlipBoard}
-            >
+            <button className="p-4 text-white/[0.7] hover:text-white  grow w-full" onClick={onFlipBoard}>
               <FiRepeat className="text-3xl mx-auto" />
             </button>
             <button className="p-4 text-white/[0.7] hover:text-red-500 grow w-full">
@@ -85,20 +87,25 @@ export default function MoveHistory({
               <table className="table-fixed w-full ">
                 <tbody>
                   {moveHistory.map((fullMove, idx) => {
+                    const offset = (moveHistory.length - idx) * 2;
                     return (
                       <tr key={idx} className="border-b border-white/[0.1]">
                         <td className="p-2 px-4 w-20">{`${idx + 1}.`}</td>
-                        <td className="p-2">
-                          {usePieceIcons
-                            ? parsePGN(fullMove[0].PGN, "w")
-                            : fullMove[0].PGN}
+                        <td
+                          onClick={() => {
+                            controls.jumpToOffset(offset - 1);
+                          }}
+                          className={`p-2 ${currentOffset === offset - 1 ? "bg-white/[0.1]" : ""}`}
+                        >
+                          {usePieceIcons ? parsePGN(fullMove[0].PGN, "w") : fullMove[0].PGN}
                         </td>
-                        <td className="p-2">
-                          {fullMove[1]?.PGN
-                            ? usePieceIcons
-                              ? parsePGN(fullMove[1].PGN, "b")
-                              : fullMove[1].PGN
-                            : "-"}
+                        <td
+                          onClick={() => {
+                            controls.jumpToOffset(offset - 2);
+                          }}
+                          className={`p-2 ${currentOffset === offset - 2 ? "bg-white/[0.1]" : ""}`}
+                        >
+                          {fullMove[1]?.PGN ? (usePieceIcons ? parsePGN(fullMove[1].PGN, "b") : fullMove[1].PGN) : "-"}
                         </td>
                       </tr>
                     );
@@ -109,31 +116,34 @@ export default function MoveHistory({
             </div>
           </div>
           <div className="flex flex-row justify-around bg-[#121212] shadow-lg">
-            <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+            <button
+              onClick={controls.jumpBackward}
+              className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+            >
               <AiOutlineFastBackward className="text-2xl mx-auto" />
             </button>
             <button
-              onClick={controls.onStepBackward}
+              onClick={controls.stepBackward}
               className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
             >
               <AiOutlineStepBackward className="text-xl mx-auto" />
             </button>
             <button
-              onClick={controls.onStepForward}
+              onClick={controls.stepForward}
               className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
             >
               <AiOutlineStepForward className="text-xl mx-auto" />
             </button>
-            <button className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+            <button
+              onClick={controls.jumpForward}
+              className="p-4 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+            >
               <AiOutlineFastForward className="text-2xl mx-auto" />
             </button>
           </div>
         </div>
         <div className="mt-10">
-          <CountdownClock
-            timeRemaining={timeRemaining[orientation]}
-            color={orientation}
-          />
+          <CountdownClock timeRemaining={timeRemaining[orientation]} color={orientation} />
         </div>
       </div>
     </div>
@@ -156,8 +166,7 @@ interface ClockProps {
   color: Chess.Color;
   timeRemaining: DurationObjectUnits;
 }
-const zeroPad = (num: number, places: number) =>
-  String(num).padStart(places, "0");
+const zeroPad = (num: number, places: number) => String(num).padStart(places, "0");
 
 function CountdownClock({ color, timeRemaining }: ClockProps) {
   return (
@@ -167,9 +176,7 @@ function CountdownClock({ color, timeRemaining }: ClockProps) {
       }`}
     >
       {`${timeRemaining.hours || 0 > 0 ? timeRemaining.hours + ":" : ""}${
-        timeRemaining.hours || 0 > 0
-          ? zeroPad(timeRemaining.minutes || 0, 2)
-          : timeRemaining.minutes
+        timeRemaining.hours || 0 > 0 ? zeroPad(timeRemaining.minutes || 0, 2) : timeRemaining.minutes
       }:${zeroPad(timeRemaining.seconds || 0, 2)}`}
     </h3>
   );

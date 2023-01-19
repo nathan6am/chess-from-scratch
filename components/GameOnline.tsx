@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import useChessLocal from "@/hooks/useChessLocal";
 import Board from "@/components/Game/Board";
 import EvalBar from "./Game/EvalBar";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import MoveHistory from "@/components/Game/MoveHistory";
 import useLocalEval from "@/hooks/useLocalEval";
@@ -13,11 +13,20 @@ interface Props {
 }
 
 export default function GameOnline({ lobbyid }: Props) {
-  const { game, gameActive, onMove, connected, playerColor, timeRemaining } =
-    useChessOnline(lobbyid);
-  const [orientation, setOrientation] = useState<Chess.Color>(
-    playerColor || "w"
-  );
+  const {
+    game,
+    gameActive,
+    onMove,
+    connected,
+    playerColor,
+    timeRemaining,
+    controls,
+    moveable,
+    currentBoard,
+    livePositionOffset,
+    lastMove,
+  } = useChessOnline(lobbyid);
+  const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
@@ -32,23 +41,21 @@ export default function GameOnline({ lobbyid }: Props) {
           legalMoves={currentGame.legalMoves}
           showHighlights={true}
           showTargets={true}
-          pieces={currentGame.board}
+          pieces={currentBoard || currentGame.board}
           animationSpeed="normal"
-          lastMove={currentGame.lastMove}
+          lastMove={lastMove}
           activeColor={currentGame.activeColor}
-          moveable={playerColor || "none"}
+          moveable={moveable ? playerColor || "none" : "none"}
           preMoveable={false}
           autoQueen={true}
           onMove={onMove}
           onPremove={() => {}}
         />
         <MoveHistory
+          currentOffset={livePositionOffset}
           orientation={orientation}
           timeRemaining={timeRemaining}
-          controls={{
-            onStepForward: () => {},
-            onStepBackward: () => {},
-          }}
+          controls={controls}
           moveHistory={currentGame.moveHistory}
           usePieceIcons={true}
           onFlipBoard={() => {

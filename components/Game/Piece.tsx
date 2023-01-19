@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import _ from "lodash";
 import Draggable from "react-draggable";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
 

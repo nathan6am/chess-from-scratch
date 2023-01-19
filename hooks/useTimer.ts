@@ -74,7 +74,7 @@ export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Op
     const newEndTime = DateTime.now().plus(newTimeRemaining);
     setEndTime(newEndTime);
     setTimeout(() => {
-      setTimeRemainingRaw(newTimeRemaining);
+      setTimeRemainingRaw(newTimeRemaining > 0 ? newTimeRemaining : 0);
     }, 10);
     setOptions((options) => ({ ...options, autoStart: autoStart }));
 

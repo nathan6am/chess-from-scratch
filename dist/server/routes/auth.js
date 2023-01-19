@@ -26,47 +26,47 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var passport_1 = __importDefault(require("passport"));
-var passportFacebook = __importStar(require("passport-facebook"));
-var express_1 = __importDefault(require("express"));
-var passport_custom_1 = __importDefault(require("passport-custom"));
-var uuid_1 = require("uuid");
-var nanoid_1 = require("nanoid");
-var nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
-var facebookClientID = process.env.FACEBOOK_APP_ID || "";
-var facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
-var facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
+const passport_1 = __importDefault(require("passport"));
+const passportFacebook = __importStar(require("passport-facebook"));
+const express_1 = __importDefault(require("express"));
+const passport_custom_1 = __importDefault(require("passport-custom"));
+const uuid_1 = require("uuid");
+const nanoid_1 = require("nanoid");
+const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
+const facebookClientID = process.env.FACEBOOK_APP_ID || "";
+const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
+const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
 passport_1.default.use(new passportFacebook.Strategy({
     clientID: facebookClientID,
     clientSecret: facebookClientSecret,
     callbackURL: facebookCallbackURL,
 }, function (accessToken, refreshToken, profile, done) {
-    var user = { id: profile.id, name: profile.displayName };
+    const user = { id: profile.id, name: profile.displayName };
     return done(null, user);
 }));
-passport_1.default.use("guest", new passport_custom_1.default.Strategy(function (_req, done) {
-    var uid = (0, uuid_1.v4)();
-    var user = {
+passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, done) => {
+    const uid = (0, uuid_1.v4)();
+    const user = {
         id: uid,
-        name: "Guest_".concat(nanoid()),
+        name: `Guest_${nanoid()}`,
     };
     console.log(user);
     return done(null, user);
 }));
-passport_1.default.serializeUser(function (user, done) {
+passport_1.default.serializeUser((user, done) => {
     done(null, JSON.stringify(user));
 });
-passport_1.default.deserializeUser(function (_req, id, done) {
-    var user = JSON.parse(id);
+passport_1.default.deserializeUser((_req, id, done) => {
+    const user = JSON.parse(id);
     done(null, user);
 });
-var router = express_1.default.Router();
+const router = express_1.default.Router();
 router.get("/auth/facebook", passport_1.default.authenticate("facebook"));
 router.get("/auth/facebook/callback", passport_1.default.authenticate("facebook", {
     successReturnToOrRedirect: "/",
     failureRedirect: "/failure",
 }));
-router.get("/auth/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), function (req, res) {
+router.get("/auth/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
     res.redirect("/");
 });
 router.get("/auth/user", function (req, res, next) {

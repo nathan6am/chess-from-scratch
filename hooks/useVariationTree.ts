@@ -1,6 +1,6 @@
 import useTreeData, { TreeNode } from "./useTreeData";
 import { useState, useMemo, useCallback } from "react";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
 
 export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {

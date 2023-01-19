@@ -1,6 +1,6 @@
 import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
 import useChessLocal from "./useChessLocal";
-import * as commands from "@/util/chess/UciCmds";
+import * as commands from "@/lib/chess/UciCmds";
 
 interface Options {
   multiPV: number;
@@ -77,12 +77,16 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
       setFinished(false);
       commands
         .getEvaluation(evaler, { fen, ...options }, cb)
-        .then((result) => {
+        .then((result: any) => {
           setEvaluation(result);
           setInProgress(false);
           setFinished(true);
         })
-        .catch((e) => setError(e));
+        .catch((e: unknown) => {
+          if (e instanceof Error) {
+            setError(e);
+          }
+        });
     }
   };
 

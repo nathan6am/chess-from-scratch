@@ -31,157 +31,123 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = __importDefault(require("express"));
-var express_session_1 = __importDefault(require("express-session"));
-var env_1 = require("@next/env");
+const express_1 = __importDefault(require("express"));
+const express_session_1 = __importDefault(require("express-session"));
+const env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
-var http = __importStar(require("http"));
-var next_1 = __importDefault(require("next"));
-var socketio = __importStar(require("socket.io"));
-var connect_redis_1 = __importDefault(require("connect-redis"));
-var RedisStore = (0, connect_redis_1.default)(express_session_1.default);
-var passport_1 = __importDefault(require("passport"));
-var auth_1 = __importDefault(require("./routes/auth"));
-var MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
-var redis_1 = require("redis");
-var redisClient = (0, redis_1.createClient)();
-var sessionClient = (0, redis_1.createClient)({ legacyMode: true });
-var cors_1 = __importDefault(require("cors"));
-var LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
-var hostname = process.env.HOSTNAME || "localhost";
-var port = parseInt(process.env.PORT || "3000", 10);
-console.log("Environment: ".concat(process.env.NODE_ENV));
-var dev = process.env.NODE_ENV !== "production";
-var nextApp = (0, next_1.default)({ dev: dev, hostname: hostname, port: port });
-var nextHandler = nextApp.getRequestHandler();
-nextApp.prepare().then(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var app, server, sessionMiddleware, wrap, io, lobbyNsp;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                app = (0, express_1.default)();
-                server = http.createServer(app);
-                return [4 /*yield*/, sessionClient.connect()];
-            case 1:
-                _a.sent();
-                console.log("Connected to session client");
-                return [4 /*yield*/, redisClient.connect()];
-            case 2:
-                _a.sent();
-                console.log("Connected to redis client");
-                sessionMiddleware = (0, express_session_1.default)({
-                    secret: process.env.SESSION_SECRET || "keyboard cat",
-                    store: new RedisStore({ client: sessionClient }),
-                    resave: false,
-                    saveUninitialized: true,
-                    cookie: {
-                        httpOnly: true,
-                        secure: dev ? false : "auto",
-                        sameSite: dev ? "lax" : "strict",
-                        maxAge: 1000 * 60 * 60 * 24 * 365,
-                    },
-                });
-                //Cross origin isolate for shared-array-buffer
-                app.use(function (req, res, next) {
-                    res.header("Cross-Origin-Embedder-Policy", "require-corp");
-                    res.header("Cross-Origin-Opener-Policy", "same-origin");
-                    res.header("Cross-Origin-Resource-Policy", "cross-origin");
-                    res.header("Access-Control-Allow-Origin", "*");
-                    res.header("Access-Control-Allow-Headers", "*");
-                    res.header("Pragma", "no-cache");
-                    res.header("Cache-Control", "no-store, must-revalidate");
-                    res.header("Expires", "0");
-                    next();
-                });
-                app.use((0, cors_1.default)());
-                app.use(sessionMiddleware);
-                app.use(passport_1.default.initialize());
-                app.use(passport_1.default.session());
-                app.use(passport_1.default.authenticate("session"));
-                app.use("/", auth_1.default);
-                wrap = function (middleware) { return function (socket, next) { return middleware(socket.request, {}, next); }; };
-                io = new socketio.Server(server);
-                io.use(function (socket, next) {
-                    sessionMiddleware(socket.request, {}, next);
-                });
-                io.use(wrap(passport_1.default.initialize()));
-                io.use(wrap(passport_1.default.session()));
-                io.use(function (socket, next) {
-                    var _a, _b;
-                    var passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
-                    if (passportUser) {
-                        var user = JSON.parse(passportUser);
-                        socket.data.user = user;
-                        socket.data.userid = user.id;
-                    }
-                    next();
-                });
-                lobbyNsp = io.of("/lobby");
-                lobbyNsp.use(function (socket, next) {
-                    sessionMiddleware(socket.request, {}, next);
-                });
-                lobbyNsp.use(wrap(passport_1.default.initialize()));
-                lobbyNsp.use(wrap(passport_1.default.session()));
-                lobbyNsp.use(function (socket, next) {
-                    var _a, _b;
-                    var passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
-                    if (passportUser) {
-                        var user = JSON.parse(passportUser);
-                        socket.data.user = user;
-                        socket.data.userid = user.id;
-                    }
-                    next();
-                });
-                lobbyNsp.on("connection", function (socket) {
-                    console.log("Client ".concat(socket.data.userid, " connected to lobby nsp"));
-                    (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
-                    socket.on("disconnect", function () {
-                        console.log("client disconnected from lobby nsp");
-                    });
-                });
-                io.on("connection", function (socket) {
-                    console.log("Connected to primary nsp");
-                    (0, MainHandler_1.default)(io, socket, redisClient);
-                    socket.on("disconnect", function () {
-                        console.log("client disconnected");
-                    });
-                });
-                app.all("*", function (req, res) { return nextHandler(req, res); });
-                server.listen(port, function () {
-                    console.log("> Ready on http://localhost:".concat(port));
-                });
-                return [2 /*return*/];
-        }
+const http = __importStar(require("http"));
+const next_1 = __importDefault(require("next"));
+const socketio = __importStar(require("socket.io"));
+const connect_redis_1 = __importDefault(require("connect-redis"));
+let RedisStore = (0, connect_redis_1.default)(express_session_1.default);
+const passport_1 = __importDefault(require("passport"));
+const auth_1 = __importDefault(require("./routes/auth"));
+const MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
+const redis_1 = require("redis");
+const redisClient = (0, redis_1.createClient)();
+const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
+const cors_1 = __importDefault(require("cors"));
+const LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
+const hostname = process.env.HOSTNAME || "localhost";
+const port = parseInt(process.env.PORT || "3000", 10);
+console.log(`Environment: ${process.env.NODE_ENV}`);
+const dev = process.env.NODE_ENV !== "production";
+const nextApp = (0, next_1.default)({ dev, hostname, port });
+const nextHandler = nextApp.getRequestHandler();
+nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
+    const app = (0, express_1.default)();
+    const server = http.createServer(app);
+    yield sessionClient.connect();
+    console.log("Connected to session client");
+    yield redisClient.connect();
+    console.log("Connected to redis client");
+    const sessionMiddleware = (0, express_session_1.default)({
+        secret: process.env.SESSION_SECRET || "keyboard cat",
+        store: new RedisStore({ client: sessionClient }),
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+            httpOnly: true,
+            secure: dev ? false : "auto",
+            sameSite: dev ? "lax" : "strict",
+            maxAge: 1000 * 60 * 60 * 24 * 365,
+        },
     });
-}); });
+    //Cross origin isolate for shared-array-buffer
+    //app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
+    app.use((req, res, next) => {
+        res.header("Cross-Origin-Embedder-Policy", "require-corp");
+        res.header("Cross-Origin-Opener-Policy", "same-origin");
+        res.header("Cross-Origin-Resource-Policy", "cross-origin");
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "*");
+        next();
+    });
+    app.use((0, cors_1.default)({ origin: process.env.BASE_URL }));
+    app.use(sessionMiddleware);
+    app.use(passport_1.default.initialize());
+    app.use(passport_1.default.session());
+    app.use(passport_1.default.authenticate("session"));
+    app.use("/", auth_1.default);
+    //Wrap middleware for socket.io
+    const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
+    const io = new socketio.Server(server, {
+        cors: {
+            origin: process.env.BASE_URL,
+            methods: ["GET", "POST"],
+        },
+    });
+    io.use((socket, next) => {
+        sessionMiddleware(socket.request, {}, next);
+    });
+    io.use(wrap(passport_1.default.initialize()));
+    io.use(wrap(passport_1.default.session()));
+    io.use((socket, next) => {
+        var _a, _b;
+        const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+        if (passportUser) {
+            const user = JSON.parse(passportUser);
+            socket.data.user = user;
+            socket.data.userid = user.id;
+        }
+        next();
+    });
+    const lobbyNsp = io.of("/lobby");
+    lobbyNsp.use((socket, next) => {
+        sessionMiddleware(socket.request, {}, next);
+    });
+    lobbyNsp.use(wrap(passport_1.default.initialize()));
+    lobbyNsp.use(wrap(passport_1.default.session()));
+    lobbyNsp.use((socket, next) => {
+        var _a, _b;
+        const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+        if (passportUser) {
+            const user = JSON.parse(passportUser);
+            socket.data.user = user;
+            socket.data.userid = user.id;
+        }
+        next();
+    });
+    lobbyNsp.on("connection", (socket) => {
+        console.log(`Client ${socket.data.userid} connected to lobby nsp`);
+        (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
+        socket.on("disconnect", () => {
+            console.log("client disconnected from lobby nsp");
+        });
+    });
+    io.on("connection", (socket) => {
+        console.log("Connected to primary nsp");
+        (0, MainHandler_1.default)(io, socket, redisClient);
+        socket.on("disconnect", () => {
+            console.log("client disconnected");
+        });
+    });
+    app.all("*", (req, res) => nextHandler(req, res));
+    server.listen(port, () => {
+        console.log(`> Ready on http://localhost:${port}`);
+    });
+}));

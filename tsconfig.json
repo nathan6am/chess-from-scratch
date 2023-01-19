@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "downlevelIteration": true,
+    "strictPropertyInitialization": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "lib": ["dom", "dom.iterable", "esnext", "es2015.collection", "es2015.iterable"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -20,6 +23,7 @@
       "@/components/*": ["components/*"],
       "@/context/*": ["context/*"],
       "@/util/*": ["util/*"],
+      "@/lib/*": ["lib/*"],
       "@/hooks/*": ["hooks/*"],
       "@/styles/*": ["styles/*"],
       "@/public/*": ["public/*"],

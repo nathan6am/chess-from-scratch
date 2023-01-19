@@ -1,5 +1,5 @@
 import useVariationTree from "./useVariationTree";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import { useCallback, useEffect, useMemo } from "react";
 import useLocalEval from "./useLocalEval";
 

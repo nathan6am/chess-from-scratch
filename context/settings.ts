@@ -1,5 +1,5 @@
 import React from "react";
-interface AppSettings {
+export interface AppSettings {
   gameBehavior: {
     movementType: "click" | "drag" | "both";
     autoQueen: boolean;

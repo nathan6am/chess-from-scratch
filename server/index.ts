@@ -77,7 +77,7 @@ nextApp.prepare().then(async () => {
   });
 
   //Cross origin isolate for shared-array-buffer
-  app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
+  //app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
   app.use((req, res, next) => {
     res.header("Cross-Origin-Embedder-Policy", "require-corp");
     res.header("Cross-Origin-Opener-Policy", "same-origin");

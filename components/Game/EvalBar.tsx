@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 interface Props {
   orientation: Chess.Color;
   scoreType: "cp" | "mate";
@@ -7,12 +7,7 @@ interface Props {
   scale: number;
 }
 import useThrottledValue from "@/hooks/useThrottledValue";
-export default function EvalBar({
-  orientation,
-  scoreType,
-  value,
-  scale,
-}: Props) {
+export default function EvalBar({ orientation, scoreType, value, scale }: Props) {
   //Throttle value for smoother animation/fewer jumps
   const throttledValue = useThrottledValue({ value, throttleMs: 300 });
 
@@ -58,9 +53,7 @@ export default function EvalBar({
         className={`h-full w-full bottom-0 left-0 absolute z-3 bg-white`}
         style={{
           transform:
-            orientation === "w"
-              ? `translate3d(0px, ${percentage}%, 0px)`
-              : `translate3d(0px, -${percentage}%, 0px)`,
+            orientation === "w" ? `translate3d(0px, ${percentage}%, 0px)` : `translate3d(0px, -${percentage}%, 0px)`,
           transition: `transform 1s ease-in`,
         }}
       ></div>

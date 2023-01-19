@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import useChessLocal from "@/hooks/useChessLocal";
 import Board from "@/components/Game/Board";
 import EvalBar from "./Game/EvalBar";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import useStockfish from "@/hooks/useStockfish";
 import MoveHistory from "@/components/Game/MoveHistory";
-import { positionToBoard } from "@/util/chess";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 export default function GameLocal() {

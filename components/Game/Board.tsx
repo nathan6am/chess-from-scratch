@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect } from "react";
 import { SettingsContext } from "@/context/settings";
 import styles from "@/styles/Board.module.scss";
-import * as Chess from "@/util/chess";
+import * as Chess from "@/lib/chess";
 import { AnimSpeedEnum } from "@/context/settings";
 import usePointerCoordinates from "@/hooks/usePointerCoordinates";
 import { useResizeDetector } from "react-resize-detector";

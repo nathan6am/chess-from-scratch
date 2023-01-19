@@ -1,22 +1,11 @@
 import { nanoid } from "nanoid";
 import { RedisClient } from "../index";
 import { wrapClient } from "../util/redisClientWrapper";
-import {
-  Lobby,
-  Game,
-  Player,
-  LobbySocket as Socket,
-  LobbyServer,
-} from "../types/lobby";
+import { Lobby, Game, Player, LobbySocket as Socket, LobbyServer } from "../types/lobby";
 import { Server } from "../types/socket";
-import * as Chess from "../../util/chess";
+import * as Chess from "../../lib/chess";
 import { currentISO, switchClock } from "../util/clockFunctions";
-export default function LobbyHandler(
-  io: Server,
-  nsp: LobbyServer,
-  socket: Socket,
-  redisClient: RedisClient
-): void {
+export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
 
   socket.on("disconnect", () => {
@@ -95,9 +84,7 @@ export default function LobbyHandler(
     if (!game) throw new Error("Unable to start game");
 
     const playerW = game.players.w;
-    const playerWhiteSocketId = lobby.players.find(
-      (player) => player.id === playerW
-    )?.primaryClientSocketId;
+    const playerWhiteSocketId = lobby.players.find((player) => player.id === playerW)?.primaryClientSocketId;
     if (!playerWhiteSocketId) throw new Error("Conection mismatch");
     nsp
       .to(playerWhiteSocketId)
@@ -118,18 +105,13 @@ export default function LobbyHandler(
     if (!lobby) throw new Error("Lobby does not exist");
     const game = lobby.currentGame;
     if (game === null) throw new Error("no active game");
-    if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
-      throw new Error("Player is not in lobby");
+    if (!lobby.reservedConnections.some((id) => id === socket.data.userid)) throw new Error("Player is not in lobby");
 
     //Execute the move
     const updatedGameData = Chess.move(game.data, move);
 
     //Update the clock state and apply increment
-    const updatedClock = switchClock(
-      game.clock,
-      moveRecievedISO,
-      game.data.activeColor
-    );
+    const updatedClock = switchClock(game.clock, moveRecievedISO, game.data.activeColor);
     const updated = await cache.updateGame(lobbyid, {
       ...game,
       data: updatedGameData,
