@@ -12,9 +12,10 @@ import {
   OneToOne,
 } from "typeorm";
 
+import type { Relation } from "typeorm";
+
 import type { Outcome, Game as GameData, Color } from "@/lib/chess";
 import type { AppSettings } from "@/context/settings";
-import { join } from "path";
 
 @Entity()
 export class User {
@@ -24,7 +25,7 @@ export class User {
   @Column()
   name: string;
 
-  @PrimaryColumn({ unique: true })
+  @Column({ unique: true })
   username: string;
 
   @Column({ nullable: true, unique: true })
@@ -37,16 +38,35 @@ export class User {
   country: string;
 
   @OneToMany(() => Notification, (notifcation) => notifcation.user)
-  notifications: Notification[];
+  notifications: Relation<Notification[]>;
 
   @OneToMany(() => User_Game, (userGame) => userGame.user)
-  games: User_Game[];
+  games: Relation<User_Game[]>;
 
   @OneToMany(() => Analysis, (analysis) => analysis.creator)
-  savedAnalyses: Analysis[];
+  savedAnalyses: Relation<Analysis[]>;
 
-  @Column({ nullable: true })
+  @Column({ type: "jsonb", nullable: true })
   settings: AppSettings | null;
+}
+
+@Entity()
+export class User_Game {
+  @PrimaryColumn()
+  user_id: string;
+
+  @PrimaryColumn()
+  game_id: string;
+  @ManyToOne(() => User, (user) => user.games)
+  @JoinColumn({ name: "user_id" })
+  user: Relation<User>;
+
+  @ManyToOne(() => Game, (game) => game.players)
+  @JoinColumn({ name: "game_id" })
+  game: Relation<Game>;
+
+  @Column()
+  color: Color;
 }
 
 @Entity()
@@ -67,21 +87,7 @@ export class Game {
   data: GameData;
 
   @OneToMany(() => User_Game, (userGame) => userGame.game)
-  players: User_Game;
-}
-
-@Entity()
-export class User_Game {
-  @ManyToOne(() => User, (user) => user.games)
-  @JoinColumn({ name: "user_id" })
-  user: User;
-
-  @ManyToOne(() => Game, (game) => game.players)
-  @JoinColumn({ name: "game_id" })
-  game: Game;
-
-  @Column()
-  color: Color;
+  players: Relation<User_Game>;
 }
 
 export enum NotificationType {
@@ -118,7 +124,7 @@ export class Notification {
   message: string;
 
   @ManyToOne(() => User, (user) => user.notifications)
-  user: User;
+  user: Relation<User>;
 }
 
 @Entity()
@@ -131,5 +137,31 @@ export class Analysis {
 
   @ManyToOne(() => User, (user) => user.savedAnalyses)
   @JoinColumn({ name: "creator_id" })
-  creator: User;
+  creator: Relation<User>;
+}
+
+@Entity()
+export class Puzzle {
+  @PrimaryColumn()
+  id: string;
+  @Column()
+  fen: string;
+  @Column("text", { array: true })
+  moves: string[];
+  @Column()
+  rating: number;
+  @Column()
+  ratingDeviation: number;
+  @Column()
+  popularity: number;
+  @Column()
+  nbPlays: number;
+  @Column("text", { array: true })
+  themes: string[];
+  @Column()
+  gameUrl: string;
+  @Column({ nullable: true })
+  openingFamily: string;
+  @Column({ nullable: true })
+  openingVariation: string;
 }
