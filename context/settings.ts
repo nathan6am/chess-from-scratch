@@ -11,7 +11,7 @@ export interface AppSettings {
     showValidMoves: boolean;
     showCoordinates: "inside" | "outside" | "hidden";
     showCapturedMaterial: boolean;
-    boardTheme: "standard" | "alternate";
+    boardTheme: "standard" | "alternate" | "custom";
     pieceTheme: "standard" | "alternate";
   };
   sound: {
@@ -51,4 +51,7 @@ export enum AnimSpeedEnum {
   disabled = 0,
 }
 
-export const SettingsContext = React.createContext<AppSettings>(defaultSettings);
+export const SettingsContext = React.createContext({
+  settings: defaultSettings,
+  updateSettings: (settings: AppSettings) => {},
+});

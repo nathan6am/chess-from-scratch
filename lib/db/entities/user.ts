@@ -11,21 +11,22 @@ import {
   OneToMany,
   OneToOne,
 } from "typeorm";
-
+import bcrypt from "bcrypt";
+import { defaultSettings } from "../../../context/settings";
 import type { Relation } from "typeorm";
 
 import type { Outcome, Game as GameData, Color } from "@/lib/chess";
 import type { AppSettings } from "@/context/settings";
 
 @Entity()
-export class User {
+export class User extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column({ nullable: true, unique: true })
   username: string;
 
   @Column({ nullable: true, unique: true })
@@ -37,6 +38,9 @@ export class User {
   @Column({ nullable: true })
   country: string;
 
+  @Column({ nullable: true })
+  email: string;
+
   @OneToMany(() => Notification, (notifcation) => notifcation.user)
   notifications: Relation<Notification[]>;
 
@@ -46,8 +50,83 @@ export class User {
   @OneToMany(() => Analysis, (analysis) => analysis.creator)
   savedAnalyses: Relation<Analysis[]>;
 
-  @Column({ type: "jsonb", nullable: true })
-  settings: AppSettings | null;
+  @Column({ type: "jsonb", default: defaultSettings })
+  settings: AppSettings;
+
+  @Column({ default: false })
+  profileComplete: boolean;
+
+  @OneToOne(() => Credential, (credential) => credential.id, { cascade: true })
+  @JoinColumn()
+  credentials: Relation<Credential>;
+
+  static async verifyCredentials(credentials: { email?: string; username?: string; password: string }) {
+    if (!credentials.email && !credentials.username) return null;
+    if (credentials.email) {
+      const user = await this.findOne({
+        where: {
+          email: credentials.email,
+        },
+        relations: {
+          credentials: true,
+        },
+      });
+      if (!user || !user.credentials) return null;
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      if (!verified) return null;
+      return {
+        username: user.username,
+        id: user.id,
+        profileComplete: user.profileComplete,
+        name: user.name,
+      };
+    }
+    if (credentials.username) {
+      const user = await this.findOne({
+        where: {
+          username: credentials.username,
+        },
+        relations: {
+          credentials: true,
+        },
+      });
+      if (!user || !user.credentials) return false;
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      if (!verified) return null;
+      return {
+        username: user.username,
+        id: user.id,
+        profileComplete: user.profileComplete,
+        name: user.name,
+      };
+    }
+    return false;
+  }
+
+  static async createAccountWithCredentials(account: {
+    email: string;
+    username: string;
+    password: string;
+    name: string;
+  }): Promise<Partial<User> | null> {
+    const exists = await this.createQueryBuilder("user")
+      .where("user.email = :email", { email: account.email })
+      .orWhere("user.username = :username", { username: account.username })
+      .getExists();
+    if (exists) {
+      return null;
+    }
+    const user = new User();
+    const credentials = new Credential();
+    const hash = bcrypt.hashSync(account.password, 10);
+    credentials.hashedPassword = hash;
+    user.credentials = credentials;
+    user.email = account.email;
+    user.username = account.username;
+    user.name = account.name;
+    user.save();
+    return user;
+  }
 }
 
 @Entity()
@@ -164,4 +243,23 @@ export class Puzzle {
   openingFamily: string;
   @Column({ nullable: true })
   openingVariation: string;
+}
+
+@Entity()
+export class CompletedPuzzle {
+  @PrimaryColumn()
+  user_id: string;
+  @PrimaryColumn()
+  puzzle_id: string;
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "user_id" })
+  user: Relation<User>;
+}
+
+@Entity()
+export class Credential {
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column({ nullable: false })
+  hashedPassword: string;
 }

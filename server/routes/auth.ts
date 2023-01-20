@@ -5,10 +5,23 @@ import express from "express";
 import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
+import { byFbId, createAccountWithCredentials, createUser, login } from "../../lib/db/connect";
+import * as passportLocal from "passport-local";
 const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
+
+passport.use(
+  new passportLocal.Strategy(async function (username, password, done) {
+    const user = await login({ username, password });
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(new Error("Invalid credentials"));
+    }
+  })
+);
 
 passport.use(
   new passportFacebook.Strategy(
@@ -17,9 +30,20 @@ passport.use(
       clientSecret: facebookClientSecret,
       callbackURL: facebookCallbackURL,
     },
-    function (accessToken, refreshToken, profile, done) {
-      const user = { id: profile.id, name: profile.displayName };
-      return done(null, user);
+    async function (accessToken, refreshToken, profile, done) {
+      const existingUser = await byFbId(profile.id);
+      if (existingUser) {
+        console.log(existingUser);
+        return done(null, existingUser);
+      }
+      const user = { facebookId: profile.id, name: profile.displayName };
+      const createdUser = createUser(user);
+      console.log(createdUser);
+      if (createdUser) {
+        return done(null, createdUser);
+      } else {
+        return done(new Error("Unable to create User"));
+      }
     }
   )
 );
@@ -31,6 +55,7 @@ passport.use(
     const user = {
       id: uid,
       name: `Guest_${nanoid()}`,
+      type: "guest",
     };
     console.log(user);
     return done(null, user);
@@ -66,6 +91,58 @@ router.get("/auth/user", function (req, res, next) {
     res.status(200).json({});
   } else {
     res.status(200).json(req.user);
+  }
+});
+
+router.get("/auth/status", async function (req, res) {});
+router.post("/auth/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.status(401).send();
+  }
+});
+router.post("/auth/signup", async function (req, res) {
+  const accountdetails = req.body;
+  if (!accountdetails) {
+    res.status(400).send();
+    return;
+  }
+  console.log(accountdetails);
+  const { email, password, username, name } = accountdetails;
+  if (
+    !email ||
+    typeof email !== "string" ||
+    !username ||
+    typeof username !== "string" ||
+    !password ||
+    typeof password !== "string" ||
+    !name ||
+    typeof name !== "string"
+  ) {
+    res.status(400).send();
+    return;
+  }
+  const created = await createAccountWithCredentials(req.body);
+  if (created) {
+    res.status(201).json(created);
+  }
+});
+
+router.post("/auth/logintest", async function (req, res) {
+  const credentials = req.body;
+  if (
+    credentials.password &&
+    typeof credentials.password === "string" &&
+    ((credentials.username && typeof credentials.username === "string") ||
+      (credentials.email && typeof credentials.email === "string"))
+  ) {
+    const user = await login(credentials);
+    if (user) {
+      res.status(200).json(user);
+      return;
+    }
+    res.status(401).send();
   }
 });
 

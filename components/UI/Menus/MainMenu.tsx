@@ -16,7 +16,7 @@ export default function MainMenu() {
     setActiveTab(key);
   };
   return (
-    <div className="md:h-[90%] max-w-[140vh] w-full flex flex-col backdrop-blur-lg bg-[#121212] rounded-lg shadow-lg">
+    <div className="md:h-[90%] max-w-[140vh] w-full flex flex-col backdrop-blur-lg bg-[#121212] rounded-lg overflow-hidden shadow-lg">
       <MenuTopBar />
       <div className="flex flex-col lg:grid lg:grid-cols-5 w-full grow bg-[#181818]">
         <div className="flex flex-col h-fit lg:py-20 rounded-l-md col-span-5 lg:col-span-1 lg:h-full w-full items-end justify-start  bg-[#1f1f1f]">

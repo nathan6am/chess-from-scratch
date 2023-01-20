@@ -1,13 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import ButtonSocial from "@/components/UI/ButtonSocial";
 import { FaGithub } from "react-icons/fa";
 import Head from "next/head";
 import Image from "next/image";
 import Knight from "../public/assets/knight.svg";
 import { useRouter } from "next/router";
-
+import Input from "@/components/UI/Input";
+import axios from "axios";
 export default function LoginPage() {
-  const router = useRouter();
   return (
     <div
       style={{
@@ -17,7 +17,7 @@ export default function LoginPage() {
         overflowX: "hidden",
         backgroundPosition: "bottom 0 left 0",
       }}
-      className="flex w-screen md:h-screen justify-center items-center "
+      className="flex w-screen lg:h-screen justify-center items-center "
     >
       <div className="h-full w-full justify-center items-center flex ">
         <Head>
@@ -27,7 +27,7 @@ export default function LoginPage() {
         </Head>
 
         <main className="flex container justify-center items-center w-full h-full">
-          <div className="md:h-[90%] max-w-[140vh] w-full flex justify-center items-center backdrop-blur-lg bg-gradient-to-r from-[#1f1f1f]/[0.5] to-[#181818]/[0.5] rounded-lg grid grid-cols-5 shadow-lg">
+          <div className="lg:h-[90%] max-w-[140vh] w-full flex justify-center items-center backdrop-blur-lg bg-gradient-to-r from-[#1f1f1f]/[0.5] to-[#181818]/[0.5] rounded-lg grid grid-cols-5 shadow-lg">
             <div className="flex flex-col py-20 rounded-l-md col-span-5 lg:col-span-3 h-full w-full justify-center items-end px-20 ">
               <h1 className="text-7xl my-4 font-extrabold text-white flex flex-row items-end">
                 <Knight className="fill-[#CDA882] inline h-24 w-24 mr-3 opac" />
@@ -50,23 +50,91 @@ export default function LoginPage() {
             <div className="w-full col-span-5 lg:hidden mt-6 ">
               <div className="border-t border-white/[0.5] w-[80%] mx-auto" />
             </div>
-            <div className="flex flex-col  max-w-[500px] items-center justify-center px-6 lg:px-10 xl:px-10 col-span-5 lg:col-span-2 h-[80%] lg:border-l border-white/[0.5] w-full my-4 mx-auto">
-              <h2 className="text-2xl text-white my-12 py-2 border-b-4 border-sepia/[0.7] px-2">Sign In to Continue</h2>
-              <ButtonSocial variant="google" href="/auth/google" />
-
-              <ButtonSocial variant="facebook" href="/auth/facebook" />
-
-              <p className="my-6 text-white opacity-50">or</p>
-              <ButtonSocial variant="guest" href="/auth/guest"></ButtonSocial>
-              <p className="text-white/[0.25] text-center px-10 my-6">
-                By continuing or signing in, you agree to our{" "}
-                <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
-                <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
-              </p>
-            </div>
+            <LoginForm />
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"error" | null>(null);
+  const onSubmit = async () => {
+    setLoginError(null);
+    if (!username || !password) return;
+    try {
+      const res = await axios.post("/auth/login", { username: username, password: password });
+      if (res.data.user) {
+        router.push("/");
+      }
+    } catch (e) {
+      setStatus("error");
+      setLoginError("Invalid username or password");
+    }
+  };
+  return (
+    <div className="flex flex-col  max-w-[500px] items-center justify-center px-6 lg:px-10 xl:px-10 col-span-5 lg:col-span-2 h-[80%] lg:border-l border-white/[0.5] w-full my-4 mx-auto">
+      <h2 className="text-2xl text-white my-8 py-2 border-b-4 border-sepia/[0.7] px-2">Sign In to Continue</h2>
+      <Input
+        id="Username"
+        error={null}
+        status={status}
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => {
+          e.preventDefault();
+          setStatus(null);
+          setUsername(e.target.value);
+        }}
+      />
+      <Input
+        id="Password"
+        status={status}
+        type="password"
+        placeholder="Password"
+        value={password}
+        error={loginError}
+        onChange={(e) => {
+          e.preventDefault();
+          setStatus(null);
+          setPassword(e.target.value);
+        }}
+      />
+
+      <div className="flex flex-row justify-between w-full items-center px-2 mb-2">
+        <div className="flex flex-row items-center">
+          <div className="w-4 h-4 rounded-sm border border-white/[0.5] mr-1 my-auto"></div>
+          <p>Remember Me</p>
+        </div>
+        <a className="mr-4">Forgot password?</a>
+      </div>
+      <button
+        onClick={onSubmit}
+        disabled={username === "" || password === ""}
+        className={`text-lg ${
+          username === "" || password === "" ? "bg-neutral-500" : "bg-[#b99873] hover:bg-[#a58058]"
+        }  text-white py-3 px-6 rounded-md w-full my-4`}
+      >
+        Sign In
+      </button>
+      <div className="w-[90%] mx-auto border-b border-white/[0.5] my-2" />
+      <ButtonSocial variant="google" href="/auth/google" />
+
+      <ButtonSocial variant="facebook" href="/auth/facebook" />
+
+      <p className="my-2 text-white opacity-50">or</p>
+      <ButtonSocial variant="guest" href="/auth/guest"></ButtonSocial>
+      <p className="text-white/[0.25] text-center px-10 my-6">
+        By continuing or signing in, you agree to our{" "}
+        <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
+        <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
+      </p>
     </div>
   );
 }

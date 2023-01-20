@@ -43,7 +43,7 @@ function MenuButton({ activeKey, tabKey, onSelect, title }: ButtonProps) {
         e.preventDefault;
         onSelect();
       }}
-      className={`my-4 text-lg md:text-xl mx-4 min-w-[60px] md:min-w-[100px] lg:min-w-0 lg:pl-2 pb-1 border-y-4 border-t-transparent ${
+      className={`my-4 focus:outline-none text-lg md:text-xl mx-4 min-w-[60px] md:min-w-[100px] lg:min-w-0 lg:pl-2 pb-1 border-y-4 border-t-transparent ${
         active ? "border-b-sepia text-white" : "text-white/[0.7] border-transparent hover:text-white"
       }`}
     >

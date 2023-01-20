@@ -12,6 +12,7 @@ import passport from "passport";
 import authRouter from "./routes/auth";
 import MainHandler from "./handlers/MainHandler";
 import { createClient } from "redis";
+import datasource from "../lib/db/connect";
 import {
   InterServerEvents,
   SocketData,
@@ -78,6 +79,7 @@ nextApp.prepare().then(async () => {
 
   //Cross origin isolate for shared-array-buffer
   //app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
+  app.use(express.json());
   app.use((req, res, next) => {
     res.header("Cross-Origin-Embedder-Policy", "require-corp");
     res.header("Cross-Origin-Opener-Policy", "same-origin");
