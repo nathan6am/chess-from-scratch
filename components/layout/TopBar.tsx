@@ -5,7 +5,7 @@ import { FiLogOut } from "react-icons/fi";
 import { MdSettings, MdPerson } from "react-icons/md";
 import { IoPersonCircle } from "react-icons/io5";
 import { useRouter } from "next/router";
-export default function MenuTopBar() {
+export default function TopBar() {
   return (
     <div className="w-full py-3 px-4 bg-white/[0.1] rounded-t-lg">
       <div className="flex flex-row justify-between">
@@ -22,13 +22,15 @@ const Logo = () => (
       <Knight className="fill-[#CDA882] inline h-8 w-8 ml-4" />
       NextChess
     </h1>
-    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">v 0.1.0</p>
+    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">
+      v 0.1.0
+    </p>
   </div>
 );
 
 const ActionButtons = () => {
   const router = useRouter();
-  const user = useContext(UserContext);
+  const { user } = useContext(UserContext);
   const onLogout = () => {
     fetch("/auth/logout", {
       method: "GET",

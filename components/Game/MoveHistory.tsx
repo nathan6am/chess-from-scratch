@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import * as Chess from "@/lib/chess";
 enum PieceChars {
   bq = "♕",
@@ -43,15 +43,6 @@ import { FaHandshake } from "react-icons/fa";
 import { FiRepeat, FiFlag } from "react-icons/fi";
 import { notEmpty } from "@/util/misc";
 
-const AlwaysScrollToBottom = () => {
-  const elementRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!elementRef.current) return;
-    elementRef.current.scrollIntoView({ behavior: "smooth" });
-  });
-  return <div ref={elementRef} />;
-};
 export default function MoveHistory({
   moveHistory,
   orientation,
@@ -61,6 +52,17 @@ export default function MoveHistory({
   timeRemaining,
   currentOffset,
 }: Props) {
+  const moveCount = useMemo(() => {
+    return moveHistory.flat().filter(notEmpty).length;
+  }, [moveHistory]);
+
+  //Scroll to bottom on every move
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [moveCount]);
+
   return (
     <div className="h-full w-[500px] flex flex-col justify-center mx-4">
       <div className="h-full w-full  flex flex-col">
@@ -134,7 +136,7 @@ export default function MoveHistory({
                   })}
                 </tbody>
               </table>
-              <AlwaysScrollToBottom />
+              <div ref={scrollRef} />
             </div>
           </div>
           <div className="flex flex-row justify-around bg-[#121212] shadow-lg">

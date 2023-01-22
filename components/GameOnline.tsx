@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import useChessLocal from "@/hooks/useChessLocal";
-import Board from "@/components/Game/Board";
-import EvalBar from "./Game/EvalBar";
+import Board from "@/components/game/Board";
+import EvalBar from "./game/EvalBar";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import MoveHistory from "@/components/Game/MoveHistory";
+import MoveHistory from "@/components/game/MoveHistory";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import useChessOnline from "@/hooks/useChessOnline";
@@ -26,7 +26,9 @@ export default function GameOnline({ lobbyid }: Props) {
     livePositionOffset,
     lastMove,
   } = useChessOnline(lobbyid);
-  const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
+  const [orientation, setOrientation] = useState<Chess.Color>(
+    playerColor || "w"
+  );
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
@@ -57,7 +59,7 @@ export default function GameOnline({ lobbyid }: Props) {
           timeRemaining={timeRemaining}
           controls={controls}
           moveHistory={currentGame.moveHistory}
-          usePieceIcons={true}
+          usePieceIcons={false}
           onFlipBoard={() => {
             setOrientation((cur) => (cur === "w" ? "b" : "w"));
           }}

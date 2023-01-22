@@ -1,6 +1,14 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User, Game, Puzzle, Notification, Analysis, User_Game, Credential } from "./entities/user";
+import {
+  User,
+  Game,
+  Puzzle,
+  Notification,
+  Analysis,
+  User_Game,
+  Credential,
+} from "./entities/user";
 const datasource = new DataSource({
   type: "postgres",
   username: "ncadmin",
@@ -47,12 +55,19 @@ export async function createUser(user: Partial<User>): Promise<User> {
   return created;
 }
 
-export async function getUserSimple(userid: string): Promise<Partial<User> | null> {
-  const user = await userRepo.createQueryBuilder("user").where("user.id = :id", { id: userid }).getOne();
+export async function getUserSimple(
+  userid: string
+): Promise<Partial<User> | null> {
+  const user = await userRepo
+    .createQueryBuilder("user")
+    .where("user.id = :id", { id: userid })
+    .getOne();
   return user;
 }
 
-export async function byFbId(facebookId: string): Promise<Partial<User> | null> {
+export async function byFbId(
+  facebookId: string
+): Promise<Partial<User> | null> {
   const user = await userRepo
     .createQueryBuilder("user")
     .select(["user.id", "user.name", "user.username", "user.profileComplete"])
@@ -72,7 +87,15 @@ export async function createAccountWithCredentials(details: {
 }
 export default datasource;
 
-export async function login(credentials: { username?: string; email?: string; password: string }) {
+export async function login(credentials: {
+  username?: string;
+  email?: string;
+  password: string;
+}) {
   const user = await User.verifyCredentials(credentials);
   return user || null;
+}
+
+export async function updateCredentials(username: string, password: string) {
+  await User.updateCredentials(username, password);
 }

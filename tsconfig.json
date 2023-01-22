@@ -5,7 +5,13 @@
     "strictPropertyInitialization": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "lib": ["dom", "dom.iterable", "esnext", "es2015.collection", "es2015.iterable"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "es2015.collection",
+      "es2015.iterable"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,6 +33,7 @@
       "@/hooks/*": ["hooks/*"],
       "@/styles/*": ["styles/*"],
       "@/public/*": ["public/*"],
+      "@/pages/*": ["pages/*"],
       "@/server/*": ["server/*"]
     }
   },

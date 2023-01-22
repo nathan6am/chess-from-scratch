@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
 import useChessLocal from "@/hooks/useChessLocal";
-import Board from "@/components/Game/Board";
-import EvalBar from "./Game/EvalBar";
+import Board from "@/components/game/Board";
+import EvalBar from "./game/EvalBar";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import useStockfish from "@/hooks/useStockfish";
-import MoveHistory from "@/components/Game/MoveHistory";
+import MoveHistory from "@/components/game/MoveHistory";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 export default function GameLocal() {
-  const { currentGame, onMove, evaluation, stepForward, stepBackward, wasm } = useAnalysisBoard(
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-  );
+  const { currentGame, onMove, evaluation, stepForward, stepBackward, wasm } =
+    useAnalysisBoard(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
   const [orientation, setOrientation] = useState<Chess.Color>("w");
 
   return (

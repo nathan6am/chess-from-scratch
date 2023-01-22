@@ -5,7 +5,13 @@ import express from "express";
 import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
-import { byFbId, createAccountWithCredentials, createUser, login } from "../../lib/db/connect";
+import {
+  byFbId,
+  createAccountWithCredentials,
+  createUser,
+  login,
+  updateCredentials,
+} from "../../lib/db/connect";
 import * as passportLocal from "passport-local";
 const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
@@ -14,7 +20,9 @@ const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
 
 passport.use(
   new passportLocal.Strategy(async function (username, password, done) {
+    console.log("pre db");
     const user = await login({ username, password });
+    console.log(user);
     if (user) {
       return done(null, user);
     } else {
@@ -82,9 +90,13 @@ router.get(
   })
 );
 
-router.get("/auth/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
-  res.redirect("/");
-});
+router.get(
+  "/auth/guest",
+  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
+  (req, res) => {
+    res.redirect("/");
+  }
+);
 
 router.get("/auth/user", function (req, res, next) {
   if (!req.user) {
@@ -95,13 +107,18 @@ router.get("/auth/user", function (req, res, next) {
 });
 
 router.get("/auth/status", async function (req, res) {});
-router.post("/auth/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
-  if (req.user) {
-    res.json(req.user);
-  } else {
-    res.status(401).send();
+router.post(
+  "/auth/login",
+  passport.authenticate("local", { failureRedirect: "/login" }),
+  function (req, res) {
+    console.log("here");
+    if (req.user) {
+      res.json({ user: req.user });
+    } else {
+      res.status(401).send();
+    }
   }
-});
+);
 router.post("/auth/signup", async function (req, res) {
   const accountdetails = req.body;
   if (!accountdetails) {
@@ -129,20 +146,20 @@ router.post("/auth/signup", async function (req, res) {
   }
 });
 
-router.post("/auth/logintest", async function (req, res) {
+router.post("/auth/updatetest", async function (req, res) {
   const credentials = req.body;
   if (
     credentials.password &&
     typeof credentials.password === "string" &&
-    ((credentials.username && typeof credentials.username === "string") ||
-      (credentials.email && typeof credentials.email === "string"))
+    credentials.username &&
+    typeof credentials.username === "string"
   ) {
-    const user = await login(credentials);
-    if (user) {
-      res.status(200).json(user);
-      return;
-    }
-    res.status(401).send();
+    const user = await updateCredentials(
+      credentials.username,
+      credentials.password
+    );
+
+    res.status(200).send();
   }
 });
 

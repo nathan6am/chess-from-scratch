@@ -60,7 +60,11 @@ export class User extends BaseEntity {
   @JoinColumn()
   credentials: Relation<Credential>;
 
-  static async verifyCredentials(credentials: { email?: string; username?: string; password: string }) {
+  static async verifyCredentials(credentials: {
+    email?: string;
+    username?: string;
+    password: string;
+  }) {
     if (!credentials.email && !credentials.username) return null;
     if (credentials.email) {
       const user = await this.findOne({
@@ -72,7 +76,10 @@ export class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      const verified = await bcrypt.compare(
+        credentials.password,
+        user.credentials.hashedPassword
+      );
       if (!verified) return null;
       return {
         username: user.username,
@@ -91,7 +98,10 @@ export class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return false;
-      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      const verified = await bcrypt.compare(
+        credentials.password,
+        user.credentials.hashedPassword
+      );
       if (!verified) return null;
       return {
         username: user.username,
@@ -126,6 +136,17 @@ export class User extends BaseEntity {
     user.name = account.name;
     user.save();
     return user;
+  }
+
+  static async updateCredentials(username: string, newPassword: string) {
+    const user = await this.findOne({
+      where: { username: username },
+      relations: { credentials: true },
+    });
+    if (user) {
+      user.credentials.hashedPassword = bcrypt.hashSync(newPassword, 10);
+      user.save();
+    }
   }
 }
 

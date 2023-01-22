@@ -12,11 +12,15 @@ function MyTabs() {
   return (
     <Tab.Group vertical>
       <Tab.List className="flex flex-col w-80 m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
-        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">Options</div>
+        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
+          Options
+        </div>
         <MenuTab>Profile</MenuTab>
         <MenuTab>Display</MenuTab>
         <MenuTab>Game Behavior</MenuTab>
         <MenuTab>Sound</MenuTab>
+        <MenuTab>Puzzles</MenuTab>
+        <MenuTab>Analysis</MenuTab>
         <MenuTab>Privacy</MenuTab>
         <MenuTab>Change Password</MenuTab>
         <MenuTab>Close Account</MenuTab>
