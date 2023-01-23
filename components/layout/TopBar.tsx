@@ -22,9 +22,7 @@ const Logo = () => (
       <Knight className="fill-[#CDA882] inline h-8 w-8 ml-4" />
       NextChess
     </h1>
-    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">
-      v 0.1.0
-    </p>
+    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">v 0.1.0</p>
   </div>
 );
 
@@ -41,7 +39,7 @@ const ActionButtons = () => {
 
   return (
     <div className="flex flex-row justify-end items-center text-white/[0.5]">
-      <p className="mr-3">Welcome, {user?.name}</p>
+      <p className="mr-3">Welcome, {user?.username}</p>
       <button onClick={() => {}}>
         <IoPersonCircle className="h-6 w-6 mx-1 hover:text-sepia" />
       </button>

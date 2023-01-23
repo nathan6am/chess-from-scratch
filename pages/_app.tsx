@@ -30,9 +30,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   return (
     <SettingsContext.Provider value={{ settings, updateSettings }}>
       <UserContext.Provider value={{ user, refresh: mutate }}>
-        <SocketContext.Provider value={socket}>
-          {getLayout(<Component {...pageProps} />)}
-        </SocketContext.Provider>
+        <SocketContext.Provider value={socket}>{getLayout(<Component {...pageProps} />)}</SocketContext.Provider>
       </UserContext.Provider>
     </SettingsContext.Provider>
   );

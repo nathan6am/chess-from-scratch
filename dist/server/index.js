@@ -37,6 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const express_session_1 = __importDefault(require("express-session"));
+const db = __importStar(require("../lib/db/connect"));
 const env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
 const http = __importStar(require("http"));
@@ -65,6 +66,8 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     console.log("Connected to session client");
     yield redisClient.connect();
     console.log("Connected to redis client");
+    yield db.initialize();
+    console.log("Connected to database");
     const sessionMiddleware = (0, express_session_1.default)({
         secret: process.env.SESSION_SECRET || "keyboard cat",
         store: new RedisStore({ client: sessionClient }),
@@ -79,6 +82,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     });
     //Cross origin isolate for shared-array-buffer
     //app.use(express.static(path.join(__dirname, "build"), { dotfiles: "allow" }));
+    app.use(express_1.default.json());
     app.use((req, res, next) => {
         res.header("Cross-Origin-Embedder-Policy", "require-corp");
         res.header("Cross-Origin-Opener-Policy", "same-origin");

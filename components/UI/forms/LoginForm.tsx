@@ -85,9 +85,7 @@ export default function LoginForm() {
             type="submit"
             disabled={username === "" || password === ""}
             className={`text-md ${
-              username === "" || password === ""
-                ? "bg-neutral-500"
-                : "bg-[#b99873] hover:bg-[#a58058]"
+              username === "" || password === "" ? "bg-neutral-500" : "bg-[#b99873] hover:bg-[#a58058]"
             }  text-white py-2 px-6 rounded-md w-full my-4`}
           >
             Sign In
@@ -95,7 +93,7 @@ export default function LoginForm() {
         </form>
 
         <div className="w-[90%] mx-auto border-b border-white/[0.5] my-2" />
-        <ButtonSocial variant="google" href="/auth/google" />
+        <ButtonSocial variant="google" href="/auth/google" className="mt-4" />
 
         <ButtonSocial variant="facebook" href="/auth/facebook" />
 
@@ -103,14 +101,11 @@ export default function LoginForm() {
         <ButtonSocial variant="guest" href="/auth/guest"></ButtonSocial>
         <p className="text-white/[0.25] text-center px-4 mb-4 text-xs">
           By continuing or signing in, you agree to our{" "}
-          <a className="hover:text-white/[0.5] underline">
-            Terms and Conditions
-          </a>{" "}
-          and{" "}
+          <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
           <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
         </p>
         <span className="flex flex-row justify-between px-2">
-          <h3 className="text-white/[0.25] mr-2">Don't have an account?</h3>
+          <h3 className="text-white/[0.25] mr-2">{`Don't have an account?`}</h3>
           <Link href="/signup">
             <p className="text-white/[0.8] font-semibold">SIGN UP</p>
           </Link>

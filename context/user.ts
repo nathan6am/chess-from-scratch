@@ -1,10 +1,6 @@
 import React from "react";
-type User = {
-  name: string | undefined;
-  id: string;
-  type: "guest" | undefined;
-};
+import { SessionUser } from "@/lib/db/entities/user";
 export const UserContext = React.createContext<{
-  user: User | undefined;
+  user: SessionUser | undefined;
   refresh: (...args: any[]) => void;
 }>({ user: undefined, refresh: () => {} });

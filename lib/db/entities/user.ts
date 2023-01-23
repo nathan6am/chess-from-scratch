@@ -10,6 +10,7 @@ import {
   CreateDateColumn,
   OneToMany,
   OneToOne,
+  ILike,
 } from "typeorm";
 import bcrypt from "bcrypt";
 import { defaultSettings } from "../../../context/settings";
@@ -17,13 +18,20 @@ import type { Relation } from "typeorm";
 
 import type { Outcome, Game as GameData, Color } from "@/lib/chess";
 import type { AppSettings } from "@/context/settings";
+import { escapeSpecialChars } from "../../../util/misc";
+
+export type SessionUser = {
+  id: string;
+  username: string | null;
+  type: "user" | "incomplete" | "guest";
+};
 
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
   @Column({ nullable: true, unique: true })
@@ -59,12 +67,21 @@ export class User extends BaseEntity {
   @OneToOne(() => Credential, (credential) => credential.id, { cascade: true })
   @JoinColumn()
   credentials: Relation<Credential>;
+  static async usernameExists(username: string) {
+    const exists = await this.findOne({
+      where: {
+        username: ILike(`${escapeSpecialChars(username)}`),
+      },
+    });
+    if (exists) return true;
+    return false;
+  }
 
-  static async verifyCredentials(credentials: {
+  static async login(credentials: {
     email?: string;
     username?: string;
     password: string;
-  }) {
+  }): Promise<SessionUser | null> {
     if (!credentials.email && !credentials.username) return null;
     if (credentials.email) {
       const user = await this.findOne({
@@ -76,66 +93,90 @@ export class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(
-        credentials.password,
-        user.credentials.hashedPassword
-      );
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
       return {
         username: user.username,
         id: user.id,
-        profileComplete: user.profileComplete,
-        name: user.name,
+        type: user.profileComplete ? "user" : "incomplete",
       };
     }
     if (credentials.username) {
       const user = await this.findOne({
         where: {
-          username: credentials.username,
+          username: ILike(`${escapeSpecialChars(credentials.username)}`),
         },
         relations: {
           credentials: true,
         },
       });
-      if (!user || !user.credentials) return false;
-      const verified = await bcrypt.compare(
-        credentials.password,
-        user.credentials.hashedPassword
-      );
+      if (!user || !user.credentials) return null;
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
       return {
         username: user.username,
         id: user.id,
-        profileComplete: user.profileComplete,
-        name: user.name,
+        type: user.profileComplete ? "user" : "incomplete",
       };
     }
-    return false;
+    return null;
+  }
+
+  static async getSessionUser(id: string) {
+    const user = await this.findOne({ where: { id } });
+    if (!user) return undefined;
+    return {
+      id: user.id,
+      username: user.username,
+      type: user.profileComplete ? "user" : "incomplete",
+    };
+  }
+
+  static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
+    const user = await this.findOne({
+      where: {
+        facebookId: profile.facebookId,
+      },
+    });
+    if (user) {
+      const { id, username, profileComplete } = user;
+      return { id, username, type: profileComplete ? "user" : "incomplete" };
+    }
+    const newUser = new User();
+    Object.assign(newUser, { facebookId: profile.facebookId, name: profile.name });
+    await newUser.save();
+    return {
+      id: newUser.id,
+      username: null,
+      type: "incomplete",
+    };
   }
 
   static async createAccountWithCredentials(account: {
     email: string;
     username: string;
     password: string;
-    name: string;
-  }): Promise<Partial<User> | null> {
+  }): Promise<{ created: Partial<User> | null; fieldErrors?: Array<{ field: string; message: string }> }> {
+    const { email, username, password } = account;
     const exists = await this.createQueryBuilder("user")
       .where("user.email = :email", { email: account.email })
-      .orWhere("user.username = :username", { username: account.username })
+      .orWhere("LOWER(user.username) = LOWER(:username)", { username: account.username })
       .getExists();
     if (exists) {
-      return null;
+      return { created: null, fieldErrors: [{ field: "email", message: "Email address is already in use" }] };
     }
     const user = new User();
     const credentials = new Credential();
     const hash = bcrypt.hashSync(account.password, 10);
     credentials.hashedPassword = hash;
     user.credentials = credentials;
-    user.email = account.email;
-    user.username = account.username;
-    user.name = account.name;
-    user.save();
-    return user;
+    Object.assign(user, { email, username });
+    await user.save();
+    if (!user) {
+      return { created: null, fieldErrors: [{ field: "none", message: "Unable to create account" }] };
+    }
+    const created = { id: user.id, username: user.username };
+    return { created: created };
   }
 
   static async updateCredentials(username: string, newPassword: string) {

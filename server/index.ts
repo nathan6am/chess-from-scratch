@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import session, { Session } from "express-session";
 import path from "path";
+import * as db from "../lib/db/connect";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
 import * as http from "http";
@@ -12,7 +13,6 @@ import passport from "passport";
 import authRouter from "./routes/auth";
 import MainHandler from "./handlers/MainHandler";
 import { createClient } from "redis";
-import datasource from "../lib/db/connect";
 import {
   InterServerEvents,
   SocketData,
@@ -63,6 +63,8 @@ nextApp.prepare().then(async () => {
   console.log("Connected to session client");
   await redisClient.connect();
   console.log("Connected to redis client");
+  await db.initialize();
+  console.log("Connected to database");
 
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || "keyboard cat",
