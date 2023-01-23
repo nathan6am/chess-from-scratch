@@ -19,4 +19,5 @@ export async function initialize() {
     entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential],
     synchronize: true,
   });
+  await datasource.initialize();
 }
