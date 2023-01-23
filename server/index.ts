@@ -96,7 +96,7 @@ nextApp.prepare().then(async () => {
   app.use(passport.session());
   app.use(passport.authenticate("session"));
 
-  app.use("/", authRouter);
+  app.use("/api/auth", authRouter);
 
   //Wrap middleware for socket.io
   const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);

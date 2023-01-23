@@ -25,7 +25,7 @@ export default function LoginForm() {
     setLoginError(null);
     if (!username || !password) return;
     try {
-      const res = await axios.post("/auth/login", {
+      const res = await axios.post("api/auth/login", {
         username: username,
         password: password,
       });
@@ -93,12 +93,12 @@ export default function LoginForm() {
         </form>
 
         <div className="w-[90%] mx-auto border-b border-white/[0.5] my-2" />
-        <ButtonSocial variant="google" href="/auth/google" className="mt-4" />
+        <ButtonSocial variant="google" href="api/auth/google" className="mt-4" />
 
         <ButtonSocial variant="facebook" href="/auth/facebook" />
 
         <p className="my-2 text-white opacity-50">or</p>
-        <ButtonSocial variant="guest" href="/auth/guest"></ButtonSocial>
+        <ButtonSocial variant="guest" href="api/auth/guest"></ButtonSocial>
         <p className="text-white/[0.25] text-center px-4 mb-4 text-xs">
           By continuing or signing in, you agree to our{" "}
           <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}

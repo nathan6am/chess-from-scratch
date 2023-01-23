@@ -81,9 +81,11 @@ export interface LobbyServerToClientEvents<isServer extends boolean = false, isS
   "game:move": (game: Game) => void;
   "game:outcome": (game: Game) => void;
   "game:new": (game: Game) => void;
+  newclient: () => void;
   "test:requestAck": (arg: string, ack: (...args: WithTimeoutAck<isServer, isSender, [string]>) => void) => void;
   "game:request-move": (
     timeoutSeconds: number,
+    game: Game,
     ack: (...args: WithTimeoutAck<isServer, isSender, [Chess.Move]>) => void
   ) => void;
 }

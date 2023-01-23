@@ -10,7 +10,7 @@ type User = {
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function useUser() {
-  const { data, error, isValidating, mutate } = useSWR<SessionUser, Error>("/auth/user", fetcher);
+  const { data, error, isValidating, mutate } = useSWR<SessionUser, Error>("/api/auth/user", fetcher);
   if (data) {
     const user = data;
   }

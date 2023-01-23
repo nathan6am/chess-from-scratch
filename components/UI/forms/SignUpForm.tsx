@@ -54,7 +54,7 @@ export default function SignUpForm() {
       setError("username", { message: "Username is already in use" });
       return;
     } else {
-      const res = await axios.post("/auth/signup", {
+      const res = await axios.post("api/auth/signup", {
         username: data.username,
         email: data.email,
         password: data.password,
@@ -72,7 +72,7 @@ export default function SignUpForm() {
     }
   };
   const handleDebounceFn = async (query: string) => {
-    const res = await axios.get(`/auth/checkusername?username=${query}`);
+    const res = await axios.get(`api/auth/checkusername?username=${query}`);
     if (res.data) {
       setVerifying(false);
       if (res.data.valid === false) {
@@ -160,11 +160,11 @@ export default function SignUpForm() {
         </form>
 
         <p className="my-2 text-white opacity-50">or</p>
-        <ButtonSocial variant="google" href="/auth/google">
+        <ButtonSocial variant="google" href="api/auth/google">
           Sign Up with Google
         </ButtonSocial>
 
-        <ButtonSocial variant="facebook" href="/auth/facebook">
+        <ButtonSocial variant="facebook" href="api/auth/facebook">
           Sign Up with Facebook
         </ButtonSocial>
 

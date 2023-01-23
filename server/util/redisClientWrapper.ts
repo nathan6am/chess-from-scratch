@@ -155,34 +155,42 @@ export class Redis implements Redis {
     const userid = player.id;
     const lobby = await this.getLobbyById(lobbyid);
     if (!lobby) throw new Error("Lobby does not exist");
-    const players = lobby.players;
-    if (lobby.reservedConnections.includes(player.id)) {
-      const updatedPlayers = players.map((connectedPlayer) => {
-        if (connectedPlayer.id !== player.id) return connectedPlayer;
+
+    //Update the socket if the player is already connected
+    let updatedPlayers = lobby.players.map((existingPlayer) => {
+      if (existingPlayer.id === userid) {
         return {
-          ...connectedPlayer,
+          ...existingPlayer,
           primaryClientSocketId: player.primaryClientSocketId,
         };
-      });
-      if (!updatedPlayers.some((player) => player.id === userid)) {
-        updatedPlayers.push(player);
       }
-      if (updatedPlayers.length > 2) throw new Error("Too many connections to lobby");
-      const updated = await this._updateLobby(lobbyid, {
+      return existingPlayer;
+    });
+
+    //Update the lobby and return if the player was already connected and only the socket was changed
+    if (updatedPlayers.some((player) => player.id === userid)) {
+      return await this._updateLobby(lobbyid, {
         players: updatedPlayers,
       });
-      return updated;
-    } else if (lobby.reservedConnections.length < 2 && lobby.players.length < 2) {
-      const reservedConnections = [...lobby.reservedConnections, player.id];
-      const updatedPlayers = [...players, player];
-      const updated = await this._updateLobby(lobbyid, {
-        players: updatedPlayers,
-        reservedConnections,
-      });
-      return updated;
-    } else {
-      throw new Error("Lobby is full");
     }
+
+    //Push the plater and return if a connection is reserverd
+    if (lobby.reservedConnections.includes(userid)) {
+      updatedPlayers.push(player);
+      return await this._updateLobby(lobbyid, {
+        players: updatedPlayers,
+      });
+    }
+
+    if (lobby.reservedConnections.length < 2) {
+      updatedPlayers.push(player);
+      return await this._updateLobby(lobbyid, {
+        reservedConnections: [...lobby.reservedConnections, player.id],
+        players: updatedPlayers,
+      });
+    }
+
+    throw new Error("Cannot connect to lobby");
   };
 }
 

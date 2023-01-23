@@ -28,9 +28,15 @@ export default function Piece({
 }: PieceProps) {
   //Prevent deprecated findDomNode warning
   const nodeRef = React.useRef<HTMLDivElement>(null);
+  const hiddenRef = useRef<boolean>(true);
   const previousSquare = useRef<Chess.Square>(square);
   const [dragging, setDragging] = useState(false);
-
+  const hidden = hiddenRef.current;
+  useEffect(() => {
+    setTimeout(() => {
+      hiddenRef.current = false;
+    }, 10);
+  }, []);
   //Calculate coordinates from square & orientation
   const coordinates = useMemo<[number, number]>(() => {
     const [x, y] = Chess.squareToCoordinates(square);
@@ -78,7 +84,6 @@ export default function Piece({
       nodeRef={nodeRef}
       allowAnyClick={false}
       bounds="parent"
-      defaultPosition={position}
       position={position}
       onStop={(e, data) => {
         setPosition({ x: data.x, y: data.y });
@@ -93,10 +98,7 @@ export default function Piece({
           setDragging(true);
           setSelectedPiece([square, piece]);
           const pointer = [e.clientX, e.clientY];
-          const piecePos = [
-            nodeRef?.current?.getBoundingClientRect().x,
-            nodeRef?.current?.getBoundingClientRect().y,
-          ];
+          const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
           //Snap to cursor
           setPosition((position) => ({
             x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
@@ -106,7 +108,7 @@ export default function Piece({
         style={{
           transition: dragging ? "" : `all ${animationSpeed}s`,
           cursor: dragging ? "grabbing" : "grab",
-          display: "flex",
+          display: hidden ? "none" : "flex",
           justifyContent: "center",
           alignItems: "center",
           width: squareSize,

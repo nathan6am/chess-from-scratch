@@ -9,7 +9,7 @@ import { User } from "../../lib/db/entities/user";
 const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
-const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
+const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
 
 passport.use(
   new passportLocal.Strategy(async function (username, password, done) {
@@ -64,21 +64,21 @@ passport.deserializeUser((_req: any, id: string, done: any) => {
 });
 const router = express.Router();
 
-router.get("/auth/facebook", passport.authenticate("facebook"));
+router.get("/facebook", passport.authenticate("facebook"));
 
 router.get(
-  "/auth/facebook/callback",
+  "/facebook/callback",
   passport.authenticate("facebook", {
     successReturnToOrRedirect: "/",
     failureRedirect: "/failure",
   })
 );
 
-router.get("/auth/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
   res.redirect("/");
 });
 
-router.get("/auth/user", function (req, res, next) {
+router.get("/user", function (req, res, next) {
   if (!req.user) {
     res.status(200).json({});
   } else {
@@ -86,8 +86,7 @@ router.get("/auth/user", function (req, res, next) {
   }
 });
 
-router.get("/auth/status", async function (req, res) {});
-router.post("/auth/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
+router.post("/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
   if (req.user) {
     res.json({ user: req.user });
   } else {
@@ -95,7 +94,7 @@ router.post("/auth/login", passport.authenticate("local", { failureRedirect: "/l
   }
 });
 
-router.post("/auth/signup", async function (req, res, next) {
+router.post("/signup", async function (req, res, next) {
   const accountdetails = req.body;
   if (!accountdetails) {
     res.status(400).send();
@@ -127,7 +126,7 @@ router.post("/auth/signup", async function (req, res, next) {
   }
 });
 
-router.get("/auth/checkusername", async function (req, res) {
+router.get("/checkusername", async function (req, res) {
   console.log(req.query);
   const username = req.query.username;
   if (!username || typeof username !== "string") {
@@ -152,7 +151,7 @@ router.get("/auth/checkusername", async function (req, res) {
 //   }
 // });
 
-router.get("/auth/logout", function (req, res, next) {
+router.get("/logout", function (req, res, next) {
   console.log("logging out");
   req.logout(function (err) {
     if (err) {
