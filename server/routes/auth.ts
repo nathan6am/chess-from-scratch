@@ -128,6 +128,7 @@ router.post("/auth/signup", async function (req, res, next) {
 });
 
 router.get("/auth/checkusername", async function (req, res) {
+  console.log(req.query);
   const username = req.query.username;
   if (!username || typeof username !== "string") {
     res.status(400).end();
