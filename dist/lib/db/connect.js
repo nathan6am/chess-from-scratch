@@ -13,6 +13,8 @@ exports.initialize = void 0;
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
 const user_1 = require("./entities/user");
+const env_1 = require("@next/env");
+(0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";
 const port = parseInt(process.env.DB_PORT || "5432");
 const password = process.env.DB_PASSWORD || "";
@@ -30,6 +32,7 @@ function initialize() {
             entities: [user_1.User, user_1.Game, user_1.Puzzle, user_1.Analysis, user_1.Notification, user_1.User_Game, user_1.Credential],
             synchronize: true,
         });
+        yield datasource.initialize();
     });
 }
 exports.initialize = initialize;

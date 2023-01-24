@@ -35,6 +35,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redisClientWrapper_1 = require("../util/redisClientWrapper");
 const Chess = __importStar(require("../../lib/chess"));
 const clockFunctions_1 = require("../util/clockFunctions");
+const luxon_1 = require("luxon");
+const misc_1 = require("../../util/misc");
 function LobbyHandler(io, nsp, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     socket.on("disconnect", () => {
@@ -68,19 +70,54 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 throw new Error("Lobby does not exist");
             if (lobby.reservedConnections.includes(userid) ||
                 (lobby.reservedConnections.length < 2 && lobby.players.length < 2)) {
-                //Add the player to the lobby cache and join the corresponding room
                 const player = {
                     id: userid,
                     score: 0,
                     primaryClientSocketId: socket.id,
                 };
-                const lobby = yield cache.connectToLobby(lobbyid, player);
+                //Check if the player was already connected from a previous client and notify any concurrent
+                //clients of the same user
+                const previousClient = lobby.players.find((existingPlayer) => existingPlayer.id === userid);
+                if (previousClient) {
+                    const clientToRemove = previousClient.primaryClientSocketId;
+                    const clients = lobby.players
+                        .map((player) => player.primaryClientSocketId)
+                        .filter((socketId) => socketId !== clientToRemove);
+                    clients.push(socket.id);
+                    const inLobby = yield nsp.in(lobbyid).fetchSockets();
+                    inLobby.forEach((socket) => {
+                        if (!clients.includes(socket.id)) {
+                            socket.leave(lobbyid);
+                        }
+                    });
+                    socket.join(lobbyid);
+                    nsp.to(userid).except(socket.id).emit("newclient");
+                }
+                //Update the cached lobby and add the socket to the room
+                const updated = yield cache.connectToLobby(lobbyid, player);
                 socket.join(lobbyid);
+                if (updated.currentGame) {
+                    const game = updated.currentGame;
+                    const activeColor = game.data.activeColor;
+                    const clock = game.clock;
+                    //Correct the time remaining if both player have played a move
+                    if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 && clock.lastMoveTimeISO !== null) {
+                        clock.timeRemainingMs[activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[activeColor]);
+                        if (game.players[activeColor] !== userid) {
+                            //Ack if the connected player is not the current turn
+                            ack({ status: true, data: updated, error: null });
+                            return;
+                        }
+                        else {
+                            //Request move
+                        }
+                    }
+                }
                 //Return the lobby to the client and start the game if both players are connected and
-                ack({ status: true, data: lobby, error: null });
-                if (lobby.players.length === 2 && lobby.currentGame === null) {
-                    const game = yield cache.newGame(lobbyid);
-                    nsp.to(lobbyid).emit("game:new", game);
+                ack({ status: true, data: updated, error: null });
+                if (updated.players.length === 2 && lobby.currentGame === null) {
+                    console.log("starting");
+                    startGame(lobbyid);
                 }
                 return;
             }
@@ -98,7 +135,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         }
     }));
     const socketInstanceById = (socketId) => __awaiter(this, void 0, void 0, function* () {
-        const sockets = yield io.in(socketId).fetchSockets();
+        const sockets = yield nsp.in(socketId).fetchSockets();
         for (const socket of sockets) {
             if (socket.id === socketId)
                 return socket;
@@ -117,38 +154,134 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             const playerWhiteSocketId = (_a = lobby.players.find((player) => player.id === playerW)) === null || _a === void 0 ? void 0 : _a.primaryClientSocketId;
             if (!playerWhiteSocketId)
                 throw new Error("Conection mismatch");
-            nsp
-                .to(playerWhiteSocketId)
-                .timeout(30000)
-                .emit("game:request-move", 30000, (err, response) => {
-                if (err) {
-                    console.error(err);
+            const whiteSocket = yield socketInstanceById(playerWhiteSocketId);
+            if (!whiteSocket) {
+                //Abort the game
+                return;
+            }
+            requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
+            nsp.to(lobbyid).emit("game:new", game);
+        });
+    }
+    const requestMoveWithTimeout = (socket, timeoutMs, game, lobbyid) => __awaiter(this, void 0, void 0, function* () {
+        const now = luxon_1.DateTime.now();
+        const lobby = yield cache.getLobbyById(lobbyid);
+        if (!lobby)
+            throw new Error("lobby does not exist");
+        if (!lobby.currentGame || lobby.currentGame.id !== game.id)
+            throw new Error("game not found");
+        //Correct the time remaining before emitting
+        if (lobby.currentGame.clock.lastMoveTimeISO) {
+            lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO, lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
+        }
+        socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            if (err) {
+                const lobby = yield cache.getLobbyById(lobbyid);
+                if (!lobby)
+                    return;
+                if (!lobby.currentGame)
+                    return;
+                //return if the game has an outcome or a new game has started
+                if (((_a = lobby.currentGame) === null || _a === void 0 ? void 0 : _a.id) !== game.id || lobby.currentGame.data.outcome)
+                    return;
+                //return if moves have been played since the initial request
+                if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
+                    return;
+                //Set outcome by timeout and emit
+                lobby.currentGame.data.outcome = {
+                    result: lobby.currentGame.data.activeColor === "w" ? "b" : "w",
+                    by: "timeout",
+                };
+                lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
+                cache.updateGame(lobbyid, lobby.currentGame);
+                nsp.to(lobbyid).emit("game:outcome", lobby.currentGame);
+            }
+            else {
+                try {
+                    console.log(response);
+                    const updated = yield executeMove(response, lobbyid);
+                    nsp.to(lobbyid).emit("game:move", updated);
+                    const currentLobby = yield cache.getLobbyById(lobbyid);
+                    if (!currentLobby)
+                        return;
+                    if (!currentLobby.currentGame)
+                        return;
+                    const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
+                    const nextPlayerSocketId = (_b = currentLobby.players.find((player) => player.id === nextPlayerId)) === null || _b === void 0 ? void 0 : _b.primaryClientSocketId;
+                    if (!nextPlayerSocketId)
+                        return;
+                    const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
+                    if (!nextPlayerSocket)
+                        return;
+                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(currentLobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]);
+                    //Request move from next player
+                    requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
                 }
-                else {
-                    console.log(response[0]);
-                    nsp.to(lobbyid).emit;
+                catch (e) {
+                    const lobby = yield cache.getLobbyById(lobbyid);
+                    if (!lobby)
+                        return;
+                    if (!lobby.currentGame)
+                        return;
+                    //return if the game has an outcome or a new game has started
+                    if (((_c = lobby.currentGame) === null || _c === void 0 ? void 0 : _c.id) !== game.id || lobby.currentGame.data.outcome)
+                        return;
+                    //return if moves have been played since the initial request
+                    if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
+                        return;
+                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
+                    //Rerequest with new timeout
+                    requestMoveWithTimeout(socket, timeRemainingMs, game, lobbyid);
                 }
-            });
+            }
+        }));
+    });
+    function executeMove(move, lobbyid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const moveRecievedISO = (0, clockFunctions_1.currentISO)();
+            const lobby = yield cache.getLobbyById(lobbyid);
+            if (!lobby)
+                throw new Error("Lobby does not exist");
+            const game = lobby.currentGame;
+            if (game === null)
+                throw new Error("no active game");
+            if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
+                throw new Error("Player is not in lobby");
+            //Execute the move
+            const updatedGameData = Chess.move(game.data, move);
+            //Update the clocks if both players have played a move
+            if (updatedGameData.fullMoveCount >= 2) {
+                //Update the clock state and apply increment
+                const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
+                return yield cache.updateGame(lobbyid, Object.assign(Object.assign({}, game), { data: updatedGameData, clock: updatedClock }));
+            }
+            else {
+                return yield cache.updateGame(lobbyid, Object.assign(Object.assign({}, game), { data: updatedGameData }));
+            }
         });
     }
     socket.on("game:move", ({ move, lobbyid }, ack) => __awaiter(this, void 0, void 0, function* () {
-        const moveRecievedISO = (0, clockFunctions_1.currentISO)();
-        const lobby = yield cache.getLobbyById(lobbyid);
-        if (!lobby)
-            throw new Error("Lobby does not exist");
-        const game = lobby.currentGame;
-        if (game === null)
-            throw new Error("no active game");
-        if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
-            throw new Error("Player is not in lobby");
-        //Execute the move
-        const updatedGameData = Chess.move(game.data, move);
-        //Update the clock state and apply increment
-        const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
-        const updated = yield cache.updateGame(lobbyid, Object.assign(Object.assign({}, game), { data: updatedGameData, clock: updatedClock }));
+        var _d;
+        const updated = yield executeMove(move, lobbyid);
         //Return the updated game data to the client and emit to the opponent
         ack({ status: true, data: updated, error: null });
         socket.to(lobbyid).emit("game:move", updated);
+        const currentLobby = yield cache.getLobbyById(lobbyid);
+        if (!currentLobby)
+            return;
+        if (!currentLobby.currentGame)
+            return;
+        const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
+        const nextPlayerSocketId = (_d = currentLobby.players.find((player) => player.id === nextPlayerId)) === null || _d === void 0 ? void 0 : _d.primaryClientSocketId;
+        if (!nextPlayerSocketId)
+            return;
+        const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
+        if (!nextPlayerSocket)
+            return;
+        const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(currentLobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]);
+        //Request move from next player
+        requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
     }));
 }
 exports.default = LobbyHandler;

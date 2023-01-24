@@ -9,8 +9,8 @@ interface Props {
 const Lobby: NextPage<Props> = ({ lobbyid }) => {
   return (
     <div className="h-screen w-screen justify-center items-center flex bg-[#181818]">
-      <main className="flex container justify-center items-center w-full h-full">
-        <div className="md:h-full w-full w-full flex justify-center items-center  ">
+      <main className="flex justify-center items-center px-8 xl:container w-screen h-full">
+        <div className="md:h-full w-full flex justify-center items-center  ">
           <NonSSRWrapper>
             <GameOnline lobbyid={lobbyid} />
           </NonSSRWrapper>

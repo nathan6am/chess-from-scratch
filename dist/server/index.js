@@ -96,7 +96,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     app.use(passport_1.default.initialize());
     app.use(passport_1.default.session());
     app.use(passport_1.default.authenticate("session"));
-    app.use("/", auth_1.default);
+    app.use("/api/auth", auth_1.default);
     //Wrap middleware for socket.io
     const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
     const io = new socketio.Server(server, {

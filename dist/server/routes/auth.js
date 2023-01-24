@@ -46,7 +46,7 @@ const user_1 = require("../../lib/db/entities/user");
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
-const facebookCallbackURL = process.env.BASE_URL + "/auth/facebook/callback";
+const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
 passport_1.default.use(new passportLocal.Strategy(function (username, password, done) {
     return __awaiter(this, void 0, void 0, function* () {
         const user = yield user_1.User.login({ username, password });
@@ -91,15 +91,15 @@ passport_1.default.deserializeUser((_req, id, done) => {
     done(null, user);
 });
 const router = express_1.default.Router();
-router.get("/auth/facebook", passport_1.default.authenticate("facebook"));
-router.get("/auth/facebook/callback", passport_1.default.authenticate("facebook", {
+router.get("/facebook", passport_1.default.authenticate("facebook"));
+router.get("/facebook/callback", passport_1.default.authenticate("facebook", {
     successReturnToOrRedirect: "/",
     failureRedirect: "/failure",
 }));
-router.get("/auth/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+router.get("/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
     res.redirect("/");
 });
-router.get("/auth/user", function (req, res, next) {
+router.get("/user", function (req, res, next) {
     if (!req.user) {
         res.status(200).json({});
     }
@@ -107,10 +107,7 @@ router.get("/auth/user", function (req, res, next) {
         res.status(200).json(req.user);
     }
 });
-router.get("/auth/status", function (req, res) {
-    return __awaiter(this, void 0, void 0, function* () { });
-});
-router.post("/auth/login", passport_1.default.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
+router.post("/login", passport_1.default.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
     if (req.user) {
         res.json({ user: req.user });
     }
@@ -118,7 +115,7 @@ router.post("/auth/login", passport_1.default.authenticate("local", { failureRed
         res.status(401).send();
     }
 });
-router.post("/auth/signup", function (req, res, next) {
+router.post("/signup", function (req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         const accountdetails = req.body;
         if (!accountdetails) {
@@ -151,8 +148,9 @@ router.post("/auth/signup", function (req, res, next) {
         }
     });
 });
-router.get("/auth/checkusername", function (req, res) {
+router.get("/checkusername", function (req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log(req.query);
         const username = req.query.username;
         if (!username || typeof username !== "string") {
             res.status(400).end();
@@ -174,7 +172,7 @@ router.get("/auth/checkusername", function (req, res) {
 //     res.status(200).send();
 //   }
 // });
-router.get("/auth/logout", function (req, res, next) {
+router.get("/logout", function (req, res, next) {
     console.log("logging out");
     req.logout(function (err) {
         if (err) {

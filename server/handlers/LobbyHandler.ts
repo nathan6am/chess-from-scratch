@@ -96,6 +96,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
         //Return the lobby to the client and start the game if both players are connected and
         ack({ status: true, data: updated, error: null });
         if (updated.players.length === 2 && lobby.currentGame === null) {
+          console.log("starting");
           startGame(lobbyid);
         }
         return;
@@ -113,7 +114,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
   });
 
   const socketInstanceById = async (socketId: string) => {
-    const sockets = await io.in(socketId).fetchSockets();
+    const sockets = await nsp.in(socketId).fetchSockets();
     for (const socket of sockets) {
       if (socket.id === socketId) return socket as unknown as Socket;
     }
@@ -129,12 +130,13 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     const playerWhiteSocketId = lobby.players.find((player) => player.id === playerW)?.primaryClientSocketId;
     if (!playerWhiteSocketId) throw new Error("Conection mismatch");
     const whiteSocket = await socketInstanceById(playerWhiteSocketId);
+
     if (!whiteSocket) {
       //Abort the game
       return;
     }
     requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
-    whiteSocket.to(lobbyid).emit("game:new", game);
+    nsp.to(lobbyid).emit("game:new", game);
   }
 
   const requestMoveWithTimeout = async (socket: Socket, timeoutMs: number, game: Game, lobbyid: string) => {
@@ -159,11 +161,16 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
         //return if moves have been played since the initial request
         if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length) return;
         //Set outcome by timeout and emit
-        lobby.currentGame.data.outcome = { result: lobby.currentGame.data.activeColor, by: "timeout" };
+        lobby.currentGame.data.outcome = {
+          result: lobby.currentGame.data.activeColor === "w" ? "b" : "w",
+          by: "timeout",
+        };
+        lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
         cache.updateGame(lobbyid, lobby.currentGame);
         nsp.to(lobbyid).emit("game:outcome", lobby.currentGame);
       } else {
         try {
+          console.log(response);
           const updated = await executeMove(response, lobbyid);
           nsp.to(lobbyid).emit("game:move", updated);
           const currentLobby = await cache.getLobbyById(lobbyid);

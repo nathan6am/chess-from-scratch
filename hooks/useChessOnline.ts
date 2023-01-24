@@ -105,12 +105,14 @@ export default function useChessOnline(lobbyId: string) {
   const clockRef = useRef<{
     w: number;
     b: number;
+    activeColor: Chess.Color;
   } | null>(null);
 
   const clock = useMemo(() => {
     if (!game) return null;
     return {
       ...game.clock.timeRemainingMs,
+      activeColor: game.data.activeColor,
     };
   }, [game]);
 
@@ -134,7 +136,7 @@ export default function useChessOnline(lobbyId: string) {
     if (!clock) return;
     timerWhite.restart(clock.w, started && activeColor === "w");
     timerBlack.restart(clock.b, started && activeColor === "b");
-  }, [clock, clockRef, timerBlack, timerWhite]);
+  }, [clock, clockRef, timerBlack, timerWhite, started]);
 
   //Memoized socket connection
   const socket = useMemo<
@@ -176,9 +178,11 @@ export default function useChessOnline(lobbyId: string) {
       setLivePositionOffset(0);
       updateGame(game);
     };
-    socket.on("game:new", (game) => {
+    const onNewGame = (game: Game) => {
       updateGame(game);
-    });
+      console.log(game);
+    };
+    socket.on("game:new", onNewGame);
     socket.on("game:move", onMoveRecieved);
     const onTest = (response: string, ack: (arg: string) => void) => {
       console.log(response);
@@ -186,9 +190,15 @@ export default function useChessOnline(lobbyId: string) {
     };
 
     const onMoveRequested = (timeout: number, game: Game, ack: (move: Chess.Move) => void) => {
+      console.log("move requested");
       callbackRef.current = ack;
       updateGame(game);
     };
+    const onOutcome = (game: Game) => {
+      updateGame(game);
+      console.log(game.data.outcome);
+    };
+    socket.on("game:outcome", onOutcome);
     socket.on("game:request-move", onMoveRequested);
     socket.on("test:requestAck", onTest);
 
@@ -196,8 +206,10 @@ export default function useChessOnline(lobbyId: string) {
       socket.disconnect();
       socket.off("connect", onConnect);
       socket.off("game:move", onMoveRecieved);
+      socket.off("game:new", onNewGame);
       socket.off("test:requestAck", onTest);
       socket.off("game:request-move", onMoveRequested);
+      socket.off("game:outcome", onOutcome);
       socket.off("connect_error", onConnectError);
     };
   }, []);
@@ -210,6 +222,7 @@ export default function useChessOnline(lobbyId: string) {
     (move: Chess.Move) => {
       if (!game || !playerColor || !lobbyid) return;
       if (game.data.activeColor !== playerColor) return;
+      if (game.data.outcome) return;
       if (game.data.legalMoves.some((legalMove) => _.isEqual(move, legalMove))) {
         delayRef.current = DateTime.now();
         //Optimistically update the game state for smooth animations
@@ -226,6 +239,7 @@ export default function useChessOnline(lobbyId: string) {
         }
         if (callbackRef.current) {
           callbackRef.current(move);
+          callbackRef.current = undefined;
         } else {
           //Emit the move event to the server and update the game again upon acknowledgement
           socket.emit("game:move", { move, lobbyid }, (response) => {
