@@ -44,9 +44,6 @@ export class User extends BaseEntity {
   googleId: string;
 
   @Column({ nullable: true })
-  country: string;
-
-  @Column({ nullable: true })
   email: string;
 
   @OneToMany(() => Notification, (notifcation) => notifcation.user)
@@ -189,6 +186,18 @@ export class User extends BaseEntity {
       user.save();
     }
   }
+}
+
+@Entity()
+export class Profile {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: "jsonb", default: defaultSettings })
+  settings: AppSettings;
+
+  @Column({ nullable: true })
+  country: string;
 }
 
 @Entity()

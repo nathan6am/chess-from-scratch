@@ -26,9 +26,7 @@ export default function GameOnline({ lobbyid }: Props) {
     livePositionOffset,
     lastMove,
   } = useChessOnline(lobbyid);
-  const [orientation, setOrientation] = useState<Chess.Color>(
-    playerColor || "w"
-  );
+  const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
