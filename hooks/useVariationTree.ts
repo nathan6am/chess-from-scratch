@@ -3,7 +3,9 @@ import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
 
-export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {
+export default function useVariationTree(
+  initialTree?: TreeNode<Chess.NodeData>[]
+) {
   const tree = useTreeData<Chess.NodeData>(initialTree || []);
 
   //Key of the selectedNode
@@ -17,7 +19,7 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
   }, [currentKey, tree]);
 
   const pgn = useMemo(() => {
-    return treeArrayToString(tree.treeArray);
+    return treeArrayToPgn(tree.treeArray);
   }, [tree.treeArray]);
 
   // Current line up to the current node
@@ -82,22 +84,30 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
     return null;
   }
 
-  function treeArrayToString(treeArray: TreeNode<Chess.NodeData>[], separator: string = " "): string {
+  function treeArrayToPgn(
+    treeArray: TreeNode<Chess.NodeData>[],
+    separator: string = " "
+  ): string {
     let str = "";
     treeArray.forEach((node) => {
       let notation = "";
       const fullMoveCount = node.data.moveCount[0];
       let index = tree.getSiblingIndex(node.key);
       if (index === 0) {
-        notation = `${fullMoveCount}${node.data.moveCount[1] === 0 ? ". " : "... "}`;
+        notation = `${fullMoveCount}${
+          node.data.moveCount[1] === 0 ? ". " : "... "
+        }`;
       } else if (node.data.moveCount[1] === 0) {
         notation = `${fullMoveCount}. `;
       }
       notation = notation + node.data.move.PGN;
 
       str += notation;
+      if (node.data.comment) {
+        str += `{${node.data.comment}}`;
+      }
       if (node.children.length) {
-        str += `(${treeArrayToString(node.children, separator)})`;
+        str += `(${treeArrayToPgn(node.children, separator)})`;
       }
       str += separator;
     });

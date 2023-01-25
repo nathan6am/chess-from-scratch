@@ -17,9 +17,6 @@ export default function GameLocal() {
 
   return (
     <div className="flex flex-col h-full w-full justify-center">
-      <p>eval: {evaluation && evaluation.score?.value}</p>
-      <p>depth: {evaluation && evaluation.depth}</p>
-      <p>wasm supported: {wasm ? "supported" : "not-supported"}</p>
       <div className="flex flex-row items-center">
         <EvalBar
           scoreType={evaluation?.score?.type || "cp"}

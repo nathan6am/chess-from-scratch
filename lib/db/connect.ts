@@ -1,6 +1,14 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User, Game, Puzzle, Notification, Analysis, User_Game, Credential } from "./entities/user";
+import {
+  User,
+  Game,
+  Puzzle,
+  Notification,
+  Analysis,
+  User_Game,
+  Credential,
+} from "./entities/user";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";
@@ -17,7 +25,15 @@ export async function initialize() {
     password,
     database,
     host,
-    entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential],
+    entities: [
+      User,
+      Game,
+      Puzzle,
+      Analysis,
+      Notification,
+      User_Game,
+      Credential,
+    ],
     synchronize: true,
   });
   await datasource.initialize();
