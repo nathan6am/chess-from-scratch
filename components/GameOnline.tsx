@@ -7,6 +7,7 @@ import _ from "lodash";
 import MoveHistory from "@/components/game/MoveHistory";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
+import Result from "@/components/UI/dialogs/Result";
 import useChessOnline from "@/hooks/useChessOnline";
 interface Props {
   lobbyid: string;
@@ -35,6 +36,7 @@ export default function GameOnline({ lobbyid }: Props) {
   const currentGame = game.data;
   return (
     <div className="flex flex-col h-full w-full justify-center">
+      <Result outcome={game.data.outcome} isOpen={game.data.outcome ? true : false} close={() => {}} />
       <div className="flex flex-row items-center">
         <Board
           orientation={orientation}

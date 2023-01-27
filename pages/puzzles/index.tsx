@@ -7,7 +7,6 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "@/pages/_app";
 import RootLayout from "@/components/layout/RootLayout";
 import MenuLayout from "@/components/layout/MenuLayout";
-import Result from "@/components/UI/dialogs/result";
 const Play: NextPageWithLayout = () => {
   return (
     <>
@@ -17,7 +16,6 @@ const Play: NextPageWithLayout = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>PUZZLEAS</div>
-      <Result outcome={{ result: "w", by: "checkmate" }} />
     </>
   );
 };

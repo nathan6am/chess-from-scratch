@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.escapeSpecialChars = exports.notEmpty = exports.coinflip = void 0;
+exports.removeUndefinedFields = exports.escapeSpecialChars = exports.notEmpty = exports.coinflip = void 0;
 function coinflip(a, b) {
     return Math.random() < 0.5 ? a : b;
 }
@@ -13,3 +13,7 @@ function escapeSpecialChars(string) {
     return string.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 exports.escapeSpecialChars = escapeSpecialChars;
+const removeUndefinedFields = (obj) => {
+    return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
+};
+exports.removeUndefinedFields = removeUndefinedFields;

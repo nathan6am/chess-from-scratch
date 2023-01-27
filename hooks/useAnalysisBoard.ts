@@ -14,7 +14,8 @@ export default function useAnalysisBoard(startFen: string) {
   }, []);
   const variationTree = useVariationTree();
 
-  const { currentNodeData, path, onStepBackward, onStepForward, continuation } = variationTree;
+  const { currentNodeData, path, onStepBackward, onStepForward, currentKey, pgn, mainLine, setCurrentKey } =
+    variationTree;
 
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNodeData === null) return initialGame;
@@ -27,7 +28,7 @@ export default function useAnalysisBoard(startFen: string) {
     if (evaler.isReady) {
       evaler.getEvaluation(currentGame.fen);
     }
-  }, [evaler.isReady]);
+  }, [evaler.isReady, currentGame]);
   const onMove = useCallback(
     (move: Chess.Move) => {
       const existingMoveKey = variationTree.findNextMove(Chess.MoveToUci(move));
@@ -35,8 +36,8 @@ export default function useAnalysisBoard(startFen: string) {
         const next = variationTree.setCurrentKey(existingMoveKey);
         if (next) evaler.getEvaluation(next.data.fen);
       } else {
-        const currentMoveCount: [number, 0 | 1] = currentNodeData ? currentNodeData.moveCount : [0, 1];
-        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, currentMoveCount);
+        const halfMoveCount = variationTree.path.length + 1;
+        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
         variationTree.addMove(nodeToInsert);
         evaler.getEvaluation(nodeToInsert.fen);
       }
@@ -54,6 +55,8 @@ export default function useAnalysisBoard(startFen: string) {
     if (prev) evaler.getEvaluation(prev.data.fen);
   };
   return {
+    pgn,
+    mainLine,
     currentGame,
     onMove,
     evaluation: evaler.evaluation,
@@ -61,5 +64,8 @@ export default function useAnalysisBoard(startFen: string) {
     stepForward,
     variations: variationTree.treeArray,
     wasm: evaler.wasmSupported,
+    setCurrentKey,
+    currentKey,
+    currentNodeData,
   };
 }

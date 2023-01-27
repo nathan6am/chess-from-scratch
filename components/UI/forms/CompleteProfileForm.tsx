@@ -2,11 +2,11 @@
 import React, { useState, useContext, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
+import Image from "next/image";
 //UI Components
 import ButtonSocial from "@/components/UI/ButtonSocial";
 import Input from "@/components/UI/Input";
-
+import { RadioGroup } from "@headlessui/react";
 //Context
 import { UserContext } from "@/context/user";
 
@@ -18,24 +18,29 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import YupPassword from "yup-password";
 YupPassword(yup);
-
+import { User } from "@/lib/db/entities/user";
+import CountrySelect from "../CountrySelect";
+import { removeUndefinedFields } from "@/util/misc";
 //ValidationSchemas
 const schema = yup.object({
-  username: yup.string().required("Username is required").min(3, "Username must be at least 3 characters").max(20),
-  email: yup.string().required("Email is required").email("Please enter a valid email address"),
-  password: yup.string().required("Password is required").min(8, "Password must contain 8 or more characters"),
-  confirmPassword: yup.string().test("match", "Passwords do not match", function (confirmPassword) {
-    return confirmPassword === this.parent.password;
-  }),
+  username: yup.string().min(3, "Username must be at least 3 characters").max(20),
 });
 
 type FormValues = {
   username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
+  name?: string;
 };
-export default function SignUpForm() {
+
+type Profile = {
+  username: string;
+  rating: number;
+  name?: string;
+  country?: string;
+};
+interface Props {
+  profile: User;
+}
+export default function SignUpForm({ profile }: Props) {
   const {
     register,
     handleSubmit,
@@ -43,30 +48,35 @@ export default function SignUpForm() {
     setError,
     clearErrors,
     formState: { errors },
-  } = useForm<FormValues>({ mode: "onTouched", reValidateMode: "onChange", resolver: yupResolver(schema) });
+  } = useForm<FormValues>({
+    defaultValues: {
+      username: profile.username || "",
+      name: profile.name || "",
+    },
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    resolver: yupResolver(schema),
+  });
   const router = useRouter();
-  const { refresh } = useContext(UserContext);
-  const password = watch("password");
+  const { refresh, user } = useContext(UserContext);
   const [usernameValid, setUsernameValid] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const [country, setCountry] = useState<string | null>(null);
+  const [rating, setRating] = useState(800);
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!usernameValid) {
+    if (data.username && !usernameValid) {
       setError("username", { message: "Username is already in use" });
       return;
     } else {
-      const res = await axios.post("api/auth/signup", {
+      let profile: Profile = {
         username: data.username,
-        email: data.email,
-        password: data.password,
-      });
-
-      if (res.data.fieldErrors) {
-        const errors = res.data.fieldErrors as Array<{ field: string; message: string }>;
-        errors.forEach((error) => {
-          if (error.field === "email") setError(error.field, { message: error.message });
-        });
-      } else if (res.data.user) {
-        refresh(res.data.user);
+        rating,
+      };
+      if (country) profile.country = country;
+      if (data.name?.length) profile.name = data.name;
+      const res = await axios.post("/api/user/complete-profile", profile);
+      if (res.data.updated && res.data.profile) {
+        refresh({ ...user, type: "user" });
         router.push("/play");
       }
     }
@@ -86,9 +96,9 @@ export default function SignUpForm() {
 
   return (
     <div className="flex flex-col items-center justify-center px-6 lg:px-10 xl:px-10 col-span-5 lg:col-span-2 min-h-[90%]  w-full my-4 mx-auto">
-      <div className="flex flex-col max-w-[400px] items-center justify-center ">
+      <div className="flex flex-col max-w-[500px]  w-full items-center justify-center ">
         <h2 className=" text-xl lg:text-2xl text-white mb-6 py-2 border-b-4 border-sepia/[0.7] px-2">
-          Create an Account
+          Complete Your Profile
         </h2>
 
         <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
@@ -100,7 +110,9 @@ export default function SignUpForm() {
             type="text"
             placeholder="Username"
             verifying={verifying}
+            disabled={profile.username ? true : false}
             {...register("username", {
+              disabled: profile.username ? true : false,
               required: { value: true, message: "Please enter a username" },
               minLength: { value: 3, message: "username must be at least 3 characters" },
               maxLength: { value: 21, message: "Max length exceeded" },
@@ -117,39 +129,34 @@ export default function SignUpForm() {
               },
             })}
           />
+
           <Input
-            id="Email"
-            error={errors.email ? (errors?.email?.message as string) || null : null}
-            label="Email"
-            status={errors.email ? "error" : null}
+            id="Name"
+            error={errors.name ? (errors?.name?.message as string) || null : null}
+            label="Name"
+            status={errors.name ? "error" : null}
             type="text"
-            placeholder="Email"
-            {...register("email")}
-          />
-          <Input
-            id="Password"
-            label="Password"
-            status={errors.password ? "error" : null}
-            type="password"
-            placeholder="Password"
-            error={(errors.password?.message as string) || null}
-            {...register("password", { deps: ["confirmPassword"] })}
-          />
-          <Input
-            id="ConfirmPassword"
-            status={errors.confirmPassword ? "error" : null}
-            type="password"
-            placeholder="Re-enter Password"
-            error={(errors.confirmPassword?.message as string) || null}
-            {...register("confirmPassword", {
-              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.value === password) {
-                  clearErrors("confirmPassword");
-                }
-              },
-            })}
+            placeholder="Full Name"
+            {...register("name")}
           />
 
+          <span className="flex flex-row items-center mb-1">
+            <label className="block text-white/[0.6] text-md font-semibold " htmlFor={"country"}>
+              Country
+            </label>
+            <p className="text-sm text-white/[0.3] font-medium ml-1 mt-[1px]">(optional)</p>
+          </span>
+          <CountrySelect
+            onChange={(val) => {
+              setCountry(val?.id || null);
+            }}
+          />
+
+          <SkillSelect
+            onChange={(skill) => {
+              setRating(skill.rating);
+            }}
+          />
           <button
             type="submit"
             disabled={false}
@@ -158,27 +165,102 @@ export default function SignUpForm() {
             Continue
           </button>
         </form>
-
-        <p className="my-2 text-white opacity-50">or</p>
-        <ButtonSocial variant="google" href="api/auth/google">
-          Sign Up with Google
-        </ButtonSocial>
-
-        <ButtonSocial variant="facebook" href="api/auth/facebook">
-          Sign Up with Facebook
-        </ButtonSocial>
-
-        <p className="text-white/[0.25] text-center px-4 mb-4 mt-2 text-xs">
-          By signing up, you agree to our <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
-          <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
-        </p>
-        <span className="flex flex-row justify-between px-2">
-          <h3 className="text-white/[0.25] mr-2">Already have an account?</h3>
-          <Link href="/login">
-            <p className="text-white/[0.8] font-semibold">SIGN IN</p>
-          </Link>
-        </span>
       </div>
     </div>
+  );
+}
+
+interface SkillLevel {
+  name: string;
+  description: string;
+  rating: number;
+  iconPath: string;
+}
+const skillOptions = [
+  { name: "Beginner", description: "< 1000", rating: 800, iconPath: "/assets/pieces/standard/bp.png" },
+  { name: "Intermediated", description: "1000-1600", rating: 1200, iconPath: "/assets/pieces/standard/bn.png" },
+  { name: "Advanced", description: "1600+", rating: 1600, iconPath: "/assets/pieces/standard/bq.png" },
+];
+
+interface SkillProps {
+  onChange: (option: SkillLevel) => void;
+}
+function SkillSelect({ onChange }: SkillProps) {
+  const [selected, setSelected] = useState(skillOptions[0]);
+
+  return (
+    <div className="w-full py-8">
+      <div className="mx-auto w-full">
+        <RadioGroup
+          value={selected}
+          onChange={(val: SkillLevel) => {
+            onChange(val);
+            setSelected(val);
+          }}
+        >
+          <label className="block text-white/[0.6] text-md font-semibold mb-2" htmlFor={"country"}>
+            Estimated Skill Level
+          </label>
+          <div className="space-y-3">
+            {skillOptions.map((option) => (
+              <RadioGroup.Option
+                key={option.name}
+                value={option}
+                className={({ active, checked }) =>
+                  `${active ? "ring-2 ring-white ring-opacity-60 " : ""}
+                  ${checked ? "bg-sepia/[0.4] bg-opacity-75 text-white" : "bg-[#202020]"}
+                    relative flex cursor-pointer rounded-lg px-3 py-2 shadow-md focus:outline-none`
+                }
+              >
+                {({ active, checked }) => (
+                  <>
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex flex-row items-center">
+                          <Image
+                            src={option.iconPath}
+                            width={24}
+                            height={20}
+                            alt=""
+                            className="mr-3 opacity-50"
+                            style={{ filter: "invert(1)" }}
+                          />
+                          <RadioGroup.Label
+                            as="p"
+                            className={`font-semibold  ${checked ? "text-white" : "text-white/[0.8]"}`}
+                          >
+                            {option.name}
+                          </RadioGroup.Label>
+                          <RadioGroup.Description
+                            as="span"
+                            className={`inline ${checked ? "text-white/[0.7]" : "text-sepia/[0.7]"} ml-3 text-sm`}
+                          >
+                            <span>{option.description}</span>{" "}
+                          </RadioGroup.Description>
+                        </div>
+                      </div>
+                      {checked && (
+                        <div className="shrink-0 text-white">
+                          <CheckIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </RadioGroup.Option>
+            ))}
+          </div>
+        </RadioGroup>
+      </div>
+    </div>
+  );
+}
+
+function CheckIcon(props: any) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <circle cx={12} cy={12} r={12} fill="#fff" opacity="0.2" />
+      <path d="M7 13l3 3 7-7" stroke="#fff" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

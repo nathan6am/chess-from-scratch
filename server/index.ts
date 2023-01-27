@@ -13,6 +13,7 @@ import passport from "passport";
 import authRouter from "./routes/auth";
 import MainHandler from "./handlers/MainHandler";
 import { createClient } from "redis";
+import userRouter from "./routes/user";
 import {
   InterServerEvents,
   SocketData,
@@ -97,6 +98,7 @@ nextApp.prepare().then(async () => {
   app.use(passport.authenticate("session"));
 
   app.use("/api/auth", authRouter);
+  app.use("/api/user", userRouter);
 
   //Wrap middleware for socket.io
   const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
@@ -149,7 +151,6 @@ nextApp.prepare().then(async () => {
   });
 
   lobbyNsp.on("connection", (socket: LobbySocket) => {
-    console.log(`Client ${socket.data.userid} connected to lobby nsp`);
     LobbyHandler(io, lobbyNsp, socket, redisClient);
     socket.on("disconnect", () => {
       console.log("client disconnected from lobby nsp");
@@ -157,7 +158,6 @@ nextApp.prepare().then(async () => {
   });
 
   io.on("connection", (socket: Socket) => {
-    console.log("Connected to primary nsp");
     MainHandler(io, socket, redisClient);
     socket.on("disconnect", () => {
       console.log("client disconnected");

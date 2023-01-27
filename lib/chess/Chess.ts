@@ -12,7 +12,6 @@ import {
   Outcome,
   HalfMove,
   Board,
-  Node,
   NodeData,
   FullMove,
 } from "./ChessTypes";
@@ -849,7 +848,7 @@ export function gameFromNodeData(data: NodeData, moves?: Array<NodeData>): Game 
   //convert the line into move history
   if (moves) {
     const halfMoves = moves.map((node) => {
-      const { uci, evaluation, moveCount, ...rest } = node;
+      const { uci, evaluation, halfMoveCount, ...rest } = node;
       return { ...rest } as HalfMove;
     });
 
@@ -868,9 +867,9 @@ export function gameFromNodeData(data: NodeData, moves?: Array<NodeData>): Game 
 }
 
 //Generate a new tree node from a halfmove
-export function halfMoveToNode(moveCount: [number, 0 | 1], halfMove: HalfMove): Omit<NodeData, "outcome"> {
+export function halfMoveToNode(halfMoveCount: number, halfMove: HalfMove): Omit<NodeData, "outcome"> {
   return {
-    moveCount,
+    halfMoveCount,
     uci: MoveToUci(halfMove.move),
     comments: [],
     ...halfMove,
@@ -881,11 +880,10 @@ export function MoveToUci(move: Move): string {
   return `${move.start}${move.end}${move.promotion ? move.promotion : ""}`;
 }
 
-export function nodeDataFromMove(game: Game, moveToExecute: Move, currentMoveCount: [number, 0 | 1]): NodeData {
+export function nodeDataFromMove(game: Game, moveToExecute: Move, halfMoveCount: number): NodeData {
   const updatedGame = move(game, moveToExecute);
   const lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
   const lastHalfMove = lastMove[1] || lastMove[0];
-  const moveCount: [number, 0 | 1] = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
-  const partialNode = halfMoveToNode(moveCount, lastHalfMove);
-  return { ...partialNode, moveCount, outcome: updatedGame.outcome };
+  const partialNode = halfMoveToNode(halfMoveCount, lastHalfMove);
+  return { ...partialNode, halfMoveCount, outcome: updatedGame.outcome };
 }

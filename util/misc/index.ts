@@ -9,3 +9,7 @@ export function notEmpty<T>(value: T | null | undefined): value is T {
 export function escapeSpecialChars(string: string): string {
   return string.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
+
+export const removeUndefinedFields = (obj: any) => {
+  return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
+};

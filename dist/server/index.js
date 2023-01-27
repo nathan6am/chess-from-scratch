@@ -49,6 +49,7 @@ const passport_1 = __importDefault(require("passport"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
 const redis_1 = require("redis");
+const user_1 = __importDefault(require("./routes/user"));
 const redisClient = (0, redis_1.createClient)();
 const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
 const cors_1 = __importDefault(require("cors"));
@@ -97,6 +98,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     app.use(passport_1.default.session());
     app.use(passport_1.default.authenticate("session"));
     app.use("/api/auth", auth_1.default);
+    app.use("/api/user", user_1.default);
     //Wrap middleware for socket.io
     const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
     const io = new socketio.Server(server, {
@@ -137,14 +139,12 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
         next();
     });
     lobbyNsp.on("connection", (socket) => {
-        console.log(`Client ${socket.data.userid} connected to lobby nsp`);
         (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
         socket.on("disconnect", () => {
             console.log("client disconnected from lobby nsp");
         });
     });
     io.on("connection", (socket) => {
-        console.log("Connected to primary nsp");
         (0, MainHandler_1.default)(io, socket, redisClient);
         socket.on("disconnect", () => {
             console.log("client disconnected");

@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "@/pages/_app";
 import RootLayout from "@/components/layout/RootLayout";
 import MenuLayout from "@/components/layout/MenuLayout";
-import Result from "@/components/UI/dialogs/result";
+import Result from "@/components/UI/dialogs/Result";
 const Study: NextPageWithLayout = () => {
   return (
     <>

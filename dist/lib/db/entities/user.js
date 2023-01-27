@@ -156,6 +156,14 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             }
         });
     }
+    static getProfile(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(id);
+            const user = yield this.findOneBy({ id: id });
+            console.log(user);
+            return user;
+        });
+    }
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
@@ -170,17 +178,21 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "username", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ default: 800 }),
+    __metadata("design:type", Number)
+], User.prototype, "rating", void 0);
+__decorate([
     (0, typeorm_1.Column)({ nullable: true, unique: true }),
     __metadata("design:type", String)
 ], User.prototype, "facebookId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true, unique: true }),
-    __metadata("design:type", String)
-], User.prototype, "googleId", void 0);
-__decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "country", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, unique: true }),
+    __metadata("design:type", String)
+], User.prototype, "googleId", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
@@ -235,7 +247,7 @@ __decorate([
     __metadata("design:type", Object)
 ], User_Game.prototype, "game", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ type: "text" }),
     __metadata("design:type", String)
 ], User_Game.prototype, "color", void 0);
 User_Game = __decorate([

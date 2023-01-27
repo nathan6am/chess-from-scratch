@@ -2,12 +2,11 @@ import useTreeData, { TreeNode } from "./useTreeData";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
+import nodeTest from "node:test";
 
-export default function useVariationTree(
-  initialTree?: TreeNode<Chess.NodeData>[]
-) {
+export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {
   const tree = useTreeData<Chess.NodeData>(initialTree || []);
-
+  const map = tree.map;
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
 
@@ -20,8 +19,71 @@ export default function useVariationTree(
 
   const pgn = useMemo(() => {
     return treeArrayToPgn(tree.treeArray);
-  }, [tree.treeArray]);
+  }, [tree]);
 
+  const mainLine = useMemo<TreeNode<Chess.NodeData>[]>(() => {
+    const root = tree.treeArray[0];
+    let path: TreeNode<Chess.NodeData>[] = [];
+    let currentNode = root;
+    while (currentNode) {
+      path.push(currentNode);
+      currentNode = currentNode.children[0];
+    }
+    return path;
+  }, [tree]);
+
+  function treeArrayToPgn(treeArray: TreeNode<Chess.NodeData>[]) {
+    let pgn = "";
+    let stack: TreeNode<Chess.NodeData>[] = [];
+    let previousVariationDepth = 0;
+    for (let i = treeArray.length - 1; i > 0; i--) {
+      stack.push(treeArray[i]);
+    }
+    stack.push(treeArray[0]);
+
+    while (stack.length) {
+      const node = stack.pop();
+      if (!node) break;
+      const halfMoveCount = tree.getDepth(node.key);
+      const variationDepth = tree.getPly(node.key);
+      const depthChange = variationDepth - previousVariationDepth;
+      const index = tree.getSiblingIndex(node.key);
+      const siblings = tree.getSiblings(node.key).slice(1);
+      if (depthChange > 1) throw new Error("Invalid tree structure");
+      if (depthChange < 0) {
+        for (let i = -1; i > depthChange; i--) {
+          pgn += ")";
+        }
+        pgn += " ";
+      }
+      if (index !== 0) pgn += "(";
+      const isWhite = halfMoveCount % 2 == 0;
+      if (depthChange !== 0 || index !== 0 || isWhite) {
+        pgn += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
+      }
+      pgn += `${node.data.PGN} ${node.data.comments.length ? `{${node.data.comments.join("; ")}} ` : ""}`;
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) pgn += ")";
+      if (node.children[0]) {
+        stack.push(node.children[0]);
+      }
+      if (index === 0) {
+        if (siblings.length) {
+          for (let i = siblings.length - 1; i >= 0; i--) {
+            stack.push(siblings[i]);
+          }
+        }
+      }
+
+      previousVariationDepth = variationDepth;
+    }
+    if (previousVariationDepth !== 0) {
+      for (let i = 1; i < previousVariationDepth; i++) {
+        pgn += ")";
+      }
+    }
+
+    return pgn;
+  }
   // Current line up to the current node
   const path = useMemo<TreeNode<Chess.NodeData>[]>(() => {
     if (currentKey === null) return [];
@@ -31,17 +93,16 @@ export default function useVariationTree(
 
   //Continuation of the current line after the selected node
   const continuation = useMemo<TreeNode<Chess.NodeData>[]>(() => {
-    if (currentKey === null) return tree.treeArray;
-    const siblings = tree.getSiblings(currentKey);
-    if (siblings.length <= 1) return [];
-    const index = siblings.findIndex((node) => node.key === currentKey);
-    return siblings.slice(index + 1);
+    const path = tree.getContinuation(currentKey);
+    return path;
   }, [currentKey, tree]);
 
   //Find the key of a given next move if the variation already exists, otherwise returns undefined
   const findNextMove = useCallback<(uci: string) => string | undefined>(
     (uci: string) => {
-      return tree.findNextNode(currentKey, (node) => node.data.uci === uci);
+      const nextMove = tree.findChild(currentKey, (node) => node.data.uci === uci);
+      if (!nextMove) return undefined;
+      return nextMove.key;
     },
     [currentKey, tree]
   );
@@ -54,14 +115,11 @@ export default function useVariationTree(
       setCurrentKey(moveKey);
       return;
     }
-    const node = {
-      key: uuidv4(),
-      children: [],
-      data,
-    };
-    tree.insertAfter(node, currentKey);
-    //Set the selected node to the new node
-    setCurrentKey(node.key);
+    const newNode = tree.addNode(data, currentKey);
+
+    if (newNode)
+      //Set the selected node to the new node
+      setCurrentKey(newNode.key);
   }
 
   //Step forward on the current line
@@ -84,37 +142,9 @@ export default function useVariationTree(
     return null;
   }
 
-  function treeArrayToPgn(
-    treeArray: TreeNode<Chess.NodeData>[],
-    separator: string = " "
-  ): string {
-    let str = "";
-    treeArray.forEach((node) => {
-      let notation = "";
-      const fullMoveCount = node.data.moveCount[0];
-      let index = tree.getSiblingIndex(node.key);
-      if (index === 0) {
-        notation = `${fullMoveCount}${
-          node.data.moveCount[1] === 0 ? ". " : "... "
-        }`;
-      } else if (node.data.moveCount[1] === 0) {
-        notation = `${fullMoveCount}. `;
-      }
-      notation = notation + node.data.move.PGN;
-
-      str += notation;
-      if (node.data.comment) {
-        str += `{${node.data.comment}}`;
-      }
-      if (node.children.length) {
-        str += `(${treeArrayToPgn(node.children, separator)})`;
-      }
-      str += separator;
-    });
-    return str;
-  }
-
   return {
+    pgn,
+    mainLine,
     findNextMove,
     addMove,
     path,
@@ -124,6 +154,7 @@ export default function useVariationTree(
       setCurrentKey(key);
       return tree.getNode(key);
     },
+    currentKey,
     onStepBackward: stepBackward,
     onStepForward: stepForward,
     treeArray: tree.treeArray,

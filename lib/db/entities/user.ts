@@ -37,8 +37,14 @@ export class User extends BaseEntity {
   @Column({ nullable: true, unique: true })
   username: string;
 
+  @Column({ default: 800 })
+  rating: number;
+
   @Column({ nullable: true, unique: true })
   facebookId: string;
+
+  @Column({ nullable: true })
+  country: string;
 
   @Column({ nullable: true, unique: true })
   googleId: string;
@@ -186,18 +192,13 @@ export class User extends BaseEntity {
       user.save();
     }
   }
-}
 
-@Entity()
-export class Profile {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: "jsonb", default: defaultSettings })
-  settings: AppSettings;
-
-  @Column({ nullable: true })
-  country: string;
+  static async getProfile(id: string) {
+    console.log(id);
+    const user = await this.findOneBy({ id: id });
+    console.log(user);
+    return user;
+  }
 }
 
 @Entity()
@@ -215,7 +216,7 @@ export class User_Game {
   @JoinColumn({ name: "game_id" })
   game: Relation<Game>;
 
-  @Column()
+  @Column({ type: "text" })
   color: Color;
 }
 

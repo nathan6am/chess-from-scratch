@@ -722,7 +722,7 @@ function gameFromNodeData(data, moves) {
     //convert the line into move history
     if (moves) {
         const halfMoves = moves.map((node) => {
-            const { uci, evaluation, moveCount } = node, rest = __rest(node, ["uci", "evaluation", "moveCount"]);
+            const { uci, evaluation, halfMoveCount } = node, rest = __rest(node, ["uci", "evaluation", "halfMoveCount"]);
             return Object.assign({}, rest);
         });
         const history = [];
@@ -741,20 +741,19 @@ function gameFromNodeData(data, moves) {
 }
 exports.gameFromNodeData = gameFromNodeData;
 //Generate a new tree node from a halfmove
-function halfMoveToNode(moveCount, halfMove) {
-    return Object.assign({ moveCount, uci: MoveToUci(halfMove.move), comments: [] }, halfMove);
+function halfMoveToNode(halfMoveCount, halfMove) {
+    return Object.assign({ halfMoveCount, uci: MoveToUci(halfMove.move), comments: [] }, halfMove);
 }
 exports.halfMoveToNode = halfMoveToNode;
 function MoveToUci(move) {
     return `${move.start}${move.end}${move.promotion ? move.promotion : ""}`;
 }
 exports.MoveToUci = MoveToUci;
-function nodeDataFromMove(game, moveToExecute, currentMoveCount) {
+function nodeDataFromMove(game, moveToExecute, halfMoveCount) {
     const updatedGame = move(game, moveToExecute);
     const lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
     const lastHalfMove = lastMove[1] || lastMove[0];
-    const moveCount = currentMoveCount[1] ? [currentMoveCount[0] + 1, 0] : [currentMoveCount[0], 1];
-    const partialNode = halfMoveToNode(moveCount, lastHalfMove);
-    return Object.assign(Object.assign({}, partialNode), { moveCount, outcome: updatedGame.outcome });
+    const partialNode = halfMoveToNode(halfMoveCount, lastHalfMove);
+    return Object.assign(Object.assign({}, partialNode), { halfMoveCount, outcome: updatedGame.outcome });
 }
 exports.nodeDataFromMove = nodeDataFromMove;

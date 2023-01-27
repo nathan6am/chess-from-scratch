@@ -1,9 +1,11 @@
 //Framework
+import { User } from "@/lib/db/entities/user";
 import React, { useState, useContext } from "react";
 import Head from "next/head";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 import { NextPageContext } from "next";
+
 //Layouts
 import RootLayout from "@/components/layout/RootLayout";
 import AuthLayout from "@/components/layout/AuthLayout";
@@ -14,9 +16,17 @@ import LoginForm from "@/components/UI/forms/LoginForm";
 //Icons
 import { FaGithub } from "react-icons/fa";
 import Knight from "../public/assets/knight.svg";
-import SignUpForm from "@/components/UI/forms/SignUpForm";
+import CompleteProfileForm from "@/components/UI/forms/CompleteProfileForm";
 import { SessionUser } from "@/lib/db/entities/user";
+import axios from "axios";
+import { initialize } from "@/lib/db/connect";
+interface Props {
+  profile?: User;
+}
+import userofile from "@/hooks/useProfile";
 const SignUp: NextPageWithLayout = () => {
+  const { user, error } = userofile();
+  if (!user) return <></>;
   return (
     <div className=" min-h-[85%] max-w-screen lg:max-w-[900px] w-full backdrop-blur-lg bg-gradient-to-r from-[#1f1f1f]/[0.5] to-[#181818]/[0.5] flex flex-col justify-center items-center overflow-hidden sm:rounded-lg shadow-lg ">
       <>
@@ -26,7 +36,7 @@ const SignUp: NextPageWithLayout = () => {
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <div className="w-full h-full flex flex-col justify-center items-center">
-          <SignUpForm />
+          <CompleteProfileForm profile={user} />
         </div>
       </>
     </div>
@@ -58,7 +68,8 @@ export async function getServerSideProps(context: NextPageContext) {
     res.statusCode = 302;
     res.end();
     return { props: {} };
+  } else if (req.user) {
+    return { props: {} };
   }
-  return { props: {} };
 }
 export default SignUp;

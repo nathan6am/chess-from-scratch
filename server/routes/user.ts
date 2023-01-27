@@ -17,7 +17,31 @@ router.get("/profile", async function (req, res) {
     res.status(200).json({ profile: null, type: "guest" });
   }
 
-  const user = User.findOne({ where: { id } });
+  const profile = await User.getProfile(id);
+  if (!profile) {
+    return res.status(404);
+  } else {
+    res.status(200).json(profile);
+    return;
+  }
+});
+
+router.post("/complete-profile", async (req, res) => {
+  const id = req.user?.id;
+  if (!id) return res.status(401);
+  if (req.user?.type === "guest") return res.status(401);
+  const profile = req.body;
+  const { name, username, rating, country } = profile;
+  const user = await User.findOneBy({ id });
+  if (!user) return res.status(404);
+
+  if (name) user.name = name;
+  if (username) user.username = username;
+  user.rating = parseInt(rating);
+  if (country) user.country = country;
+  user.profileComplete = true;
+  const updated: User = await user.save();
+  res.status(200).json({ updated: true, profile: updated });
 });
 
 router.get("/checkusername", async function (req, res) {
@@ -31,4 +55,5 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-export default router;
+const userRouter = router;
+export default userRouter;

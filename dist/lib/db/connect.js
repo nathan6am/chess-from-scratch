@@ -29,7 +29,15 @@ function initialize() {
             password,
             database,
             host,
-            entities: [user_1.User, user_1.Game, user_1.Puzzle, user_1.Analysis, user_1.Notification, user_1.User_Game, user_1.Credential],
+            entities: [
+                user_1.User,
+                user_1.Game,
+                user_1.Puzzle,
+                user_1.Analysis,
+                user_1.Notification,
+                user_1.User_Game,
+                user_1.Credential,
+            ],
             synchronize: true,
         });
         yield datasource.initialize();

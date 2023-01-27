@@ -8,11 +8,10 @@ import useStockfish from "@/hooks/useStockfish";
 import MoveHistory from "@/components/game/MoveHistory";
 import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
+import VarationTree from "./game/VarationTree";
 export default function GameLocal() {
-  const { currentGame, onMove, evaluation, stepForward, stepBackward, wasm } =
-    useAnalysisBoard(
-      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    );
+  const { currentGame, onMove, evaluation, stepForward, stepBackward, wasm, pgn, mainLine, setCurrentKey, currentKey } =
+    useAnalysisBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   const [orientation, setOrientation] = useState<Chess.Color>("w");
 
   return (
@@ -40,6 +39,12 @@ export default function GameLocal() {
           onMove={onMove}
           onPremove={() => {}}
         />
+        <div className="flex flex-col justify-start h-full w-[400px]">
+          <VarationTree mainLine={mainLine} selectedKey={currentKey} setSelectedKey={setCurrentKey} />
+          <button onClick={stepForward}>Forward</button>
+          <button onClick={stepBackward}>Backward</button>
+          <p>{pgn}</p>
+        </div>
       </div>
     </div>
   );

@@ -26,9 +26,39 @@ router.get("/profile", function (req, res) {
         if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.type) === "guest") {
             res.status(200).json({ profile: null, type: "guest" });
         }
-        const user = user_1.User.findOne({ where: { id } });
+        const profile = yield user_1.User.getProfile(id);
+        if (!profile) {
+            return res.status(404);
+        }
+        else {
+            res.status(200).json(profile);
+            return;
+        }
     });
 });
+router.post("/complete-profile", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    const id = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!id)
+        return res.status(401);
+    if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.type) === "guest")
+        return res.status(401);
+    const profile = req.body;
+    const { name, username, rating, country } = profile;
+    const user = yield user_1.User.findOneBy({ id });
+    if (!user)
+        return res.status(404);
+    if (name)
+        user.name = name;
+    if (username)
+        user.username = username;
+    user.rating = parseInt(rating);
+    if (country)
+        user.country = country;
+    user.profileComplete = true;
+    const updated = yield user.save();
+    res.status(200).json({ updated: true, profile: updated });
+}));
 router.get("/checkusername", function (req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(req.query);
@@ -41,4 +71,5 @@ router.get("/checkusername", function (req, res) {
         res.status(200).json({ valid: !exists });
     });
 });
-exports.default = router;
+const userRouter = router;
+exports.default = userRouter;
