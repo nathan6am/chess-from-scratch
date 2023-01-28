@@ -98,7 +98,10 @@ export default function Piece({
           setDragging(true);
           setSelectedPiece([square, piece]);
           const pointer = [e.clientX, e.clientY];
-          const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
+          const piecePos = [
+            nodeRef?.current?.getBoundingClientRect().x,
+            nodeRef?.current?.getBoundingClientRect().y,
+          ];
           //Snap to cursor
           setPosition((position) => ({
             x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),

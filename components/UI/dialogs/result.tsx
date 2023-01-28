@@ -1,7 +1,12 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useMemo, useState } from "react";
 import * as Chess from "@/lib/chess";
-import { MdArrowDropUp, MdOutlineRestartAlt, MdAnalytics, MdExitToApp } from "react-icons/md";
+import {
+  MdArrowDropUp,
+  MdOutlineRestartAlt,
+  MdAnalytics,
+  MdExitToApp,
+} from "react-icons/md";
 interface Props {
   outcome: Chess.Outcome;
   isOpen: boolean;
@@ -64,7 +69,10 @@ export default function Result({ outcome, isOpen, close }: Props) {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md px-8 transform overflow-hidden rounded-2xl bg-[#202020] py-10 text-left align-middle shadow-lg transition-all">
-                  <Dialog.Title as="h3" className="text-2xl font-semibold text-center">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-2xl font-semibold text-center"
+                  >
                     {title}
                   </Dialog.Title>
                   <div className="mt-1 font-medium text-md text-center text-white/[0.7]">
