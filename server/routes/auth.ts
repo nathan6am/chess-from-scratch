@@ -31,7 +31,10 @@ passport.use(
       callbackURL: facebookCallbackURL,
     },
     async function (accessToken, refreshToken, profile, done) {
-      const user = User.loginWithFacebook({ name: profile.displayName, facebookId: profile.id });
+      const user = User.loginWithFacebook({
+        name: profile.displayName,
+        facebookId: profile.id,
+      });
       if (user) {
         return done(null, user);
       } else {
@@ -74,9 +77,13 @@ router.get(
   })
 );
 
-router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
-  res.redirect("/");
-});
+router.get(
+  "/guest",
+  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
+  (req, res) => {
+    res.redirect("/");
+  }
+);
 
 router.get("/user", function (req, res, next) {
   if (!req.user) {
@@ -86,13 +93,17 @@ router.get("/user", function (req, res, next) {
   }
 });
 
-router.post("/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
-  if (req.user) {
-    res.json({ user: req.user });
-  } else {
-    res.status(401).send();
+router.post(
+  "/login",
+  passport.authenticate("local", { failureRedirect: "/login" }),
+  function (req, res) {
+    if (req.user) {
+      res.json({ user: req.user });
+    } else {
+      res.status(401).send();
+    }
   }
-});
+);
 
 router.post("/signup", async function (req, res, next) {
   const accountdetails = req.body;

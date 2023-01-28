@@ -65,7 +65,10 @@ passport_1.default.use(new passportFacebook.Strategy({
     callbackURL: facebookCallbackURL,
 }, function (accessToken, refreshToken, profile, done) {
     return __awaiter(this, void 0, void 0, function* () {
-        const user = user_1.User.loginWithFacebook({ name: profile.displayName, facebookId: profile.id });
+        const user = user_1.User.loginWithFacebook({
+            name: profile.displayName,
+            facebookId: profile.id,
+        });
         if (user) {
             return done(null, user);
         }

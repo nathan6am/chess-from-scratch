@@ -101,7 +101,8 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     const activeColor = game.data.activeColor;
                     const clock = game.clock;
                     //Correct the time remaining if both player have played a move
-                    if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 && clock.lastMoveTimeISO !== null) {
+                    if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 &&
+                        clock.lastMoveTimeISO !== null) {
                         clock.timeRemainingMs[activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[activeColor]);
                         if (game.players[activeColor] !== userid) {
                             //Ack if the connected player is not the current turn
@@ -174,7 +175,9 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         if (lobby.currentGame.clock.lastMoveTimeISO) {
             lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO, lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
         }
-        socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
+        socket
+            .timeout(timeoutMs)
+            .emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
             var _a, _b, _c;
             if (err) {
                 const lobby = yield cache.getLobbyById(lobbyid);
@@ -183,10 +186,12 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 if (!lobby.currentGame)
                     return;
                 //return if the game has an outcome or a new game has started
-                if (((_a = lobby.currentGame) === null || _a === void 0 ? void 0 : _a.id) !== game.id || lobby.currentGame.data.outcome)
+                if (((_a = lobby.currentGame) === null || _a === void 0 ? void 0 : _a.id) !== game.id ||
+                    lobby.currentGame.data.outcome)
                     return;
                 //return if moves have been played since the initial request
-                if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
+                if (lobby.currentGame.data.moveHistory.flat().length !==
+                    game.data.moveHistory.flat().length)
                     return;
                 //Set outcome by timeout and emit
                 lobby.currentGame.data.outcome = {
@@ -214,7 +219,8 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
                     if (!nextPlayerSocket)
                         return;
-                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(currentLobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]);
+                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(currentLobby.currentGame.clock.lastMoveTimeISO ||
+                        luxon_1.DateTime.now().toISO(), currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]);
                     //Request move from next player
                     requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
                 }
@@ -225,12 +231,15 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     if (!lobby.currentGame)
                         return;
                     //return if the game has an outcome or a new game has started
-                    if (((_c = lobby.currentGame) === null || _c === void 0 ? void 0 : _c.id) !== game.id || lobby.currentGame.data.outcome)
+                    if (((_c = lobby.currentGame) === null || _c === void 0 ? void 0 : _c.id) !== game.id ||
+                        lobby.currentGame.data.outcome)
                         return;
                     //return if moves have been played since the initial request
-                    if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
+                    if (lobby.currentGame.data.moveHistory.flat().length !==
+                        game.data.moveHistory.flat().length)
                         return;
-                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
+                    const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO ||
+                        luxon_1.DateTime.now().toISO(), lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
                     //Rerequest with new timeout
                     requestMoveWithTimeout(socket, timeRemainingMs, game, lobbyid);
                 }

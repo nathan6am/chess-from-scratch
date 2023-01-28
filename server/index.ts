@@ -1,6 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import session, { Session } from "express-session";
-import path from "path";
 import * as db from "../lib/db/connect";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
@@ -101,7 +100,8 @@ nextApp.prepare().then(async () => {
   app.use("/api/user", userRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   const io: socketio.Server = new socketio.Server<
     ClientToServerEvents,
@@ -116,7 +116,11 @@ nextApp.prepare().then(async () => {
   });
 
   io.use((socket, next) => {
-    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
+    sessionMiddleware(
+      socket.request as Request,
+      {} as Response,
+      next as NextFunction
+    );
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
@@ -136,7 +140,11 @@ nextApp.prepare().then(async () => {
     LobbySocketData
   > = io.of("/lobby");
   lobbyNsp.use((socket, next) => {
-    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
+    sessionMiddleware(
+      socket.request as Request,
+      {} as Response,
+      next as NextFunction
+    );
   });
   lobbyNsp.use(wrap(passport.initialize()));
   lobbyNsp.use(wrap(passport.session()));
