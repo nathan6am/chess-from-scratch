@@ -128,7 +128,7 @@ nextApp.prepare().then(async () => {
     const passportUser = socket.request.session?.passport?.user;
     if (passportUser) {
       const user = JSON.parse(passportUser);
-      socket.data.user = user;
+      socket.data.sessionUser = user;
       socket.data.userid = user.id;
     }
     next();
@@ -152,7 +152,7 @@ nextApp.prepare().then(async () => {
     const passportUser = socket.request.session?.passport?.user;
     if (passportUser) {
       const user = JSON.parse(passportUser);
-      socket.data.user = user;
+      socket.data.sessionUser = user;
       socket.data.userid = user.id;
     }
     next();

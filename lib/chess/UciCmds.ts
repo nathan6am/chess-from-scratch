@@ -1,3 +1,5 @@
+import { Square, PieceType, Move } from "./ChessTypes";
+
 export function initialize(stockfish: Worker) {
   stockfish.postMessage("uci");
 }
@@ -13,7 +15,9 @@ export function setSkillLevel(value: number, stockfish: Worker) {
     );
   stockfish.postMessage(`setoption name Skill Level value ${value}`);
 }
-const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 10000));
+const timeout = new Promise((resolve) =>
+  setTimeout(() => resolve(false), 10000)
+);
 
 export async function ready(stockfish: Worker) {
   const isReady = new Promise((resolve, reject) => {
@@ -56,7 +60,8 @@ export async function startup(stockfish: Worker) {
                   type = arg;
                   break;
                 case "default":
-                  if (defaultValue.length >= 1) defaultValue = defaultValue + " " + arg;
+                  if (defaultValue.length >= 1)
+                    defaultValue = defaultValue + " " + arg;
                   else defaultValue = arg;
                   break;
                 default:
@@ -92,34 +97,47 @@ interface EvalOptions {
   depth: number;
   fen: string;
   useNNUE: boolean;
+  multiPV: number;
 }
 
-export interface Evaluation {
+export interface EvalInfo {
   depth: number;
-  multipv: number;
+  multiPV: number;
   score: {
     type: "cp" | "mate" | "lowerbound" | "upperbound";
     value: number;
   };
   seldepth: number;
   nodes?: number;
-  time?: number;
+  time: number;
   nps?: number;
   hashfull?: number;
   pv: string[];
 }
 
-//Conver UCI info message into evaluation object
-function parseEvalInfo(args: string[]): Evaluation {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+//Convert UCI info message into evaluation object
+function parseEvalInfo(args: string[]): EvalInfo {
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
-  let evaluation: Evaluation = {
+  let evaluation: EvalInfo = {
     depth: 0,
-    multipv: 1,
+    multiPV: 1,
     score: {
       type: "cp",
       value: 0,
     },
+    time: 0,
     seldepth: 0,
     pv: [],
   };
@@ -133,13 +151,18 @@ function parseEvalInfo(args: string[]): Evaluation {
           evaluation.depth = parseInt(arg);
           break;
         case "multipv":
-          evaluation.multipv = parseInt(arg);
+          evaluation.multiPV = parseInt(arg);
           break;
         case "seldepth":
           evaluation.seldepth = parseInt(arg);
           break;
         case "score":
-          if (arg === "cp" || arg === "mate" || arg === "upperbound" || arg === "lowerbound") {
+          if (
+            arg === "cp" ||
+            arg === "mate" ||
+            arg === "upperbound" ||
+            arg === "lowerbound"
+          ) {
             evaluation.score.type = arg;
           } else {
             evaluation.score.value = parseInt(arg);
@@ -165,52 +188,121 @@ function parseEvalInfo(args: string[]): Evaluation {
   return evaluation;
 }
 
+export interface PartialEval {
+  score: { type: "cp" | "mate"; value: number };
+  depth: number;
+}
+export type UCIMove = {
+  start: Square;
+  end: Square;
+  promotion?: PieceType;
+};
+
+export interface EvalScore {
+  type: "cp" | "mate";
+  value: number;
+}
+export interface Variation {
+  score: { type: "cp" | "mate"; value: number };
+  moves: string[];
+}
+export interface Line {
+  score: { type: "cp" | "mate"; value: number };
+  moves: UCIMove[];
+}
+export interface FinalEvaluation {
+  score: { type: "cp" | "mate"; value: number };
+  lines: Line[];
+  depth: number;
+  bestMove: UCIMove;
+  time: number;
+}
 export async function getEvaluation(
   evaler: Worker,
-  options: EvalOptions = { depth: 10, fen: "", useNNUE: false },
-  callback: (evaluation: Evaluation) => void
-) {
+  options: EvalOptions = { depth: 10, fen: "", useNNUE: false, multiPV: 3 },
+  callback: (patialEval: PartialEval) => void
+): Promise<FinalEvaluation> {
   const stockfish = evaler;
-  let result: any;
+  let info: EvalInfo;
   let timer: NodeJS.Timeout;
-  const evaluation = new Promise((resolve, reject) => {
+  let multiPVs: Variation[] = [];
+  const evaluation = new Promise<FinalEvaluation>((resolve, reject) => {
     const handler = (e: MessageEvent) => {
       if (!e.data) return;
       const args: string[] = e.data.split(" ");
       const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
       //Ignore some unnecessary messages
-      if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
-        const evaluation = parseEvalInfo(args);
-        evaluation.score.value = evaluation.score.value * multiplier;
-        if (evaluation.score.type !== "lowerbound" && evaluation.score.type !== "upperbound") {
-          result = evaluation;
-          callback(evaluation);
+      if (
+        args[0] === "info" &&
+        !(args.includes("string") || args.includes("currmove"))
+      ) {
+        const evalInfo = parseEvalInfo(args);
+        evalInfo.score.value = evalInfo.score.value * multiplier;
+        if (
+          evalInfo.score.type !== "lowerbound" &&
+          evalInfo.score.type !== "upperbound"
+        ) {
+          const score = {
+            type: evalInfo.score.type as unknown as "cp" | "mate",
+            value: evalInfo.score.value,
+          };
+          if (evalInfo.multiPV === 1) {
+            info = evalInfo;
+            callback({
+              score,
+              depth: evalInfo.depth,
+            });
+          }
+          multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
         }
       }
 
       if (args[0] === "bestmove") {
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
-        if (!result) reject("Evaluation error");
-        if (result) resolve(result);
-      }
-      if (args[0] === "bestmove" && result?.depth === options.depth) {
+        if (info.depth !== options.depth) reject("depth not reached");
+        const finalEval: FinalEvaluation = {
+          lines: multiPVs.map((variation) => ({
+            ...variation,
+            moves: variation.moves.map((uci) => parseUciMove(uci)),
+          })),
+          score: {
+            type: info.score.type as unknown as "cp" | "mate",
+            value: info.score.value,
+          },
+          bestMove: parseUciMove(args[1]),
+          depth: info.depth,
+          time: info.time,
+        };
+        resolve(finalEval);
       }
     };
     stockfish.addEventListener("message", handler);
     stockfish.postMessage(`setoption name Use NNUE value ${options.useNNUE}`);
     stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+    stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
     stockfish.postMessage("position fen " + options.fen);
     stockfish.postMessage("go depth " + options.depth);
     stockfish.postMessage("eval");
     timer = setTimeout(() => {
       stockfish.removeEventListener("message", handler);
       reject(new Error("timeout waiting for response on command `evaluation`"));
-    }, 120000);
+    }, 400000);
   });
 
   const final = await evaluation;
   return final;
+}
+
+function parseUciMove(uci: string): UCIMove {
+  const args: string[] = uci.trim().match(/.{1,2}/g) || [];
+  if (!args[0] || ![args[1]]) throw new Error("invalid uci move");
+  let move: UCIMove = {
+    start: args[0] as Square,
+    end: args[1] as Square,
+  };
+  if (args[2]) move.promotion = args[2] as PieceType;
+  return move;
 }
 
 export async function stop(stockfish: Worker, timeout?: number) {
@@ -230,7 +322,7 @@ export async function stop(stockfish: Worker, timeout?: number) {
     timer = setTimeout(() => {
       stockfish.removeEventListener("message", handler);
       reject(new Error("timeout waiting for response on command `stop`"));
-    }, timeout || 10000);
+    }, timeout || 20000);
   });
   const stopped = await stop;
   return stopped;

@@ -5,7 +5,7 @@ import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
 import * as passportLocal from "passport-local";
-import { User } from "../../lib/db/entities/user";
+import User from "../../lib/db/entities/User";
 const nanoid = customAlphabet("1234567890", 10);
 
 const router = express.Router();

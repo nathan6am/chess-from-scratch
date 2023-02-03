@@ -13,13 +13,14 @@ export default function GameLocal() {
   const {
     currentGame,
     onMove,
-    evaluation,
+    evaler,
     stepForward,
     stepBackward,
     wasm,
     pgn,
     mainLine,
     setCurrentKey,
+    path,
     currentKey,
   } = useAnalysisBoard(
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -30,8 +31,8 @@ export default function GameLocal() {
     <div className="flex flex-col h-full w-full justify-center">
       <div className="flex flex-row items-center">
         <EvalBar
-          scoreType={evaluation?.score?.type || "cp"}
-          value={evaluation?.score?.value || 0}
+          scoreType={evaler.currentScore?.type || "cp"}
+          value={evaler.currentScore?.value || 0}
           orientation={orientation}
           scale={9.06}
           key={orientation}
@@ -56,6 +57,7 @@ export default function GameLocal() {
             mainLine={mainLine}
             selectedKey={currentKey}
             setSelectedKey={setCurrentKey}
+            path={path}
           />
           <button onClick={stepForward}>Forward</button>
           <button onClick={stepBackward}>Backward</button>

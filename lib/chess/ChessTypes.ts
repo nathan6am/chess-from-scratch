@@ -1,4 +1,4 @@
-import { Evaluation } from "./UciCmds";
+import { FinalEvaluation } from "./UciCmds";
 export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type File = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 export type Square = `${File}${Rank}`;
@@ -80,7 +80,7 @@ export enum FileEnum {
 export interface NodeData extends HalfMove {
   comments: string[];
   uci: string;
-  evaluation?: Evaluation;
+  evaluation?: FinalEvaluation;
   halfMoveCount: number;
   outcome: Outcome;
 }

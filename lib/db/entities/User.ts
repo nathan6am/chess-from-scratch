@@ -19,7 +19,9 @@ import type { Relation } from "typeorm";
 import type { Outcome, Game as GameData, Color } from "@/lib/chess";
 import type { AppSettings } from "@/context/settings";
 import { escapeSpecialChars } from "../../../util/misc";
-
+import User_Game from "./User_Game";
+import Game from "./Game";
+import Puzzle from "./Puzzle";
 export type SessionUser = {
   id: string;
   username: string | null;
@@ -27,7 +29,7 @@ export type SessionUser = {
 };
 
 @Entity()
-export class User extends BaseEntity {
+export default class User extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -96,7 +98,10 @@ export class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      const verified = await bcrypt.compare(
+        credentials.password,
+        user.credentials.hashedPassword
+      );
       if (!verified) return null;
       return {
         username: user.username,
@@ -114,7 +119,10 @@ export class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
+      const verified = await bcrypt.compare(
+        credentials.password,
+        user.credentials.hashedPassword
+      );
       if (!verified) return null;
       return {
         username: user.username,
@@ -135,7 +143,10 @@ export class User extends BaseEntity {
     };
   }
 
-  static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
+  static async loginWithFacebook(profile: {
+    facebookId: string;
+    name: string;
+  }): Promise<SessionUser> {
     const user = await this.findOne({
       where: {
         facebookId: profile.facebookId,
@@ -146,7 +157,10 @@ export class User extends BaseEntity {
       return { id, username, type: profileComplete ? "user" : "incomplete" };
     }
     const newUser = new User();
-    Object.assign(newUser, { facebookId: profile.facebookId, name: profile.name });
+    Object.assign(newUser, {
+      facebookId: profile.facebookId,
+      name: profile.name,
+    });
     await newUser.save();
     return {
       id: newUser.id,
@@ -159,14 +173,24 @@ export class User extends BaseEntity {
     email: string;
     username: string;
     password: string;
-  }): Promise<{ created: Partial<User> | null; fieldErrors?: Array<{ field: string; message: string }> }> {
+  }): Promise<{
+    created: Partial<User> | null;
+    fieldErrors?: Array<{ field: string; message: string }>;
+  }> {
     const { email, username, password } = account;
     const exists = await this.createQueryBuilder("user")
       .where("user.email = :email", { email: account.email })
-      .orWhere("LOWER(user.username) = LOWER(:username)", { username: account.username })
+      .orWhere("LOWER(user.username) = LOWER(:username)", {
+        username: account.username,
+      })
       .getExists();
     if (exists) {
-      return { created: null, fieldErrors: [{ field: "email", message: "Email address is already in use" }] };
+      return {
+        created: null,
+        fieldErrors: [
+          { field: "email", message: "Email address is already in use" },
+        ],
+      };
     }
     const user = new User();
     const credentials = new Credential();
@@ -176,7 +200,10 @@ export class User extends BaseEntity {
     Object.assign(user, { email, username });
     await user.save();
     if (!user) {
-      return { created: null, fieldErrors: [{ field: "none", message: "Unable to create account" }] };
+      return {
+        created: null,
+        fieldErrors: [{ field: "none", message: "Unable to create account" }],
+      };
     }
     const created = { id: user.id, username: user.username };
     return { created: created };
@@ -199,46 +226,6 @@ export class User extends BaseEntity {
     console.log(user);
     return user;
   }
-}
-
-@Entity()
-export class User_Game {
-  @PrimaryColumn()
-  user_id: string;
-
-  @PrimaryColumn()
-  game_id: string;
-  @ManyToOne(() => User, (user) => user.games)
-  @JoinColumn({ name: "user_id" })
-  user: Relation<User>;
-
-  @ManyToOne(() => Game, (game) => game.players)
-  @JoinColumn({ name: "game_id" })
-  game: Relation<Game>;
-
-  @Column({ type: "text" })
-  color: Color;
-}
-
-@Entity()
-export class Game {
-  @PrimaryColumn()
-  id: string;
-
-  @Column("jsonb", { nullable: true })
-  timeControl: { timeSeconds: number; incrementSeconds: number };
-
-  @Column("jsonb")
-  outcome: Outcome;
-
-  @Column()
-  pgn: string;
-
-  @Column("jsonb")
-  data: GameData;
-
-  @OneToMany(() => User_Game, (userGame) => userGame.game)
-  players: Relation<User_Game>;
 }
 
 export enum NotificationType {
@@ -289,32 +276,6 @@ export class Analysis {
   @ManyToOne(() => User, (user) => user.savedAnalyses)
   @JoinColumn({ name: "creator_id" })
   creator: Relation<User>;
-}
-
-@Entity()
-export class Puzzle {
-  @PrimaryColumn()
-  id: string;
-  @Column()
-  fen: string;
-  @Column("text", { array: true })
-  moves: string[];
-  @Column()
-  rating: number;
-  @Column()
-  ratingDeviation: number;
-  @Column()
-  popularity: number;
-  @Column()
-  nbPlays: number;
-  @Column("text", { array: true })
-  themes: string[];
-  @Column()
-  gameUrl: string;
-  @Column({ nullable: true })
-  openingFamily: string;
-  @Column({ nullable: true })
-  openingVariation: string;
 }
 
 @Entity()

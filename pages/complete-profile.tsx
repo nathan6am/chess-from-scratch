@@ -1,5 +1,5 @@
 //Framework
-import { User } from "@/lib/db/entities/user";
+import User from "@/lib/db/entities/User";
 import React, { useState, useContext } from "react";
 import Head from "next/head";
 import type { ReactElement } from "react";
@@ -17,7 +17,7 @@ import LoginForm from "@/components/UI/forms/LoginForm";
 import { FaGithub } from "react-icons/fa";
 import Knight from "../public/assets/knight.svg";
 import CompleteProfileForm from "@/components/UI/forms/CompleteProfileForm";
-import { SessionUser } from "@/lib/db/entities/user";
+import { SessionUser } from "@/lib/db/entities/User";
 import axios from "axios";
 import { initialize } from "@/lib/db/connect";
 interface Props {
@@ -32,7 +32,10 @@ const SignUp: NextPageWithLayout = () => {
       <>
         <Head>
           <title>NextChess | Account Setup</title>
-          <meta name="Account Setup" content="Sign In to Continue to NextChess" />
+          <meta
+            name="Account Setup"
+            content="Sign In to Continue to NextChess"
+          />
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <div className="w-full h-full flex flex-col justify-center items-center">

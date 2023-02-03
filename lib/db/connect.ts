@@ -1,14 +1,10 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import {
-  User,
-  Game,
-  Puzzle,
-  Notification,
-  Analysis,
-  User_Game,
-  Credential,
-} from "./entities/user";
+import User, { Notification, Credential } from "./entities/User";
+import Game from "./entities/Game";
+import Puzzle from "./entities/Puzzle";
+import User_Game from "./entities/User_Game";
+import { Analysis } from "./entities/User";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";

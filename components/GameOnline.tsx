@@ -9,6 +9,7 @@ import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import Result from "@/components/UI/dialogs/Result";
 import useChessOnline from "@/hooks/useChessOnline";
+import Waiting from "./game/Waiting";
 interface Props {
   lobbyid: string;
 }
@@ -27,16 +28,27 @@ export default function GameOnline({ lobbyid }: Props) {
     livePositionOffset,
     lastMove,
   } = useChessOnline(lobbyid);
-  const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
+  const [orientation, setOrientation] = useState<Chess.Color>(
+    playerColor || "w"
+  );
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
-  if (!game || !gameActive) return <div>waiting</div>;
+  if (!game || !gameActive)
+    return (
+      <Waiting
+        lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`}
+      />
+    );
 
   const currentGame = game.data;
   return (
     <div className="flex flex-col h-full w-full justify-center">
-      <Result outcome={game.data.outcome} isOpen={game.data.outcome ? true : false} close={() => {}} />
+      <Result
+        outcome={game.data.outcome}
+        isOpen={game.data.outcome ? true : false}
+        close={() => {}}
+      />
       <div className="flex flex-row items-center">
         <Board
           orientation={orientation}

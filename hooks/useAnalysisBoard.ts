@@ -2,7 +2,8 @@ import useVariationTree from "./useVariationTree";
 import * as Chess from "@/lib/chess";
 import { useCallback, useEffect, useMemo } from "react";
 import useLocalEval from "./useLocalEval";
-
+import useDebounce from "./useDebounce";
+import _ from "lodash";
 export default function useAnalysisBoard(startFen: string) {
   const evaler = useLocalEval();
   const initialGame = useMemo<Chess.Game>(() => {
@@ -14,8 +15,17 @@ export default function useAnalysisBoard(startFen: string) {
   }, []);
   const variationTree = useVariationTree();
 
-  const { currentNodeData, path, onStepBackward, onStepForward, currentKey, pgn, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNodeData,
+    path,
+    continuation,
+    onStepBackward,
+    onStepForward,
+    currentKey,
+    pgn,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNodeData === null) return initialGame;
@@ -24,22 +34,35 @@ export default function useAnalysisBoard(startFen: string) {
       path.map((node) => node.data)
     );
   }, [currentNodeData, initialGame]);
+
+  //Debounce fen change for evaler/api requests
+  const debouncedFen = useDebounce(currentGame.fen, 600);
   useEffect(() => {
     if (evaler.isReady) {
-      evaler.getEvaluation(currentGame.fen);
+      console.log(debouncedFen);
+      evaler.getEvaluation(debouncedFen);
     }
-  }, [evaler.isReady, currentGame]);
+  }, [evaler.isReady, debouncedFen]);
+
+  const currentLine = useMemo(() => {
+    return [...path, ...continuation];
+  }, [path, continuation]);
+
   const onMove = useCallback(
     (move: Chess.Move) => {
       const existingMoveKey = variationTree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
         const next = variationTree.setCurrentKey(existingMoveKey);
-        if (next) evaler.getEvaluation(next.data.fen);
+        //if (next) evaler.getEvaluation(next.data.fen);
       } else {
         const halfMoveCount = variationTree.path.length + 1;
-        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
+        const nodeToInsert = Chess.nodeDataFromMove(
+          currentGame,
+          move,
+          halfMoveCount
+        );
         variationTree.addMove(nodeToInsert);
-        evaler.getEvaluation(nodeToInsert.fen);
+        //evaler.getEvaluation(nodeToInsert.fen);
       }
     },
     [currentGame, variationTree]
@@ -47,24 +70,26 @@ export default function useAnalysisBoard(startFen: string) {
 
   const stepForward = () => {
     const next = onStepForward();
-    if (next) evaler.getEvaluation(next.data.fen);
+    //if (next) evaler.getEvaluation(next.data.fen);
   };
 
   const stepBackward = () => {
     const prev = onStepBackward();
-    if (prev) evaler.getEvaluation(prev.data.fen);
+    //if (prev) evaler.getEvaluation(prev.data.fen);
   };
   return {
     pgn,
     mainLine,
     currentGame,
     onMove,
-    evaluation: evaler.evaluation,
+    evaler,
     stepBackward,
     stepForward,
     variations: variationTree.treeArray,
     wasm: evaler.wasmSupported,
     setCurrentKey,
+    currentLine,
+    path,
     currentKey,
     currentNodeData,
   };

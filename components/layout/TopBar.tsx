@@ -22,7 +22,9 @@ const Logo = () => (
       <Knight className="fill-[#CDA882] inline h-8 w-8 ml-4" />
       NextChess
     </h1>
-    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">v 0.1.0</p>
+    <p className="text-white text-right font-regular text-xs opacity-10 ml-2 mb-[2px]">
+      v 0.1.0
+    </p>
   </div>
 );
 
@@ -30,7 +32,7 @@ const ActionButtons = () => {
   const router = useRouter();
   const { user } = useContext(UserContext);
   const onLogout = () => {
-    fetch("/auth/logout", {
+    fetch("/api/auth/logout", {
       method: "GET",
     }).then(() => {
       router.push("/login");

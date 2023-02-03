@@ -1,6 +1,17 @@
-import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
-import useChessLocal from "./useChessLocal";
+import React, {
+  useReducer,
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import * as commands from "@/lib/chess/UciCmds";
+import type {
+  FinalEvaluation,
+  PartialEval,
+  EvalScore,
+} from "@/lib/chess/UciCmds";
 
 interface Options {
   multiPV: number;
@@ -20,18 +31,27 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
   });
   const [error, setError] = useState<Error | null>(null);
   const [inProgress, setInProgress] = useState(false);
-  const [evaluation, setEvaluation] = useState<any>(null);
+  const [currentScore, setCurrentScore] = useState<EvalScore | null>(null);
+  const [currentDepth, setCurrentDepth] = useState<number>(0);
+  const [bestMove, setBestMove] = useState<commands.UCIMove | null>(null);
+  const [evaluation, setEvaluation] = useState<FinalEvaluation | null>(null);
   const [finished, setFinished] = useState<boolean>(false);
   const wasmSupported =
     typeof WebAssembly === "object" &&
-    WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+    WebAssembly.validate(
+      Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
+    );
 
   //Intialize worker
   const stockfishRef = useRef<Worker>();
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+    stockfishRef.current = new Worker(
+      wasmSupported
+        ? "/stockfishNNUE/src/stockfish.js"
+        : "/stockfish/stockfish.js"
+    );
   }, []);
 
   //Verify engine is ready
@@ -61,8 +81,9 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
   const getEvaluation = async (fen: string) => {
     //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
     //before promise resolves with final evalutaion
-    const cb = (evaluation: any) => {
-      setEvaluation(evaluation);
+    const cb = (partialEval: PartialEval) => {
+      setCurrentDepth(partialEval.depth);
+      setCurrentScore(partialEval.score);
     };
 
     if (!isReady || !stockfishRef.current) {
@@ -77,8 +98,10 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
       setFinished(false);
       commands
         .getEvaluation(evaler, { fen, ...options }, cb)
-        .then((result: any) => {
+        .then((result) => {
           setEvaluation(result);
+          setCurrentDepth(result.depth);
+          setBestMove(result.bestMove);
           setInProgress(false);
           setFinished(true);
         })
@@ -94,9 +117,12 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
     isReady,
     evaluation,
     getEvaluation,
+    currentDepth,
+    currentScore,
     error,
     inProgress,
     finished,
+    bestMove,
     wasmSupported,
   };
 }

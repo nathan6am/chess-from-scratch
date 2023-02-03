@@ -689,7 +689,7 @@ export interface GameConfig {
   handicap?: Array<TimeControl>;
 }
 
-type TimeControl = {
+export type TimeControl = {
   timeSeconds: number;
   incrementSeconds: number;
   moves?: number;

@@ -1,5 +1,5 @@
 import * as Chess from "../../lib/chess";
-
+import { SessionUser } from "../../lib/db/entities/User";
 export interface LobbyOptions {
   rated: boolean;
   color: Chess.Color | "random";
@@ -21,6 +21,7 @@ export interface Clock {
 
 export interface Player {
   id: string; //User id of the player
+  username: string;
   primaryClientSocketId: string; //Socket id of the primary client connection to the game
   lastPing?: number; //Last measured ping delay
   rating?: number;
@@ -72,8 +73,7 @@ interface SocketResponse<T> {
 
 export interface LobbySocketData {
   userid: string;
-  username: string;
-  user: any;
+  sessionUser: SessionUser;
   lastPing?: number;
 }
 export interface LobbyInterServerEvents {

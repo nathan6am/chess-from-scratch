@@ -1,20 +1,31 @@
-import react, { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
+//Framework
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useRef,
+  useMemo,
+} from "react";
+
+//Types
 import {
   LobbyClientToServerEvents,
   LobbyServerToClientEvents,
-  LobbySocketData,
-  LobbyInterServerEvents,
   Game,
-  Clock,
 } from "../server/types/lobby";
-import * as Chess from "@/lib/chess";
-import { UserContext } from "@/context/user";
-import { io, Socket } from "socket.io-client";
 import { Lobby } from "server/types/lobby";
-import _ from "lodash";
-import useTimer from "./useTimer";
+
+//Util
+import * as Chess from "@/lib/chess";
 import { DateTime } from "luxon";
 import { notEmpty } from "@/util/misc";
+import _ from "lodash";
+import useTimer from "./useTimer";
+
+//Context
+import { UserContext } from "@/context/user";
+import { io, Socket } from "socket.io-client";
 
 export default function useChessOnline(lobbyId: string) {
   const [connected, setConnected] = useState(false);
@@ -33,6 +44,8 @@ export default function useChessOnline(lobbyId: string) {
     if (game.players.b === user?.id) return "b";
     return null;
   }, [game, user]);
+
+  const players = lobby?.players;
 
   const moveHistoryFlat = useMemo(() => {
     if (!game) return [];
@@ -56,7 +69,10 @@ export default function useChessOnline(lobbyId: string) {
     if (livePositionOffset + 1 > moveHistoryFlat.length) {
       return initialBoard;
     }
-    return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].board || null;
+    return (
+      moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)]
+        .board || null
+    );
   }, [livePositionOffset, moveHistoryFlat, game]);
 
   const lastMove = useMemo(() => {
@@ -65,7 +81,10 @@ export default function useChessOnline(lobbyId: string) {
     if (livePositionOffset + 1 > moveHistoryFlat.length) {
       return null;
     }
-    return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move || null;
+    return (
+      moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move ||
+      null
+    );
   }, [livePositionOffset, moveHistoryFlat, game]);
 
   const moveable = useMemo<boolean>(() => {
@@ -81,7 +100,9 @@ export default function useChessOnline(lobbyId: string) {
   }, [moveHistoryFlat]);
 
   const stepBackward = useCallback(() => {
-    setLivePositionOffset((cur) => (cur < moveHistoryFlat.length ? cur + 1 : cur));
+    setLivePositionOffset((cur) =>
+      cur < moveHistoryFlat.length ? cur + 1 : cur
+    );
   }, [moveHistoryFlat]);
 
   const jumpForward = () => {
@@ -99,7 +120,6 @@ export default function useChessOnline(lobbyId: string) {
     },
     [moveHistoryFlat]
   );
-
   //Track the last updated clock state - used to track last known clock state to
   //prevent useEffect from updating timers if the game is updated but the clock state hasn't changed
   const clockRef = useRef<{
@@ -140,7 +160,10 @@ export default function useChessOnline(lobbyId: string) {
 
   //Memoized socket connection
   const socket = useMemo<
-    Socket<LobbyServerToClientEvents<false, false>, LobbyClientToServerEvents<false, true>>
+    Socket<
+      LobbyServerToClientEvents<false, false>,
+      LobbyClientToServerEvents<false, true>
+    >
   >(() => {
     return io("/lobby");
   }, []);
@@ -152,44 +175,47 @@ export default function useChessOnline(lobbyId: string) {
   //Register Event Listeners and auto-connect to the lobby on mount
   useEffect(() => {
     if (!socket.connected) socket.connect();
+
+    //Define event handlers
     const onConnect = () => {
-      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
-        if (res && res.status && res.data) {
-          const lobby = res.data;
-          setLobby(res.data);
-          if (lobby.currentGame) {
-            updateGame(lobby.currentGame);
+      socket.emit(
+        "lobby:connect",
+        lobbyId,
+        (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+          if (res && res.status && res.data) {
+            const lobby = res.data;
+            setLobby(res.data);
+            if (lobby.currentGame) {
+              updateGame(lobby.currentGame);
+            }
+          } else if (res && !res.status) {
+            setConnected(false);
+            console.log(res);
+            console.error(res.error?.message);
+          } else {
           }
-        } else if (res && !res.status) {
-          setConnected(false);
-          console.log(res);
-          console.error(res.error?.message);
-        } else {
         }
-      });
+      );
       setConnected(true);
     };
     const onConnectError = (err: unknown) => {
       console.log(err);
     };
-    socket.on("connect", onConnect);
-    socket.on("connect_error", onConnectError);
     const onMoveRecieved = (game: Game) => {
       setLivePositionOffset(0);
       updateGame(game);
     };
     const onNewGame = (game: Game) => {
       updateGame(game);
-      console.log(game);
     };
-    socket.on("game:new", onNewGame);
-    socket.on("game:move", onMoveRecieved);
     const onTest = (response: string, ack: (arg: string) => void) => {
-      console.log(response);
       callbackRef.current = ack;
     };
-
-    const onMoveRequested = (timeout: number, game: Game, ack: (move: Chess.Move) => void) => {
+    const onMoveRequested = (
+      timeout: number,
+      game: Game,
+      ack: (move: Chess.Move) => void
+    ) => {
       console.log("move requested");
       callbackRef.current = ack;
       updateGame(game);
@@ -198,6 +224,11 @@ export default function useChessOnline(lobbyId: string) {
       updateGame(game);
       console.log(game.data.outcome);
     };
+    //Register event listeners
+    socket.on("connect", onConnect);
+    socket.on("connect_error", onConnectError);
+    socket.on("game:new", onNewGame);
+    socket.on("game:move", onMoveRecieved);
     socket.on("game:outcome", onOutcome);
     socket.on("game:request-move", onMoveRequested);
     socket.on("test:requestAck", onTest);
@@ -214,16 +245,14 @@ export default function useChessOnline(lobbyId: string) {
     };
   }, []);
 
-  const test = () => {
-    socket.emit("test:timeout");
-  };
-
   const onMove = useCallback(
     (move: Chess.Move) => {
       if (!game || !playerColor || !lobbyid) return;
       if (game.data.activeColor !== playerColor) return;
       if (game.data.outcome) return;
-      if (game.data.legalMoves.some((legalMove) => _.isEqual(move, legalMove))) {
+      if (
+        game.data.legalMoves.some((legalMove) => _.isEqual(move, legalMove))
+      ) {
         delayRef.current = DateTime.now();
         //Optimistically update the game state for smooth animations
         setLivePositionOffset(0);
@@ -258,8 +287,7 @@ export default function useChessOnline(lobbyId: string) {
   );
 
   return {
-    connected: connected,
-    test: test,
+    connected,
     game,
     currentBoard,
     livePositionOffset,
@@ -274,6 +302,7 @@ export default function useChessOnline(lobbyId: string) {
     gameActive,
     lastMove,
     playerColor,
+    players,
     onMove,
     timeRemaining: {
       w: timerWhite.timeRemaining,
