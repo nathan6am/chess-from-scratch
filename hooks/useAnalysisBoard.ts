@@ -1,5 +1,7 @@
 import useVariationTree from "./useVariationTree";
 import * as Chess from "@/lib/chess";
+import useSound from "use-sound";
+
 import { useCallback, useEffect, useMemo } from "react";
 import useLocalEval from "./useLocalEval";
 import useDebounce from "./useDebounce";
@@ -26,7 +28,8 @@ export default function useAnalysisBoard(startFen: string) {
     mainLine,
     setCurrentKey,
   } = variationTree;
-
+  const [playMove] = useSound("/assets/sounds/move.wav");
+  const [playCapture] = useSound("/assets/sounds/capture.wav");
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNodeData === null) return initialGame;
     return Chess.gameFromNodeData(
@@ -34,6 +37,12 @@ export default function useAnalysisBoard(startFen: string) {
       path.map((node) => node.data)
     );
   }, [currentNodeData, initialGame]);
+  const lastMove = currentGame.lastMove;
+  useEffect(() => {
+    if (lastMove) {
+      playMove();
+    }
+  }, [lastMove, playMove, playCapture]);
 
   //Debounce fen change for evaler/api requests
   const debouncedFen = useDebounce(currentGame.fen, 600);
