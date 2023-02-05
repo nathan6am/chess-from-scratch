@@ -1,5 +1,10 @@
 import React from "react";
-
-export default function Evaler() {
-  return <div>Evaler</div>;
+import * as Chess from "@/lib/chess";
+import { Evaler } from "@/hooks/useLocalEval";
+interface Props {
+  evaler: Evaler;
+  currentNodeData?: Chess.NodeData;
+}
+export default function EvalInfo({ evaler }: Props) {
+  return <div className="w-full p-2"></div>;
 }

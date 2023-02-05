@@ -1,17 +1,6 @@
-import React, {
-  useReducer,
-  useRef,
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
 import * as commands from "@/lib/chess/UciCmds";
-import type {
-  FinalEvaluation,
-  PartialEval,
-  EvalScore,
-} from "@/lib/chess/UciCmds";
+import type { FinalEvaluation, PartialEval, EvalScore } from "@/lib/chess/UciCmds";
 
 interface Options {
   multiPV: number;
@@ -24,7 +13,22 @@ const defaultOptions = {
   depth: 18,
 };
 
-export default function useLocalEval(initialOptions?: Partial<Options>) {
+export interface Evaler {
+  currentOptions: Options;
+  isReady: boolean;
+  evaluation: FinalEvaluation | null;
+  getEvaluation: (fen: string) => Promise<void>;
+  currentDepth: number;
+  currentScore: EvalScore | null;
+  error: Error | null;
+  inProgress: boolean;
+  finished: boolean;
+  bestMove: commands.UCIMove | null;
+  wasmSupported: boolean;
+  updateOptions: (updates: Partial<Options>) => void;
+}
+
+export default function useLocalEval(initialOptions?: Partial<Options>): Evaler {
   const [options, setOptions] = useState<Options>({
     ...initialOptions,
     ...defaultOptions,
@@ -38,20 +42,17 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
   const [finished, setFinished] = useState<boolean>(false);
   const wasmSupported =
     typeof WebAssembly === "object" &&
-    WebAssembly.validate(
-      Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
-    );
+    WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
 
   //Intialize worker
+  const updateOptions = (updates: Partial<Options>) => {
+    setOptions((current) => ({ ...current, ...updates }));
+  };
   const stockfishRef = useRef<Worker>();
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(
-      wasmSupported
-        ? "/stockfishNNUE/src/stockfish.js"
-        : "/stockfish/stockfish.js"
-    );
+    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
   }, []);
 
   //Verify engine is ready
@@ -114,6 +115,8 @@ export default function useLocalEval(initialOptions?: Partial<Options>) {
   };
 
   return {
+    currentOptions: options,
+    updateOptions,
     isReady,
     evaluation,
     getEvaluation,

@@ -52,7 +52,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function TimeControlSelect() {
-  const [timeControl, setTimeControl] = useState<TimeControl>();
+  const [timeControl, setTimeControl] = useState<TimeControl | null>(null);
   return (
     <div className="w-full max-w-md px-2 py-4 sm:px-0">
       <Tab.Group>
@@ -60,6 +60,11 @@ export default function TimeControlSelect() {
           {CATEGORIES.map((category) => (
             <Tab
               key={category.id}
+              onClick={() => {
+                if (category.options && category.options.length) {
+                  setTimeControl(category.options[0]);
+                } else setTimeControl(null);
+              }}
               className={({ selected }) =>
                 classNames(
                   "w-full rounded-lg py-2.5 text-md font-medium leading-5 text-white",
@@ -74,8 +79,15 @@ export default function TimeControlSelect() {
         </Tab.List>
         <Tab.Panels className="mt-2">
           {CATEGORIES.map((category, idx) => (
-            <Tab.Panel key={category.id} className={"w-full mt-4 text-sm p-4 bg-white/[0.1] rounded-xl"}>
-              {category.options?.length && <OptionSelect options={category.options} />}
+            <Tab.Panel key={category.id} className={"w-full mt-4 text-sm p-4 bg-[#161616] rounded-xl"}>
+              {category.options?.length && (
+                <OptionSelect
+                  options={category.options}
+                  onChange={(option) => {
+                    setTimeControl(option);
+                  }}
+                />
+              )}
             </Tab.Panel>
           ))}
         </Tab.Panels>
@@ -84,17 +96,24 @@ export default function TimeControlSelect() {
   );
 }
 
-function OptionSelect({ options }: { options: TimeControl[] }) {
+function OptionSelect({ options, onChange }: { options: TimeControl[]; onChange: (option: TimeControl) => void }) {
   const [selected, setSelected] = useState(options[0]);
   return (
-    <RadioGroup value={selected} onChange={setSelected} className={"gap-4 grid grid-cols-4 w-full"}>
+    <RadioGroup
+      value={selected}
+      onChange={(option: TimeControl) => {
+        setSelected(option);
+        onChange(option);
+      }}
+      className={"gap-4 grid grid-cols-4 w-full"}
+    >
       {options.map((option, idx) => (
         <RadioGroup.Option value={option} key={idx}>
           {({ checked }) => (
             <div
               className={`bg-white/[0.1] text-center p-2 rounded-md cursor-pointer ${
                 checked
-                  ? "bg-white/[0.3] ring-2 ring-offset-2 ring-offset-[#202020] ring-opacity-60 ring-green-400 "
+                  ? "bg-white/[0.3] ring-2 ring-offset-2 ring-offset-[#161616] ring-opacity-60 ring-green-400 "
                   : "text-white/[0.7] hover:bg-sepia/[0.3]"
               }`}
             >

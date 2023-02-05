@@ -40,7 +40,8 @@ export default function useAnalysisBoard(startFen: string) {
   const lastMove = currentGame.lastMove;
   useEffect(() => {
     if (lastMove) {
-      playMove();
+      if (lastMove.capture) playCapture();
+      else playMove();
     }
   }, [lastMove, playMove, playCapture]);
 
@@ -65,11 +66,7 @@ export default function useAnalysisBoard(startFen: string) {
         //if (next) evaler.getEvaluation(next.data.fen);
       } else {
         const halfMoveCount = variationTree.path.length + 1;
-        const nodeToInsert = Chess.nodeDataFromMove(
-          currentGame,
-          move,
-          halfMoveCount
-        );
+        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
         variationTree.addMove(nodeToInsert);
         //evaler.getEvaluation(nodeToInsert.fen);
       }
@@ -95,7 +92,6 @@ export default function useAnalysisBoard(startFen: string) {
     stepBackward,
     stepForward,
     variations: variationTree.treeArray,
-    wasm: evaler.wasmSupported,
     setCurrentKey,
     currentLine,
     path,

@@ -9,6 +9,7 @@ import useLocalEval from "@/hooks/useLocalEval";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import Result from "@/components/UI/dialogs/Result";
 import useChessOnline from "@/hooks/useChessOnline";
+import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
 interface Props {
   lobbyid: string;
@@ -32,9 +33,7 @@ export default function GameOnline({ lobbyid }: Props) {
     livePositionOffset,
     lastMove,
   } = useChessOnline(lobbyid);
-  const [orientation, setOrientation] = useState<Chess.Color>(
-    playerColor || "w"
-  );
+  const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const players = useMemo(() => {
     let result: Record<Chess.Color, Player | undefined> = {
       w: undefined,
@@ -49,12 +48,7 @@ export default function GameOnline({ lobbyid }: Props) {
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
-  if (!game || !gameActive)
-    return (
-      <Waiting
-        lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`}
-      />
-    );
+  if (!game || !gameActive) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
   const currentGame = game.data;
   return (
@@ -63,17 +57,13 @@ export default function GameOnline({ lobbyid }: Props) {
       <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">
         <div className="flex flex-col h-full grow justify-start lg:justify-center items-center">
           <div className={`w-full ${styles.boardColumn}`}>
-            <div
-              className={`flex ${
-                orientation === "w" ? "flex-col" : "flex-col-reverse"
-              } w-full`}
-            >
+            <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
               <div className="lg:hidden">
                 <Clock timeRemaining={timeRemaining.b} color="b" />
               </div>
-              {players.b && (
-                <PlayerCard player={players.b} connectionStatus={true} />
-              )}
+              <div className="flex flex-row">
+                {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
+              </div>
               <Board
                 orientation={orientation}
                 legalMoves={currentGame.legalMoves}
@@ -89,18 +79,14 @@ export default function GameOnline({ lobbyid }: Props) {
                 onMove={onMove}
                 onPremove={() => {}}
               />
-              {players.w && (
-                <PlayerCard player={players.w} connectionStatus={true} />
-              )}
+              {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
               <div className="lg:hidden">
                 <Clock timeRemaining={timeRemaining.w} color="w" />
               </div>
             </div>
 
             <div className="min-h-[120px] w-full py-2 block lg:hidden">
-              <div className="w-full h-full rounded-lg bg-black">
-                board controls
-              </div>
+              <BoardControls controls={controls} />
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-20" onClose={closeModal}>
+        <Dialog as="div" className="relative z-20" onClose={closeModal} unmount={false}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -44,7 +44,7 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
                     <Toggle label="Rated" onChange={() => {}} />
                     <label>Time Control</label>
                     <TimeControlSelect />
-                    <NumbericInput />
+
                     <div className="flex flex-row justify-end mt-6">
                       <button onClick={closeModal} className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36">
                         Cancel
