@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const nanoid_1 = require("nanoid");
-const user_1 = require("../../lib/db/entities/user");
+const User_1 = __importDefault(require("../../lib/db/entities/User"));
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const router = express_1.default.Router();
 router.get("/profile", function (req, res) {
@@ -26,7 +26,7 @@ router.get("/profile", function (req, res) {
         if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.type) === "guest") {
             res.status(200).json({ profile: null, type: "guest" });
         }
-        const profile = yield user_1.User.getProfile(id);
+        const profile = yield User_1.default.getProfile(id);
         if (!profile) {
             return res.status(404);
         }
@@ -45,7 +45,7 @@ router.post("/complete-profile", (req, res) => __awaiter(void 0, void 0, void 0,
         return res.status(401);
     const profile = req.body;
     const { name, username, rating, country } = profile;
-    const user = yield user_1.User.findOneBy({ id });
+    const user = yield User_1.default.findOneBy({ id });
     if (!user)
         return res.status(404);
     if (name)
@@ -67,7 +67,7 @@ router.get("/checkusername", function (req, res) {
             res.status(400).end();
             return;
         }
-        const exists = yield user_1.User.usernameExists(username);
+        const exists = yield User_1.default.usernameExists(username);
         res.status(200).json({ valid: !exists });
     });
 });

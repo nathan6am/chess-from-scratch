@@ -22,11 +22,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var User_1;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Credential = exports.CompletedPuzzle = exports.Puzzle = exports.Analysis = exports.Notification = exports.NotificationType = exports.Game = exports.User_Game = exports.User = void 0;
+exports.Credential = exports.CompletedPuzzle = exports.Analysis = exports.Notification = exports.NotificationType = void 0;
 const typeorm_1 = require("typeorm");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const settings_1 = require("../../../context/settings");
 const misc_1 = require("../../../util/misc");
+const User_Game_1 = __importDefault(require("./User_Game"));
 let User = User_1 = class User extends typeorm_1.BaseEntity {
     static usernameExists(username) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -111,7 +112,10 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                 return { id, username, type: profileComplete ? "user" : "incomplete" };
             }
             const newUser = new User_1();
-            Object.assign(newUser, { facebookId: profile.facebookId, name: profile.name });
+            Object.assign(newUser, {
+                facebookId: profile.facebookId,
+                name: profile.name,
+            });
             yield newUser.save();
             return {
                 id: newUser.id,
@@ -125,10 +129,17 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             const { email, username, password } = account;
             const exists = yield this.createQueryBuilder("user")
                 .where("user.email = :email", { email: account.email })
-                .orWhere("LOWER(user.username) = LOWER(:username)", { username: account.username })
+                .orWhere("LOWER(user.username) = LOWER(:username)", {
+                username: account.username,
+            })
                 .getExists();
             if (exists) {
-                return { created: null, fieldErrors: [{ field: "email", message: "Email address is already in use" }] };
+                return {
+                    created: null,
+                    fieldErrors: [
+                        { field: "email", message: "Email address is already in use" },
+                    ],
+                };
             }
             const user = new User_1();
             const credentials = new Credential();
@@ -138,7 +149,10 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             Object.assign(user, { email, username });
             yield user.save();
             if (!user) {
-                return { created: null, fieldErrors: [{ field: "none", message: "Unable to create account" }] };
+                return {
+                    created: null,
+                    fieldErrors: [{ field: "none", message: "Unable to create account" }],
+                };
             }
             const created = { id: user.id, username: user.username };
             return { created: created };
@@ -202,7 +216,7 @@ __decorate([
     __metadata("design:type", Object)
 ], User.prototype, "notifications", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => User_Game, (userGame) => userGame.user),
+    (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.user),
     __metadata("design:type", Object)
 ], User.prototype, "games", void 0);
 __decorate([
@@ -225,65 +239,7 @@ __decorate([
 User = User_1 = __decorate([
     (0, typeorm_1.Entity)()
 ], User);
-exports.User = User;
-let User_Game = class User_Game {
-};
-__decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], User_Game.prototype, "user_id", void 0);
-__decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], User_Game.prototype, "game_id", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => User, (user) => user.games),
-    (0, typeorm_1.JoinColumn)({ name: "user_id" }),
-    __metadata("design:type", Object)
-], User_Game.prototype, "user", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => Game, (game) => game.players),
-    (0, typeorm_1.JoinColumn)({ name: "game_id" }),
-    __metadata("design:type", Object)
-], User_Game.prototype, "game", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: "text" }),
-    __metadata("design:type", String)
-], User_Game.prototype, "color", void 0);
-User_Game = __decorate([
-    (0, typeorm_1.Entity)()
-], User_Game);
-exports.User_Game = User_Game;
-let Game = class Game {
-};
-__decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], Game.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)("jsonb", { nullable: true }),
-    __metadata("design:type", Object)
-], Game.prototype, "timeControl", void 0);
-__decorate([
-    (0, typeorm_1.Column)("jsonb"),
-    __metadata("design:type", Object)
-], Game.prototype, "outcome", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Game.prototype, "pgn", void 0);
-__decorate([
-    (0, typeorm_1.Column)("jsonb"),
-    __metadata("design:type", Function)
-], Game.prototype, "data", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => User_Game, (userGame) => userGame.game),
-    __metadata("design:type", Object)
-], Game.prototype, "players", void 0);
-Game = __decorate([
-    (0, typeorm_1.Entity)()
-], Game);
-exports.Game = Game;
+exports.default = User;
 var NotificationType;
 (function (NotificationType) {
     NotificationType["REQUEST_ACCEPTED"] = "request-accepted";
@@ -350,56 +306,6 @@ Analysis = __decorate([
     (0, typeorm_1.Entity)()
 ], Analysis);
 exports.Analysis = Analysis;
-let Puzzle = class Puzzle {
-};
-__decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], Puzzle.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Puzzle.prototype, "fen", void 0);
-__decorate([
-    (0, typeorm_1.Column)("text", { array: true }),
-    __metadata("design:type", Array)
-], Puzzle.prototype, "moves", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Puzzle.prototype, "rating", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Puzzle.prototype, "ratingDeviation", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Puzzle.prototype, "popularity", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Puzzle.prototype, "nbPlays", void 0);
-__decorate([
-    (0, typeorm_1.Column)("text", { array: true }),
-    __metadata("design:type", Array)
-], Puzzle.prototype, "themes", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Puzzle.prototype, "gameUrl", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Puzzle.prototype, "openingFamily", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Puzzle.prototype, "openingVariation", void 0);
-Puzzle = __decorate([
-    (0, typeorm_1.Entity)()
-], Puzzle);
-exports.Puzzle = Puzzle;
 let CompletedPuzzle = class CompletedPuzzle {
 };
 __decorate([

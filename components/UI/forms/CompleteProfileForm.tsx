@@ -18,7 +18,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import YupPassword from "yup-password";
 YupPassword(yup);
-import { User } from "@/lib/db/entities/user";
+import User from "@/lib/db/entities/User";
 import CountrySelect from "../CountrySelect";
 import { removeUndefinedFields } from "@/util/misc";
 //ValidationSchemas

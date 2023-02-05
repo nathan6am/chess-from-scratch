@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useEffect } from "react";
 import axios from "axios";
-import { SessionUser } from "@/lib/db/entities/user";
+import { SessionUser } from "@/lib/db/entities/User";
 type User = {
   name: string | undefined;
   id: string;

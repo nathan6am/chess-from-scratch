@@ -1,19 +1,8 @@
 //Framework
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useContext,
-  useRef,
-  useMemo,
-} from "react";
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
 
 //Types
-import {
-  LobbyClientToServerEvents,
-  LobbyServerToClientEvents,
-  Game,
-} from "../server/types/lobby";
+import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game } from "../server/types/lobby";
 import { Lobby } from "server/types/lobby";
 
 //Util
@@ -69,10 +58,7 @@ export default function useChessOnline(lobbyId: string) {
     if (livePositionOffset + 1 > moveHistoryFlat.length) {
       return initialBoard;
     }
-    return (
-      moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)]
-        .board || null
-    );
+    return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].board || null;
   }, [livePositionOffset, moveHistoryFlat, game]);
 
   const lastMove = useMemo(() => {
@@ -81,10 +67,7 @@ export default function useChessOnline(lobbyId: string) {
     if (livePositionOffset + 1 > moveHistoryFlat.length) {
       return null;
     }
-    return (
-      moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move ||
-      null
-    );
+    return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move || null;
   }, [livePositionOffset, moveHistoryFlat, game]);
 
   const moveable = useMemo<boolean>(() => {
@@ -100,9 +83,7 @@ export default function useChessOnline(lobbyId: string) {
   }, [moveHistoryFlat]);
 
   const stepBackward = useCallback(() => {
-    setLivePositionOffset((cur) =>
-      cur < moveHistoryFlat.length ? cur + 1 : cur
-    );
+    setLivePositionOffset((cur) => (cur < moveHistoryFlat.length ? cur + 1 : cur));
   }, [moveHistoryFlat]);
 
   const jumpForward = () => {
@@ -160,10 +141,7 @@ export default function useChessOnline(lobbyId: string) {
 
   //Memoized socket connection
   const socket = useMemo<
-    Socket<
-      LobbyServerToClientEvents<false, false>,
-      LobbyClientToServerEvents<false, true>
-    >
+    Socket<LobbyServerToClientEvents<false, false>, LobbyClientToServerEvents<false, true>>
   >(() => {
     return io("/lobby");
   }, []);
@@ -178,24 +156,20 @@ export default function useChessOnline(lobbyId: string) {
 
     //Define event handlers
     const onConnect = () => {
-      socket.emit(
-        "lobby:connect",
-        lobbyId,
-        (res: { status: boolean; data?: Lobby; error: Error | null }) => {
-          if (res && res.status && res.data) {
-            const lobby = res.data;
-            setLobby(res.data);
-            if (lobby.currentGame) {
-              updateGame(lobby.currentGame);
-            }
-          } else if (res && !res.status) {
-            setConnected(false);
-            console.log(res);
-            console.error(res.error?.message);
-          } else {
+      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+        if (res && res.status && res.data) {
+          const lobby = res.data;
+          setLobby(res.data);
+          if (lobby.currentGame) {
+            updateGame(lobby.currentGame);
           }
+        } else if (res && !res.status) {
+          setConnected(false);
+          console.log(res);
+          console.error(res.error?.message);
+        } else {
         }
-      );
+      });
       setConnected(true);
     };
     const onConnectError = (err: unknown) => {
@@ -211,11 +185,7 @@ export default function useChessOnline(lobbyId: string) {
     const onTest = (response: string, ack: (arg: string) => void) => {
       callbackRef.current = ack;
     };
-    const onMoveRequested = (
-      timeout: number,
-      game: Game,
-      ack: (move: Chess.Move) => void
-    ) => {
+    const onMoveRequested = (timeout: number, game: Game, ack: (move: Chess.Move) => void) => {
       console.log("move requested");
       callbackRef.current = ack;
       updateGame(game);
@@ -250,9 +220,7 @@ export default function useChessOnline(lobbyId: string) {
       if (!game || !playerColor || !lobbyid) return;
       if (game.data.activeColor !== playerColor) return;
       if (game.data.outcome) return;
-      if (
-        game.data.legalMoves.some((legalMove) => _.isEqual(move, legalMove))
-      ) {
+      if (game.data.legalMoves.some((legalMove) => _.isEqual(move, legalMove))) {
         delayRef.current = DateTime.now();
         //Optimistically update the game state for smooth animations
         setLivePositionOffset(0);
@@ -287,6 +255,7 @@ export default function useChessOnline(lobbyId: string) {
   );
 
   return {
+    lobby,
     connected,
     game,
     currentBoard,

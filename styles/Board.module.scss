@@ -9,16 +9,25 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
   min-width: 95vw;
 }
 
+.boardColumn {
+  max-width: calc(100vh - 200px - 8em);
+  @include large {
+    max-width: calc(100vh - 160px);
+  }
+}
 .board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  height: 100%;
-  max-width: 1200px;
-  max-height: 80vh;
+  width: 100%;
+  max-width: calc(100vh - 200px - 8em);
+  max-height: 100vw;
   aspect-ratio: 1;
   margin-inline: auto;
   position: relative;
+  @include large {
+    max-width: calc(100vh - 160px);
+  }
   .dark {
     background-color: $square-dark;
   }
@@ -27,6 +36,7 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
   }
   .square {
     position: relative;
+    aspect-ratio: 1;
     .selected {
       background-color: $selected-highlight;
     }

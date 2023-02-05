@@ -1,12 +1,4 @@
-import React, {
-  useCallback,
-  useState,
-  useEffect,
-  useContext,
-  useMemo,
-  useRef,
-  useLayoutEffect,
-} from "react";
+import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect } from "react";
 import { SettingsContext } from "@/context/settings";
 import styles from "@/styles/Board.module.scss";
 import * as Chess from "@/lib/chess";
@@ -47,8 +39,7 @@ function useCurrentSquare(orientation: Chess.Color): {
   useEffect(() => {
     // Only accept coordinated within the board
     if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
-      const coordinates: [number, number] =
-        orientation === "w" ? [x, 7 - y] : [7 - x, y];
+      const coordinates: [number, number] = orientation === "w" ? [x, 7 - y] : [7 - x, y];
       setCurrentSquare(Chess.toSquare(coordinates));
     } else {
       //Set the current square to null if the pointer is outside the board
@@ -81,9 +72,7 @@ export default function Board({
   const { boardRef, currentSquare } = useCurrentSquare(orientation);
 
   //TODO: Clear selected piece when clicking outside the board
-  const [selectedPiece, setSelectedPiece] = useState<
-    [Chess.Square, Chess.Piece] | null
-  >(null);
+  const [selectedPiece, setSelectedPiece] = useState<[Chess.Square, Chess.Piece] | null>(null);
 
   //Show Promotion Menu
   const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
@@ -108,9 +97,7 @@ export default function Board({
       if (piece.color !== activeColor) return;
 
       // Find the corresponding legal move - should be unique unless there is a promotion
-      const move = legalMoves.find(
-        (move) => move.start === square && move.end === currentSquare
-      );
+      const move = legalMoves.find((move) => move.start === square && move.end === currentSquare);
       //Return if no legal move is found
       if (!move) return;
 
@@ -125,17 +112,7 @@ export default function Board({
       }
       setSelectedPiece(null);
     }
-  }, [
-    currentSquare,
-    selectedPiece,
-    autoQueen,
-    legalMoves,
-    activeColor,
-    moveable,
-    onMove,
-    preMoveable,
-    onPremove,
-  ]);
+  }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
 
   /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -158,9 +135,7 @@ export default function Board({
         if (piece.color !== activeColor) return;
 
         // Find the corresponding legal move - should be unique unless there is a promotion
-        const move = legalMoves.find(
-          (move) => move.start === square && move.end === targetSquare
-        );
+        const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
         //Return if no legal move is found
         if (!move) return;
 
@@ -176,16 +151,7 @@ export default function Board({
         setSelectedPiece(null);
       }
     },
-    [
-      selectedPiece,
-      autoQueen,
-      legalMoves,
-      activeColor,
-      moveable,
-      onMove,
-      preMoveable,
-      onPremove,
-    ]
+    [selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]
   );
   useEffect(() => {
     setSelectedPiece(null);
@@ -203,55 +169,44 @@ export default function Board({
 
   return (
     <>
-      <div className="w-full">
-        <div className={styles.board} ref={boardRef}>
-          {boardMap.map((row) =>
-            row.map((square) => (
-              <RenderSquare
-                key={square}
-                hasPiece={pieces.some((piece) => piece[0] === square)}
-                isTarget={
-                  (selectedPiece &&
-                    selectedPiece[1].targets?.includes(square)) ||
-                  false
-                }
-                isSelected={
-                  (selectedPiece && selectedPiece[0] === square) || false
-                }
-                square={square}
-                color={Chess.getSquareColor(square)}
-                onSelectTarget={() => {
-                  onSelectTarget(square);
-                }}
-                isPremoved={false}
-                showTargets={showTargets}
-                showHighlights={showHighlights}
-                clearSelection={clearSelection}
-                squareSize={squareSize}
-                hovered={currentSquare === square}
-                isLastMove={
-                  lastMove?.start === square || lastMove?.end === square
-                }
-              />
-            ))
-          )}
-          {pieces.map(([square, piece]) => (
-            <Piece
-              animationSpeed={AnimSpeedEnum[animationSpeed]}
-              setSelectedPiece={setSelectedPiece}
-              key={piece.key}
-              piece={piece}
+      <div className={`${styles.board} relative`} ref={boardRef}>
+        {boardMap.map((row) =>
+          row.map((square) => (
+            <RenderSquare
+              key={square}
+              hasPiece={pieces.some((piece) => piece[0] === square)}
+              isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+              isSelected={(selectedPiece && selectedPiece[0] === square) || false}
               square={square}
-              disabled={
-                (moveable !== "both" && piece.color !== moveable) ||
-                (!preMoveable && piece.color !== activeColor)
-              }
-              orientation={orientation}
-              onDrop={onDrop}
+              color={Chess.getSquareColor(square)}
+              onSelectTarget={() => {
+                onSelectTarget(square);
+              }}
+              isPremoved={false}
+              showTargets={showTargets}
+              showHighlights={showHighlights}
+              clearSelection={clearSelection}
               squareSize={squareSize}
+              hovered={currentSquare === square}
+              isLastMove={lastMove?.start === square || lastMove?.end === square}
             />
-          ))}
-        </div>
+          ))
+        )}
+        {pieces.map(([square, piece]) => (
+          <Piece
+            animationSpeed={AnimSpeedEnum[animationSpeed]}
+            setSelectedPiece={setSelectedPiece}
+            key={`${piece.key}${orientation}`}
+            piece={piece}
+            square={square}
+            disabled={
+              (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+            }
+            orientation={orientation}
+            onDrop={onDrop}
+            squareSize={squareSize}
+          />
+        ))}
       </div>
     </>
   );
@@ -294,20 +249,14 @@ function RenderSquare({
         if (isTarget) onSelectTarget();
         else clearSelection();
       }}
-      className={`${styles.square} ${
-        color === "w" ? styles.light : styles.dark
-      } `}
+      className={`${styles.square} ${color === "w" ? styles.light : styles.dark} `}
     >
       <div
-        className={`${styles.contents} ${
-          isTarget && showTargets && hovered && styles.hover
-        } ${isSelected && styles.selected} ${
-          isLastMove && showHighlights && styles.lastmove
-        }`}
+        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.hover} ${
+          isSelected && styles.selected
+        } ${isLastMove && showHighlights && styles.lastmove}`}
       >
-        {isTarget && showTargets && (
-          <div className={hasPiece ? styles.ring : styles.dot} />
-        )}
+        {isTarget && showTargets && <div className={hasPiece ? styles.ring : styles.dot} />}
       </div>
     </div>
   );

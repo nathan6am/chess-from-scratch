@@ -42,14 +42,14 @@ const passport_custom_1 = __importDefault(require("passport-custom"));
 const uuid_1 = require("uuid");
 const nanoid_1 = require("nanoid");
 const passportLocal = __importStar(require("passport-local"));
-const user_1 = require("../../lib/db/entities/user");
+const User_1 = __importDefault(require("../../lib/db/entities/User"));
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
 passport_1.default.use(new passportLocal.Strategy(function (username, password, done) {
     return __awaiter(this, void 0, void 0, function* () {
-        const user = yield user_1.User.login({ username, password });
+        const user = yield User_1.default.login({ username, password });
         console.log(user);
         if (user) {
             return done(null, user);
@@ -65,7 +65,7 @@ passport_1.default.use(new passportFacebook.Strategy({
     callbackURL: facebookCallbackURL,
 }, function (accessToken, refreshToken, profile, done) {
     return __awaiter(this, void 0, void 0, function* () {
-        const user = user_1.User.loginWithFacebook({
+        const user = User_1.default.loginWithFacebook({
             name: profile.displayName,
             facebookId: profile.id,
         });
@@ -135,7 +135,7 @@ router.post("/signup", function (req, res, next) {
             res.status(400).send();
             return;
         }
-        const result = yield user_1.User.createAccountWithCredentials(accountdetails);
+        const result = yield User_1.default.createAccountWithCredentials(accountdetails);
         if (result.created) {
             req.logIn(result.created, function (err) {
                 if (err) {
@@ -159,7 +159,7 @@ router.get("/checkusername", function (req, res) {
             res.status(400).end();
             return;
         }
-        const exists = yield user_1.User.usernameExists(username);
+        const exists = yield User_1.default.usernameExists(username);
         res.status(200).json({ valid: !exists });
     });
 });

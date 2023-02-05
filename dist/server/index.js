@@ -117,7 +117,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
         const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
         if (passportUser) {
             const user = JSON.parse(passportUser);
-            socket.data.user = user;
+            socket.data.sessionUser = user;
             socket.data.userid = user.id;
         }
         next();
@@ -133,7 +133,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
         const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
         if (passportUser) {
             const user = JSON.parse(passportUser);
-            socket.data.user = user;
+            socket.data.sessionUser = user;
             socket.data.userid = user.id;
         }
         next();

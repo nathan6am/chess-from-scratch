@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from "react";
 import _ from "lodash";
 import Draggable from "react-draggable";
 import * as Chess from "@/lib/chess";
@@ -31,12 +31,15 @@ export default function Piece({
   const hiddenRef = useRef<boolean>(true);
   const previousSquare = useRef<Chess.Square>(square);
   const [dragging, setDragging] = useState(false);
+
+  //Delay visibility slightly to prevent flashing in origin position
   const hidden = hiddenRef.current;
   useEffect(() => {
     setTimeout(() => {
       hiddenRef.current = false;
     }, 10);
   }, []);
+
   //Calculate coordinates from square & orientation
   const coordinates = useMemo<[number, number]>(() => {
     const [x, y] = Chess.squareToCoordinates(square);
@@ -65,17 +68,31 @@ export default function Piece({
       previousSquare.current = square;
     } else {
       //if the position has changed, but not the square, update the position without animation
+      // const positionNew = {
+      //   x: coordinates[0] * squareSize,
+      //   y: coordinates[1] * squareSize,
+      // };
+      // if (!_.isEqual(position, positionNew)) {
+      //   setDragging(true);
+      //   setPosition(positionNew);
+      //   setTimeout(() => {
+      //     setDragging(false);
+      //   }, animationSpeed * 1000);
+      // }
+    }
+  }, [square, dragging, orientation, squareSize, coordinates, animationSpeed]);
+
+  useLayoutEffect(() => {
+    if (dragging) return;
+    if (square !== previousSquare.current) {
+      return;
+    } else {
+      //if the position has changed, but not the square, update the position without animation
       const positionNew = {
         x: coordinates[0] * squareSize,
         y: coordinates[1] * squareSize,
       };
-      if (!_.isEqual(position, positionNew)) {
-        setDragging(true);
-        setPosition(positionNew);
-        setTimeout(() => {
-          setDragging(false);
-        }, animationSpeed * 1000);
-      }
+      setPosition(positionNew);
     }
   }, [square, dragging, orientation, squareSize, coordinates, animationSpeed]);
 
@@ -98,10 +115,7 @@ export default function Piece({
           setDragging(true);
           setSelectedPiece([square, piece]);
           const pointer = [e.clientX, e.clientY];
-          const piecePos = [
-            nodeRef?.current?.getBoundingClientRect().x,
-            nodeRef?.current?.getBoundingClientRect().y,
-          ];
+          const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
           //Snap to cursor
           setPosition((position) => ({
             x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
@@ -125,7 +139,7 @@ export default function Piece({
         }}
         ref={nodeRef}
       >
-        <Image
+        <img
           src={`/assets/pieces/standard/${piece.color}${piece.type}.png`}
           alt={`${piece.color}${piece.type}`}
           height={squareSize * 0.9}

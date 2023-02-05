@@ -2,10 +2,11 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import { SocketContext } from "@/context/socket";
 import { useRouter } from "next/router";
 import Button from "../../Button";
-import Toggle from "./Toggle";
+import NewGame from "../../dialogs/NewGame";
 export default function Play() {
   const router = useRouter();
   const socket = useContext(SocketContext);
+
   const createLobby = useCallback(() => {
     socket.emit("lobby:create", { color: "random" }, (response) => {
       if (response && response.data) {
@@ -14,11 +15,22 @@ export default function Play() {
     });
   }, [socket, router]);
   const [joinInput, setJoinInput] = useState("");
-  const [rated, setRated] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   return (
     <div className="flex flex-col items-center">
+      <NewGame
+        isOpen={showModal}
+        closeModal={() => {
+          setShowModal(false);
+        }}
+        onCreateLobby={createLobby}
+      />
       <div className="max-w-[800px] w-full p-10 grid md:grid-cols-2 gap-4">
-        <Button onClick={createLobby}>
+        <Button
+          onClick={() => {
+            setShowModal(true);
+          }}
+        >
           <p>Play with a Friend</p>
         </Button>
         <Button>
@@ -30,7 +42,6 @@ export default function Play() {
         <Button>
           <p>Over the board</p>
         </Button>
-        <Toggle checked={rated} onChange={setRated} label="rated" />
       </div>
       <div className="w-full grid grid-cols-2 max-w-[800px]">
         <div className="bg-white/[0.2] m-4">
