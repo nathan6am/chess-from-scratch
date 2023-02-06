@@ -1,11 +1,4 @@
-import {
-  BaseEntity,
-  Entity,
-  PrimaryColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from "typeorm";
+import { BaseEntity, Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import type { Color } from "@/lib/chess";
 import type { Relation } from "typeorm";
 import User from "./User";
@@ -28,4 +21,7 @@ export default class User_Game extends BaseEntity {
 
   @Column({ type: "text" })
   color: Color;
+
+  @Column({ nullable: true })
+  rating: number;
 }

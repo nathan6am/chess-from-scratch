@@ -4,6 +4,7 @@ import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
 import nodeTest from "node:test";
 
+interface VariationTree {}
 export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {
   const tree = useTreeData<Chess.NodeData>(initialTree || []);
   const map = tree.map;
@@ -61,8 +62,11 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
       if (depthChange !== 0 || index !== 0 || isWhite) {
         pgn += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
-      pgn += `${node.data.PGN} ${node.data.comments.length ? `{${node.data.comments.join("; ")}} ` : ""}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) pgn += ")";
+      pgn += `${node.data.PGN} ${
+        node.data.comments.length ? `{${node.data.comments.join("; ")}} ` : ""
+      }`;
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
+        pgn += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }

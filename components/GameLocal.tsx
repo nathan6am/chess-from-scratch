@@ -16,7 +16,6 @@ export default function GameLocal() {
     evaler,
     stepForward,
     stepBackward,
-    wasm,
     pgn,
     mainLine,
     setCurrentKey,

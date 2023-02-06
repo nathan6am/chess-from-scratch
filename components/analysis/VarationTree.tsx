@@ -218,7 +218,9 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
   return (
     <>
       <div className="w-full flex flex-row text-sm">
-        <div className="px-4 py-2 bg-sepia/[0.3] relative">{moveCount}.</div>
+        <div className="px-4 py-2 w-14 text-center bg-sepia/[0.3] relative">
+          {moveCount}.
+        </div>
         <div className="w-full h-full grid grid-cols-2 bg-[#161616]">
           {row.map((node, idx) => (
             <RenderRowEntry

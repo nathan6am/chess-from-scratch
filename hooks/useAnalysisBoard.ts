@@ -28,8 +28,7 @@ export default function useAnalysisBoard(startFen: string) {
     mainLine,
     setCurrentKey,
   } = variationTree;
-  const [playMove] = useSound("/assets/sounds/move.wav");
-  const [playCapture] = useSound("/assets/sounds/capture.wav");
+
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNodeData === null) return initialGame;
     return Chess.gameFromNodeData(
@@ -37,13 +36,19 @@ export default function useAnalysisBoard(startFen: string) {
       path.map((node) => node.data)
     );
   }, [currentNodeData, initialGame]);
+
+  //Move sounds
+  const [playMove] = useSound("/assets/sounds/move.wav");
+  const [playCapture] = useSound("/assets/sounds/capture.wav");
+  const [playCastle] = useSound("/assets/sounds/castle.wav");
   const lastMove = currentGame.lastMove;
   useEffect(() => {
     if (lastMove) {
       if (lastMove.capture) playCapture();
+      else if (lastMove.isCastle) playCastle();
       else playMove();
     }
-  }, [lastMove, playMove, playCapture]);
+  }, [lastMove, playMove, playCapture, playCastle]);
 
   //Debounce fen change for evaler/api requests
   const debouncedFen = useDebounce(currentGame.fen, 600);
@@ -66,7 +71,11 @@ export default function useAnalysisBoard(startFen: string) {
         //if (next) evaler.getEvaluation(next.data.fen);
       } else {
         const halfMoveCount = variationTree.path.length + 1;
-        const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
+        const nodeToInsert = Chess.nodeDataFromMove(
+          currentGame,
+          move,
+          halfMoveCount
+        );
         variationTree.addMove(nodeToInsert);
         //evaler.getEvaluation(nodeToInsert.fen);
       }

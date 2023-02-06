@@ -1,109 +1,151 @@
 import React, { useEffect, useState, useMemo } from "react";
-import useChessLocal from "@/hooks/useChessLocal";
 import Board from "@/components/game/Board";
-import EvalBar from "./game/EvalBar";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import MoveHistory from "@/components/game/MoveHistory";
-import useLocalEval from "@/hooks/useLocalEval";
-import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import Result from "@/components/UI/dialogs/Result";
-import useChessOnline from "@/hooks/useChessOnline";
+import useChessOnline, {
+  BoardControls as IBoardControls,
+  GameControls as IGameControls,
+} from "@/hooks/useChessOnline";
 import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
+
+import Clock from "./game/Clock";
+import PlayerCard from "./game/PlayerCard";
+import { Player } from "@/server/types/lobby";
+import { BoardColumn, BoardRow, PanelColumn, PanelContainer } from "./layout/GameLayout";
+import { DurationObjectUnits } from "luxon";
+import GameControls from "./game/GameControls";
+import MoveHistory from "./game/MoveHistory";
+
 interface Props {
   lobbyid: string;
 }
-import Clock from "./game/Clock";
-import PlayerCard from "./game/PlayerCard";
-import styles from "@/styles/Board.module.scss";
-import { Player } from "@/server/types/lobby";
 export default function GameOnline({ lobbyid }: Props) {
+  const onlineGame = useChessOnline(lobbyid);
   const {
-    lobby,
-    game,
-    gameActive,
-    onMove,
-    connected,
-    playerColor,
-    timeRemaining,
-    controls,
-    moveable,
+    currentGame,
     currentBoard,
-    livePositionOffset,
+    timeRemaining,
+    playerColor,
+    lobby,
     lastMove,
-  } = useChessOnline(lobbyid);
+    moveable,
+    gameControls,
+    boardControls,
+    livePositionOffset,
+  } = onlineGame;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const players = useMemo(() => {
     let result: Record<Chess.Color, Player | undefined> = {
       w: undefined,
       b: undefined,
     };
-    if (!lobby || !game) return result;
-    result.w = lobby.players.find((player) => player.id === game.players.w);
-    result.b = lobby.players.find((player) => player.id === game.players.b);
-    console.log(game.players.b);
+    if (!lobby || !currentGame) return result;
+    result.w = lobby.players.find((player) => player.id === currentGame.players.w);
+    result.b = lobby.players.find((player) => player.id === currentGame.players.b);
+
     return result;
-  }, [lobby, game]);
+  }, [lobby, currentGame]);
+
+  //Set the board orientation if the player color changes
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
-  if (!game || !gameActive) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
-  const currentGame = game.data;
+  if (!onlineGame.connectionStatus.lobby) {
+    return <div>Connecting...</div>;
+  }
+  //TODO: Add connecting component
+  if (!currentGame)
+    return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
+
+  const gameData = currentGame.data;
   return (
     <div className="flex flex-col h-full w-full justify-center">
-      <Result outcome={game.data.outcome} isOpen={false} close={() => {}} />
-      <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">
-        <div className="flex flex-col h-full grow justify-start lg:justify-center items-center">
-          <div className={`w-full ${styles.boardColumn}`}>
-            <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
-              <div className="lg:hidden">
-                <Clock timeRemaining={timeRemaining.b} color="b" />
-              </div>
-              <div className="flex flex-row">
-                {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
-              </div>
-              <Board
-                orientation={orientation}
-                legalMoves={currentGame.legalMoves}
-                showHighlights={true}
-                showTargets={true}
-                pieces={currentBoard || currentGame.board}
-                animationSpeed="normal"
-                lastMove={lastMove}
-                activeColor={currentGame.activeColor}
-                moveable={moveable ? playerColor || "none" : "none"}
-                preMoveable={false}
-                autoQueen={true}
-                onMove={onMove}
-                onPremove={() => {}}
-              />
-              {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
-              <div className="lg:hidden">
-                <Clock timeRemaining={timeRemaining.w} color="w" />
-              </div>
-            </div>
-
-            <div className="min-h-[120px] w-full py-2 block lg:hidden">
-              <BoardControls controls={controls} />
-            </div>
+      <Result
+        outcome={gameData.outcome}
+        isOpen={gameData.outcome ? true : false}
+        close={() => {}}
+      />
+      <BoardRow>
+        <BoardColumn>
+          <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
+            <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
+            {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
+            <Board
+              orientation={orientation}
+              legalMoves={gameData.legalMoves}
+              showHighlights={true}
+              showTargets={true}
+              pieces={currentBoard || gameData.board}
+              animationSpeed="normal"
+              lastMove={lastMove}
+              activeColor={gameData.activeColor}
+              moveable={moveable ? playerColor || "none" : "none"}
+              preMoveable={false}
+              autoQueen={true}
+              onMove={gameControls.onMove}
+              onPremove={() => {}}
+            />
+            {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
+            <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
           </div>
-        </div>
-        <div className="h-full hidden lg:block">
-          <MoveHistory
-            currentOffset={livePositionOffset}
-            orientation={orientation}
+
+          <div className="min-h-[120px] w-full py-2 block lg:hidden">
+            <BoardControls controls={boardControls} />
+          </div>
+        </BoardColumn>
+        <PanelColumn>
+          <PanelOnline
             timeRemaining={timeRemaining}
-            controls={controls}
-            moveHistory={currentGame.moveHistory}
-            usePieceIcons={false}
-            onFlipBoard={() => {
+            boardControls={boardControls}
+            gameControls={gameControls}
+            flipBoard={() => {
               setOrientation((cur) => (cur === "w" ? "b" : "w"));
             }}
+            currentOffset={livePositionOffset}
+            moveHistory={gameData.moveHistory}
+            orientation={orientation}
           />
-        </div>
-      </div>
+        </PanelColumn>
+      </BoardRow>
+    </div>
+  );
+}
+
+interface PanelProps {
+  timeRemaining: Record<Chess.Color, DurationObjectUnits>;
+  boardControls: IBoardControls;
+  gameControls: IGameControls;
+  flipBoard: () => void;
+  moveHistory: Chess.MoveHistory;
+  currentOffset: number;
+  orientation: Chess.Color;
+}
+function PanelOnline({
+  timeRemaining,
+  boardControls,
+  gameControls,
+  moveHistory,
+  flipBoard,
+  currentOffset,
+  orientation,
+}: PanelProps) {
+  return (
+    <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full h-full`}>
+      <Clock color="b" timeRemaining={timeRemaining.b} size="lg" className="my-4" />
+      <PanelContainer>
+        <GameControls gameControls={gameControls} flipBoard={flipBoard} />
+        <MoveHistory
+          moveHistory={moveHistory}
+          jumpToOffset={boardControls.jumpToOffset}
+          currentOffset={currentOffset}
+          usePieceIcons={true}
+        />
+        <BoardControls controls={boardControls} />
+      </PanelContainer>
+      <Clock color="w" timeRemaining={timeRemaining.w} size="lg" className="my-4" />
     </div>
   );
 }

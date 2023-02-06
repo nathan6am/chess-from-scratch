@@ -1,4 +1,4 @@
-export function coinflip<T>(a: T, b: T): T {
+export function coinflip<T, U = T>(a: T | U, b: T | U): T | U {
   return Math.random() < 0.5 ? a : b;
 }
 
