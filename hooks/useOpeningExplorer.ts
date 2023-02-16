@@ -105,7 +105,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
     queryFn: () => fetcher(debouncedGame),
   });
   return {
-    data: debounceSyncRef.current ? data : undefined,
+    data,
     error,
     isLoading: debounceSyncRef.current ? isLoading : true,
   };

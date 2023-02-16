@@ -10,6 +10,9 @@ import BoardControls from "../game/BoardControls";
 import { ScrollContainer } from "../layout/GameLayout";
 import Explorer from "./Explorer";
 import { Tab } from "@headlessui/react";
+import { MdModeComment } from "react-icons/md";
+import { FaExclamationCircle } from "react-icons/fa";
+import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
 export default function AnalysisBoard() {
   const {
@@ -30,6 +33,7 @@ export default function AnalysisBoard() {
     explorer,
   } = useAnalysisBoard();
   const [orientation, setOrientation] = useState<Chess.Color>("w");
+
   return (
     <div className="flex flex-col h-full w-full justify-center">
       <BoardRow>
@@ -74,17 +78,54 @@ export default function AnalysisBoard() {
           </div>
           <div className="w-full grow relative bg-white/[0.05]">
             <ScrollContainer>
-              <VarationTree mainLine={mainLine} selectedKey={currentKey} setSelectedKey={setCurrentKey} path={path} />
+              <VarationTree
+                mainLine={mainLine}
+                selectedKey={currentKey}
+                setSelectedKey={setCurrentKey}
+                path={path}
+              />
             </ScrollContainer>
           </div>
-          <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
-          {/* <Explorer
-            data={explorer.data}
-            error={explorer.error}
-            isLoading={explorer.isLoading}
-            currentGame={currentGame}
-            onMove={onMove}
-          /> */}
+          <div className="w-full border-t border-white/[0.2] ">
+            <Tab.Group>
+              <Tab.List className="flex bg-[#121212] pt-1 shadow-lg">
+                <StyledTab>
+                  <p>
+                    <MdModeComment className="inline mr-1" /> Comment
+                  </p>
+                </StyledTab>
+                <StyledTab>
+                  <p>
+                    <FaExclamationCircle className="inline mr-1" /> Annotate
+                  </p>
+                </StyledTab>
+                <StyledTab>
+                  <p>
+                    <BsShareFill className="inline mr-1 mb-1 text-sm" /> Share
+                  </p>
+                </StyledTab>
+              </Tab.List>
+              <Tab.Panels>
+                <Tab.Panel>
+                  <Comments
+                    key={currentNode?.key || "none"}
+                    node={currentNode}
+                    controls={commentControls}
+                  />
+                </Tab.Panel>
+                <Tab.Panel>
+                  <Explorer
+                    data={explorer.data}
+                    error={explorer.error}
+                    isLoading={explorer.isLoading}
+                    currentGame={currentGame}
+                    onMove={onMove}
+                  />
+                </Tab.Panel>
+              </Tab.Panels>
+            </Tab.Group>
+          </div>
+
           <BoardControls
             controls={boardControls}
             flipBoard={() => {
@@ -96,5 +137,27 @@ export default function AnalysisBoard() {
     </div>
   );
 }
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(" ");
+}
 
-function ToolTabs() {}
+interface TabProps {
+  children?: JSX.Element | JSX.Element[] | string;
+}
+function StyledTab({ children }: TabProps) {
+  return (
+    <Tab
+      className={({ selected }) =>
+        classNames(
+          "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
+          "focus:outline-none ",
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+        )
+      }
+    >
+      {children}
+    </Tab>
+  );
+}

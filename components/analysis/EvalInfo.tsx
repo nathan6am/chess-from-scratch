@@ -36,7 +36,10 @@ function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
     let currentGame = _.cloneDeep(game);
     line.moves.forEach((uciMove) => {
       const move = currentGame.legalMoves.find(
-        (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
+        (move) =>
+          move.start === uciMove.start &&
+          move.end === uciMove.end &&
+          move.promotion === uciMove.promotion
       );
       if (!move) {
         return result;
@@ -49,7 +52,7 @@ function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
     return result;
   } catch (e) {
     console.error(e);
-    return result;
+    return [];
   }
 }
 
@@ -58,9 +61,12 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     if (evaler.inProgress || !enabled || !evaler.evaluation) {
       return [];
     }
-    const lines = evaler.evaluation.lines.map((line) => ({ ...line, moves: uciMovesToPgn(line, currentGame) }));
+    const lines = evaler.evaluation.lines.map((line) => ({
+      ...line,
+      moves: uciMovesToPgn(line, currentGame),
+    }));
     return lines;
-  }, [currentGame, enabled, evaler.inProgress, evaler.evaluation]);
+  }, [enabled, evaler.inProgress, evaler.evaluation]);
   const score = useMemo(() => {
     if (evaler.currentScore) return parseScore(evaler.currentScore);
     else return "+0.0";
@@ -90,7 +96,10 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
           </div>
         </div>
       </div>
-      <ProgressBar progress={enabled ? progress : 0} key={`${moveKey}${evaler.inProgress ? "a" : "b"}`} />
+      <ProgressBar
+        progress={enabled ? progress : 0}
+        key={`${moveKey}${evaler.inProgress ? "a" : "b"}`}
+      />
       {enabled && (
         <>
           <div
@@ -125,7 +134,17 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
                   Array.from(Array(evaler.currentOptions.multiPV).keys()).map((_, idx) => {
                     return (
                       <div key={idx} className="flex flex-row items-center h-6 w-full ">
-                        <ClipLoader size={16} color="white" />
+                        <div className="w-[50px] shrink-0 rounded-sm bg-white/[0.1] opacity-60 py-1">
+                          <div className="h-[1em] relative w-full">
+                            <div className="absolute top-0 left-0 right-0 bottom-0 w-full flex justify-center items-center">
+                              <ClipLoader size={14} color="white" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
+                          <div className="h-[1em]"></div>
+                        </p>
                       </div>
                     );
                   })}

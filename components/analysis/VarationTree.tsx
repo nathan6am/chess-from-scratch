@@ -47,7 +47,13 @@ export default function VarationTree({ mainLine, selectedKey, setSelectedKey, pa
   return (
     <div className="w-full flex flex-col bg-[#121212] divide-y divide-white/[0.2]">
       {mainlineRows.map((row, idx) => (
-        <RenderRow path={path} key={idx} row={row} selectedKey={selectedKey} setSelectedKey={setSelectedKey} />
+        <RenderRow
+          path={path}
+          key={idx}
+          row={row}
+          selectedKey={selectedKey}
+          setSelectedKey={setSelectedKey}
+        />
       ))}
     </div>
   );
@@ -77,7 +83,11 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
     }
   }, [forceExpand]);
   return (
-    <div className={`w-full ${(depth || 0) > 0 ? "border-dotted border-l" : ""} border-white/[0.2] text-sm`}>
+    <div
+      className={`w-full ${
+        (depth || 0) > 0 ? "border-dotted border-l" : ""
+      } border-white/[0.2] text-sm`}
+    >
       <div className="flex flex-wrap py-2 pl-4 pr-2 relative rounded">
         <p className="text-sepia/[0.8] indent-[-1.5em] pl-[1.5em]">
           {subVariations.length > 0 && (
@@ -101,7 +111,7 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
             const selected = selectedKey === node.key;
             return (
               <>
-                <div
+                <span
                   className={`cursor-pointer inline mx-[1px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white ${
                     selected ? "bg-blue-400/[0.2] " : ""
                   }`}
@@ -111,13 +121,15 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
                   }}
                 >
                   {(isWhite || index === 0) && (
-                    <div className={`inline ml-[2px] opacity-50 text-white`}>{moveCount(node.data.halfMoveCount)}</div>
+                    <span className={`inline ml-[2px] opacity-50 text-white`}>
+                      {moveCount(node.data.halfMoveCount)}
+                    </span>
                   )}
-                  <p className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
+                  <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
                     {parsePGN(node.data.PGN, isWhite ? "w" : "b")}
-                  </p>
-                </div>
-                {node.data.comment && " " + node.data.comment}
+                  </span>
+                </span>
+                {node.data.comment && " " + node.data.comment + " "}
               </>
             );
           })}
@@ -172,7 +184,8 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
   const firstNode = row.find((node) => node !== null);
   const comment = row.find((node) => node?.data.comment?.length)?.data.comment;
   const forceExpand = useMemo(
-    () => path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
+    () =>
+      path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
     [path, variations]
   );
   useEffect(() => {
@@ -188,7 +201,12 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
         <div className="px-4 py-2 w-14 text-center bg-sepia/[0.3] relative">{moveCount}.</div>
         <div className="w-full h-full grid grid-cols-2 bg-[#161616]">
           {row.map((node, idx) => (
-            <RenderRowEntry key={idx} node={node} selectedKey={selectedKey} setSelectedKey={setSelectedKey} />
+            <RenderRowEntry
+              key={idx}
+              node={node}
+              selectedKey={selectedKey}
+              setSelectedKey={setSelectedKey}
+            />
           ))}
         </div>
       </div>
@@ -263,7 +281,9 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
           setSelectedKey(node.key);
         }
       }}
-      className={`cursor-pointer border-white/[0.2] border-r h-full p-2 ${selected ? "bg-blue-400/[0.2]" : ""} `}
+      className={`cursor-pointer border-white/[0.2] border-r h-full p-2 ${
+        selected ? "bg-blue-400/[0.2]" : ""
+      } `}
     >
       <div className="flex flex-row justify-between items-center">
         <p>{node ? `${parsePGN(node.data.PGN, isWhite ? "w" : "b")}` : ". . ."}</p>

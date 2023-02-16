@@ -1,5 +1,5 @@
 import { ApiResponse, MoveData } from "@/hooks/useOpeningExplorer";
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useMemo, useEffect } from "react";
 import { ScrollContainer } from "../layout/GameLayout";
 import Loading from "../UI/Loading";
 import { parsePGN } from "../game/MoveHistory";
@@ -19,9 +19,20 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
     },
     [onMove, currentGame]
   );
+
+  const prevOpening = useRef<string>("Starting Position");
+  useEffect(() => {
+    if (!data) return;
+    if (data.opening && data.opening.name !== prevOpening.current) {
+      prevOpening.current = data.opening.name;
+    }
+  }, [data]);
+  const opening = useMemo(() => {
+    return data?.opening?.name || prevOpening.current;
+  }, [data]);
   return (
     <div className="w-full h-[200px] flex flex-col">
-      <div className="w-full p-1 px-3 text-sm">{`Opening: ${data?.opening?.name || ""}`}</div>
+      <div className="w-full p-1 px-3 text-sm bg-[#202020] shadow-md">{`Opening: ${opening}`}</div>
       <div className="w-full grow relative">
         <ScrollContainer>
           <>
@@ -31,7 +42,7 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
                 <Loading />
               </>
             )}
-            {data && (
+            {data && !isLoading && (
               <>
                 {data.moves.map((moveData) => (
                   <RenderMoveRow attemptMove={attemptMove} moveData={moveData} key={moveData.uci} />
@@ -40,6 +51,7 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
             )}
           </>
         </ScrollContainer>
+        <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5]"></div>
       </div>
     </div>
   );
@@ -53,7 +65,7 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
   const notation = parsePGN(moveData.san, "w");
   const totalGames = moveData.white + moveData.black + moveData.draws;
   return (
-    <div className="w-full flex flex-row py-1 pr-2 border-b">
+    <div className="w-full flex flex-row py-1 pr-2 border-b border-white/[0.2]">
       <div className="w-40 flex flex-row items-center px-2">
         <button
           onClick={() => {
@@ -65,7 +77,12 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
         </button>
         <p className="text-xs ">{totalGames}</p>
       </div>
-      <PercentageBar total={totalGames} black={moveData.black} draws={moveData.draws} white={moveData.white} />
+      <PercentageBar
+        total={totalGames}
+        black={moveData.black}
+        draws={moveData.draws}
+        white={moveData.white}
+      />
     </div>
   );
 }
@@ -84,20 +101,26 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
           className="bg-white text-black text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((white / total) * 100)}%` }}
         >
-          <p>{`${Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white}`}</p>
+          <p>{`${
+            Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white
+          }`}</p>
         </div>
       )}
       {draws > 0 && (
         <div
           className="bg-[#363636] text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((draws / total) * 100)}%` }}
-        >{`${Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws}`}</div>
+        >{`${
+          Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws
+        }`}</div>
       )}
       {black > 0 && (
         <div
           className="bg-black text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((black / total) * 100)}%` }}
-        >{`${Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black}`}</div>
+        >{`${
+          Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black
+        }`}</div>
       )}
     </div>
   );

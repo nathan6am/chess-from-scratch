@@ -26,7 +26,7 @@ export default function Comments({ node, controls }: Props) {
 
   const [editing, setEditing] = useState(false);
   return (
-    <div className="w-full h-fit flex flex-col bg-[#202020] border-t border-white/[0.3] pb-1">
+    <div className="w-full h-fit flex flex-col bg-[#202020] pb-1">
       {/* <div className=" w-full py-2 px-4">Comment</div> */}
       <form
         ref={formRef}
@@ -79,7 +79,8 @@ export default function Comments({ node, controls }: Props) {
                 inputRef.current?.focus();
               }}
             >
-              <MdEdit className="inline mb-[2px]" /> <p className="inline group-hover:underline">Edit</p>
+              <MdEdit className="inline mb-[2px]" />{" "}
+              <p className="inline group-hover:underline">Edit</p>
             </button>
           )}
           {editing && (
@@ -96,7 +97,10 @@ export default function Comments({ node, controls }: Props) {
             </button>
           )}
           {editing && edited && (
-            <button className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2" type="submit">
+            <button
+              className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2"
+              type="submit"
+            >
               <MdOutlineSaveAlt className="inline mr-1 mb-[2px] text-lg" />
               Save
             </button>
