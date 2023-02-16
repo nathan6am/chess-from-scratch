@@ -1,14 +1,19 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useMemo, useState } from "react";
 interface Props {
-  onCreateLobby: (options: any) => void;
+  onCreateLobby: (options: Partial<LobbyOptions>) => void;
   isOpen: boolean;
   closeModal: () => void;
 }
 import TimeControlSelect from "../forms/TimeControlSelect";
 import NumbericInput from "../NumbericInput";
-import Toggle from "../Menus/content/Toggle";
+import Toggle from "../Toggle";
+import { TimeControl } from "@/lib/chess";
+import { LobbyOptions } from "@/server/types/lobby";
 export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
+  const [rated, setRated] = useState(true);
+  const [timeControl, setTimeControl] = useState<TimeControl | undefined>();
+  const [color, setColor] = useState();
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -41,16 +46,21 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
                     New Game
                   </Dialog.Title>
                   <div className="max-w-sm mx-auto">
-                    <Toggle label="Rated" onChange={() => {}} />
+                    <Toggle label="Rated" className="my-4" checked={rated} onChange={setRated} />
                     <label>Time Control</label>
-                    <TimeControlSelect />
-
+                    <TimeControlSelect setTimeControl={setTimeControl} />
                     <div className="flex flex-row justify-end mt-6">
                       <button onClick={closeModal} className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36">
                         Cancel
                       </button>
                       <button
-                        onClick={onCreateLobby}
+                        onClick={() => {
+                          onCreateLobby({
+                            rated: rated,
+                            color: color || "random",
+                            gameConfig: { timeControls: timeControl ? [timeControl] : [] },
+                          });
+                        }}
                         className="py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 ml-4 w-36"
                       >
                         Start Game
@@ -64,19 +74,5 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
         </Dialog>
       </Transition>
     </>
-  );
-}
-
-function Content() {
-  return (
-    <div className="max-w-sm mx-auto">
-      <Toggle label="Rated" onChange={() => {}} />
-      <label>Time Control</label>
-      <TimeControlSelect />
-      <div className="flex flex-row justify-end mt-6">
-        <button className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36">Cancel</button>
-        <button className="py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 ml-4 w-36">Start Game</button>
-      </div>
-    </div>
   );
 }

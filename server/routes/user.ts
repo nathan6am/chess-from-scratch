@@ -5,7 +5,7 @@ import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
 import * as passportLocal from "passport-local";
-import User from "../../lib/db/entities/User";
+import User, { SessionUser } from "../../lib/db/entities/User";
 const nanoid = customAlphabet("1234567890", 10);
 
 const router = express.Router();
@@ -45,7 +45,6 @@ router.post("/complete-profile", async (req, res) => {
 });
 
 router.get("/checkusername", async function (req, res) {
-  console.log(req.query);
   const username = req.query.username;
   if (!username || typeof username !== "string") {
     res.status(400).end();
@@ -53,6 +52,14 @@ router.get("/checkusername", async function (req, res) {
   }
   const exists = await User.usernameExists(username);
   res.status(200).json({ valid: !exists });
+});
+
+router.get("/games", async function (req, res) {
+  const user: SessionUser | undefined = req.user;
+  if (!user) return res.status(401);
+  if (user.type === "guest") return res.status(401);
+  const games = await User.getGames(user.id);
+  res.status(200).json(games);
 });
 
 const userRouter = router;

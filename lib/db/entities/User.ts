@@ -98,10 +98,7 @@ export default class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(
-        credentials.password,
-        user.credentials.hashedPassword
-      );
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
       return {
         username: user.username,
@@ -119,10 +116,7 @@ export default class User extends BaseEntity {
         },
       });
       if (!user || !user.credentials) return null;
-      const verified = await bcrypt.compare(
-        credentials.password,
-        user.credentials.hashedPassword
-      );
+      const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
       return {
         username: user.username,
@@ -143,10 +137,7 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async loginWithFacebook(profile: {
-    facebookId: string;
-    name: string;
-  }): Promise<SessionUser> {
+  static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
     const user = await this.findOne({
       where: {
         facebookId: profile.facebookId,
@@ -169,11 +160,7 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async createAccountWithCredentials(account: {
-    email: string;
-    username: string;
-    password: string;
-  }): Promise<{
+  static async createAccountWithCredentials(account: { email: string; username: string; password: string }): Promise<{
     created: Partial<User> | null;
     fieldErrors?: Array<{ field: string; message: string }>;
   }> {
@@ -187,9 +174,7 @@ export default class User extends BaseEntity {
     if (exists) {
       return {
         created: null,
-        fieldErrors: [
-          { field: "email", message: "Email address is already in use" },
-        ],
+        fieldErrors: [{ field: "email", message: "Email address is already in use" }],
       };
     }
     const user = new User();
@@ -221,10 +206,41 @@ export default class User extends BaseEntity {
   }
 
   static async getProfile(id: string) {
-    console.log(id);
-    const user = await this.findOneBy({ id: id });
-    console.log(user);
+    const user = await this.findOneBy({ id });
     return user;
+  }
+
+  static async getGames(id: string) {
+    const user = await this.findOne({
+      where: { id: id },
+      relations: {
+        games: {
+          game: {
+            players: {
+              user: true,
+            },
+          },
+        },
+      },
+    });
+    const usergames = user?.games || []
+    const result = usergames.map(usergame => {
+      const filteredPlayers = usergame.game.players.map(player => ({
+        username: player.user.username,
+        rating: player.rating,
+        color: player.color
+      }))
+      return (
+        {
+          ...usergame,
+          game: {
+            ...usergame.game,
+            players: filteredPlayers
+          }
+        }
+      )
+    })
+    return result
   }
 }
 

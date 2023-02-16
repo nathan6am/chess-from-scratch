@@ -15,9 +15,7 @@ export function setSkillLevel(value: number, stockfish: Worker) {
     );
   stockfish.postMessage(`setoption name Skill Level value ${value}`);
 }
-const timeout = new Promise((resolve) =>
-  setTimeout(() => resolve(false), 10000)
-);
+const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 40000));
 
 export async function ready(stockfish: Worker) {
   const isReady = new Promise((resolve, reject) => {
@@ -60,8 +58,7 @@ export async function startup(stockfish: Worker) {
                   type = arg;
                   break;
                 case "default":
-                  if (defaultValue.length >= 1)
-                    defaultValue = defaultValue + " " + arg;
+                  if (defaultValue.length >= 1) defaultValue = defaultValue + " " + arg;
                   else defaultValue = arg;
                   break;
                 default:
@@ -117,18 +114,7 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = [
-    "depth",
-    "multipv",
-    "score",
-    "seldepth",
-    "time",
-    "nodes",
-    "nps",
-    "time",
-    "pv",
-    "hashfull",
-  ];
+  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -157,12 +143,7 @@ function parseEvalInfo(args: string[]): EvalInfo {
           evaluation.seldepth = parseInt(arg);
           break;
         case "score":
-          if (
-            arg === "cp" ||
-            arg === "mate" ||
-            arg === "upperbound" ||
-            arg === "lowerbound"
-          ) {
+          if (arg === "cp" || arg === "mate" || arg === "upperbound" || arg === "lowerbound") {
             evaluation.score.type = arg;
           } else {
             evaluation.score.value = parseInt(arg);
@@ -232,16 +213,10 @@ export async function getEvaluation(
       const args: string[] = e.data.split(" ");
       const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
       //Ignore some unnecessary messages
-      if (
-        args[0] === "info" &&
-        !(args.includes("string") || args.includes("currmove"))
-      ) {
+      if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
         const evalInfo = parseEvalInfo(args);
         evalInfo.score.value = evalInfo.score.value * multiplier;
-        if (
-          evalInfo.score.type !== "lowerbound" &&
-          evalInfo.score.type !== "upperbound"
-        ) {
+        if (evalInfo.score.type !== "lowerbound" && evalInfo.score.type !== "upperbound") {
           const score = {
             type: evalInfo.score.type as unknown as "cp" | "mate",
             value: evalInfo.score.value,
@@ -260,7 +235,10 @@ export async function getEvaluation(
       if (args[0] === "bestmove") {
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
-        if (info.depth !== options.depth) reject("depth not reached");
+        if (info.depth !== options.depth) {
+          console.log("rejecting");
+          reject("depth not reached");
+        }
         const finalEval: FinalEvaluation = {
           lines: multiPVs.map((variation) => ({
             ...variation,

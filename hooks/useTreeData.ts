@@ -1,4 +1,3 @@
-import { ChildProcess } from "child_process";
 import { useState, useMemo, useCallback } from "react";
 export type TreeNode<T> = {
   key: string;
@@ -160,6 +159,7 @@ function useTreeData<T extends object>(initialMap: Map<string, TreeNode<T>> | Tr
       if (!currentNode.children[0]) break;
       currentNode = currentNode.children[0];
     }
+    if (!key) return path;
     return path.slice(1);
   }
 

@@ -50,6 +50,9 @@ export default class Game extends BaseEntity {
           userGame.user = user;
           userGame.game = game;
           userGame.color = color as Color;
+          userGame.result =
+            userGame.game.outcome?.result === "d" ? "draw" : userGame.game.outcome?.result === color ? "win" : "loss";
+          if (user.rating) userGame.rating = user.rating;
           await userGame.save();
           game.players.push(userGame);
         }

@@ -6,18 +6,19 @@ import {
   AiOutlineStepBackward,
   AiOutlineFastBackward,
 } from "react-icons/ai";
-
+import { FiRepeat, FiFlag } from "react-icons/fi";
 interface Props {
   controls: {
     stepForward: () => void;
     stepBackward: () => void;
     jumpForward: () => void;
     jumpBackward: () => void;
-    jumpToOffset: (offset: number) => void;
+    jumpToOffset?: (offset: number) => void;
   };
   className?: string;
+  flipBoard?: () => void;
 }
-export default function BoardControls({ controls, className }: Props) {
+export default function BoardControls({ controls, className, flipBoard }: Props) {
   return (
     <div className={`flex flex-row justify-around bg-[#121212] shadow-lg ${className || ""}`}>
       <button
@@ -44,6 +45,11 @@ export default function BoardControls({ controls, className }: Props) {
       >
         <AiOutlineFastForward className="text-2xl mx-auto" />
       </button>
+      {flipBoard !== undefined && (
+        <button onClick={flipBoard} className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full">
+          <FiRepeat className="text-2xl mx-auto" />
+        </button>
+      )}
     </div>
   );
 }

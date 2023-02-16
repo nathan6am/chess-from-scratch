@@ -161,8 +161,7 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
     var i = 0;
     const promotions = ["r", "q", "n", "b"];
     //loop as long as current coordinates are still on the board or the range is reached
-    while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) &&
-        (!range || i < range)) {
+    while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
         //increment by the rule values and make sure the resulting coordinates are still on the board
         currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]);
         i++;
@@ -170,8 +169,7 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
             break;
         // check the square for pieces
         let currentSquare = toSquare(currentCoordinates);
-        let isPromotion = piece.type === "p" &&
-            currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
+        let isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
         if (position.has(currentSquare)) {
             //break if the piece is of the same color or the piece can't capture in the given direction
             if (((_a = position.get(currentSquare)) === null || _a === void 0 ? void 0 : _a.color) === activeColor)
@@ -202,16 +200,11 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
         }
         else {
             // en passant capture
-            if (toSquare(currentCoordinates) === enPassantTarget &&
-                piece.type === "p" &&
-                canCapture) {
+            if (toSquare(currentCoordinates) === enPassantTarget && piece.type === "p" && canCapture) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([
-                        currentCoordinates[0],
-                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
-                    ]),
+                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
                 });
             }
             else {
@@ -385,17 +378,14 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w"
-        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
-        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return (!position.has(square) &&
-                !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -407,8 +397,7 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return (!position.has(square) &&
-                !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -443,8 +432,11 @@ function executeMove(game, move) {
     if (move.isCastle) {
         let [start, end] = castleMap[move.end];
         let rook = position.get(start);
-        if (!rook)
+        if (!rook) {
+            console.log(move);
+            console.log(game);
             throw new Error("Move is invalid.");
+        }
         position.set(end, rook);
         position.delete(start);
         position.set(move.end, piece);
@@ -470,8 +462,7 @@ function executeMove(game, move) {
             enPassantTarget = getTargetSquare(move);
         }
         //Remove corresponding castle rights on rook or king move
-        if (piece.type === "r" &&
-            (castleRights.kingSide || castleRights.queenSide)) {
+        if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
             const coords = squareToCoordinates(move.start);
             if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
                 castleRights.queenSide = false;
@@ -519,8 +510,11 @@ function testMove(game, move) {
     if (move.isCastle) {
         let [start, end] = castleMap[move.end];
         let rook = position.get(start);
-        if (!rook)
+        if (!rook) {
+            console.log(move);
+            console.log(game);
             throw new Error("Move is invalid.");
+        }
         position.set(end, rook);
         position.delete(start);
         position.set(move.end, piece);
@@ -546,8 +540,7 @@ function testMove(game, move) {
             enPassantTarget = getTargetSquare(move);
         }
         //Remove corresponding castle rights on rook or king move
-        if (piece.type === "r" &&
-            (castleRights.kingSide || castleRights.queenSide)) {
+        if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
             const coords = squareToCoordinates(move.start);
             if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
                 castleRights.queenSide = false;
@@ -578,7 +571,7 @@ class Game {
         const initialGameState = (0, FenParser_1.fenToGameState)(gameConfig.startPosition);
         if (!initialGameState)
             throw new Error("Config is invalid: Invalid FEN passed to start position");
-        const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget, } = initialGameState;
+        const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = initialGameState;
         const legalMoves = getMoves(initialGameState);
         const board = positionToBoard(position);
         Object.assign(this, {
@@ -598,11 +591,13 @@ class Game {
     }
 }
 exports.Game = Game;
-function createGame(options = {
+const defaultConfig = {
     startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     timeControls: null,
-}) {
-    const game = new Game(options);
+};
+function createGame(options) {
+    const config = Object.assign(Object.assign({}, defaultConfig), options);
+    const game = new Game(config);
     return game;
 }
 exports.createGame = createGame;
@@ -623,7 +618,8 @@ function isThreeFoldRepetition(moveHistory, gameState) {
     return false;
 }
 //execute a move and return the updated game
-function move(game, move, elapsedTimeSeconds) {
+function move(gameInitial, move, elapsedTimeSeconds) {
+    const game = lodash_1.default.clone(gameInitial);
     var outcome = game.outcome;
     //verify the move is listed as one of the available moves
     const moveIsLegal = game.legalMoves.some((availableMove) => lodash_1.default.isEqual(move, availableMove));
@@ -631,7 +627,7 @@ function move(game, move, elapsedTimeSeconds) {
     if (!moveIsLegal)
         throw new Error("Move is not in available moves");
     //execute the move and update the gameState and captured pieces
-    const { castleRights, activeColor, halfMoveCount, fullMoveCount, enPassantTarget, } = game;
+    const { castleRights, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = game;
     const position = boardToPosition(game.board);
     const gameState = {
         position,
@@ -696,9 +692,7 @@ exports.move = move;
 function injectTargets(board, legalMoves) {
     const withTargets = board.map((entry) => {
         const [square, piece] = entry;
-        const targets = legalMoves
-            .filter((move) => move.start === square)
-            .map((move) => move.end);
+        const targets = legalMoves.filter((move) => move.start === square).map((move) => move.end);
         return [square, Object.assign(Object.assign({}, piece), { targets })];
     });
     return withTargets;
@@ -729,7 +723,7 @@ function getSquareColor(square) {
 }
 exports.getSquareColor = getSquareColor;
 //Create a new game object from a tree node and it's given line
-function gameFromNodeData(data, moves) {
+function gameFromNodeData(data, startPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", moves) {
     const board = data.board;
     const fen = data.fen;
     const game = createGame({ startPosition: fen, timeControls: null });
@@ -737,7 +731,7 @@ function gameFromNodeData(data, moves) {
     //convert the line into move history
     if (moves) {
         const halfMoves = moves.map((node) => {
-            const { uci, evaluation, halfMoveCount } = node, rest = __rest(node, ["uci", "evaluation", "halfMoveCount"]);
+            const { uci, evaluation, halfMoveCount, comment, annotations } = node, rest = __rest(node, ["uci", "evaluation", "halfMoveCount", "comment", "annotations"]);
             return Object.assign({}, rest);
         });
         const history = [];
@@ -752,12 +746,12 @@ function gameFromNodeData(data, moves) {
             }
         });
     }
-    return Object.assign(Object.assign({}, game), { board, moveHistory, lastMove: data.move });
+    return Object.assign(Object.assign({}, game), { board, moveHistory, lastMove: data.move, config: Object.assign(Object.assign({}, game.config), { startPosition }) });
 }
 exports.gameFromNodeData = gameFromNodeData;
 //Generate a new tree node from a halfmove
 function halfMoveToNode(halfMoveCount, halfMove) {
-    return Object.assign({ halfMoveCount, uci: MoveToUci(halfMove.move), comments: [] }, halfMove);
+    return Object.assign({ halfMoveCount, uci: MoveToUci(halfMove.move), comment: null, annotations: [] }, halfMove);
 }
 exports.halfMoveToNode = halfMoveToNode;
 function MoveToUci(move) {

@@ -136,9 +136,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             if (exists) {
                 return {
                     created: null,
-                    fieldErrors: [
-                        { field: "email", message: "Email address is already in use" },
-                    ],
+                    fieldErrors: [{ field: "email", message: "Email address is already in use" }],
                 };
             }
             const user = new User_1();
@@ -172,10 +170,34 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
     }
     static getProfile(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(id);
-            const user = yield this.findOneBy({ id: id });
-            console.log(user);
+            const user = yield this.findOneBy({ id });
             return user;
+        });
+    }
+    static getGames(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.findOne({
+                where: { id: id },
+                relations: {
+                    games: {
+                        game: {
+                            players: {
+                                user: true,
+                            },
+                        },
+                    },
+                },
+            });
+            const usergames = (user === null || user === void 0 ? void 0 : user.games) || [];
+            const result = usergames.map(usergame => {
+                const filteredPlayers = usergame.game.players.map(player => ({
+                    username: player.user.username,
+                    rating: player.rating,
+                    color: player.color
+                }));
+                return (Object.assign(Object.assign({}, usergame), { game: Object.assign(Object.assign({}, usergame.game), { players: filteredPlayers }) }));
+            });
+            return result;
         });
     }
 };

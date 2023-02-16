@@ -4,11 +4,7 @@ import { wrapClient } from "../util/redisClientWrapper";
 import { Socket, Server } from "../types/socket";
 import { Lobby } from "../types/lobby";
 import * as Chess from "../../lib/chess";
-export default function (
-  io: Server,
-  socket: Socket,
-  redisClient: RedisClient
-): void {
+export default function (io: Server, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
   socket.on("authenticate", async (ack) => {
     if (!socket.data.userid) {
@@ -42,9 +38,8 @@ export default function (
       players: [], //Add to reserved connections, but not players until user joins the lobby page
       options: {
         rated: false,
-        gameConfig: {
-          startPosition:
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        gameConfig: options.gameConfig || {
+          startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
           timeControls: [{ timeSeconds: 300, incrementSeconds: 5 }],
         },
         color: "random",

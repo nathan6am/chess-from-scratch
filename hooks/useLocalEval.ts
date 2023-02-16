@@ -1,11 +1,13 @@
 import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
 import * as commands from "@/lib/chess/UciCmds";
+import { NodeData } from "@/lib/chess";
 import type { FinalEvaluation, PartialEval, EvalScore } from "@/lib/chess/UciCmds";
 
 interface Options {
   multiPV: number;
   useNNUE: boolean;
   depth: number;
+  useCloud?: boolean;
 }
 const defaultOptions = {
   multiPV: 3,
@@ -17,7 +19,7 @@ export interface Evaler {
   currentOptions: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
-  getEvaluation: (fen: string) => Promise<void>;
+  getEvaluation: (fen: string, cachedEval?: FinalEvaluation | undefined) => Promise<FinalEvaluation | undefined>;
   currentDepth: number;
   currentScore: EvalScore | null;
   error: Error | null;
@@ -26,6 +28,7 @@ export interface Evaler {
   bestMove: commands.UCIMove | null;
   wasmSupported: boolean;
   updateOptions: (updates: Partial<Options>) => void;
+  stop: () => Promise<void>;
 }
 
 export default function useLocalEval(initialOptions?: Partial<Options>): Evaler {
@@ -79,38 +82,55 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     };
   }, []);
 
-  const getEvaluation = async (fen: string) => {
-    //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
-    //before promise resolves with final evalutaion
-    const cb = (partialEval: PartialEval) => {
-      setCurrentDepth(partialEval.depth);
-      setCurrentScore(partialEval.score);
-    };
-
+  const getEvaluation = async (
+    fen: string,
+    cachedEval?: FinalEvaluation | undefined
+  ): Promise<FinalEvaluation | undefined> => {
     if (!isReady || !stockfishRef.current) {
       setError(new Error("Eval engine not yet initialized"));
+      return;
     } else {
       const evaler = stockfishRef.current;
-      if (inProgress) {
-        const stopped = await commands.stop(evaler);
-        //console.log(stopped);
+      if (inProgress) await commands.stop(evaler);
+
+      if (cachedEval && cachedEval.depth >= options.depth) {
+        setEvaluation(cachedEval);
+        setCurrentDepth(cachedEval.depth);
+        setCurrentScore(cachedEval.score);
+        return;
       }
+      setCurrentDepth(0);
+      //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
+      //before promise resolves with final evalutaion
+      const cb = (partialEval: PartialEval) => {
+        setCurrentDepth(partialEval.depth);
+        setCurrentScore(partialEval.score);
+      };
       setInProgress(true);
       setFinished(false);
-      commands
-        .getEvaluation(evaler, { fen, ...options }, cb)
-        .then((result) => {
-          setEvaluation(result);
-          setCurrentDepth(result.depth);
-          setBestMove(result.bestMove);
-          setInProgress(false);
-          setFinished(true);
-        })
-        .catch((e: unknown) => {
-          if (e instanceof Error) {
-            setError(e);
-          }
-        });
+      try {
+        const result = await commands.getEvaluation(evaler, { fen: fen, ...options }, cb);
+        setEvaluation(result);
+        setCurrentDepth(result.depth);
+        setBestMove(result.bestMove);
+        setInProgress(false);
+        setFinished(true);
+        return result;
+      } catch (e) {
+        if (e instanceof Error) {
+          setError(e);
+        }
+        setInProgress(false);
+      }
+    }
+  };
+
+  const stop = async () => {
+    const evaler = stockfishRef.current;
+    if (!evaler) return;
+    if (inProgress) {
+      await commands.stop(evaler);
+      setInProgress(false);
     }
   };
 
@@ -127,5 +147,6 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     finished,
     bestMove,
     wasmSupported,
+    stop,
   };
 }

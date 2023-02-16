@@ -1,6 +1,7 @@
 import React from "react";
 import SideBar from "./SideBar";
 import TopBar from "./TopBar";
+import useProfile from "@/hooks/useProfile";
 const PAGES = [
   { href: "/play", label: "Play", key: "play" },
   { href: "/puzzles", label: "Puzzles", key: "puzzles" },
@@ -12,6 +13,7 @@ interface Props {
   children?: JSX.Element | JSX.Element[];
 }
 export default function MenuLayout({ children }: Props) {
+  
   return (
     <div className="min-h-screen sm:min-h-[90%] w-full flex flex-col backdrop-blur-lg bg-[#121212] sm:rounded-lg overflow-hidden shadow-lg">
       <TopBar />

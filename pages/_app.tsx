@@ -2,14 +2,15 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { SocketContext, socket } from "../context/socket";
 import { UserContext } from "@/context/user";
-import { defaultSettings, SettingsContext } from "@/context/settings";
+import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
 import useUser from "@/hooks/useUser";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import router from "@/server/routes/auth";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 
+const queryClient = new QueryClient();
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -19,7 +20,10 @@ type AppPropsWithLayout = AppProps & {
 };
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => page);
-  const [settings, updateSettings] = useState(() => defaultSettings);
+  const [settings, setSettings] = useState(() => defaultSettings);
+  const updateSettings = (settings: Partial<AppSettings>) => {
+    setSettings((currentSettings) => ({ ...currentSettings, ...settings }));
+  };
   const { user, error, isValidating, mutate } = useUser();
   const router = useRouter();
   useEffect(() => {
@@ -28,10 +32,12 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     }
   }, [user]);
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
-      <UserContext.Provider value={{ user, refresh: mutate }}>
-        <SocketContext.Provider value={socket}>{getLayout(<Component {...pageProps} />)}</SocketContext.Provider>
-      </UserContext.Provider>
-    </SettingsContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <SettingsContext.Provider value={{ settings, updateSettings }}>
+        <UserContext.Provider value={{ user, refresh: mutate }}>
+          <SocketContext.Provider value={socket}>{getLayout(<Component {...pageProps} />)}</SocketContext.Provider>
+        </UserContext.Provider>
+      </SettingsContext.Provider>
+    </QueryClientProvider>
   );
 }

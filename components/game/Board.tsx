@@ -169,7 +169,7 @@ export default function Board({
 
   return (
     <>
-      <div className={`${styles.board} relative`} ref={boardRef}>
+      <div className={`${styles.board} relative mx-0`} ref={boardRef}>
         {boardMap.map((row) =>
           row.map((square) => (
             <RenderSquare

@@ -42,7 +42,7 @@ function default_1(io, socket, redisClient) {
             reservedConnections: [userid],
             currentGame: null,
             players: [],
-            options: Object.assign({ rated: false, gameConfig: {
+            options: Object.assign({ rated: false, gameConfig: options.gameConfig || {
                     startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                     timeControls: [{ timeSeconds: 300, incrementSeconds: 5 }],
                 }, color: "random" }, options),

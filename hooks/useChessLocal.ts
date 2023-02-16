@@ -31,7 +31,7 @@ function chessReducer(state: chess.Game, action: { type: string; payload: any })
 //Offline / vs Computer implementation of game logic as a react hook
 
 export default function useChessLocal(config?: { startPosition: string; timeControls: any }) {
-  const newGame = chess.createGame(config || undefined);
+  const newGame = chess.createGame(config || {});
 
   const initialState: chess.Game = {
     ...newGame,

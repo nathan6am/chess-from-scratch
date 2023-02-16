@@ -1,24 +1,20 @@
 import React from "react";
 import styles from "@/styles/Board.module.scss";
 
-interface LayoutComponentProps {
+export interface LayoutComponentProps {
   children?: JSX.Element | JSX.Element[];
   className?: string;
 }
-export function BoardColumn({ children }: LayoutComponentProps) {
+export function BoardColumn({ children, className }: LayoutComponentProps) {
   return (
-    <div className="flex flex-col h-full grow justify-start lg:justify-center items-center">
+    <div className={`flex flex-col h-full grow justify-start lg:justify-center ${className}`}>
       <div className={`w-full ${styles.boardColumn}`}>{children}</div>
     </div>
   );
 }
 
 export function BoardRow({ children }: LayoutComponentProps) {
-  return (
-    <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">{children}</div>;
 }
 
 export function PanelColumn({ children }: LayoutComponentProps) {
@@ -31,6 +27,23 @@ export function PanelColumn({ children }: LayoutComponentProps) {
   );
 }
 
+export function PanelColumnLg({ children }: LayoutComponentProps) {
+  return (
+    <div className="h-full hidden lg:block max-h-[1060px]">
+      <div className="h-full w-[460px] xl:w-[500px] flex flex-col justify-center mx-4 py-10">
+        <div className="h-full  w-full  flex flex-col">{children}</div>
+      </div>
+    </div>
+  );
+}
 export function PanelContainer({ children }: LayoutComponentProps) {
   return <div className="bg-[#121212] flex flex-col h-full">{children}</div>;
+}
+
+export function ScrollContainer({ children }: LayoutComponentProps) {
+  return (
+    <div className="top-0 bottom-0 left-0 right-0 overflow-y-scroll absolute scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px]">
+      {children}
+    </div>
+  );
 }

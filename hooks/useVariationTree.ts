@@ -11,11 +11,11 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
 
-  const currentNodeData = useMemo<Chess.NodeData | null>(() => {
+  const currentNode = useMemo<TreeNode<Chess.NodeData> | null>(() => {
     if (currentKey == null) return null;
     const node = tree.getNode(currentKey);
     if (!node) return null;
-    return node.data;
+    return node;
   }, [currentKey, tree]);
 
   const pgn = useMemo(() => {
@@ -63,10 +63,9 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
         pgn += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       pgn += `${node.data.PGN} ${
-        node.data.comments.length ? `{${node.data.comments.join("; ")}} ` : ""
-      }`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
-        pgn += ")";
+        node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""
+      } ${node.data.comment ? `{${node.data.comment}} ` : ""}`;
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) pgn += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
@@ -147,20 +146,18 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
   }
 
   return {
+    tree,
     pgn,
     mainLine,
     findNextMove,
     addMove,
     path,
     continuation,
-    currentNodeData,
-    setCurrentKey: (key: string) => {
-      setCurrentKey(key);
-      return tree.getNode(key);
-    },
+    currentNode,
+    setCurrentKey,
     currentKey,
-    onStepBackward: stepBackward,
-    onStepForward: stepForward,
+    stepBackward,
+    stepForward,
     treeArray: tree.treeArray,
   };
 }

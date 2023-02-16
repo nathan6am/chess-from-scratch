@@ -39,6 +39,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: "text" }),
     __metadata("design:type", String)
 ], User_Game.prototype, "color", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "text" }),
+    __metadata("design:type", String)
+], User_Game.prototype, "result", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], User_Game.prototype, "rating", void 0);
 User_Game = __decorate([
     (0, typeorm_1.Entity)()
 ], User_Game);

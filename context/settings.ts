@@ -53,5 +53,5 @@ export enum AnimSpeedEnum {
 
 export const SettingsContext = React.createContext({
   settings: defaultSettings,
-  updateSettings: (settings: AppSettings) => {},
+  updateSettings: (settings: Partial<AppSettings>) => {},
 });

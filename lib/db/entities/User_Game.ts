@@ -22,6 +22,9 @@ export default class User_Game extends BaseEntity {
   @Column({ type: "text" })
   color: Color;
 
+  @Column({ type: "text" })
+  result: "win" | "loss" | "draw";
+
   @Column({ nullable: true })
   rating: number;
 }

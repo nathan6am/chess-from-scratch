@@ -78,7 +78,8 @@ export enum FileEnum {
 }
 
 export interface NodeData extends HalfMove {
-  comments: string[];
+  comment: string | null;
+  annotations: number[];
   uci: string;
   evaluation?: FinalEvaluation;
   halfMoveCount: number;

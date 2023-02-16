@@ -61,7 +61,6 @@ router.post("/complete-profile", (req, res) => __awaiter(void 0, void 0, void 0,
 }));
 router.get("/checkusername", function (req, res) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(req.query);
         const username = req.query.username;
         if (!username || typeof username !== "string") {
             res.status(400).end();
@@ -69,6 +68,17 @@ router.get("/checkusername", function (req, res) {
         }
         const exists = yield User_1.default.usernameExists(username);
         res.status(200).json({ valid: !exists });
+    });
+});
+router.get("/games", function (req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const user = req.user;
+        if (!user)
+            return res.status(401);
+        if (user.type === "guest")
+            return res.status(401);
+        const games = yield User_1.default.getGames(user.id);
+        res.status(200).json(games);
     });
 });
 const userRouter = router;

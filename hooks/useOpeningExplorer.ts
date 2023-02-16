@@ -1,9 +1,12 @@
 import useSWR from "swr";
 
 import axios from "axios";
-import { useState } from "react";
-
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import * as Chess from "@/lib/chess";
+import { TreeNode } from "./useTreeData";
+import { notEmpty } from "@/util/misc";
+import useDebounce from "./useDebounce";
 
 interface Options {
   startFen: string;
@@ -25,7 +28,85 @@ enum Endpoints {
   "lichess" = "https://explorer.lichess.ovh/lichess",
   "masters" = "https://explorer.lichess.ovh/masters",
 }
-export default function useOpeningExplorer(options?: Partial<Options>) {
-  const { startFen, database, moves, topGames } = { ...defaultOptions, ...options };
-  const [startPosition, setStartPosition] = useState<string>(startFen);
+
+import _ from "lodash";
+export interface ApiResponse {
+  white: number;
+  black: number;
+  draws: number;
+  moves: MoveData[];
+  topGames: DBGameData[];
+  opening: {
+    eco: string;
+    name: string;
+  } | null;
+}
+
+export interface MoveData {
+  uci: string;
+  san: string;
+  averageRating: number;
+  white: number;
+  black: number;
+  draws: number;
+  game: DBGameData | null;
+}
+
+interface DBGameData {
+  uci?: string;
+  winner: "black" | "white" | "draw";
+  white: PlayerInfo;
+  black: PlayerInfo;
+  id: string;
+  year: number;
+  month: string;
+}
+
+interface PlayerInfo {
+  name: string;
+  rating: number;
+}
+
+const reduceMoves = (history: Chess.MoveHistory): string =>
+  history
+    .flat()
+    .filter(notEmpty)
+    .map((halfMove) => Chess.MoveToUci(halfMove.move))
+    .join(",");
+
+const fetcher = async (game: Chess.Game) => {
+  const fen = game.config.startPosition;
+  const play = reduceMoves(game.moveHistory);
+  const endpoint = Endpoints["masters"];
+  const response = await axios.get(endpoint, {
+    params: {
+      fen,
+      play,
+    },
+  });
+  if (!response.data) throw new Error("No response data");
+  return response.data as ApiResponse;
+};
+
+export default function useOpeningExplorer(currentGame: Chess.Game, options?: Partial<Options>) {
+  //Debounce game state for api calls
+  const debouncedGame = useDebounce(currentGame, 700);
+  //Ref to set loading state when currentGame changes before debounced game upates
+  const debounceSyncRef = useRef<boolean>(false);
+  const prevGameRef = useRef<Chess.Game>(currentGame);
+  useEffect(() => {
+    if (_.isEqual(currentGame.fen, debouncedGame.fen)) debounceSyncRef.current = true;
+    else {
+      debounceSyncRef.current = false;
+    }
+  }, [currentGame, debouncedGame, debounceSyncRef]);
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["explorer", debouncedGame],
+    queryFn: () => fetcher(debouncedGame),
+  });
+  return {
+    data: debounceSyncRef.current ? data : undefined,
+    error,
+    isLoading: debounceSyncRef.current ? isLoading : true,
+  };
 }
