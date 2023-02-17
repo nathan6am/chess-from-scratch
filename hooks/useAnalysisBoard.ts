@@ -32,8 +32,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, []);
   const variationTree = useVariationTree();
 
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, pgn, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    pgn,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -135,9 +144,11 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
           }
         });
       } else {
-        evaler.getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation).then((result) => {
-          if (result) cacheEvaluation(debouncedNode.key, result);
-        });
+        evaler
+          .getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation)
+          .then((result) => {
+            if (result) cacheEvaluation(debouncedNode.key, result);
+          });
       }
     }
   }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
@@ -174,6 +185,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   return {
     pgn,
     mainLine,
+    rootNodes: variationTree.rootNodes,
     currentGame,
     onMove,
     evaler,

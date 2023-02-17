@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as Chess from "@/lib/chess";
 import { TreeHook, TreeNode } from "@/hooks/useTreeData";
 import { MdArrowDropDown, MdExpandMore, MdOutlineMenuOpen, MdModeComment } from "react-icons/md";
@@ -7,54 +7,67 @@ import { BiHide } from "react-icons/bi";
 
 import { VscExpandAll } from "react-icons/vsc";
 import { parsePGN } from "../game/MoveHistory";
-import path from "path";
 interface Props {
   mainLine: TreeNode<Chess.NodeData>[];
+  rootNodes: TreeNode<Chess.NodeData>[];
   selectedKey: string | null;
   setSelectedKey: any;
   path: Node[];
 }
 
-type Row = [Node | null, Node | null];
+type Row = { nodes: [Node | null, Node | null]; variations?: Node[] };
 type Node = TreeNode<Chess.NodeData>;
-export default function VarationTree({ mainLine, selectedKey, setSelectedKey, path }: Props) {
+export default function VarationTree({
+  mainLine,
+  selectedKey,
+  setSelectedKey,
+  path,
+  rootNodes,
+}: Props) {
+  const rootVariations = useMemo(() => rootNodes.slice(1), [rootNodes]);
   const mainlineRows = useMemo(() => {
-    let currentRow: Row = [null, null];
+    let currentRow: [Node | null, Node | null] = [null, null];
     let rows: Row[] = [];
-    mainLine.forEach((node) => {
-      const hasVariations = node.children.length > 1;
+    mainLine.forEach((node, idx) => {
+      const prevNode = mainLine[idx - 1] || null;
+      let variations = idx === 0 ? rootVariations : prevNode.children.slice(1);
       const hasComment = node.data.comment;
       const isWhite = node.data.halfMoveCount % 2 !== 0;
       if (currentRow.every((node) => !node)) {
         if (isWhite) {
-          if (hasVariations || hasComment) rows.push([node, null]);
+          if (variations.length || hasComment) rows.push({ nodes: [node, null], variations });
           else currentRow[0] = node;
         } else {
-          rows.push([null, node]);
+          rows.push({
+            nodes: [null, node],
+            variations: variations.length ? variations : undefined,
+          });
         }
       } else {
         if (!currentRow[0]) throw new Error("Mainline invalid");
         currentRow[1] = node;
-        rows.push(currentRow);
+        rows.push({ nodes: currentRow, variations: variations.length ? variations : undefined });
         currentRow = [null, null];
       }
     });
     if (currentRow.some((node) => node !== null)) {
-      rows.push(currentRow);
+      rows.push({ nodes: currentRow });
     }
     return rows;
   }, [mainLine]);
   return (
     <div className="w-full flex flex-col bg-[#121212] divide-y divide-white/[0.2]">
-      {mainlineRows.map((row, idx) => (
-        <RenderRow
-          path={path}
-          key={idx}
-          row={row}
-          selectedKey={selectedKey}
-          setSelectedKey={setSelectedKey}
-        />
-      ))}
+      {mainlineRows.map((row, idx) => {
+        return (
+          <RenderRow
+            path={path}
+            key={idx}
+            row={row}
+            selectedKey={selectedKey}
+            setSelectedKey={setSelectedKey}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -68,11 +81,12 @@ interface VariationProps {
   selectedKey: string | null;
   setSelectedKey: any;
   depth?: number;
+  rootVariations?: Node[];
 }
 
 function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: VariationProps) {
   const { line, subVariations } = getVariation(node);
-  const [expanded, setExpanded] = useState<boolean>(false);
+  const [expanded, setExpanded] = useState<boolean>(true);
   const forceExpand = useMemo(() => {
     return path.some((pathNode) => subVariations.some((node) => node.key === pathNode.key));
   }, [path, subVariations]);
@@ -107,30 +121,14 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
             </button>
           )}
           {line.map((node, index) => {
-            const isWhite = node.data.halfMoveCount % 2 !== 0;
-            const selected = selectedKey === node.key;
             return (
-              <>
-                <span
-                  className={`cursor-pointer inline mx-[1px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white ${
-                    selected ? "bg-blue-400/[0.2] " : ""
-                  }`}
-                  key={node.key}
-                  onClick={() => {
-                    setSelectedKey(node.key);
-                  }}
-                >
-                  {(isWhite || index === 0) && (
-                    <span className={`inline ml-[2px] opacity-50 text-white`}>
-                      {moveCount(node.data.halfMoveCount)}
-                    </span>
-                  )}
-                  <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
-                    {parsePGN(node.data.PGN, isWhite ? "w" : "b")}
-                  </span>
-                </span>
-                {node.data.comment && " " + node.data.comment + " "}
-              </>
+              <RenderNode
+                node={node}
+                index={index}
+                key={node.key}
+                selectedKey={selectedKey}
+                setSelectedKey={setSelectedKey}
+              />
             );
           })}
         </p>
@@ -178,11 +176,11 @@ interface RowProps {
   path: Node[];
 }
 function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
+  const { nodes, variations } = row;
   //Auto expand
-  const [expanded, setExpanded] = useState(false);
-  const variations = row.find((node) => node && node.children.length > 1)?.children.slice(1);
-  const firstNode = row.find((node) => node !== null);
-  const comment = row.find((node) => node?.data.comment?.length)?.data.comment;
+  const [expanded, setExpanded] = useState(true);
+  const firstNode = nodes.find((node) => node !== null);
+  const comment = nodes.find((node) => node?.data.comment?.length)?.data.comment;
   const forceExpand = useMemo(
     () =>
       path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
@@ -200,7 +198,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
       <div className="w-full flex flex-row text-sm">
         <div className="px-4 py-2 w-14 text-center bg-sepia/[0.3] relative">{moveCount}.</div>
         <div className="w-full h-full grid grid-cols-2 bg-[#161616]">
-          {row.map((node, idx) => (
+          {nodes.map((node, idx) => (
             <RenderRowEntry
               key={idx}
               node={node}
@@ -218,7 +216,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
           </p>
         </div>
       )}
-      {variations && (
+      {variations && variations.length > 0 && (
         <div
           className={`w-full bg-[#202020]
           }] border-b border-r border-white/[0.2]  pb-[4px] pt-[2px]  pl-2 text-white/[0.6]`}
@@ -250,16 +248,18 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
       )}
       {expanded && variations && (
         <div className="w-full pl-1 border-r border-white/[0.1] border-b">
-          {variations.map((node) => (
-            <RenderVariation
-              key={node.key}
-              node={node}
-              selectedKey={selectedKey}
-              setSelectedKey={setSelectedKey}
-              depth={0}
-              path={path}
-            />
-          ))}
+          <>
+            {variations.map((node) => (
+              <RenderVariation
+                key={node.key}
+                node={node}
+                selectedKey={selectedKey}
+                setSelectedKey={setSelectedKey}
+                depth={0}
+                path={path}
+              />
+            ))}
+          </>
         </div>
       )}
     </>
@@ -271,11 +271,18 @@ interface RowEntryProps {
   setSelectedKey: any;
 }
 function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
+  const ref = useRef<HTMLDivElement>(null);
   const selected = node?.key === selectedKey;
   const isWhite = node && node.data.halfMoveCount % 2 !== 0;
 
+  useEffect(() => {
+    if (!ref.current || !selected) return;
+    ref.current.scrollIntoView({ behavior: "smooth" });
+  }, [selected, ref]);
+
   return (
     <div
+      ref={ref}
       onClick={() => {
         if (node) {
           setSelectedKey(node.key);
@@ -289,5 +296,47 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
         <p>{node ? `${parsePGN(node.data.PGN, isWhite ? "w" : "b")}` : ". . ."}</p>
       </div>
     </div>
+  );
+}
+
+interface NodeProps {
+  node: Node;
+  selectedKey: string | null;
+  setSelectedKey: (key: string) => void;
+  index: number;
+}
+
+function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
+  const isWhite = node.data.halfMoveCount % 2 !== 0;
+  const selected = selectedKey === node.key;
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!ref.current || !selected) return;
+    ref.current.scrollIntoView({ behavior: "smooth" });
+  }, [selected, ref]);
+
+  return (
+    <>
+      <span
+        ref={ref}
+        className={`cursor-pointer inline mx-[1px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white ${
+          selected ? "bg-blue-400/[0.2] " : ""
+        }`}
+        key={node.key}
+        onClick={() => {
+          setSelectedKey(node.key);
+        }}
+      >
+        {(isWhite || index === 0) && (
+          <span className={`inline ml-[2px] opacity-50 text-white`}>
+            {moveCount(node.data.halfMoveCount)}
+          </span>
+        )}
+        <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
+          {parsePGN(node.data.PGN, isWhite ? "w" : "b")}
+        </span>
+      </span>
+      {node.data.comment && " " + node.data.comment + " "}
+    </>
   );
 }

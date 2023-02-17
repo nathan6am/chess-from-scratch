@@ -33,13 +33,20 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
     return path;
   }, [tree]);
 
+  const rootNodes = useMemo<TreeNode<Chess.NodeData>[]>(() => {
+    const root = tree.treeArray[0];
+    if (!root) return [];
+    const nodes = tree.getSiblings(root.key);
+    return nodes;
+  }, [tree]);
+
   function treeArrayToPgn(treeArray: TreeNode<Chess.NodeData>[]) {
     let pgn = "";
     let stack: TreeNode<Chess.NodeData>[] = [];
     let previousVariationDepth = 0;
-    for (let i = treeArray.length - 1; i > 0; i--) {
-      stack.push(treeArray[i]);
-    }
+    // for (let i = treeArray.length - 1; i > 0; i--) {
+    //   stack.push(treeArray[i]);
+    // }
     stack.push(treeArray[0]);
 
     while (stack.length) {
@@ -63,9 +70,12 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
         pgn += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       pgn += `${node.data.PGN} ${
-        node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""
+        node.data.annotations.length
+          ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
+          : ""
       } ${node.data.comment ? `{${node.data.comment}} ` : ""}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) pgn += ")";
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
+        pgn += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
@@ -149,6 +159,7 @@ export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[
     tree,
     pgn,
     mainLine,
+    rootNodes,
     findNextMove,
     addMove,
     path,

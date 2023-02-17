@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 import { throttle } from "lodash";
 
-const usePointerCoordinates = (gridSize: number) => {
+const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseMove = throttle((event: PointerEvent) => {
@@ -26,10 +25,7 @@ const usePointerCoordinates = (gridSize: number) => {
     };
   }, []);
 
-  return {
-    ref,
-    position,
-  };
+  return position;
 };
 
 export default usePointerCoordinates;

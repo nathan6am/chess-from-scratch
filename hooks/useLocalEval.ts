@@ -19,7 +19,10 @@ export interface Evaler {
   currentOptions: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
-  getEvaluation: (fen: string, cachedEval?: FinalEvaluation | undefined) => Promise<FinalEvaluation | undefined>;
+  getEvaluation: (
+    fen: string,
+    cachedEval?: FinalEvaluation | undefined
+  ) => Promise<FinalEvaluation | undefined>;
   currentDepth: number;
   currentScore: EvalScore | null;
   error: Error | null;
@@ -55,7 +58,9 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+    stockfishRef.current = new Worker(
+      wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+    );
   }, []);
 
   //Verify engine is ready
@@ -105,6 +110,9 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       const cb = (partialEval: PartialEval) => {
         setCurrentDepth(partialEval.depth);
         setCurrentScore(partialEval.score);
+        if (partialEval.bestMove) {
+          setBestMove(partialEval.bestMove);
+        }
       };
       setInProgress(true);
       setFinished(false);

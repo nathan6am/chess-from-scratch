@@ -72,6 +72,18 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     else return "+0.0";
   }, [evaler.currentScore]);
 
+  const bestMove = useMemo(() => {
+    const uciMove = evaler.bestMove;
+    if (!uciMove) return null;
+    const move = currentGame.legalMoves.find(
+      (move) =>
+        move.start === uciMove.start &&
+        move.end === uciMove.end &&
+        move.promotion === uciMove.promotion
+    );
+    return move?.PGN || null;
+  }, [evaler.bestMove]);
+
   const progress = (evaler.currentDepth / evaler.currentOptions.depth) * 100;
   const [showLines, setShowLines] = useState(true);
   return (
@@ -129,6 +141,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
           </div>
           {showLines && (
             <div className="w-full py-3 px-4 bg-white/[0.05] space-y-2">
+              <p>Best move: {`${bestMove || ""}`}</p>
               <>
                 {evaler.inProgress &&
                   Array.from(Array(evaler.currentOptions.multiPV).keys()).map((_, idx) => {
@@ -142,9 +155,9 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
                           </div>
                         </div>
 
-                        <p className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
+                        <div className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
                           <div className="h-[1em]"></div>
-                        </p>
+                        </div>
                       </div>
                     );
                   })}

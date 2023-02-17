@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import * as Chess from "@/lib/chess";
 import { BoardRow, BoardColumn, PanelColumnLg, LayoutComponentProps } from "../layout/GameLayout";
@@ -14,6 +14,7 @@ import { MdModeComment } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
 import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
+import Share from "./Share";
 export default function AnalysisBoard() {
   const {
     currentGame,
@@ -24,6 +25,7 @@ export default function AnalysisBoard() {
     boardControls,
     pgn,
     mainLine,
+    rootNodes,
     setCurrentKey,
     path,
     currentKey,
@@ -33,6 +35,7 @@ export default function AnalysisBoard() {
     explorer,
   } = useAnalysisBoard();
   const [orientation, setOrientation] = useState<Chess.Color>("w");
+  const boardRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col h-full w-full justify-center">
@@ -40,6 +43,7 @@ export default function AnalysisBoard() {
         <div className="flex flex-row h-fit w-full justify-center">
           <BoardColumn className={evalEnabled ? "items-end" : "items-center"}>
             <Board
+              ref={boardRef}
               orientation={orientation}
               legalMoves={currentGame.legalMoves}
               showHighlights={true}
@@ -79,6 +83,7 @@ export default function AnalysisBoard() {
           <div className="w-full grow relative bg-white/[0.05]">
             <ScrollContainer>
               <VarationTree
+                rootNodes={rootNodes}
                 mainLine={mainLine}
                 selectedKey={currentKey}
                 setSelectedKey={setCurrentKey}
@@ -121,6 +126,9 @@ export default function AnalysisBoard() {
                     currentGame={currentGame}
                     onMove={onMove}
                   />
+                </Tab.Panel>
+                <Tab.Panel>
+                  <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

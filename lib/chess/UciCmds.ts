@@ -114,7 +114,18 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -172,6 +183,7 @@ function parseEvalInfo(args: string[]): EvalInfo {
 export interface PartialEval {
   score: { type: "cp" | "mate"; value: number };
   depth: number;
+  bestMove?: UCIMove;
 }
 export type UCIMove = {
   start: Square;
@@ -226,6 +238,7 @@ export async function getEvaluation(
             callback({
               score,
               depth: evalInfo.depth,
+              bestMove: parseUciMove(evalInfo.pv[0]),
             });
           }
           multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
@@ -236,7 +249,6 @@ export async function getEvaluation(
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
         if (info.depth !== options.depth) {
-          console.log("rejecting");
           reject("depth not reached");
         }
         const finalEval: FinalEvaluation = {
