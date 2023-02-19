@@ -133,7 +133,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
           </div>
           {showLines && (
             <div className="w-full py-3 px-4 bg-white/[0.05] space-y-2">
-              <p>Best move: {`${bestMove || ""}`}</p>
+              {/* <p>Best move: {`${bestMove || ""}`}</p> */}
               <>
                 {evaler.inProgress &&
                   Array.from(Array(evaler.currentOptions.multiPV).keys()).map((_, idx) => {
@@ -174,4 +174,3 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     </div>
   );
 }
-

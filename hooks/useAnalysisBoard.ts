@@ -1,13 +1,49 @@
-import useVariationTree from "./useVariationTree";
-import * as Chess from "@/lib/chess";
-import useSound from "use-sound";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import useLocalEval from "./useLocalEval";
+import useSound from "use-sound";
+import useVariationTree from "./useVariationTree";
+import useLocalEval, { Evaler } from "./useLocalEval";
 import useDebounce from "./useDebounce";
+import useOpeningExplorer from "./useOpeningExplorer";
+import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import { TreeNode } from "./useTreeData";
-import useOpeningExplorer from "./useOpeningExplorer";
-import { string } from "yup";
+import { BoardControls } from "./useChessOnline";
+import { ApiResponse } from "./useOpeningExplorer";
+type Node = TreeNode<Chess.NodeData>;
+
+export interface AnalysisHook {
+  currentKey: string | null;
+  currentNode: Node | null;
+  pgn: string;
+  mainLine: Node[];
+  rootNodes: Node[];
+  currentGame: Chess.Game;
+  onMove: (move: Chess.Move) => void;
+  evaler: Evaler;
+  evalEnabled: boolean;
+  setEvalEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  boardControls: {
+    stepForward: () => void;
+    stepBackward: () => void;
+    jumpForward: () => void;
+    jumpBackward: () => void;
+  };
+  variations: Node[];
+  setCurrentKey: React.Dispatch<React.SetStateAction<string | null>>;
+  currentLine: Node[];
+  path: Node[];
+  debouncedNode: Node | null;
+  explorer: {
+    data: ApiResponse | undefined;
+    error: unknown;
+    isLoading: boolean;
+  };
+  commentControls: {
+    updateComment: (nodeId: string, comment: string) => void;
+    removeAnnotation: (nodeId: string, annotation: number) => void;
+    insertAnnotation: (nodeId: string, annotation: number) => void;
+  };
+}
 
 interface AnalysisOptions {
   startPosition: string;
@@ -18,7 +54,7 @@ const defaultOptions = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   evalEnabled: true,
 };
-export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>) {
+export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
   const options = { ...defaultOptions, ...initialOptions };
   const [evalEnabled, setEvalEnabled] = useState(true);
   const [startPosEval, setStartPosEval] = useState<Chess.FinalEvaluation | undefined>();
@@ -32,17 +68,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, []);
   const variationTree = useVariationTree();
 
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    pgn,
-    mainLine,
-    setCurrentKey,
-  } = variationTree;
+  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, pgn, mainLine, setCurrentKey } =
+    variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -144,11 +171,9 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
           }
         });
       } else {
-        evaler
-          .getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation)
-          .then((result) => {
-            if (result) cacheEvaluation(debouncedNode.key, result);
-          });
+        evaler.getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation).then((result) => {
+          if (result) cacheEvaluation(debouncedNode.key, result);
+        });
       }
     }
   }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);

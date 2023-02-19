@@ -15,6 +15,7 @@ import { FaExclamationCircle } from "react-icons/fa";
 import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
 import Share from "./Share";
+import AnalysisPanel from "./AnalysisPanel";
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
   const {
@@ -85,67 +86,7 @@ export default function AnalysisBoard() {
               </StyledTab>
             </Tab.List>
             <Tab.Panel as={Fragment}>
-              <>
-                <div className="shadow-md">
-                  <EvalInfo
-                    evaler={evaler}
-                    enabled={evalEnabled}
-                    setEnabled={setEvalEnabled}
-                    moveKey={evalEnabled ? debouncedNode?.key || "root" : "disabled"}
-                    currentGame={currentGame}
-                  />
-                </div>
-                <div className="w-full grow relative bg-white/[0.05]">
-                  <ScrollContainer>
-                    <VarationTree
-                      rootNodes={rootNodes}
-                      mainLine={mainLine}
-                      selectedKey={currentKey}
-                      setSelectedKey={setCurrentKey}
-                      path={path}
-                    />
-                  </ScrollContainer>
-                </div>
-                <div className="w-full border-t border-white/[0.2] ">
-                  <Tab.Group>
-                    <Tab.List className="flex bg-[#121212] pt-1 shadow-lg">
-                      <StyledTab>
-                        <p>
-                          <MdModeComment className="inline mr-1" /> Comment
-                        </p>
-                      </StyledTab>
-                      <StyledTab>
-                        <p>
-                          <FaExclamationCircle className="inline mr-1" /> Annotate
-                        </p>
-                      </StyledTab>
-                      <StyledTab>
-                        <p>
-                          <BsShareFill className="inline mr-1 mb-1 text-sm" /> Share
-                        </p>
-                      </StyledTab>
-                    </Tab.List>
-                    <Tab.Panels>
-                      <Tab.Panel>
-                        <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
-                      </Tab.Panel>
-                      <Tab.Panel>
-                        <p>Annotation Placeholder</p>
-                      </Tab.Panel>
-                      <Tab.Panel>
-                        <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
-                      </Tab.Panel>
-                    </Tab.Panels>
-                  </Tab.Group>
-                </div>
-
-                <BoardControls
-                  controls={boardControls}
-                  flipBoard={() => {
-                    setOrientation((cur) => (cur === "w" ? "b" : "w"));
-                  }}
-                />
-              </>
+              <AnalysisPanel analysis={analysis} boardRef={boardRef} />
             </Tab.Panel>
             <Tab.Panel>
               <Explorer
@@ -157,6 +98,12 @@ export default function AnalysisBoard() {
               />
             </Tab.Panel>
           </Tab.Group>
+          <BoardControls
+            controls={boardControls}
+            flipBoard={() => {
+              setOrientation((cur) => (cur === "w" ? "b" : "w"));
+            }}
+          />
         </PanelColumnLg>
       </BoardRow>
     </div>
@@ -174,9 +121,11 @@ function StyledTab({ children }: TabProps) {
     <Tab
       className={({ selected }) =>
         classNames(
-          "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
+          "flex-1 border-b border-b-4 py-2 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#303030] border-sepia"
+            : "bg-[#262626] border-[#262626] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

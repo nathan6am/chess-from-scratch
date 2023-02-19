@@ -4,6 +4,7 @@ import { ScrollContainer } from "../layout/GameLayout";
 import Loading from "../UI/Loading";
 import { parsePGN } from "../game/MoveHistory";
 import * as Chess from "@/lib/chess";
+import _ from "lodash";
 interface Props {
   isLoading: boolean;
   error: unknown;
@@ -20,19 +21,22 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
     [onMove, currentGame]
   );
 
-  const prevOpening = useRef<string>("Starting Position");
+  const prevOpening = useRef<{ name: string; eco: string } | null>(null);
   useEffect(() => {
     if (!data) return;
-    if (data.opening && data.opening.name !== prevOpening.current) {
-      prevOpening.current = data.opening.name;
+    if (data.opening && !_.isEqual(data.opening, prevOpening)) {
+      prevOpening.current = data.opening;
     }
   }, [data]);
   const opening = useMemo(() => {
-    return data?.opening?.name || prevOpening.current;
+    return data?.opening || prevOpening.current;
   }, [data]);
   return (
-    <div className="w-full h-[200px] flex flex-col">
-      <div className="w-full p-1 px-3 text-sm bg-[#202020] shadow-md">{`Opening: ${opening}`}</div>
+    <div className="w-full h-[400px] flex flex-col">
+      <div className="w-full p-2 px-3 text-md bg-[#202020] shadow-md">
+        {`Opening: ${opening?.name || "Starting Position"}`}
+        <span className="inline text-sepia/[0.8]">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+      </div>
       <div className="w-full grow relative">
         <ScrollContainer>
           <>
@@ -77,12 +81,7 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
         </button>
         <p className="text-xs ">{totalGames}</p>
       </div>
-      <PercentageBar
-        total={totalGames}
-        black={moveData.black}
-        draws={moveData.draws}
-        white={moveData.white}
-      />
+      <PercentageBar total={totalGames} black={moveData.black} draws={moveData.draws} white={moveData.white} />
     </div>
   );
 }
@@ -101,26 +100,20 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
           className="bg-white text-black text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((white / total) * 100)}%` }}
         >
-          <p>{`${
-            Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white
-          }`}</p>
+          <p>{`${Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white}`}</p>
         </div>
       )}
       {draws > 0 && (
         <div
           className="bg-[#363636] text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((draws / total) * 100)}%` }}
-        >{`${
-          Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws
-        }`}</div>
+        >{`${Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws}`}</div>
       )}
       {black > 0 && (
         <div
-          className="bg-black text-white text-xs px-2 flex items-center"
+          className="bg-black grow text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((black / total) * 100)}%` }}
-        >{`${
-          Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black
-        }`}</div>
+        >{`${Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black}`}</div>
       )}
     </div>
   );
