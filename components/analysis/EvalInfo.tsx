@@ -20,6 +20,7 @@ interface Props {
 
 import { parsePGN } from "../game/MoveHistory";
 import { ClipLoader } from "react-spinners";
+import NumbericInput from "../UI/NumbericInput";
 
 const parseScore = (score: Chess.EvalScore): string => {
   if (score.type === "mate") {
@@ -36,10 +37,7 @@ function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
     let currentGame = _.cloneDeep(game);
     line.moves.forEach((uciMove) => {
       const move = currentGame.legalMoves.find(
-        (move) =>
-          move.start === uciMove.start &&
-          move.end === uciMove.end &&
-          move.promotion === uciMove.promotion
+        (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
       );
       if (!move) {
         return result;
@@ -76,10 +74,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     const uciMove = evaler.bestMove;
     if (!uciMove) return null;
     const move = currentGame.legalMoves.find(
-      (move) =>
-        move.start === uciMove.start &&
-        move.end === uciMove.end &&
-        move.promotion === uciMove.promotion
+      (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
     );
     return move?.PGN || null;
   }, [evaler.bestMove]);
@@ -108,10 +103,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
           </div>
         </div>
       </div>
-      <ProgressBar
-        progress={enabled ? progress : 0}
-        key={`${moveKey}${evaler.inProgress ? "a" : "b"}`}
-      />
+      <ProgressBar progress={enabled ? progress : 0} key={`${moveKey}${evaler.inProgress ? "a" : "b"}`} />
       {enabled && (
         <>
           <div
@@ -182,3 +174,4 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     </div>
   );
 }
+

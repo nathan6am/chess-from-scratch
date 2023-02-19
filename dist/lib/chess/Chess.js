@@ -461,6 +461,7 @@ function executeMove(game, move) {
         if (piece.type === "p" && isDoublePush(move)) {
             enPassantTarget = getTargetSquare(move);
         }
+        //TODO: Bug fix - remove castling rights if corner rook is captured
         //Remove corresponding castle rights on rook or king move
         if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
             const coords = squareToCoordinates(move.start);
@@ -746,7 +747,8 @@ function gameFromNodeData(data, startPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPP
             }
         });
     }
-    return Object.assign(Object.assign({}, game), { board, moveHistory, lastMove: data.move, config: Object.assign(Object.assign({}, game.config), { startPosition }) });
+    return Object.assign(Object.assign({}, game), { board,
+        moveHistory, lastMove: data.move, config: Object.assign(Object.assign({}, game.config), { startPosition }) });
 }
 exports.gameFromNodeData = gameFromNodeData;
 //Generate a new tree node from a halfmove

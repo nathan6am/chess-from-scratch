@@ -192,6 +192,7 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
                             callback({
                                 score,
                                 depth: evalInfo.depth,
+                                bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
                             });
                         }
                         multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
@@ -201,7 +202,6 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
                     if (info.depth !== options.depth) {
-                        console.log("rejecting");
                         reject("depth not reached");
                     }
                     const finalEval = {

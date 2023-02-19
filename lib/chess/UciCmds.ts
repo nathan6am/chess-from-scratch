@@ -114,18 +114,7 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = [
-    "depth",
-    "multipv",
-    "score",
-    "seldepth",
-    "time",
-    "nodes",
-    "nps",
-    "time",
-    "pv",
-    "hashfull",
-  ];
+  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -238,7 +227,7 @@ export async function getEvaluation(
             callback({
               score,
               depth: evalInfo.depth,
-              bestMove: parseUciMove(evalInfo.pv[0]),
+              bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
             });
           }
           multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };

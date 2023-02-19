@@ -15,7 +15,7 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
     }
   };
   const decrement = () => {
-    if (!min || value < min) {
+    if (min === undefined || value > min) {
       onChange(value - 1);
     }
   };
@@ -42,8 +42,8 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
             const re = /^[0-9\b]+$/;
 
             // if value is not blank, then test the regex
-
-            if (e.target.value === "" || re.test(e.target.value)) onChange(parseInt(e.target.value));
+            if (e.target.value === "") onChange(0);
+            if (re.test(e.target.value)) onChange(parseInt(e.target.value));
           }}
           onBlur={() => {
             if (max && value > max) {

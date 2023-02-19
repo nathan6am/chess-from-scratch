@@ -76,6 +76,12 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
   }
 }
 
+.promotionMenu {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+}
+
 .piece {
   user-select: none;
   -moz-user-select: none;
