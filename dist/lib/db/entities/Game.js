@@ -38,16 +38,21 @@ let Game = Game_1 = class Game extends typeorm_1.BaseEntity {
                     game.guestPlayer = { username: player.username, color: color };
                 }
                 else {
-                    const userGame = new User_Game_1.default();
                     const user = yield User_1.default.findOneBy({ id: player.id });
                     if (user) {
+                        const userGame = new User_Game_1.default();
                         userGame.user = user;
                         userGame.game = game;
                         userGame.color = color;
                         userGame.result =
-                            ((_a = userGame.game.outcome) === null || _a === void 0 ? void 0 : _a.result) === "d" ? "draw" : ((_b = userGame.game.outcome) === null || _b === void 0 ? void 0 : _b.result) === color ? "win" : "loss";
+                            ((_a = userGame.game.outcome) === null || _a === void 0 ? void 0 : _a.result) === "d"
+                                ? "draw"
+                                : ((_b = userGame.game.outcome) === null || _b === void 0 ? void 0 : _b.result) === color
+                                    ? "win"
+                                    : "loss";
                         if (user.rating)
                             userGame.rating = user.rating;
+                        console.log(userGame);
                         yield userGame.save();
                         game.players.push(userGame);
                     }
@@ -79,7 +84,7 @@ __decorate([
     __metadata("design:type", Function)
 ], Game.prototype, "data", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.game),
+    (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.game, { cascade: true }),
     __metadata("design:type", Object)
 ], Game.prototype, "players", void 0);
 __decorate([

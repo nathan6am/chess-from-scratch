@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import { Tab } from "@headlessui/react";
 import EvalInfo from "./EvalInfo";
 import { ScrollContainer } from "../layout/GameLayout";
 import VarationTree from "./VarationTree";
-import { MdModeComment } from "react-icons/md";
+import { MdModeComment, MdExpandMore } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
+import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
 import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
 import Share from "./Share";
@@ -14,7 +15,9 @@ interface Props {
   boardRef: React.RefObject<HTMLDivElement>;
 }
 export default function AnalysisPanel({ analysis, boardRef }: Props) {
+  const [expanded, setExpanded] = useState(true);
   const {
+    onMove,
     evalEnabled,
     setEvalEnabled,
     evaler,
@@ -28,7 +31,12 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
     currentNode,
     pgn,
     commentControls,
+    setMoveQueue,
   } = analysis;
+
+  const attemptMoves = (moves: string[]) => {
+    setMoveQueue(moves);
+  };
   return (
     <>
       <div className="shadow-md">
@@ -38,6 +46,7 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
           setEnabled={setEvalEnabled}
           moveKey={evalEnabled ? debouncedNode?.key || "root" : "disabled"}
           currentGame={currentGame}
+          attemptMoves={attemptMoves}
         />
       </div>
       <div className="w-full grow relative bg-white/[0.05]">
@@ -53,7 +62,15 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
       </div>
       <div className="w-full border-t border-white/[0.2] ">
         <Tab.Group>
-          <Tab.List className="flex bg-[#121212] pt-1 shadow-lg">
+          <Tab.List className="flex bg-[#121212] pt-1 shadow-lg relative">
+            <button
+              className={`absolute right-2 top-0 bottom-0 flex flex-col justify-center text-white/[0.8] hover:text-white`}
+              onClick={() => {
+                setExpanded((x) => !x);
+              }}
+            >
+              {expanded ? <VscCollapseAll className="" /> : <VscExpandAll />}
+            </button>
             <StyledTab>
               <p>
                 <MdModeComment className="inline mr-1" /> Comment
@@ -70,12 +87,17 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
               </p>
             </StyledTab>
           </Tab.List>
-          <Tab.Panels>
+          <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Comments
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <p>Annotation Placeholder</p>
+              {currentNode?.data.annotations.join(" ") || ""}
             </Tab.Panel>
             <Tab.Panel>
               <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
@@ -101,7 +123,9 @@ function StyledTab({ children }: TabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

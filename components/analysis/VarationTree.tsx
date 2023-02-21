@@ -72,9 +72,6 @@ export default function VarationTree({
   );
 }
 
-function moveCount(halfMoveCount: number): string {
-  return `${Math.ceil(halfMoveCount / 2)}${halfMoveCount % 2 !== 0 ? ". " : "... "}`;
-}
 interface VariationProps {
   path: Node[];
   node: Node;
@@ -329,7 +326,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
       >
         {(isWhite || index === 0) && (
           <span className={`inline ml-[2px] opacity-50 text-white`}>
-            {moveCount(node.data.halfMoveCount)}
+            {Chess.moveCountToNotation(node.data.halfMoveCount)}
           </span>
         )}
         <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>

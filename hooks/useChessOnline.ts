@@ -239,6 +239,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       setSocketConnected(true);
     };
     const onLobbyDidUpdate = (updates: Partial<Lobby>) => {
+      console.log(updates);
       setLobby((current) => {
         if (!current) return current;
         return { ...current, ...updates };

@@ -1,12 +1,8 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import * as Chess from "@/lib/chess";
-import {
-  MdArrowDropUp,
-  MdOutlineRestartAlt,
-  MdAnalytics,
-  MdExitToApp,
-} from "react-icons/md";
+import { MdArrowDropUp, MdOutlineRestartAlt, MdAnalytics, MdExitToApp } from "react-icons/md";
 interface Props {
   outcome: Chess.Outcome;
   isOpen: boolean;
@@ -40,7 +36,7 @@ export default function Result({ outcome, isOpen, close }: Props) {
   function closeModal() {
     close();
   }
-
+  const router = useRouter();
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -69,10 +65,7 @@ export default function Result({ outcome, isOpen, close }: Props) {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md px-8 transform overflow-hidden rounded-2xl bg-[#202020] py-10 text-left align-middle shadow-lg transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-2xl font-semibold text-center"
-                  >
+                  <Dialog.Title as="h3" className="text-2xl font-semibold text-center">
                     {title}
                   </Dialog.Title>
                   <div className="mt-1 font-medium text-md text-center text-white/[0.7]">
@@ -105,9 +98,11 @@ export default function Result({ outcome, isOpen, close }: Props) {
                       <MdAnalytics className="inline text-xl ml-1" />
                     </button>
                     <button
+                      onClick={() => {
+                        router.push("/play");
+                      }}
                       type="button"
                       className="inline-flex justify-center items-center rounded-md border border-transparent bg-red-400/[0.6] px-4 py-2 font-medium text-white hover:bg-red-500/[0.5] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                      onClick={closeModal}
                     >
                       Exit to Menu
                       <MdExitToApp className="inline text-xl ml-1" />

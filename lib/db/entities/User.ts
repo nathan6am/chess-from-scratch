@@ -57,7 +57,7 @@ export default class User extends BaseEntity {
   @OneToMany(() => Notification, (notifcation) => notifcation.user)
   notifications: Relation<Notification[]>;
 
-  @OneToMany(() => User_Game, (userGame) => userGame.user)
+  @OneToMany(() => User_Game, (userGame) => userGame.user, { cascade: true })
   games: Relation<User_Game[]>;
 
   @OneToMany(() => Analysis, (analysis) => analysis.creator)
@@ -137,7 +137,10 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
+  static async loginWithFacebook(profile: {
+    facebookId: string;
+    name: string;
+  }): Promise<SessionUser> {
     const user = await this.findOne({
       where: {
         facebookId: profile.facebookId,
@@ -160,7 +163,11 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async createAccountWithCredentials(account: { email: string; username: string; password: string }): Promise<{
+  static async createAccountWithCredentials(account: {
+    email: string;
+    username: string;
+    password: string;
+  }): Promise<{
     created: Partial<User> | null;
     fieldErrors?: Array<{ field: string; message: string }>;
   }> {
@@ -223,24 +230,22 @@ export default class User extends BaseEntity {
         },
       },
     });
-    const usergames = user?.games || []
-    const result = usergames.map(usergame => {
-      const filteredPlayers = usergame.game.players.map(player => ({
+    const usergames = user?.games || [];
+    const result = usergames.map((usergame) => {
+      const filteredPlayers = usergame.game.players.map((player) => ({
         username: player.user.username,
         rating: player.rating,
-        color: player.color
-      }))
-      return (
-        {
-          ...usergame,
-          game: {
-            ...usergame.game,
-            players: filteredPlayers
-          }
-        }
-      )
-    })
-    return result
+        color: player.color,
+      }));
+      return {
+        ...usergame,
+        game: {
+          ...usergame.game,
+          players: filteredPlayers,
+        },
+      };
+    });
+    return result;
   }
 }
 

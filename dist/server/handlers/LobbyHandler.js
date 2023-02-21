@@ -91,6 +91,53 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             nsp.to(lobbyid).emit("game:new", game);
         });
     }
+    //Handle game result
+    function handleGameResult(lobbyid, game) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const lobby = yield cache.getLobbyById(lobbyid);
+            if (!lobby || !lobby.currentGame)
+                return;
+            const updated = yield cache.updateGame(lobbyid, game);
+            const playerW = lobby.players.find((player) => player.id === game.players.w);
+            const playerB = lobby.players.find((player) => player.id === game.players.b);
+            if (!playerW || !playerB)
+                throw new Error("player mismatch");
+            const players = { w: playerW, b: playerB };
+            console.log(players);
+            const outcome = updated.data.outcome;
+            if (!outcome)
+                return;
+            //update game scores
+            if (outcome.result === "d") {
+                lobby.players = lobby.players.map((player) => {
+                    return Object.assign(Object.assign({}, player), { score: player.score + 0.5 });
+                });
+            }
+            else {
+                lobby.players = lobby.players.map((player) => {
+                    if (outcome.result === "w" && player.id === playerW.id) {
+                        return Object.assign(Object.assign({}, player), { score: player.score + 1 });
+                    }
+                    else if (outcome.result === "b" && player.id === playerB.id) {
+                        return Object.assign(Object.assign({}, player), { score: player.score + 1 });
+                    }
+                    else
+                        return player;
+                });
+            }
+            yield cache.updateLobby(lobbyid, { players: lobby.players });
+            const data = updated.data;
+            const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+            nsp.to(lobbyid).emit("game:outcome", updated);
+            nsp.to(lobbyid).emit("lobby:update", { players: lobby.players });
+            //Save the game to db if any user is not a guest
+            if (lobby.players.some((player) => player.user.type !== "guest")) {
+                console.log(game.id);
+                const saved = yield Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
+                console.log(saved);
+            }
+        });
+    }
     socket.on("disconnect", () => {
         //Find the active game if applicable and set a timeout for reconnection
         //or, abort the game if it has not yet started
@@ -241,14 +288,18 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     by: "timeout",
                 };
                 lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
-                cache.updateGame(lobbyid, lobby.currentGame);
-                nsp.to(lobbyid).emit("game:outcome", lobby.currentGame);
+                yield cache.updateGame(lobbyid, lobby.currentGame);
+                yield handleGameResult(lobbyid, lobby.currentGame);
             }
             else {
                 //Attempt to execute the move upon response from the client
                 try {
                     const updated = yield executeMove(response, lobbyid);
                     nsp.to(lobbyid).emit("game:move", updated);
+                    if (updated.data.outcome) {
+                        yield handleGameResult(lobbyid, updated);
+                        return;
+                    }
                     const currentLobby = yield cache.getLobbyById(lobbyid);
                     //Retrieve the socket instance for the next player
                     if (!currentLobby)
@@ -341,19 +392,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         const game = lobby.currentGame;
         game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
         const updated = yield cache.updateGame(lobbyid, game);
-        nsp.to(lobbyid).emit("game:outcome", updated);
-        const playerW = lobby.players.find((player) => player.id === game.players.w);
-        const playerB = lobby.players.find((player) => player.id === game.players.b);
-        if (!playerW || !playerB)
-            throw new Error("player mismatch");
-        const players = { w: playerW, b: playerB };
-        const outcome = updated.data.outcome;
-        const data = updated.data;
-        const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
-        if (lobby.players.some((player) => player.user.type !== "guest")) {
-            const saved = yield Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
-            console.log(saved);
-        }
+        yield handleGameResult(lobbyid, game);
     }));
 }
 exports.default = LobbyHandler;

@@ -5,7 +5,7 @@ interface Props {
   isOpen: boolean;
   closeModal: () => void;
 }
-import TimeControlSelect from "../forms/TimeControlSelect";
+import TimeControlSelect from "../TimeControlSelect";
 import NumbericInput from "../NumbericInput";
 import Toggle from "../Toggle";
 import { TimeControl } from "@/lib/chess";
@@ -50,7 +50,10 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
                     <label>Time Control</label>
                     <TimeControlSelect setTimeControl={setTimeControl} />
                     <div className="flex flex-row justify-end mt-6">
-                      <button onClick={closeModal} className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36">
+                      <button
+                        onClick={closeModal}
+                        className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36"
+                      >
                         Cancel
                       </button>
                       <button

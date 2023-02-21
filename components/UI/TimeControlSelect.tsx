@@ -46,7 +46,7 @@ const CATEGORIES: Category[] = [
 
 import { useState } from "react";
 import { Tab, RadioGroup } from "@headlessui/react";
-import NumbericInput from "../NumbericInput";
+import NumbericInput from "./NumbericInput";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -85,7 +85,9 @@ export default function TimeControlSelect({
                 classNames(
                   "w-full rounded-lg py-2.5 text-md font-medium leading-5 text-white",
                   "ring-white ring-opacity-60 ring-offset-2 ring-offset-[#1f1f1f] focus:outline-none focus:ring-2",
-                  selected ? "bg-[#b99873] shadow" : "text-white/[0.7] hover:bg-white/[0.12] hover:text-white"
+                  selected
+                    ? "bg-[#b99873] shadow"
+                    : "text-white/[0.7] hover:bg-white/[0.12] hover:text-white"
                 )
               }
             >
@@ -95,7 +97,10 @@ export default function TimeControlSelect({
         </Tab.List>
         <Tab.Panels className="mt-2">
           {CATEGORIES.map((category, idx) => (
-            <Tab.Panel key={category.id} className={"w-full mt-4 text-sm p-4 bg-[#161616] rounded-xl"}>
+            <Tab.Panel
+              key={category.id}
+              className={"w-full mt-4 text-sm p-4 bg-[#161616] rounded-xl"}
+            >
               {category.options?.length && (
                 <OptionSelect
                   defaultOptionIndex={lastSelected[idx] || 0}
@@ -182,7 +187,7 @@ function CustomSelect({ onChange, defaultValue }: CustomSelectProps) {
         min={0}
         max={90}
         value={minutes}
-        onChange={(val) => {
+        onChange={(val: number) => {
           setMinutes(val);
           onChange({
             timeSeconds: val * 60,
@@ -195,7 +200,7 @@ function CustomSelect({ onChange, defaultValue }: CustomSelectProps) {
         min={0}
         max={60}
         value={incrementSeconds}
-        onChange={(val) => {
+        onChange={(val: number) => {
           setIncrementSeconds(val);
           onChange({
             timeSeconds: minutes * 60,

@@ -7,14 +7,20 @@ export interface LayoutComponentProps {
 }
 export function BoardColumn({ children, className }: LayoutComponentProps) {
   return (
-    <div className={`flex flex-col h-full grow justify-start lg:justify-center ${className}`}>
+    <div
+      className={`flex flex-col h-full basis-[100vh] shrink-1 justify-start lg:justify-center ${className}`}
+    >
       <div className={`w-full ${styles.boardColumn}`}>{children}</div>
     </div>
   );
 }
 
 export function BoardRow({ children }: LayoutComponentProps) {
-  return <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">{children}</div>;
+  return (
+    <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">
+      {children}
+    </div>
+  );
 }
 
 export function PanelColumn({ children }: LayoutComponentProps) {

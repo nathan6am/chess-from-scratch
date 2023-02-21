@@ -114,7 +114,18 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,

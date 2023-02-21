@@ -31,7 +31,9 @@ export class Redis implements Redis {
   };
 
   private _playerIsInLobby = async (lobbyid: string, playerid: string): Promise<boolean> => {
-    const playersJSON: unknown = await this.client.json.get(`lobby:${lobbyid}`, { path: ".players" });
+    const playersJSON: unknown = await this.client.json.get(`lobby:${lobbyid}`, {
+      path: ".players",
+    });
     if (!playersJSON) return false;
     const players = playersJSON as Player[];
     return players.some((player) => player?.id === playerid);
@@ -58,6 +60,17 @@ export class Redis implements Redis {
     return updatedLobby;
   };
 
+  updateLobby = async (lobbyid: string, updates: Partial<Lobby>): Promise<Lobby> => {
+    const lobby = await this.getLobbyById(lobbyid);
+    if (!lobby) throw new Error("Lobby does not exist");
+    const updatedLobby: Lobby = {
+      ...lobby,
+      ...updates,
+    };
+    const updated = await this.client.json.set(`lobby:${lobbyid}`, "$", indexed(updatedLobby));
+    if (!updated) throw new Error("Unable to update lobby");
+    return updatedLobby;
+  };
   getLobbyById = async (id: string) => {
     const lobbyJSON: unknown = await this.client.json.get(`lobby:${id}`);
     if (!lobbyJSON) return undefined;
@@ -98,7 +111,8 @@ export class Redis implements Redis {
       const playerA = lobby.creator;
       const playerB = lobby.players.find((player) => player.id !== lobby.creator)?.id;
       if (!playerB) throw new Error("Not enough players connected to start game");
-      const creatorColor = lobby.options.color === "random" ? coinflip<Chess.Color>("w", "b") : lobby.options.color;
+      const creatorColor =
+        lobby.options.color === "random" ? coinflip<Chess.Color>("w", "b") : lobby.options.color;
       players[creatorColor] = playerA;
       players[creatorColor === "w" ? "b" : "w"] = playerB;
     }
@@ -132,7 +146,9 @@ export class Redis implements Redis {
   //Updates the game at the given lobbyid
   updateGame = async (lobbyid: string, update: Game): Promise<Game> => {
     const gameJSON = indexed(update);
-    const updated = await this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON, { XX: true });
+    const updated = await this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON, {
+      XX: true,
+    });
     if (!updated) throw new Error("Unable to update game");
     return update;
   };

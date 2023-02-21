@@ -110,7 +110,18 @@ function startup(stockfish) {
 exports.startup = startup;
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args) {
-    const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+    const values = [
+        "depth",
+        "multipv",
+        "score",
+        "seldepth",
+        "time",
+        "nodes",
+        "nps",
+        "time",
+        "pv",
+        "hashfull",
+    ];
     let reading = "";
     let evaluation = {
         depth: 0,

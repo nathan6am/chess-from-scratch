@@ -52,9 +52,9 @@ export interface MoveData {
   game: DBGameData | null;
 }
 
-interface DBGameData {
+export interface DBGameData {
   uci?: string;
-  winner: "black" | "white" | "draw";
+  winner: "black" | "white" | null;
   white: PlayerInfo;
   black: PlayerInfo;
   id: string;

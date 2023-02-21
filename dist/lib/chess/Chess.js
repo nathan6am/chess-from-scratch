@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 const ChessTypes_1 = require("./ChessTypes");
 const lodash_1 = __importDefault(require("lodash"));
 const FenParser_1 = require("./FenParser");
@@ -204,7 +204,10 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
+                    capture: toSquare([
+                        currentCoordinates[0],
+                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
+                    ]),
                 });
             }
             else {
@@ -378,14 +381,16 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w"
+        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
+        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) && !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -397,7 +402,7 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) && !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -483,6 +488,14 @@ function executeMove(game, move) {
         fullMoveCount,
         castleRights: Object.assign(Object.assign({}, game.castleRights), { [game.activeColor]: castleRights }),
     };
+    if (move.capture === "a8")
+        updatedGame.castleRights.b.queenSide = false;
+    if (move.capture === "h8")
+        updatedGame.castleRights.b.kingSide = false;
+    if (move.capture === "a1")
+        updatedGame.castleRights.b.queenSide = false;
+    if (move.capture === "h1")
+        updatedGame.castleRights.b.kingSide = false;
     return {
         updatedGameState: updatedGame,
         capturedPiece: capture,
@@ -561,6 +574,14 @@ function testMove(game, move) {
         fullMoveCount,
         castleRights: Object.assign(Object.assign({}, game.castleRights), { [activeColor]: castleRights }),
     };
+    if (move.capture === "a8")
+        updatedGame.castleRights.b.queenSide = false;
+    if (move.capture === "h8")
+        updatedGame.castleRights.b.kingSide = false;
+    if (move.capture === "a1")
+        updatedGame.castleRights.b.queenSide = false;
+    if (move.capture === "h1")
+        updatedGame.castleRights.b.kingSide = false;
     return {
         updatedGameState: updatedGame,
         capturedPiece: capture,
@@ -768,3 +789,7 @@ function nodeDataFromMove(game, moveToExecute, halfMoveCount) {
     return Object.assign(Object.assign({}, partialNode), { halfMoveCount, outcome: updatedGame.outcome });
 }
 exports.nodeDataFromMove = nodeDataFromMove;
+function moveCountToNotation(halfMoveCount) {
+    return `${Math.ceil(halfMoveCount / 2)}${halfMoveCount % 2 !== 0 ? ". " : "... "}`;
+}
+exports.moveCountToNotation = moveCountToNotation;

@@ -47,7 +47,9 @@ class Redis {
             return true;
         });
         this._playerIsInLobby = (lobbyid, playerid) => __awaiter(this, void 0, void 0, function* () {
-            const playersJSON = yield this.client.json.get(`lobby:${lobbyid}`, { path: ".players" });
+            const playersJSON = yield this.client.json.get(`lobby:${lobbyid}`, {
+                path: ".players",
+            });
             if (!playersJSON)
                 return false;
             const players = playersJSON;
@@ -65,6 +67,16 @@ class Redis {
             return true;
         });
         this._updateLobby = (lobbyid, updates) => __awaiter(this, void 0, void 0, function* () {
+            const lobby = yield this.getLobbyById(lobbyid);
+            if (!lobby)
+                throw new Error("Lobby does not exist");
+            const updatedLobby = Object.assign(Object.assign({}, lobby), updates);
+            const updated = yield this.client.json.set(`lobby:${lobbyid}`, "$", indexed(updatedLobby));
+            if (!updated)
+                throw new Error("Unable to update lobby");
+            return updatedLobby;
+        });
+        this.updateLobby = (lobbyid, updates) => __awaiter(this, void 0, void 0, function* () {
             const lobby = yield this.getLobbyById(lobbyid);
             if (!lobby)
                 throw new Error("Lobby does not exist");
@@ -152,7 +164,9 @@ class Redis {
         //Updates the game at the given lobbyid
         this.updateGame = (lobbyid, update) => __awaiter(this, void 0, void 0, function* () {
             const gameJSON = indexed(update);
-            const updated = yield this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON, { XX: true });
+            const updated = yield this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON, {
+                XX: true,
+            });
             if (!updated)
                 throw new Error("Unable to update game");
             return update;

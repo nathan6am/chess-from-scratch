@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
 import nodeTest from "node:test";
+import { gameFromNodeData, nodeDataFromMove } from "@/lib/chess";
 
 interface VariationTree {}
 export default function useVariationTree(initialTree?: TreeNode<Chess.NodeData>[]) {

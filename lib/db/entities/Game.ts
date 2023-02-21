@@ -22,7 +22,7 @@ export default class Game extends BaseEntity {
   @Column("jsonb")
   data: GameData;
 
-  @OneToMany(() => User_Game, (userGame) => userGame.game)
+  @OneToMany(() => User_Game, (userGame) => userGame.game, { cascade: true })
   players: Relation<User_Game[]>;
 
   @Column("jsonb", { nullable: true })
@@ -39,20 +39,24 @@ export default class Game extends BaseEntity {
     Object.assign(game, { id, outcome, data, timeControl });
     game.players = [];
     await game.save();
-
     Object.entries(players).forEach(async ([color, player]) => {
       if (player.user.type === "guest") {
         game.guestPlayer = { username: player.username, color: color as Color };
       } else {
-        const userGame = new User_Game();
         const user = await User.findOneBy({ id: player.id });
         if (user) {
+          const userGame = new User_Game();
           userGame.user = user;
           userGame.game = game;
           userGame.color = color as Color;
           userGame.result =
-            userGame.game.outcome?.result === "d" ? "draw" : userGame.game.outcome?.result === color ? "win" : "loss";
+            userGame.game.outcome?.result === "d"
+              ? "draw"
+              : userGame.game.outcome?.result === color
+              ? "win"
+              : "loss";
           if (user.rating) userGame.rating = user.rating;
+          console.log(userGame);
           await userGame.save();
           game.players.push(userGame);
         }

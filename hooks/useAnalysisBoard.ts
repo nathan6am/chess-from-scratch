@@ -9,6 +9,7 @@ import _ from "lodash";
 import { TreeNode } from "./useTreeData";
 import { BoardControls } from "./useChessOnline";
 import { ApiResponse } from "./useOpeningExplorer";
+import { pgnToTreeArray } from "./test";
 type Node = TreeNode<Chess.NodeData>;
 
 export interface AnalysisHook {
@@ -38,6 +39,7 @@ export interface AnalysisHook {
     error: unknown;
     isLoading: boolean;
   };
+  setMoveQueue: React.Dispatch<React.SetStateAction<string[]>>;
   commentControls: {
     updateComment: (nodeId: string, comment: string) => void;
     removeAnnotation: (nodeId: string, annotation: number) => void;
@@ -48,6 +50,7 @@ export interface AnalysisHook {
 interface AnalysisOptions {
   startPosition: string;
   initialTree?: TreeNode<Chess.NodeData>[];
+  pgnSource?: string;
   evalEnabled: boolean;
 }
 const defaultOptions = {
@@ -66,10 +69,31 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     });
     return game;
   }, []);
-  const variationTree = useVariationTree();
 
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, pgn, mainLine, setCurrentKey } =
-    variationTree;
+  const initialTree = useMemo(() => {
+    if (options.pgnSource) {
+      try {
+        const tree = pgnToTreeArray(options.pgnSource, options.startPosition);
+        return tree;
+      } catch (e) {
+        console.log(e);
+        return [];
+      }
+    }
+  }, [options.pgnSource, options.startPosition]);
+  const variationTree = useVariationTree(initialTree);
+
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    pgn,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -171,9 +195,11 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
           }
         });
       } else {
-        evaler.getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation).then((result) => {
-          if (result) cacheEvaluation(debouncedNode.key, result);
-        });
+        evaler
+          .getEvaluation(debouncedNode.data.fen, debouncedNode.data.evaluation)
+          .then((result) => {
+            if (result) cacheEvaluation(debouncedNode.key, result);
+          });
       }
     }
   }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
@@ -207,6 +233,22 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     setCurrentKey(null);
   };
 
+  const [moveQueue, setMoveQueue] = useState<string[]>([]);
+  const prevLastMove = useRef(lastMove);
+  useEffect(() => {
+    if (prevLastMove.current === currentGame.lastMove && prevLastMove.current !== null) return; //"don't execute if a the game hasn't updated"
+    prevLastMove.current === currentGame.lastMove;
+    const move = currentGame.legalMoves.find((move) => move.PGN === moveQueue[0]);
+    if (move) {
+      setTimeout(() => {
+        onMove(move);
+        setMoveQueue((cur) => cur.slice(1));
+      }, 200);
+    } else {
+      return;
+    }
+  }, [moveQueue, currentGame, onMove, prevLastMove]);
+
   return {
     pgn,
     mainLine,
@@ -221,6 +263,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     setCurrentKey,
     currentLine,
     path,
+    setMoveQueue,
     currentKey,
     currentNode,
     debouncedNode,

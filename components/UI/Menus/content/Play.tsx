@@ -71,15 +71,18 @@ export default function Play() {
                       usergame.game.guestPlayer;
                     const color = usergame.color;
                     const outcome = usergame.game.data.outcome;
-                    const result = outcome?.result === "d" ? "Draw" : outcome?.result === color ? "Win" : "Loss";
+                    const result =
+                      outcome?.result === "d" ? "Draw" : outcome?.result === color ? "Win" : "Loss";
                     return (
-                      <p key={usergame.game_id}>
+                      <p key={usergame.game.id}>
                         {result} vs. {opponent.username}
                       </p>
                     );
                   })}
                 {(!user || !user.games?.length) && (
-                  <div className="px-8 p-4 text-sm text-center italic text-white/[0.5]">No games to show.</div>
+                  <div className="px-8 p-4 text-sm text-center italic text-white/[0.5]">
+                    No games to show.
+                  </div>
                 )}
               </div>
             </div>
@@ -90,7 +93,9 @@ export default function Play() {
             </div>
             <div className="grow w-full relative">
               <div className="top-0 bottom-0 left-0 right-0 absolute bg-black/[0.1] overflow-y-scroll">
-                <div className="px-8 p-4 text-sm text-center italic text-white/[0.5]">No games to show.</div>
+                <div className="px-8 p-4 text-sm text-center italic text-white/[0.5]">
+                  No games to show.
+                </div>
               </div>
             </div>
           </div>

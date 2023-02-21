@@ -189,13 +189,13 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                 },
             });
             const usergames = (user === null || user === void 0 ? void 0 : user.games) || [];
-            const result = usergames.map(usergame => {
-                const filteredPlayers = usergame.game.players.map(player => ({
+            const result = usergames.map((usergame) => {
+                const filteredPlayers = usergame.game.players.map((player) => ({
                     username: player.user.username,
                     rating: player.rating,
-                    color: player.color
+                    color: player.color,
                 }));
-                return (Object.assign(Object.assign({}, usergame), { game: Object.assign(Object.assign({}, usergame.game), { players: filteredPlayers }) }));
+                return Object.assign(Object.assign({}, usergame), { game: Object.assign(Object.assign({}, usergame.game), { players: filteredPlayers }) });
             });
             return result;
         });
@@ -238,7 +238,7 @@ __decorate([
     __metadata("design:type", Object)
 ], User.prototype, "notifications", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.user),
+    (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.user, { cascade: true }),
     __metadata("design:type", Object)
 ], User.prototype, "games", void 0);
 __decorate([

@@ -46,6 +46,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [bestMove, setBestMove] = useState<commands.UCIMove | null>(null);
   const [evaluation, setEvaluation] = useState<FinalEvaluation | null>(null);
   const [finished, setFinished] = useState<boolean>(false);
+  const lastFen = useRef<string>();
   const wasmSupported =
     typeof WebAssembly === "object" &&
     WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
@@ -87,6 +88,10 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     };
   }, []);
 
+  useEffect(() => {
+    if (lastFen.current) getEvaluation(lastFen.current);
+  }, [options]);
+
   const getEvaluation = async (
     fen: string,
     cachedEval?: FinalEvaluation | undefined
@@ -95,13 +100,19 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       setError(new Error("Eval engine not yet initialized"));
       return;
     } else {
+      lastFen.current = fen;
       const evaler = stockfishRef.current;
       if (inProgress) await commands.stop(evaler);
 
-      if (cachedEval && cachedEval.depth >= options.depth) {
+      if (
+        cachedEval &&
+        cachedEval.depth >= options.depth &&
+        cachedEval.lines.length >= options.multiPV
+      ) {
         setEvaluation(cachedEval);
         setCurrentDepth(cachedEval.depth);
         setCurrentScore(cachedEval.score);
+
         return;
       }
       setCurrentDepth(0);

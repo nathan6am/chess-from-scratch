@@ -65,6 +65,52 @@ export default function LobbyHandler(
     nsp.to(lobbyid).emit("game:new", game);
   }
 
+  //Handle game result
+  async function handleGameResult(lobbyid: string, game: Game) {
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby || !lobby.currentGame) return;
+
+    const updated = await cache.updateGame(lobbyid, game);
+    const playerW = lobby.players.find((player) => player.id === game.players.w);
+    const playerB = lobby.players.find((player) => player.id === game.players.b);
+    if (!playerW || !playerB) throw new Error("player mismatch");
+    const players = { w: playerW, b: playerB };
+    console.log(players);
+    const outcome = updated.data.outcome;
+    if (!outcome) return;
+    //update game scores
+    if (outcome.result === "d") {
+      lobby.players = lobby.players.map((player) => {
+        return { ...player, score: player.score + 0.5 };
+      });
+    } else {
+      lobby.players = lobby.players.map((player) => {
+        if (outcome.result === "w" && player.id === playerW.id) {
+          return {
+            ...player,
+            score: player.score + 1,
+          };
+        } else if (outcome.result === "b" && player.id === playerB.id) {
+          return {
+            ...player,
+            score: player.score + 1,
+          };
+        } else return player;
+      });
+    }
+    await cache.updateLobby(lobbyid, { players: lobby.players });
+    const data = updated.data;
+    const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+    nsp.to(lobbyid).emit("game:outcome", updated);
+    nsp.to(lobbyid).emit("lobby:update", { players: lobby.players });
+    //Save the game to db if any user is not a guest
+    if (lobby.players.some((player) => player.user.type !== "guest")) {
+      console.log(game.id);
+      const saved = await GameEntity.saveGame(players, outcome, data, timeControl, game.id);
+      console.log(saved);
+    }
+  }
+
   socket.on("disconnect", () => {
     //Find the active game if applicable and set a timeout for reconnection
     //or, abort the game if it has not yet started
@@ -223,13 +269,17 @@ export default function LobbyHandler(
             by: "timeout",
           };
           lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
-          cache.updateGame(lobbyid, lobby.currentGame);
-          nsp.to(lobbyid).emit("game:outcome", lobby.currentGame);
+          await cache.updateGame(lobbyid, lobby.currentGame);
+          await handleGameResult(lobbyid, lobby.currentGame);
         } else {
           //Attempt to execute the move upon response from the client
           try {
             const updated = await executeMove(response, lobbyid);
             nsp.to(lobbyid).emit("game:move", updated);
+            if (updated.data.outcome) {
+              await handleGameResult(lobbyid, updated);
+              return;
+            }
             const currentLobby = await cache.getLobbyById(lobbyid);
 
             //Retrieve the socket instance for the next player
@@ -343,17 +393,6 @@ export default function LobbyHandler(
     const game = lobby.currentGame;
     game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
     const updated = await cache.updateGame(lobbyid, game);
-    nsp.to(lobbyid).emit("game:outcome", updated);
-    const playerW = lobby.players.find((player) => player.id === game.players.w);
-    const playerB = lobby.players.find((player) => player.id === game.players.b);
-    if (!playerW || !playerB) throw new Error("player mismatch");
-    const players = { w: playerW, b: playerB };
-    const outcome = updated.data.outcome;
-    const data = updated.data;
-    const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
-    if (lobby.players.some((player) => player.user.type !== "guest")) {
-      const saved = await GameEntity.saveGame(players, outcome, data, timeControl, game.id);
-      console.log(saved);
-    }
+    await handleGameResult(lobbyid, game);
   });
 }

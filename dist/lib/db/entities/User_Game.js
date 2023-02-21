@@ -18,13 +18,9 @@ const Game_1 = __importDefault(require("./Game"));
 let User_Game = class User_Game extends typeorm_1.BaseEntity {
 };
 __decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], User_Game.prototype, "user_id", void 0);
-__decorate([
-    (0, typeorm_1.PrimaryColumn)(),
-    __metadata("design:type", String)
-], User_Game.prototype, "game_id", void 0);
+    (0, typeorm_1.PrimaryGeneratedColumn)(),
+    __metadata("design:type", Number)
+], User_Game.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => User_1.default, (user) => user.games),
     (0, typeorm_1.JoinColumn)({ name: "user_id" }),
@@ -32,7 +28,7 @@ __decorate([
 ], User_Game.prototype, "user", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Game_1.default, (game) => game.players),
-    (0, typeorm_1.JoinColumn)({ name: "game_id" }),
+    (0, typeorm_1.JoinColumn)({ name: "game_id", referencedColumnName: "id" }),
     __metadata("design:type", Object)
 ], User_Game.prototype, "game", void 0);
 __decorate([

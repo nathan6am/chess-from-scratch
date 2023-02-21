@@ -1,4 +1,4 @@
-import * as Chess from "@/lib/chess";
+import * as Chess from "../lib/chess";
 import { v4 as uuidv4 } from "uuid";
 interface NodeDataPartial {
   PGN: string;
@@ -13,8 +13,7 @@ interface MaybeNodeDataPartial {
 }
 import { TreeNode } from "./useTreeData";
 
-const testString = `1. e4 d5 {comment} 2. f4 (2. Nc3 f6 3. g4 (3. Qe2) (3. h3 b6 {another comment} 4. Nxd5)) 2... g6 3. Nc3 b6
-4. h4 (4. g4 h5 5. Rb1)`;
+const testString = `1. e4  d6  {asdssssd} 2. d4  e5  3. Nc3 $10 exd4  4. Qxd4  (4. Nb1  c5  5. Nf3  Nc6  6. Bd3  (6. c3  )(6. Ke2  ) 6... Nf6  {another comment} ) 4... Nc6  5. Bb5 `;
 
 function parsePGN(pgn: string) {
   const tree: Map<string, TreeNode<NodeDataPartial>> = new Map();
@@ -74,10 +73,7 @@ function parsePGN(pgn: string) {
       throw new Error("Invalid pgn");
     } else {
       if (
-        (prevChar === " " ||
-          prevChar === ")" ||
-          prevChar === "}" ||
-          prevChar === "(") &&
+        (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
         isDigit(char)
       ) {
         if (inMoveCount) throw new Error("Invalid pgn");
@@ -199,10 +195,191 @@ function buildTreeArray<T>(
   return parentNode.children;
 }
 
-console.log(
-  JSON.stringify(
-    buildTreeArray(parsePGN(testString.replace(/(\r\n|\n|\r)/gm, ""))),
-    null,
-    2
-  )
-);
+type Node = TreeNode<Chess.NodeData>;
+export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
+  let map = new Map<string, Node>();
+  const addNode = (data: Chess.NodeData, parentKey: string | null): Node | undefined => {
+    const key = uuidv4();
+    const newNode = { key, data, parentKey: parentKey, children: [] };
+    map.set(newNode.key, newNode);
+    if (parentKey) {
+      const parentNode = map.get(parentKey);
+      if (!parentNode) throw new Error("Invalid parent key.");
+      parentNode.children.push(newNode);
+    }
+    return newNode;
+  };
+
+  function getPath(key: string): Node[] {
+    const destNode = map.get(key);
+    if (!destNode) return [];
+    let path: Node[] = [];
+    let currentNode: Node | undefined = destNode;
+    while (currentNode) {
+      path.unshift(currentNode);
+      if (currentNode.parentKey === null) break;
+      const parentNode = map.get(currentNode.parentKey);
+      currentNode = parentNode;
+    }
+    return path;
+  }
+
+  let stream = pgn.replace(/(\r\n|\n|\r)/gm, "");
+  const initialGame = Chess.createGame({ startPosition: startPosition });
+  //let currentGame = initialGame;
+  let reading = "unknown";
+  let prevChar = " ";
+  let currentData: { pgn?: string; comment: string | null; annotations: number[] } = {
+    comment: null,
+    annotations: [],
+  };
+  let currentMove = "";
+  let moveCount = "1";
+  let comment = "";
+  let annotation = "";
+  let variationStack: Array<Node | null> = [];
+  let currentParent: Node | null = null;
+  const isDigit = (char: string): boolean => {
+    const exp = /\d/;
+    return exp.test(char);
+  };
+  const getCurrentGame = () => {
+    const node = currentParent;
+    if (!node) return initialGame;
+    else {
+      const currentPath = getPath(node.key);
+      return Chess.gameFromNodeData(
+        node.data,
+        initialGame.config.startPosition,
+        currentPath.map((node) => node.data)
+      );
+    }
+  };
+  const postCurrentData = () => {
+    const pgn = currentData.pgn;
+    if (!pgn) throw new Error("Invalid PGN string");
+
+    const currentGame = getCurrentGame();
+    const move = currentGame.legalMoves.find((move) => move.PGN === pgn);
+
+    if (!move) {
+      console.log(pgn);
+      throw new Error(`Invalid move: ${pgn}`);
+    }
+
+    const parentKey = currentParent?.key || null;
+    const path = parentKey ? getPath(parentKey) : [];
+    const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
+    data.comment = currentData.comment || null;
+    data.annotations = currentData.annotations || [];
+    const node = addNode(data, parentKey);
+    if (!node) throw new Error("Something went wrong");
+    currentParent = node;
+    currentData = {
+      comment: null,
+      annotations: [],
+    };
+  };
+  for (let char of stream) {
+    if (reading === "comment") {
+      if (char === "}") {
+        reading = "unknown";
+        currentData.comment = comment;
+        comment = "";
+      } else {
+        comment += char;
+      }
+    } else if (char === "{") {
+      reading = "comment";
+    } else if (char === "}" && reading !== "comment") {
+      throw new Error("Invalid pgn");
+    } else if (reading === "annotation") {
+      if (char === " ") {
+        if (!annotation.length)
+          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (currentData.annotations) {
+          currentData.annotations.push(parseInt(annotation));
+        } else {
+          currentData.annotations = [parseInt(annotation)];
+        }
+        annotation = "";
+        reading = "unknown";
+      } else if (char === "(") {
+        if (currentData.annotations) {
+          currentData.annotations.push(parseInt(annotation));
+        } else {
+          currentData.annotations = [parseInt(annotation)];
+        }
+        annotation = "";
+        if (currentData.pgn) postCurrentData();
+        const path: Node[] = currentParent ? getPath(currentParent["key"]) : [];
+        const prevParent = path[path.length - 2] || null;
+        variationStack.push(currentParent);
+        currentParent = prevParent;
+        console.log(`variationstack: ${variationStack.map((node) => node && node.data.PGN)}`);
+        reading = "unknown";
+      } else if (char === ")") {
+        if (currentData.annotations) {
+          currentData.annotations.push(parseInt(annotation));
+        } else {
+          currentData.annotations = [parseInt(annotation)];
+        }
+        annotation = "";
+        if (currentData.pgn) postCurrentData();
+        const nextParent = variationStack.pop();
+        currentParent = nextParent || null;
+        reading = "unknown";
+      } else if (!isDigit(char)) {
+        console.log(`Character:"${char}"`);
+        throw new Error("Invalid NAG annotation code");
+      } else {
+        annotation += char;
+      }
+    } else if (char === "$") {
+      reading = "annotation";
+    } else if (
+      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
+      isDigit(char)
+    ) {
+      reading = "move-count";
+      moveCount = char;
+      if (currentData.pgn) postCurrentData();
+    } else if (char === "(") {
+      if (currentData.pgn) postCurrentData();
+      const path: Node[] = currentParent ? getPath(currentParent["key"]) : [];
+      const prevParent = path[path.length - 2] || null;
+      variationStack.push(currentParent);
+      currentParent = prevParent;
+      console.log(`variationstack: ${variationStack.map((node) => node && node.data.PGN)}`);
+    } else if (char === ")") {
+      if (currentData.pgn) postCurrentData();
+      const nextParent = variationStack.pop();
+      currentParent = nextParent || null;
+    } else if (reading === "move-count") {
+      if (isDigit(char)) moveCount += char;
+      else if (char === " ") reading = "pgn";
+      else if (char !== ".") {
+        currentMove = char;
+        reading = "pgn";
+      }
+    } else if (reading === "pgn") {
+      if (char === " " && currentMove.length) {
+        reading = "unknown";
+        currentData.pgn = currentMove;
+        currentMove = "";
+      } else if (char === " ") {
+        reading = "unknown";
+      } else currentMove += char;
+    } else if (reading === "unknown") {
+      const specialChars = [" ", "$", "(", ")", "{", "}"];
+      if (!isDigit(char) && !specialChars.includes(char)) {
+        if (currentData.pgn) postCurrentData();
+        reading = "pgn";
+        currentMove = char;
+      }
+    }
+    prevChar = char;
+  }
+  if (currentData.pgn) postCurrentData();
+  return buildTreeArray(map);
+}
