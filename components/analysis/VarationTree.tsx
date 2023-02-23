@@ -280,13 +280,18 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
   return (
     <div
       ref={ref}
+      onContextMenu={() => {}}
       onClick={() => {
         if (node) {
           setSelectedKey(node.key);
         }
       }}
-      className={`cursor-pointer border-white/[0.2] border-r h-full p-2 ${
-        selected ? "bg-blue-400/[0.2]" : ""
+      className={` border-white/[0.2] border-r h-full p-2 ${
+        selected
+          ? "bg-blue-400/[0.2] cursor-pointer"
+          : node
+          ? "hover:bg-white/[0.1] cursor-pointer"
+          : ""
       } `}
     >
       <div className="flex flex-row justify-between items-center">
