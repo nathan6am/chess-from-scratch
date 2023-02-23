@@ -114,18 +114,7 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = [
-    "depth",
-    "multipv",
-    "score",
-    "seldepth",
-    "time",
-    "nodes",
-    "nps",
-    "time",
-    "pv",
-    "hashfull",
-  ];
+  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -209,6 +198,7 @@ export interface FinalEvaluation {
   depth: number;
   bestMove: UCIMove;
   time: number;
+  isCloud?: boolean;
 }
 export async function getEvaluation(
   evaler: Worker,
@@ -284,7 +274,7 @@ export async function getEvaluation(
   return final;
 }
 
-function parseUciMove(uci: string): UCIMove {
+export function parseUciMove(uci: string): UCIMove {
   const args: string[] = uci.trim().match(/.{1,2}/g) || [];
   if (!args[0] || ![args[1]]) throw new Error("invalid uci move");
   let move: UCIMove = {

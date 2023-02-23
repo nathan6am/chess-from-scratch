@@ -6,7 +6,7 @@ import ProgressBar from "./ProgressBar";
 import { BiHide } from "react-icons/bi";
 import _ from "lodash";
 import { VscExpandAll } from "react-icons/vsc";
-import { MdSettings, MdExpandMore } from "react-icons/md";
+import { MdSettings, MdExpandMore, MdCloud } from "react-icons/md";
 import { Popover } from "@headlessui/react";
 import { usePopper } from "react-popper";
 interface Props {
@@ -39,10 +39,7 @@ function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
     let currentGame = _.cloneDeep(game);
     line.moves.forEach((uciMove) => {
       const move = currentGame.legalMoves.find(
-        (move) =>
-          move.start === uciMove.start &&
-          move.end === uciMove.end &&
-          move.promotion === uciMove.promotion
+        (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
       );
       if (!move) {
         return result;
@@ -59,14 +56,7 @@ function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
   }
 }
 
-export default function EvalInfo({
-  evaler,
-  enabled,
-  setEnabled,
-  moveKey,
-  currentGame,
-  attemptMoves,
-}: Props) {
+export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, currentGame, attemptMoves }: Props) {
   let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   let [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   let { styles, attributes } = usePopper(referenceElement, popperElement, {
@@ -100,10 +90,7 @@ export default function EvalInfo({
     const uciMove = evaler.bestMove;
     if (!uciMove) return null;
     const move = currentGame.legalMoves.find(
-      (move) =>
-        move.start === uciMove.start &&
-        move.end === uciMove.end &&
-        move.promotion === uciMove.promotion
+      (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
     );
     return move?.PGN || null;
   }, [evaler.bestMove]);
@@ -118,7 +105,12 @@ export default function EvalInfo({
             <div className="flex flex-row p-2 pl-4 justify-between items-center grow">
               <div className={`flex flex-col ${enabled ? "" : "opacity-20"}`}>
                 <h2 className="text-2xl font-semibold text-left">{score}</h2>
-                <p className="text-xs opacity-70">{`Current depth: ${evaler.currentDepth}/${evaler.currentOptions.depth}`}</p>
+                <p className="text-xs opacity-70">
+                  {`Current depth: ${evaler.currentDepth}/${evaler.currentOptions.depth}`}
+                  {evaler.evaluation?.isCloud && !evaler.inProgress ? (
+                    <MdCloud className="opacity-60 inline text-lg ml-1 mb-1" />
+                  ) : null}
+                </p>
               </div>
               <Toggle
                 checked={enabled}
@@ -138,20 +130,12 @@ export default function EvalInfo({
             </Popover.Button>
           </div>
 
-          <Popover.Panel
-            ref={setPopperElement}
-            className="z-50"
-            style={styles.popper}
-            {...attributes.popper}
-          >
+          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
       </div>
-      <ProgressBar
-        progress={enabled ? progress : 0}
-        key={`${moveKey}${evaler.inProgress ? "a" : "b"}`}
-      />
+      <ProgressBar progress={enabled ? progress : 0} key={`${moveKey}${evaler.inProgress ? "a" : "b"}`} />
       {enabled && (
         <>
           <div
@@ -205,14 +189,7 @@ export default function EvalInfo({
               {evaler.evaluation &&
                 !evaler.inProgress &&
                 parsedLines.map((line, idx) => {
-                  return (
-                    <RenderLine
-                      key={idx}
-                      line={line}
-                      attemptMoves={attemptMoves}
-                      currentGame={currentGame}
-                    />
-                  );
+                  return <RenderLine key={idx} line={line} attemptMoves={attemptMoves} currentGame={currentGame} />;
                 })}
             </div>
           )}
@@ -242,11 +219,7 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p
-        className={`${
-          expanded ? "" : "truncate"
-        } bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}
-      >
+      <p className={`${expanded ? "" : "truncate"} bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
@@ -267,11 +240,7 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore
-          className={` transition-transform duration-400 text-xl ${
-            expanded ? "" : "rotate-[-90deg]"
-          }`}
-        />
+        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
       </button>
     </div>
   );
@@ -288,9 +257,7 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
-          {Chess.moveCountToNotation(moveCount)}
-        </span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"
@@ -304,13 +271,26 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
 
 function OptionsMenu({ evaler }: { evaler: Evaler }) {
   return (
-    <div className="w-full py-2 px-4 bg-[#363636] rounded-md shadow-lg">
+    <div className="w-full p-4 bg-[#363636] rounded-md shadow-lg">
       <Toggle
-        label="Use NNUE"
+        className="mb-3"
+        label="NNUE"
+        labelClasses="text-sm opacity-75"
         checked={evaler.currentOptions.useNNUE}
         onChange={(enabled) => {
           evaler.updateOptions({
             useNNUE: enabled,
+          });
+        }}
+      />
+      <Toggle
+        className="mb-3"
+        label="Cloud Evaluation"
+        labelClasses="text-sm opacity-75"
+        checked={evaler.currentOptions.useCloud}
+        onChange={(enabled) => {
+          evaler.updateOptions({
+            useCloud: enabled,
           });
         }}
       />

@@ -1,28 +1,75 @@
 import React, { useReducer, useRef, useMemo, useState, useEffect, useCallback } from "react";
 import * as commands from "@/lib/chess/UciCmds";
-import { NodeData } from "@/lib/chess";
+import { NodeData, Color } from "@/lib/chess";
 import type { FinalEvaluation, PartialEval, EvalScore } from "@/lib/chess/UciCmds";
-
+import axios from "axios";
 interface Options {
   multiPV: number;
   useNNUE: boolean;
   depth: number;
-  useCloud?: boolean;
+  useCloud: boolean;
 }
 const defaultOptions = {
+  useCloud: true,
   multiPV: 3,
   useNNUE: true,
   depth: 18,
 };
+interface CloudEval {
+  depth: number;
+  fen: string;
+  knodes: number;
+  pvs: Array<{ cp?: number; mate?: number; moves: string }>;
+}
 
+function pvToLine(pv: { cp?: number; mate?: number; moves: string }): commands.Line {
+  if (pv.cp === undefined && pv.mate === undefined) throw new Error("Invalid pv object");
+  if (!(pv.cp || pv.cp === 0) && !(pv.mate || pv.mate === 0)) throw new Error("Invalid pv object");
+  const score: commands.EvalScore =
+    pv.cp || pv.cp === 0 ? { type: "cp", value: pv.cp } : { type: "mate", value: pv.mate || 0 };
+  const moves = pv.moves.split(" ").map((move) => commands.parseUciMove(move));
+  return {
+    score,
+    moves,
+  };
+}
+function convertCloudEval(cloudEval: CloudEval, activeColor: Color): FinalEvaluation {
+  if (!cloudEval.pvs.length) throw new Error("No lines");
+
+  const lines = cloudEval.pvs.map((pv) => pvToLine(pv));
+  lines.sort((lineA, lineB) => {
+    const scoreA = lineA.score;
+    const scoreB = lineB.score;
+    if (scoreA.type === "mate" && scoreB.type === "mate") {
+      if (activeColor === "w") return scoreA.value - scoreB.value;
+      return scoreB.value - scoreA.value;
+    } else if (scoreA.type === "mate" || scoreB.type === "mate") {
+      if (scoreA.type === "mate" && scoreA.value < 0) return activeColor === "w" ? 1 : -1;
+      if (scoreA.type === "mate" && scoreA.value >= 0) return activeColor === "w" ? -1 : 1;
+      if (scoreA.type === "cp" && scoreB.value < 0) return activeColor === "w" ? -1 : 1;
+      return activeColor === "w" ? 1 : -1;
+    } else {
+      if (activeColor === "w") return scoreB.value - scoreA.value;
+      return scoreA.value - scoreB.value;
+    }
+  });
+
+  const bestMove = commands.parseUciMove(cloudEval.pvs[0].moves[0]);
+  const score = lines[0].score;
+  return {
+    bestMove,
+    lines,
+    depth: cloudEval.depth,
+    isCloud: true,
+    time: 0,
+    score,
+  };
+}
 export interface Evaler {
   currentOptions: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
-  getEvaluation: (
-    fen: string,
-    cachedEval?: FinalEvaluation | undefined
-  ) => Promise<FinalEvaluation | undefined>;
+  getEvaluation: (fen: string, cachedEval?: FinalEvaluation | undefined) => Promise<FinalEvaluation | undefined>;
   currentDepth: number;
   currentScore: EvalScore | null;
   error: Error | null;
@@ -59,9 +106,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(
-      wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
-    );
+    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
   }, []);
 
   //Verify engine is ready
@@ -104,16 +149,34 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       const evaler = stockfishRef.current;
       if (inProgress) await commands.stop(evaler);
 
-      if (
-        cachedEval &&
-        cachedEval.depth >= options.depth &&
-        cachedEval.lines.length >= options.multiPV
-      ) {
+      if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
         setEvaluation(cachedEval);
         setCurrentDepth(cachedEval.depth);
         setCurrentScore(cachedEval.score);
 
         return;
+      } else if (options.useCloud) {
+        try {
+          const res = await axios.get("https://lichess.org/api/cloud-eval", {
+            params: {
+              fen,
+              multiPv: options.multiPV,
+            },
+          });
+
+          if (res.status === 200 && res.data) {
+            const activeColor = fen.split(" ")[1] as Color;
+            const cloudEval: CloudEval = res.data;
+            const evaluation = convertCloudEval(cloudEval, activeColor);
+            setEvaluation(evaluation);
+            setCurrentDepth(evaluation.depth);
+            setCurrentScore(evaluation.score);
+            setBestMove(evaluation.bestMove);
+            return;
+          }
+        } catch (e) {
+          console.log(e);
+        }
       }
       setCurrentDepth(0);
       //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument

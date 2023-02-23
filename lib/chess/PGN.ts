@@ -15,7 +15,7 @@ export function moveToPgn(
   var notation = "";
   if (move.isCastle) {
     let coords = squareToCoordinates(move.end);
-    if (coords[0] === 6) {
+    if (coords[0] === 6 || coords[0] === 7) {
       notation = "O-O";
     } else {
       notation = "O-O-O";

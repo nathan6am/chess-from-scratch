@@ -10,7 +10,7 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
 }
 
 .boardColumn {
-  max-width: calc(100vh - 200px - 8em);
+  max-width: calc(100vh - 120px - 8em);
   @include large {
     max-width: calc(100vh - 160px);
   }
@@ -20,7 +20,7 @@ $lastmove-highlight: rgba(17, 192, 255, 0.5);
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   width: 100%;
-  max-width: calc(100vh - 200px - 8em);
+  max-width: calc(100vh - 120px - 8em);
   max-height: 100vw;
   aspect-ratio: 1;
   position: relative;

@@ -108,5 +108,6 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
     data,
     error,
     isLoading: debounceSyncRef.current ? isLoading : true,
+    sourceGame: debouncedGame,
   };
 }

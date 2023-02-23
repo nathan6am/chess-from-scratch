@@ -13,10 +13,7 @@ import { Tab } from "@headlessui/react";
 import AnalysisPanel from "./AnalysisPanel";
 export default function AnalysisBoard() {
   const testString = ` 1. Rxb5+ (1. Ne5 $143 Kxb6 2. Nd7+ Kc6 3. Nxf8 Bxg4 4. Nh7 Bd1 5. Nxg5 b4 $11) 1... Kxb5 2. Ne5+ Ka4 3. Nd7 Be2 4. Bxe2 Rb8+ 5. Bb5+ Rxb5+ 6. Ka2 Rb1 7. Kxb1 $18`;
-  const analysis = useAnalysisBoard({
-    startPosition: "5r2/8/1R6/ppk3p1/2N3P1/P4b2/1K6/5B2 w - - 0 1",
-    pgnSource: testString,
-  });
+  const analysis = useAnalysisBoard();
   const {
     currentGame,
     onMove,
@@ -40,6 +37,7 @@ export default function AnalysisBoard() {
 
   return (
     <div className="flex flex-col h-full w-full justify-center">
+      <div className="w-full h-8 bg-[#404040]"></div>
       <BoardRow>
         <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
           <BoardColumn className={evalEnabled ? "items-center" : "items-center"}>
@@ -92,7 +90,7 @@ export default function AnalysisBoard() {
                 data={explorer.data}
                 error={explorer.error}
                 isLoading={explorer.isLoading}
-                currentGame={currentGame}
+                currentGame={explorer.sourceGame}
                 onMove={onMove}
               />
             </Tab.Panel>

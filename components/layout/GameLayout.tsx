@@ -8,7 +8,7 @@ export interface LayoutComponentProps {
 export function BoardColumn({ children, className }: LayoutComponentProps) {
   return (
     <div
-      className={`flex flex-col h-full basis-[100vh] shrink-1 justify-start lg:justify-center ${className}`}
+      className={`flex flex-col h-full  lg:basis-[100vh] grow shrink-1 justify-start items-center lg:justify-center ${className}`}
     >
       <div className={`w-full ${styles.boardColumn}`}>{children}</div>
     </div>
@@ -17,9 +17,7 @@ export function BoardColumn({ children, className }: LayoutComponentProps) {
 
 export function BoardRow({ children }: LayoutComponentProps) {
   return (
-    <div className="flex flex-row h-full w-full items-center justify-center py-6 lg:py-10">
-      {children}
-    </div>
+    <div className="flex flex-row h-full w-full items-center justify-center lg:py-6 lg:pb-10 lg:pt-4">{children}</div>
   );
 }
 
@@ -35,8 +33,8 @@ export function PanelColumn({ children }: LayoutComponentProps) {
 
 export function PanelColumnLg({ children }: LayoutComponentProps) {
   return (
-    <div className="h-full hidden lg:block max-h-[1060px]">
-      <div className="h-full w-[460px] xl:w-[500px] flex flex-col justify-center mx-4 py-10">
+    <div className="h-full hidden lg:block max-h-[1200px]">
+      <div className="h-full w-[460px] xl:w-[500px] flex flex-col justify-center mx-4 py-6">
         <div className="h-full  w-full  flex flex-col">{children}</div>
       </div>
     </div>

@@ -3,10 +3,7 @@ import Board from "@/components/game/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import Result from "@/components/UI/dialogs/Result";
-import useChessOnline, {
-  BoardControls as IBoardControls,
-  GameControls as IGameControls,
-} from "@/hooks/useChessOnline";
+import useChessOnline, { BoardControls as IBoardControls, GameControls as IGameControls } from "@/hooks/useChessOnline";
 import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
 
@@ -16,7 +13,7 @@ import { Player } from "@/server/types/lobby";
 import { BoardColumn, BoardRow, PanelColumn, PanelContainer } from "./layout/GameLayout";
 import { DurationObjectUnits } from "luxon";
 import GameControls from "./game/GameControls";
-import MoveHistory from "./game/MoveHistory";
+import MoveHistory, { MoveTape } from "./game/MoveHistory";
 
 interface Props {
   lobbyid: string;
@@ -57,22 +54,28 @@ export default function GameOnline({ lobbyid }: Props) {
     return <div>Connecting...</div>;
   }
   //TODO: Add connecting component
-  if (!currentGame)
-    return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
+  if (!currentGame) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
   const gameData = currentGame.data;
   return (
-    <div className="flex flex-col h-full w-full justify-center">
-      <Result
-        outcome={gameData.outcome}
-        isOpen={gameData.outcome ? true : false}
-        close={() => {}}
-      />
+    <div className="flex flex-col h-full w-screen justify-center">
+      <Result outcome={gameData.outcome} isOpen={gameData.outcome ? true : false} close={() => {}} />
       <BoardRow>
         <BoardColumn>
+          <div className="w-full lg:hidden">
+            <MoveTape
+              moveHistory={gameData.moveHistory}
+              jumpToOffset={boardControls.jumpToOffset}
+              currentOffset={livePositionOffset}
+              usePieceIcons={true}
+            />
+          </div>
           <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
-            <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
-            {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
+            <div className="flex flex-row w-full justify-between">
+              {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
+              <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
+            </div>
+
             <Board
               orientation={orientation}
               legalMoves={gameData.legalMoves}
@@ -88,12 +91,22 @@ export default function GameOnline({ lobbyid }: Props) {
               onMove={gameControls.onMove}
               onPremove={() => {}}
             />
-            {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
-            <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
+            <div className="flex flex-row w-full justify-between">
+              {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
+              <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
+            </div>
           </div>
 
-          <div className="min-h-[120px] w-full py-2 block lg:hidden">
+          <div className="min-h-[120px] w-full block lg:hidden">
             <BoardControls controls={boardControls} />
+            <GameControls
+              size="sm"
+              className="bg-white/[0.1]"
+              gameControls={gameControls}
+              flipBoard={() => {
+                setOrientation((cur) => (cur === "w" ? "b" : "w"));
+              }}
+            />
           </div>
         </BoardColumn>
         <PanelColumn>
@@ -136,7 +149,7 @@ function PanelOnline({
     <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full h-full`}>
       <Clock color="b" timeRemaining={timeRemaining.b} size="lg" className="my-4" />
       <PanelContainer>
-        <GameControls gameControls={gameControls} flipBoard={flipBoard} />
+        <GameControls gameControls={gameControls} flipBoard={flipBoard} size="lg" />
         <MoveHistory
           moveHistory={moveHistory}
           jumpToOffset={boardControls.jumpToOffset}

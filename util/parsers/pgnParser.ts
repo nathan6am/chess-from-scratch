@@ -1,7 +1,7 @@
-import * as Chess from "../lib/chess";
+import * as Chess from "../../lib/chess";
 import { v4 as uuidv4 } from "uuid";
-import { TreeNode } from "./useTreeData";
-import { notEmpty } from "../util/misc";
+import { TreeNode } from "../../hooks/useTreeData";
+import { notEmpty } from "../misc";
 
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;

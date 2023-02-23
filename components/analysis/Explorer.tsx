@@ -36,9 +36,7 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
       <div className="w-full h-[400px] flex flex-col">
         <div className="w-full p-2 px-3 text-md bg-[#202020] shadow-md">
           {`Opening: ${opening?.name || "Starting Position"}`}
-          <span className="inline text-sepia/[0.8]">{`${
-            opening?.eco ? ` (${opening.eco})` : ""
-          }`}</span>
+          <span className="inline text-sepia/[0.8]">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
         </div>
         <div className="w-full grow relative">
           <ScrollContainer>
@@ -52,11 +50,7 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
               {data && !isLoading && (
                 <>
                   {data.moves.map((moveData) => (
-                    <RenderMoveRow
-                      attemptMove={attemptMove}
-                      moveData={moveData}
-                      key={moveData.uci}
-                    />
+                    <RenderMoveRow attemptMove={attemptMove} moveData={moveData} key={moveData.uci} />
                   ))}
                 </>
               )}
@@ -65,7 +59,7 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
           <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5]"></div>
         </div>
       </div>
-      <TopGames games={data?.topGames || []} />
+      <TopGames games={data?.topGames || []} sourceGame={currentGame} attemptMove={attemptMove} />
     </div>
   );
 }
@@ -90,12 +84,7 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
         </button>
         <p className="text-xs ">{totalGames}</p>
       </div>
-      <PercentageBar
-        total={totalGames}
-        black={moveData.black}
-        draws={moveData.draws}
-        white={moveData.white}
-      />
+      <PercentageBar total={totalGames} black={moveData.black} draws={moveData.draws} white={moveData.white} />
     </div>
   );
 }
@@ -114,26 +103,20 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
           className="bg-white text-black text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((white / total) * 100)}%` }}
         >
-          <p>{`${
-            Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white
-          }`}</p>
+          <p>{`${Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white}`}</p>
         </div>
       )}
       {draws > 0 && (
         <div
           className="bg-[#363636] text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((draws / total) * 100)}%` }}
-        >{`${
-          Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws
-        }`}</div>
+        >{`${Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws}`}</div>
       )}
       {black > 0 && (
         <div
           className="bg-black grow text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((black / total) * 100)}%` }}
-        >{`${
-          Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black
-        }`}</div>
+        >{`${Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black}`}</div>
       )}
     </div>
   );
@@ -141,15 +124,17 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
 
 interface TopGameProps {
   games: DBGameData[];
+  sourceGame: Chess.Game;
+  attemptMove: (san: string) => void;
 }
-function TopGames({ games }: TopGameProps) {
+function TopGames({ games, sourceGame, attemptMove }: TopGameProps) {
   return (
     <div className="w-full grow overflow-hidden flex flex-col">
       <div className="w-full bg-white/[0.1] py-1 px-3">Top Games</div>
       <div className="w-full grow relative">
         <ScrollContainer>
           {games.map((game) => (
-            <RenderGame key={game.id} game={game} />
+            <RenderGame key={game.id} game={game} sourceGame={sourceGame} attemptMove={attemptMove} />
           ))}
         </ScrollContainer>
       </div>
@@ -157,29 +142,53 @@ function TopGames({ games }: TopGameProps) {
   );
 }
 
-function RenderGame({ game }: { game: DBGameData }) {
+function RenderGame({
+  game,
+  sourceGame,
+  attemptMove,
+}: {
+  game: DBGameData;
+  sourceGame: Chess.Game;
+  attemptMove: (san: string) => void;
+}) {
+  const movePGN = useMemo(() => {
+    const uci = game.uci ? Chess.parseUciMove(game.uci) : null;
+    if (!uci) return null;
+    return (
+      sourceGame.legalMoves.find(
+        (move) =>
+          move.start === uci.start && move.end === uci.end && (move.promotion ? move.promotion === uci.promotion : true)
+      )?.PGN || null
+    );
+  }, [game, sourceGame]);
   return (
     <div className="flex flex-row w-full items-center border-b justify-between px-2 pr-4">
-      <div className="flex flex-row w-full items-center ">
+      <div className="flex flex-row w-fit items-center ">
         <div className="flex flex-col w-[220px] text-xs p-1 ">
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
             {game.white.name}
-            <span className="inline opacity-60 ml-1">
-              {game.white.rating && `(${game.white.rating})`}
-            </span>
+            <span className="inline opacity-60 ml-1">{game.white.rating && `(${game.white.rating})`}</span>
           </p>
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
             {game.black.name}
-            <span className="inline opacity-60 ml-1">
-              {game.black.rating && `(${game.black.rating})`}
-            </span>
+            <span className="inline opacity-60 ml-1">{game.black.rating && `(${game.black.rating})`}</span>
           </p>
         </div>
         <RenderGameResult winner={game.winner} />
       </div>
       <p className="text-sm">{game.month || game.year}</p>
+      <button
+        onClick={() => {
+          if (movePGN) {
+            attemptMove(movePGN);
+          }
+        }}
+        className="text-sm px-1 py-1 bg-white/[0.1] hover:bg-white/[0.2] rounded-sm w-[50px] mr-2 text-center"
+      >
+        {movePGN || "-"}
+      </button>
     </div>
   );
 }
