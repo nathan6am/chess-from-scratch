@@ -6,11 +6,10 @@ import * as Chess from "@/lib/chess";
 import { AnimSpeedEnum } from "@/context/settings";
 import usePointerCoordinates from "@/hooks/usePointerCoordinates";
 import { useResizeDetector } from "react-resize-detector";
-import Draggable from "react-draggable";
-import Image from "next/image";
 import _ from "lodash";
 import Piece from "./Piece";
-import { position } from "html2canvas/dist/types/css/property-descriptors/position";
+import useBoardTheme from "@/hooks/useBoardTheme";
+import usePieceSet from "@/hooks/usePieceSet";
 interface Props {
   orientation: Chess.Color;
   pieces: Chess.Board;
@@ -20,12 +19,14 @@ interface Props {
   moveable: Chess.Color | "both" | "none";
   preMoveable: boolean;
   animationSpeed: "slow" | "fast" | "normal" | "disabled";
+  movementType: "click" | "drag" | "both";
   showTargets: boolean;
   showHighlights: boolean;
   autoQueen: boolean;
   onMove: (move: Chess.Move) => void;
   onPremove: (start: Chess.Square, end: Chess.Square) => void;
   premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
+  pieceSet: string;
 }
 
 // Hook to track the current square of the pointer
@@ -57,15 +58,22 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
       moveable,
       preMoveable,
       autoQueen,
+      movementType,
       animationSpeed,
       showTargets,
       showHighlights,
       onMove,
       onPremove,
+      pieceSet,
     }: Props,
     ref
   ) => {
     const boardRef = useRef<HTMLDivElement>(null);
+
+    //Load board/pieces css
+    useBoardTheme("marble-2");
+    usePieceSet(pieceSet);
+
     // Track the current square of the pointer
     const currentSquare = useCurrentSquare(orientation, boardRef);
 
@@ -75,6 +83,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
     //Show Promotion Menu
     const [promotionMove, setPromotionMove] = useState<{ start: Chess.Square; end: Chess.Square } | null>(null);
 
+    useEffect(() => {
+      setPromotionMove(null);
+    }, [lastMove]);
     /* Callback to execute when a selected piece is dropped on a square; 
   if the drop square is a valid move, it calls the passed `onMove` prop, passing it the 
   selected piece and the target square */
@@ -176,8 +187,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
 
     return (
       <>
-        <div className={`${styles.board} relative mx-0`} ref={mergeRefs([ref, boardRef])}>
+        <div className={`${styles.board} relative mx-0 board-bg`} ref={mergeRefs([ref, boardRef])}>
           <PromotionMenu
+            cancel={() => setPromotionMove(null)}
             orientation={orientation}
             promotionMove={promotionMove}
             activeColor={activeColor}
@@ -196,34 +208,42 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
             }}
           />
           {boardMap.map((row) =>
-            row.map((square) => (
-              <RenderSquare
-                key={square}
-                hasPiece={pieces.some((piece) => piece[0] === square)}
-                isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
-                isSelected={(selectedPiece && selectedPiece[0] === square) || false}
-                square={square}
-                color={Chess.getSquareColor(square)}
-                onSelectTarget={() => {
-                  onSelectTarget(square);
-                }}
-                isPremoved={false}
-                showTargets={showTargets}
-                showHighlights={showHighlights}
-                clearSelection={clearSelection}
-                squareSize={squareSize}
-                hovered={currentSquare === square}
-                isLastMove={lastMove?.start === square || lastMove?.end === square}
-              />
-            ))
+            row.map((square) => {
+              const piece = pieces.find((piece) => piece[0] === square);
+              return (
+                <RenderSquare
+                  activeColor={activeColor}
+                  key={square}
+                  piece={piece ? piece[1] : null}
+                  isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                  isSelected={(selectedPiece && selectedPiece[0] === square) || false}
+                  square={square}
+                  color={Chess.getSquareColor(square)}
+                  onSelectTarget={() => {
+                    onSelectTarget(square);
+                  }}
+                  setSelectedPiece={setSelectedPiece}
+                  isPremoved={false}
+                  showTargets={showTargets}
+                  showHighlights={showHighlights}
+                  clearSelection={clearSelection}
+                  squareSize={squareSize}
+                  hovered={currentSquare === square}
+                  isLastMove={lastMove?.start === square || lastMove?.end === square}
+                  orientation={orientation}
+                />
+              );
+            })
           )}
           {pieces.map(([square, piece]) => (
             <Piece
+              selectedPiece={selectedPiece}
               animationSpeed={AnimSpeedEnum[animationSpeed]}
               setSelectedPiece={setSelectedPiece}
               key={`${piece.key}${orientation}`}
               piece={piece}
               square={square}
+              movementType={movementType}
               disabled={
                 (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
               }
@@ -240,18 +260,21 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
 
 interface SquareProps {
   squareSize: number;
-  hasPiece: boolean;
+  piece: Chess.Piece | null;
   isTarget: boolean;
+  setSelectedPiece: (piece: [Chess.Square, Chess.Piece] | null) => void;
   isSelected: boolean;
   square: Chess.Square;
   isLastMove: boolean;
   isPremoved: boolean;
   color: Chess.Color;
+  activeColor: Chess.Color;
   onSelectTarget: any;
   hovered: boolean;
   showTargets: boolean;
   showHighlights: boolean;
   clearSelection: () => void;
+  orientation: Chess.Color;
 }
 
 function RenderSquare({
@@ -261,28 +284,59 @@ function RenderSquare({
   square,
   isLastMove,
   isPremoved,
-  hasPiece,
+  activeColor,
+  piece,
   color,
   onSelectTarget,
   hovered,
   showTargets,
   showHighlights,
+  setSelectedPiece,
   clearSelection,
+  orientation,
 }: SquareProps) {
+  const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
+  const showRank = useMemo(
+    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7),
+    [orientation, coordinates]
+  );
+  const showFile = useMemo(
+    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7),
+    [orientation, coordinates]
+  );
+  const [file, rank] = square.split("");
   return (
     <div
       onClick={() => {
         if (isTarget) onSelectTarget();
         else clearSelection();
       }}
-      className={`${styles.square} ${color === "w" ? styles.light : styles.dark} `}
+      className={`${styles.square} ${color === "w" ? "square-light" : "square-dark"} `}
     >
+      {showRank && (
+        <span
+          className={`text-xs md:text-sm xl:text-md absolute top-[1px] md:top-[2px] xl:top-[3px] left-[2px] md:left-[3px] xl:left-[4px] ${
+            color === "w" ? "on-light" : "on-dark"
+          } opacity-80`}
+        >
+          {rank}
+        </span>
+      )}
+      {showFile && (
+        <span
+          className={`text-xs md:text-sm xl:text-md absolute bottom-[1px] md:bottom-[2px] xl:bottom-[3px] right-[2px] md:right-[3px] xl:right-[4px] ${
+            color === "w" ? "on-light" : "on-dark"
+          } opacity-80`}
+        >
+          {file}
+        </span>
+      )}
       <div
-        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.hover} ${
+        className={`${styles.contents} ${isTarget && showTargets && hovered && "target-hover-highlight"} ${
           isSelected && styles.selected
         } ${isLastMove && showHighlights && styles.lastmove}`}
       >
-        {isTarget && showTargets && <div className={hasPiece ? styles.ring : styles.dot} />}
+        {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
     </div>
   );
@@ -295,7 +349,7 @@ interface PromotionProps {
   onSelect: (type: Chess.PieceType) => void;
   cancel?: () => void;
 }
-function PromotionMenu({ promotionMove, orientation, activeColor, onSelect }: PromotionProps) {
+function PromotionMenu({ promotionMove, orientation, activeColor, onSelect, cancel }: PromotionProps) {
   if (!promotionMove) return <></>;
   const [file] = Chess.squareToCoordinates(promotionMove.end);
   const col = orientation === "w" ? 1 + file : 8 - file;
@@ -304,6 +358,7 @@ function PromotionMenu({ promotionMove, orientation, activeColor, onSelect }: Pr
     <>
       {promotionMove && (
         <div
+          onClick={cancel}
           className={`${styles.promotionMenu} absolute top-0 bottom-0 left-0 right-0 bg-black/[0.5]`}
           style={{ zIndex: 300 }}
         >
@@ -362,14 +417,12 @@ function PromotionRow({ position, pieceType, color, row, onSelect }: PromotionRo
         style={{ gridColumnStart: position, gridRowStart: row }}
         className={`${styles.square} box-border border-4 cursor-pointer  border-[#cfcfcf]/[0.8] hover:border-white rounded-full bg-[#505050]/[0.5] backdrop-blur-lg group flex justify-center items-center`}
       >
-        <img
-          className="group-hover:scale-110 ease-in-out duration-200"
-          src={`/assets/pieces/standard/${color}${pieceType}.png`}
-          alt={`${color}${pieceType}`}
-          height="90%"
-          width="90%"
+        <div
+          className={`${styles.piece} ${color}${pieceType} bg-cover group-hover:scale-110 ease-in-out duration-200`}
           style={{
             pointerEvents: "none",
+            width: `90%`,
+            height: `90%`,
           }}
         />
       </div>

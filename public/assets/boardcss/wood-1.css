@@ -1,0 +1,32 @@
+.square-light {
+  background-color: transparent;
+}
+
+.square-dark {
+  background-color: transparent;
+}
+
+.board-bg {
+  background-image: url("/assets/boardcss/wood-1-bg.jpg");
+  background-size: contain;
+}
+
+.selected-highlight {
+  background-color: rgba(255, 3, 62, 0.3);
+}
+
+.lastmove-highlight {
+  background-color: rgba(17, 192, 255, 0.2);
+}
+
+.target-hover-highlight {
+  background-color: rgba(255, 229, 59, 0.3);
+}
+
+.on-light {
+  color: #443830;
+}
+
+.on-dark {
+  color: #c7a98d;
+}

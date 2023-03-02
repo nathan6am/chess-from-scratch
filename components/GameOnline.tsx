@@ -77,6 +77,7 @@ export default function GameOnline({ lobbyid }: Props) {
             </div>
 
             <Board
+              pieceSet="default"
               orientation={orientation}
               legalMoves={gameData.legalMoves}
               showHighlights={true}

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stop = exports.getEvaluation = exports.startup = exports.ready = exports.setSkillLevel = exports.limitStrength = exports.initialize = void 0;
+exports.stop = exports.parseUciMove = exports.getEvaluation = exports.startup = exports.ready = exports.setSkillLevel = exports.limitStrength = exports.initialize = void 0;
 function initialize(stockfish) {
     stockfish.postMessage("uci");
 }
@@ -110,18 +110,7 @@ function startup(stockfish) {
 exports.startup = startup;
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args) {
-    const values = [
-        "depth",
-        "multipv",
-        "score",
-        "seldepth",
-        "time",
-        "nodes",
-        "nps",
-        "time",
-        "pv",
-        "hashfull",
-    ];
+    const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
     let reading = "";
     let evaluation = {
         depth: 0,
@@ -257,6 +246,7 @@ function parseUciMove(uci) {
         move.promotion = args[2];
     return move;
 }
+exports.parseUciMove = parseUciMove;
 function stop(stockfish, timeout) {
     return __awaiter(this, void 0, void 0, function* () {
         let timer;

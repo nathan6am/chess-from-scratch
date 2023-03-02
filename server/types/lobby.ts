@@ -116,8 +116,13 @@ export interface LobbyClientToServerEvents<isServer extends boolean = false, isS
   "game:move": (args: { move: Chess.Move; lobbyid: string }, ack: (response: SocketResponse<Game>) => void) => void;
 
   "game:offer-draw": (lobbyid: string) => void;
+
   "game:resign": (lobbyid: string) => void;
+
   "test:timeout": () => void;
+
+  "game:update": (lobbyid: string, ack: (response: SocketResponse<Game>) => void) => void;
+
   "lobby:request-rematch": (lobbyid: string, ack: (status: boolean) => void) => void;
 }
 

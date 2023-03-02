@@ -8,12 +8,14 @@ interface Options {
   useNNUE: boolean;
   depth: number;
   useCloud: boolean;
+  showEvalBar: boolean;
 }
 const defaultOptions = {
   useCloud: true,
   multiPV: 3,
   useNNUE: true,
   depth: 18,
+  showEvalBar: true,
 };
 interface CloudEval {
   depth: number;

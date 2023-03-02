@@ -7,9 +7,11 @@ import styles from "@/styles/Board.module.scss";
 
 interface PieceProps {
   piece: Chess.Piece;
-  setSelectedPiece: (piece: [Chess.Square, Chess.Piece]) => void;
+  selectedPiece: [Chess.Square, Chess.Piece] | null;
+  setSelectedPiece: (piece: [Chess.Square, Chess.Piece] | null) => void;
   onDrop: () => void;
   disabled: boolean;
+  movementType: "click" | "drag" | "both";
   squareSize: number;
   orientation: Chess.Color;
   square: Chess.Square;
@@ -18,26 +20,34 @@ interface PieceProps {
 
 export default function Piece({
   piece,
+  selectedPiece,
   setSelectedPiece,
   onDrop,
   disabled,
   square,
   squareSize,
   orientation,
+  movementType,
   animationSpeed,
 }: PieceProps) {
+  const selectedRef = useRef<boolean>(false);
   //Prevent deprecated findDomNode warning
   const nodeRef = React.useRef<HTMLDivElement>(null);
   const hiddenRef = useRef<boolean>(true);
   const previousSquare = useRef<Chess.Square>(square);
   const [dragging, setDragging] = useState(false);
 
+  useEffect(() => {
+    if (!_.isEqual(selectedPiece, [square, piece])) {
+      selectedRef.current = false;
+    }
+  }, [selectedPiece]);
   //Delay visibility slightly to prevent flashing in origin position
   const hidden = hiddenRef.current;
   useEffect(() => {
     setTimeout(() => {
       hiddenRef.current = false;
-    }, 10);
+    }, 3);
   }, []);
 
   //Calculate coordinates from square & orientation
@@ -95,9 +105,10 @@ export default function Piece({
       setPosition(positionNew);
     }
   }, [square, dragging, orientation, squareSize, coordinates, animationSpeed]);
-
+  const draggable = movementType === "both" || movementType === "drag";
   return (
     <Draggable
+      disabled={!draggable}
       nodeRef={nodeRef}
       allowAnyClick={false}
       bounds="parent"
@@ -112,19 +123,35 @@ export default function Piece({
         onPointerDown={(e) => {
           if (disabled) return;
           if (e.button === 2) return;
-          setDragging(true);
-          setSelectedPiece([square, piece]);
-          const pointer = [e.clientX, e.clientY];
-          const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
-          //Snap to cursor
-          setPosition((position) => ({
-            x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
-            y: position.y + pointer[1] - ((piecePos[1] || 0) + squareSize / 2),
-          }));
+          if (draggable) {
+            setDragging(true);
+            setSelectedPiece([square, piece]);
+            const pointer = [e.clientX, e.clientY];
+            const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
+            //Snap to cursor
+            setPosition((position) => ({
+              x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
+              y: position.y + pointer[1] - ((piecePos[1] || 0) + squareSize / 2),
+            }));
+          } else {
+            setSelectedPiece([square, piece]);
+          }
+        }}
+        onPointerUp={() => {
+          if (movementType === "drag") {
+            setSelectedPiece(null);
+          } else {
+            if (selectedRef.current) {
+              setSelectedPiece(null);
+              selectedRef.current = false;
+            } else {
+              selectedRef.current = true;
+            }
+          }
         }}
         style={{
           transition: dragging ? "" : `all ${animationSpeed}s`,
-          cursor: dragging ? "grabbing" : "grab",
+          cursor: draggable ? (dragging ? "grabbing" : "grab") : "pointer",
           display: hidden ? "none" : "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -139,7 +166,15 @@ export default function Piece({
         }}
         ref={nodeRef}
       >
-        <img
+        <div
+          className={`${styles.piece} ${piece.color}${piece.type} bg-cover`}
+          style={{
+            pointerEvents: "none",
+            width: `${squareSize * 0.9}px`,
+            height: `${squareSize * 0.9}px`,
+          }}
+        />
+        {/* <img
           src={`/assets/pieces/standard/${piece.color}${piece.type}.png`}
           alt={`${piece.color}${piece.type}`}
           height={squareSize * 0.9}
@@ -148,7 +183,7 @@ export default function Piece({
           style={{
             pointerEvents: "none",
           }}
-        />
+        /> */}
       </div>
     </Draggable>
   );

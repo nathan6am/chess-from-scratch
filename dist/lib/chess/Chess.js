@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 const ChessTypes_1 = require("./ChessTypes");
 const lodash_1 = __importDefault(require("lodash"));
 const FenParser_1 = require("./FenParser");
@@ -145,6 +145,43 @@ function getMovementRules(piece, start) {
             throw new Error(`Type:${type} is not a valid piece type`);
     }
 }
+function preMovesByRule(rule, start, position) {
+    const { increment, range } = rule;
+    const startingCoordinates = squareToCoordinates(start);
+    const piece = position.get(start);
+    let premoves = [];
+    if (!piece)
+        return [];
+    let currentCoordinates = startingCoordinates;
+    let i = 0;
+    const promotions = ["r", "q", "n", "b"];
+    while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
+        //increment by the rule values and make sure the resulting coordinates are still on the board
+        currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]);
+        i++;
+        if (!currentCoordinates.every((coord) => coord >= 0 && coord <= 7))
+            break;
+        // check the square for pieces
+        let currentSquare = toSquare(currentCoordinates);
+        let isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
+        if (isPromotion) {
+            promotions.forEach((type) => {
+                premoves.push({
+                    start,
+                    end: currentSquare,
+                    promotion: type,
+                });
+            });
+        }
+        else {
+            premoves.push({
+                start,
+                end: currentSquare,
+            });
+        }
+    }
+    return premoves;
+}
 function evaluateRule(rule, position, start, enPassantTarget = null) {
     var _a, _b;
     const { increment, canCapture, captureOnly, range } = rule;
@@ -154,11 +191,11 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
         throw new Error(`No piece at starting square ${start}}`);
     const activeColor = piece.color;
     //Initialize return variables
-    var controlledSquares = [];
-    var potentialMoves = [];
-    var containsCheck = false;
-    var currentCoordinates = startingCoordinates;
-    var i = 0;
+    let controlledSquares = [];
+    let potentialMoves = [];
+    let containsCheck = false;
+    let currentCoordinates = startingCoordinates;
+    let i = 0;
     const promotions = ["r", "q", "n", "b"];
     //loop as long as current coordinates are still on the board or the range is reached
     while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
@@ -204,10 +241,7 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([
-                        currentCoordinates[0],
-                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
-                    ]),
+                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
                 });
             }
             else {
@@ -327,7 +361,52 @@ function verifyMove(move, position) {
     }
     return true;
 }
-//Returns an array of all the legal moves in a position
+function getPremoves(game) {
+    const position = boardToPosition(game.board);
+    const { activeColor, castleRights } = game;
+    const preMoveColor = activeColor === "w" ? "b" : "w";
+    const { kingSide, queenSide } = castleRights[preMoveColor];
+    let premoves = [];
+    for (let [start, piece] of position) {
+        if (piece.color === preMoveColor) {
+            const rules = getMovementRules(piece, start);
+            rules.forEach((rule) => {
+                const moves = preMovesByRule(rule, start, position);
+                moves.forEach((premove) => {
+                    premoves.push(premove);
+                });
+            });
+        }
+    }
+    if (kingSide) {
+        premoves.push({
+            start: preMoveColor === "w" ? "e1" : "e8",
+            end: preMoveColor === "w" ? "g1" : "g8",
+        });
+        //King onto rook
+        premoves.push({
+            start: preMoveColor === "w" ? "e1" : "e8",
+            end: preMoveColor === "w" ? "h1" : "h8",
+        });
+    }
+    if (queenSide) {
+        premoves.push({
+            start: preMoveColor === "w" ? "e1" : "e8",
+            end: preMoveColor === "w" ? "c1" : "c8",
+        });
+        premoves.push({
+            start: preMoveColor === "w" ? "e1" : "e8",
+            end: preMoveColor === "w" ? "a1" : "a8",
+        });
+    }
+    return premoves;
+}
+exports.getPremoves = getPremoves;
+/**
+ * Get all the legal moves given current game stats
+ * @param game current game state
+ * @returns an array of the legal moves
+ */
 function getMoves(game) {
     const { activeColor, position, enPassantTarget, castleRights } = game;
     const { kingSide, queenSide } = castleRights[activeColor];
@@ -381,16 +460,14 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w"
-        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
-        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -399,17 +476,32 @@ function getCastles(game, opponentControlledSquares) {
             isCastle: true,
             PGN: "O-O",
         });
+        //King onto rook support
+        moves.push({
+            start: activeColor === "w" ? "e1" : "e8",
+            end: activeColor === "w" ? "h1" : "h8",
+            capture: null,
+            isCastle: true,
+            PGN: "O-O",
+        });
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
             end: activeColor === "w" ? "c1" : "c8",
             capture: null,
             isCastle: true,
-            PGN: "",
+            PGN: "O-O-O",
+        });
+        moves.push({
+            start: activeColor === "w" ? "e1" : "e8",
+            end: activeColor === "w" ? "a1" : "a8",
+            capture: null,
+            isCastle: true,
+            PGN: "O-O-O",
         });
     }
     return moves;
@@ -429,9 +521,23 @@ function executeMove(game, move) {
     var enPassantTarget = null;
     const castleMap = {
         g1: ["h1", "f1"],
+        h1: ["h1", "f1"],
         c1: ["a1", "d1"],
+        a1: ["a1", "d1"],
         g8: ["h8", "f8"],
+        h8: ["h8", "f8"],
         c8: ["a8", "d8"],
+        a8: ["a8", "d8"],
+    };
+    const destMap = {
+        g1: "g1",
+        h1: "g1",
+        c1: "c1",
+        a1: "c1",
+        g8: "g8",
+        h8: "g8",
+        c8: "c8",
+        a8: "c8",
     };
     var castleRights = Object.assign({}, game.castleRights[game.activeColor]);
     if (move.isCastle) {
@@ -442,9 +548,12 @@ function executeMove(game, move) {
             console.log(game);
             throw new Error("Move is invalid.");
         }
+        let dest = destMap[move.end];
+        if (!dest)
+            throw new Error("invalid end square for castles");
         position.set(end, rook);
         position.delete(start);
-        position.set(move.end, piece);
+        position.set(dest, piece);
         position.delete(move.start);
         //remove castle rights
         castleRights.kingSide = false;
@@ -516,9 +625,13 @@ function testMove(game, move) {
     var enPassantTarget = null;
     const castleMap = {
         g1: ["h1", "f1"],
+        h1: ["h1", "f1"],
         c1: ["a1", "d1"],
+        a1: ["a1", "d1"],
         g8: ["h8", "f8"],
-        c8: ["a8", "f8"],
+        h8: ["h8", "f8"],
+        c8: ["a8", "d8"],
+        a8: ["a8", "d8"],
     };
     var castleRights = Object.assign({}, game.castleRights[game.activeColor]);
     if (move.isCastle) {

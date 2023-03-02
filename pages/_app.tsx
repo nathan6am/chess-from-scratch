@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
-
+import { useLocalStorage } from "usehooks-ts";
 const queryClient = new QueryClient();
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -20,7 +20,7 @@ type AppPropsWithLayout = AppProps & {
 };
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => page);
-  const [settings, setSettings] = useState(() => defaultSettings);
+  const [settings, setSettings] = useLocalStorage("app-settings", defaultSettings);
   const updateSettings = (settings: Partial<AppSettings>) => {
     setSettings((currentSettings) => ({ ...currentSettings, ...settings }));
   };

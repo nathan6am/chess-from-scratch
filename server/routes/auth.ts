@@ -1,6 +1,6 @@
 import passport from "passport";
 import * as passportFacebook from "passport-facebook";
-import express from "express";
+import express, { Request } from "express";
 import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
@@ -77,13 +77,9 @@ router.get(
   })
 );
 
-router.get(
-  "/guest",
-  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
-  (req, res) => {
-    res.redirect("/");
-  }
-);
+router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+  res.redirect("/");
+});
 
 router.get("/user", function (req, res, next) {
   if (!req.user) {
@@ -93,17 +89,13 @@ router.get("/user", function (req, res, next) {
   }
 });
 
-router.post(
-  "/login",
-  passport.authenticate("local", { failureRedirect: "/login" }),
-  function (req, res) {
-    if (req.user) {
-      res.json({ user: req.user });
-    } else {
-      res.status(401).send();
-    }
+router.post("/login", passport.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
+  if (req.user) {
+    res.json({ user: req.user });
+  } else {
+    res.status(401).send();
   }
-);
+});
 
 router.post("/signup", async function (req, res, next) {
   const accountdetails = req.body;
@@ -148,19 +140,24 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-// router.post("/auth/updatetest", async function (req, res) {
-//   const credentials = req.body;
-//   if (
-//     credentials.password &&
-//     typeof credentials.password === "string" &&
-//     credentials.username &&
-//     typeof credentials.username === "string"
-//   ) {
-//     const user = await updateCredentials(credentials.username, credentials.password);
+router.post("/change-password", async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
+  const sessionUser = req.user;
+  if (!sessionUser || sessionUser.type === "guest") {
+    res.status(401).end();
+    return;
+  }
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).end();
+    return;
+  }
+  const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
 
-//     res.status(200).send();
-//   }
-// });
+  if (updated) return res.status(200).json({ updated: true });
+  else {
+    res.status(401).end();
+  }
+});
 
 router.get("/logout", function (req, res, next) {
   console.log("logging out");

@@ -130,3 +130,30 @@ a {
     opacity: 0;
   }
 }
+
+@layer components {
+  input[type="range"] {
+    @apply appearance-none bg-transparent;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    @apply bg-white/25 rounded-full h-2;
+  }
+
+  input[type="range"]::-moz-range-track {
+    @apply bg-white/25 rounded-full h-2;
+  }
+
+  input[type="range"]::-ms-track {
+    @apply bg-white/25 rounded-full h-2;
+  }
+  input[type="range"]::-moz-range-thumb {
+    @apply bg-sepia border-none;
+  }
+  input[type="range"]::-ms-thumb {
+    @apply bg-sepia border-none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    @apply bg-sepia border-none;
+  }
+}

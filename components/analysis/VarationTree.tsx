@@ -17,13 +17,7 @@ interface Props {
 
 type Row = { nodes: [Node | null, Node | null]; variations?: Node[] };
 type Node = TreeNode<Chess.NodeData>;
-export default function VarationTree({
-  mainLine,
-  selectedKey,
-  setSelectedKey,
-  path,
-  rootNodes,
-}: Props) {
+export default function VarationTree({ mainLine, selectedKey, setSelectedKey, path, rootNodes }: Props) {
   const rootVariations = useMemo(() => rootNodes.slice(1), [rootNodes]);
   const mainlineRows = useMemo(() => {
     let currentRow: [Node | null, Node | null] = [null, null];
@@ -58,15 +52,7 @@ export default function VarationTree({
   return (
     <div className="w-full flex flex-col bg-[#121212] divide-y divide-white/[0.2]">
       {mainlineRows.map((row, idx) => {
-        return (
-          <RenderRow
-            path={path}
-            key={idx}
-            row={row}
-            selectedKey={selectedKey}
-            setSelectedKey={setSelectedKey}
-          />
-        );
+        return <RenderRow path={path} key={idx} row={row} selectedKey={selectedKey} setSelectedKey={setSelectedKey} />;
       })}
     </div>
   );
@@ -94,11 +80,7 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
     }
   }, [forceExpand]);
   return (
-    <div
-      className={`w-full ${
-        (depth || 0) > 0 ? "border-dotted border-l" : ""
-      } border-white/[0.2] text-sm`}
-    >
+    <div className={`w-full ${(depth || 0) > 0 ? "border-dotted border-l" : ""} border-white/[0.2] text-sm`}>
       <div className="flex flex-wrap py-2 pl-4 pr-2 relative rounded">
         <p className="text-sepia/[0.8] indent-[-1.5em] pl-[1.5em]">
           {subVariations.length > 0 && (
@@ -179,8 +161,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
   const firstNode = nodes.find((node) => node !== null);
   const comment = nodes.find((node) => node?.data.comment?.length)?.data.comment;
   const forceExpand = useMemo(
-    () =>
-      path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
+    () => path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
     [path, variations]
   );
   useEffect(() => {
@@ -196,12 +177,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
         <div className="px-4 py-2 w-14 text-center bg-sepia/[0.3] relative">{moveCount}.</div>
         <div className="w-full h-full grid grid-cols-2 bg-[#161616]">
           {nodes.map((node, idx) => (
-            <RenderRowEntry
-              key={idx}
-              node={node}
-              selectedKey={selectedKey}
-              setSelectedKey={setSelectedKey}
-            />
+            <RenderRowEntry key={idx} node={node} selectedKey={selectedKey} setSelectedKey={setSelectedKey} />
           ))}
         </div>
       </div>
@@ -287,11 +263,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
         }
       }}
       className={` border-white/[0.2] border-r h-full p-2 ${
-        selected
-          ? "bg-blue-400/[0.2] cursor-pointer"
-          : node
-          ? "hover:bg-white/[0.1] cursor-pointer"
-          : ""
+        selected ? "bg-blue-400/[0.2] cursor-pointer" : node ? "hover:bg-white/[0.1] cursor-pointer" : ""
       } `}
     >
       <div className="flex flex-row justify-between items-center">
@@ -314,7 +286,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!ref.current || !selected) return;
-    ref.current.scrollIntoView({ behavior: "smooth" });
+    //ref.current.scrollIntoView({ behavior: "smooth" });
   }, [selected, ref]);
 
   return (
@@ -334,9 +306,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
             {Chess.moveCountToNotation(node.data.halfMoveCount)}
           </span>
         )}
-        <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
-          {parsePGN(node.data.PGN, isWhite ? "w" : "b")}
-        </span>
+        <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>{parsePGN(node.data.PGN, isWhite ? "w" : "b")}</span>
       </span>
       {node.data.comment && " " + node.data.comment + " "}
     </>

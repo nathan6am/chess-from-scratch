@@ -21,7 +21,7 @@ function parseTag(tag: string): TagJSON | undefined {
     value,
   };
 }
-function pgnToJson(pgn: string): any {
+export function pgnToJson(pgn: string): any {
   let tags: string[] = [];
   let section: "tags" | "movetext" = "tags";
   const args = pgn.split(/(\r\n|\n|\r)/gm);
@@ -71,162 +71,6 @@ interface MaybeNodeDataPartial {
   moveCount: [number, 0 | 1];
 }
 
-const testString = `1. e4  d6  {asdssssd} 2. d4  e5  3. Nc3 $10 exd4  4. Qxd4  (4. Nb1  c5  5. Nf3  Nc6  6. Bd3  (6. c3  )(6. Ke2  ) 6... Nf6  {another comment} ) 4... Nc6  5. Bb5 `;
-
-function parsePGN(pgn: string) {
-  const tree: Map<string, TreeNode<NodeDataPartial>> = new Map();
-
-  function addNode(node: Omit<TreeNode<NodeDataPartial>, "parentKey">, parentKey: string | null): void {
-    console.log(node);
-    console.log(parentKey);
-    const newNode = { ...node, parentKey: parentKey };
-    tree.set(node.key, newNode);
-    if (parentKey) {
-      const parentNode = tree.get(parentKey);
-      if (!parentNode) {
-        console.log(`Error: parent node with key ${parentKey} not found`);
-        return;
-      }
-      parentNode.children.push(newNode);
-    }
-  }
-
-  const newNode = () => ({
-    key: uuidv4(),
-    data: { PGN: null, comment: null, moveCount: [1, 0] as [number, 0 | 1] },
-    children: [],
-  });
-  let currentNode: Omit<TreeNode<MaybeNodeDataPartial>, "parentKey"> | null;
-  let currentMove = "";
-  let prevNode: TreeNode<NodeDataPartial> | null = null;
-  let inComment = false;
-  let comment = "";
-  let stackTrace: string[] = [];
-  let prevChar = " ";
-  let count = "";
-  let moveCounter = [1, 0];
-  let inMoveCount = false;
-  currentNode = newNode();
-
-  const isDigit = (char: string): boolean => {
-    const exp = /\d/;
-    return exp.test(char);
-  };
-
-  for (const char of pgn) {
-    if (inComment) {
-      if (char === "}") {
-        inComment = false;
-        prevChar = char;
-        if (!currentNode) throw new Error("Invalid pgn");
-        currentNode.data.comment = comment;
-      }
-      comment += char;
-    } else if (char === "{") {
-      inComment = true;
-    } else if (char === "}" && !inComment) {
-      throw new Error("Invalid pgn");
-    } else {
-      if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
-        if (inMoveCount) throw new Error("Invalid pgn");
-        inMoveCount = true;
-        count += char;
-        if (currentNode.data.PGN) {
-          const node = currentNode as unknown as Omit<TreeNode<MaybeNodeDataPartial>, "parentKey"> | null;
-          if (!node || !node.data.PGN) throw new Error("Invalid pgn");
-          addNode(node as Omit<TreeNode<NodeDataPartial>, "parentKey">, stackTrace[stackTrace.length - 1] || null);
-          prevNode = {
-            ...node,
-            parentKey: stackTrace[stackTrace.length - 1] || null,
-          } as TreeNode<NodeDataPartial>;
-          currentNode = newNode();
-          currentMove = "";
-        } else {
-          currentNode = newNode();
-          currentMove = "";
-        }
-      } else if (inMoveCount) {
-        if (char !== "." && char !== " " && !isDigit(char)) {
-          console.log(char);
-          console.log(prevChar);
-          throw new Error("Invalid pgn");
-        }
-
-        if (isDigit(char)) {
-          count += char;
-        }
-        if (char === "." && isDigit(prevChar)) {
-          moveCounter[0] = parseInt(count);
-          count = "";
-        }
-        if (char === "." && prevChar === ".") {
-          moveCounter[1] = 1;
-        }
-        if (char === " ") {
-          console.log("exit move count");
-          inMoveCount = false;
-          currentNode = newNode();
-        }
-      } else if (char === "(") {
-        if (prevNode) {
-          stackTrace.push(prevNode.key);
-        }
-        if (currentNode.data.PGN) {
-          addNode(
-            currentNode as Omit<TreeNode<NodeDataPartial>, "parentKey">,
-            stackTrace[stackTrace.length - 1] || null
-          );
-          prevNode = {
-            ...currentNode,
-            parentKey: stackTrace[stackTrace.length - 1] || null,
-          } as TreeNode<NodeDataPartial>;
-          currentNode = newNode();
-          currentMove = "";
-        }
-      } else if (char === ")") {
-        if (!currentNode) throw new Error("Invalid pgn");
-        if (!currentNode.data.PGN) {
-          stackTrace.pop();
-        } else {
-          addNode(
-            currentNode as Omit<TreeNode<NodeDataPartial>, "parentKey">,
-            stackTrace[stackTrace.length - 1] || null
-          );
-          prevNode = {
-            ...currentNode,
-            parentKey: stackTrace[stackTrace.length - 1] || null,
-          } as TreeNode<NodeDataPartial>;
-          stackTrace.pop();
-          currentNode = newNode();
-          currentMove = "";
-        }
-      } else if (char === " ") {
-        if (!currentNode) throw new Error("Invalid pgn");
-        if (currentMove.length) {
-          currentNode.data.PGN = currentMove;
-        }
-        currentMove = "";
-      } else {
-        if (currentNode.data.PGN && prevChar === " ") {
-          addNode(
-            currentNode as Omit<TreeNode<NodeDataPartial>, "parentKey">,
-            stackTrace[stackTrace.length - 1] || null
-          );
-          prevNode = {
-            ...currentNode,
-            parentKey: stackTrace[stackTrace.length - 1] || null,
-          } as TreeNode<NodeDataPartial>;
-          currentMove = "";
-          currentNode = newNode();
-        }
-        currentMove += char;
-      }
-    }
-    prevChar = char;
-  }
-  return tree;
-}
-
 function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
@@ -239,6 +83,21 @@ function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | nu
 }
 
 type Node = TreeNode<Chess.NodeData>;
+
+export function mainLineFromTreeArray(treeArray: Node[]) {
+  const path: Node[] = [];
+  let currentNode = treeArray[0];
+  while (currentNode) {
+    path.push(currentNode);
+    currentNode = currentNode.children[0];
+  }
+  return path;
+}
+
+export function mainLineToMoveHistory(line: Node[]) {
+  
+}
+
 export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
   let map = new Map<string, Node>();
   const addNode = (data: Chess.NodeData, parentKey: string | null): Node | undefined => {

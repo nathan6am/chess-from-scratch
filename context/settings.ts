@@ -10,13 +10,17 @@ export interface AppSettings {
     showHighlights: boolean;
     showValidMoves: boolean;
     showCoordinates: "inside" | "outside" | "hidden";
+    usePieceIcons: boolean;
     showCapturedMaterial: boolean;
-    boardTheme: "standard" | "alternate" | "custom";
-    pieceTheme: "standard" | "alternate";
+    boardTheme: string;
+    pieceTheme: string;
   };
   sound: {
     volume: number;
     lowTimeWarning: boolean;
+    moveSounds: boolean;
+    invalidMoveSounds: boolean;
+    notifcationSounds: boolean;
   };
 
   UITheme: "light" | "dark";
@@ -34,12 +38,17 @@ export const defaultSettings: AppSettings = {
     showValidMoves: true,
     showCoordinates: "inside",
     showCapturedMaterial: true,
-    boardTheme: "standard",
-    pieceTheme: "standard",
+    usePieceIcons: true,
+    boardTheme: "default",
+    pieceTheme: "default",
   },
+
   sound: {
     volume: 100,
     lowTimeWarning: true,
+    moveSounds: true,
+    invalidMoveSounds: true,
+    notifcationSounds: true,
   },
   UITheme: "dark",
 };

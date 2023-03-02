@@ -57,6 +57,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
   const lobbyid = lobby?.id || null; //ID of the connected lobby
   const [game, updateGame] = useState<Game | null>(null); //The current active game
   const [premoveQueue, setPremoveQueue] = useState<Chess.Move[]>([]);
+  const [connectionError, setConnectionError] = useState<boolean>(false);
   const { user } = useContext(UserContext);
   const lobbyConnected = lobby !== null;
   const gameActive = useMemo(() => {
@@ -218,35 +219,30 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
 
     //Define event handlers
     const onConnect = () => {
-      socket.emit(
-        "lobby:connect",
-        lobbyId,
-        (res: { status: boolean; data?: Lobby; error: Error | null }) => {
-          if (res && res.status && res.data) {
-            const lobby = res.data;
-            setLobby(res.data);
-            if (lobby.currentGame) {
-              updateGame(lobby.currentGame);
-            }
-          } else if (res && !res.status) {
-            setSocketConnected(false);
-            console.log(res);
-            console.error(res.error?.message);
-          } else {
+      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+        if (res && res.status && res.data) {
+          const lobby = res.data;
+          setLobby(res.data);
+          if (lobby.currentGame) {
+            updateGame(lobby.currentGame);
           }
+        } else if (res && !res.status) {
+          setSocketConnected(false);
+          console.log(res);
+          console.error(res.error?.message);
+        } else {
         }
-      );
+      });
       setSocketConnected(true);
     };
     const onLobbyDidUpdate = (updates: Partial<Lobby>) => {
-      console.log(updates);
       setLobby((current) => {
         if (!current) return current;
         return { ...current, ...updates };
       });
     };
     const onConnectError = (err: unknown) => {
-      console.log(err);
+      setConnectionError(true);
     };
     const onMoveRecieved = (game: Game) => {
       setLivePositionOffset(0);
@@ -259,13 +255,11 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       callbackRef.current = ack;
     };
     const onMoveRequested = (timeout: number, game: Game, ack: (move: Chess.Move) => void) => {
-      console.log("move requested");
       callbackRef.current = ack;
       updateGame(game);
     };
     const onOutcome = (game: Game) => {
       updateGame(game);
-      console.log(game.data.outcome);
     };
     //Register event listeners
     socket.on("connect", onConnect);
@@ -312,6 +306,19 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
         if (callbackRef.current) {
           callbackRef.current(move);
           callbackRef.current = undefined;
+          socket.emit("game:update", lobbyid, (response) => {
+            if (response.status && response.data) {
+              updateGame((current) => {
+                if (!current) return current;
+                return {
+                  ...current,
+                  data: response.data?.data || current?.data,
+                };
+              });
+            } else {
+              setConnectionError(true);
+            }
+          });
         } else {
           //Emit the move event to the server and update the game again upon acknowledgement
           socket.emit("game:move", { move, lobbyid }, (response) => {
@@ -328,6 +335,26 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     },
     [socket, game, playerColor, lobbyid, delayRef]
   );
+
+  const prevGame = useRef<Chess.Game>();
+  useEffect(() => {
+    if (!game) return;
+    if (_.isEqual(prevGame.current, game)) return;
+    if (!playerColor) return;
+    if (game.data.activeColor !== playerColor) return;
+    if (!premoveQueue.length) return;
+    const nextPremove = premoveQueue[0];
+    const move = game.data.legalMoves.find(
+      (move) =>
+        move.start === nextPremove.start &&
+        move.end === nextPremove.end &&
+        (!move.promotion || move.promotion === nextPremove.promotion)
+    );
+    if (!move) setPremoveQueue([]);
+    else onMove(move);
+    prevGame.current = game.data;
+    setPremoveQueue((cur) => cur.slice(1));
+  }, [onMove, game, premoveQueue, playerColor]);
 
   const resign = useCallback(() => {
     if (!lobbyid) return;

@@ -304,12 +304,23 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
         }}
       />
       <NumbericInput
-        label="depth"
+        label="Depth"
         value={evaler.currentOptions.depth}
         min={1}
         max={30}
         onChange={(val) => {
           evaler.updateOptions({ depth: val });
+        }}
+      />
+      <Toggle
+        className="mt-3"
+        label="Show Eval Bar"
+        labelClasses="text-sm opacity-75"
+        checked={evaler.currentOptions.showEvalBar}
+        onChange={(enabled) => {
+          evaler.updateOptions({
+            showEvalBar: enabled,
+          });
         }}
       />
     </div>

@@ -10,8 +10,9 @@ interface Props {
   srLabel?: string;
   labelClasses?: string;
   className?: string;
+  reverse?: boolean;
 }
-export default function Toggle({ label, checked, onChange, srLabel, labelClasses, className }: Props) {
+export default function Toggle({ label, checked, onChange, srLabel, labelClasses, className, reverse }: Props) {
   const controlled = useMemo(() => checked !== undefined, [checked]);
   const [enabled, setEnabled] = useState(false);
   const changeHandler = (value: boolean) => {
@@ -21,13 +22,19 @@ export default function Toggle({ label, checked, onChange, srLabel, labelClasses
     }
   };
   return (
-    <div className={`flex flex-row justify-between ${className}`}>
+    <div
+      className={`flex ${
+        reverse ? "flex-row-reverse justify-end items-center" : "flex-row justify-between"
+      }  ${className}`}
+    >
       {label && <label className={labelClasses || ""}>{label}</label>}
       <Switch
         checked={controlled ? checked : enabled}
         onChange={changeHandler}
         className={`${(controlled ? checked : enabled) ? "bg-green-500" : "bg-white/[0.1]"}
-          relative inline-flex items-center h-[20px] w-[40px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white focus-visible:ring-opacity-75 `}
+        ${
+          reverse ? "mr-3" : ""
+        } relative inline-flex items-center h-[20px] w-[40px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-white focus-visible:ring-opacity-75 `}
       >
         <span className="sr-only">{srLabel || "Use Setting"}</span>
         <span

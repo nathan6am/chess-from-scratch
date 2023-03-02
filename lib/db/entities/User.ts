@@ -22,6 +22,8 @@ import { escapeSpecialChars } from "../../../util/misc";
 import User_Game from "./User_Game";
 import Game from "./Game";
 import Puzzle from "./Puzzle";
+import Collection from "./Collection";
+import Analysis from "./Analysis";
 export type SessionUser = {
   id: string;
   username: string | null;
@@ -60,7 +62,10 @@ export default class User extends BaseEntity {
   @OneToMany(() => User_Game, (userGame) => userGame.user, { cascade: true })
   games: Relation<User_Game[]>;
 
-  @OneToMany(() => Analysis, (analysis) => analysis.creator)
+  @OneToMany(() => Collection, (collection) => collection.user)
+  collections: Relation<Collection[]>;
+
+  @OneToMany(() => Analysis, (analysis) => analysis.author)
   savedAnalyses: Relation<Analysis[]>;
 
   @Column({ type: "jsonb", default: defaultSettings })
@@ -137,10 +142,7 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async loginWithFacebook(profile: {
-    facebookId: string;
-    name: string;
-  }): Promise<SessionUser> {
+  static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
     const user = await this.findOne({
       where: {
         facebookId: profile.facebookId,
@@ -163,11 +165,7 @@ export default class User extends BaseEntity {
     };
   }
 
-  static async createAccountWithCredentials(account: {
-    email: string;
-    username: string;
-    password: string;
-  }): Promise<{
+  static async createAccountWithCredentials(account: { email: string; username: string; password: string }): Promise<{
     created: Partial<User> | null;
     fieldErrors?: Array<{ field: string; message: string }>;
   }> {
@@ -201,15 +199,30 @@ export default class User extends BaseEntity {
     return { created: created };
   }
 
-  static async updateCredentials(username: string, newPassword: string) {
+  static async updateCredentials(userid: string, currentPassword: string, newPassword: string) {
     const user = await this.findOne({
-      where: { username: username },
+      where: { id: userid },
       relations: { credentials: true },
     });
-    if (user) {
+    if (user && bcrypt.compareSync(currentPassword, user.credentials.hashedPassword)) {
       user.credentials.hashedPassword = bcrypt.hashSync(newPassword, 10);
-      user.save();
+      await user.save();
+      return true;
     }
+    return false;
+  }
+  static async getCollections(id: string): Promise<Collection[]> {
+    const user = await this.findOne({
+      where: { id: id },
+      relations: {
+        collections: {
+          analyses: {
+            collections: true,
+          },
+        },
+      },
+    });
+    return user?.collections || [];
   }
 
   static async getProfile(id: string) {
@@ -284,19 +297,6 @@ export class Notification {
 
   @ManyToOne(() => User, (user) => user.notifications)
   user: Relation<User>;
-}
-
-@Entity()
-export class Analysis {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
-
-  @Column({ type: "json" })
-  tree: any;
-
-  @ManyToOne(() => User, (user) => user.savedAnalyses)
-  @JoinColumn({ name: "creator_id" })
-  creator: Relation<User>;
 }
 
 @Entity()

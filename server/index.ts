@@ -13,6 +13,7 @@ import authRouter from "./routes/auth";
 import MainHandler from "./handlers/MainHandler";
 import { createClient } from "redis";
 import userRouter from "./routes/user";
+import analysisRouter from "./routes/analysis";
 import {
   InterServerEvents,
   SocketData,
@@ -98,10 +99,10 @@ nextApp.prepare().then(async () => {
 
   app.use("/api/auth", authRouter);
   app.use("/api/user", userRouter);
+  app.use("/api/analysis", analysisRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) =>
-    middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
 
   const io: socketio.Server = new socketio.Server<
     ClientToServerEvents,
@@ -116,11 +117,7 @@ nextApp.prepare().then(async () => {
   });
 
   io.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   io.use(wrap(passport.initialize()));
   io.use(wrap(passport.session()));
@@ -140,11 +137,7 @@ nextApp.prepare().then(async () => {
     LobbySocketData
   > = io.of("/lobby");
   lobbyNsp.use((socket, next) => {
-    sessionMiddleware(
-      socket.request as Request,
-      {} as Response,
-      next as NextFunction
-    );
+    sessionMiddleware(socket.request as Request, {} as Response, next as NextFunction);
   });
   lobbyNsp.use(wrap(passport.initialize()));
   lobbyNsp.use(wrap(passport.session()));

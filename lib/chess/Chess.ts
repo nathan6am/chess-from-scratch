@@ -14,11 +14,14 @@ import {
   Board,
   NodeData,
   FullMove,
+  Premove,
 } from "./ChessTypes";
 
 import _ from "lodash";
 import { trimMoveCounts, fenToGameState, gameStateToFen } from "./FenParser";
 import { moveToPgn } from "./PGN";
+import { TreeNode } from "@/hooks/useTreeData";
+import { notEmpty } from "@/util/misc";
 
 /*---------------------------------------------------------
 Type Definitions
@@ -170,6 +173,42 @@ function getMovementRules(piece: Piece, start: Square): Array<MovementRule> {
   }
 }
 
+function preMovesByRule(rule: MovementRule, start: Square, position: Position) {
+  const { increment, range } = rule;
+  const startingCoordinates = squareToCoordinates(start);
+  const piece = position.get(start);
+  let premoves: Premove[] = [];
+  if (!piece) return [];
+  let currentCoordinates = startingCoordinates;
+  let i = 0;
+  const promotions = ["r", "q", "n", "b"];
+  while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
+    //increment by the rule values and make sure the resulting coordinates are still on the board
+    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [number, number];
+    i++;
+    if (!currentCoordinates.every((coord) => coord >= 0 && coord <= 7)) break;
+
+    // check the square for pieces
+    let currentSquare = toSquare(currentCoordinates);
+    let isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
+    if (isPromotion) {
+      promotions.forEach((type) => {
+        premoves.push({
+          start,
+          end: currentSquare,
+          promotion: type as PieceType,
+        });
+      });
+    } else {
+      premoves.push({
+        start,
+        end: currentSquare,
+      });
+    }
+  }
+  return premoves;
+}
+
 function evaluateRule(
   rule: MovementRule,
   position: Position,
@@ -189,12 +228,12 @@ function evaluateRule(
   const activeColor = piece.color;
 
   //Initialize return variables
-  var controlledSquares: Array<Square> = [];
-  var potentialMoves: Array<Omit<Move, "PGN">> = [];
-  var containsCheck = false;
+  let controlledSquares: Array<Square> = [];
+  let potentialMoves: Array<Omit<Move, "PGN">> = [];
+  let containsCheck = false;
 
-  var currentCoordinates = startingCoordinates;
-  var i = 0;
+  let currentCoordinates = startingCoordinates;
+  let i = 0;
   const promotions = ["r", "q", "n", "b"];
 
   //loop as long as current coordinates are still on the board or the range is reached
@@ -363,14 +402,61 @@ function verifyMove(move: Move | Omit<Move, "PGN">, position: Position): boolean
   return true;
 }
 
-//Returns an array of all the legal moves in a position
-export function getMoves(game: GameState): Array<Move> {
+export function getPremoves(game: Game): Premove[] {
+  const position = boardToPosition(game.board);
+  const { activeColor, castleRights } = game;
+
+  const preMoveColor = activeColor === "w" ? "b" : "w";
+  const { kingSide, queenSide } = castleRights[preMoveColor];
+  let premoves: Premove[] = [];
+  for (let [start, piece] of position) {
+    if (piece.color === preMoveColor) {
+      const rules = getMovementRules(piece, start);
+      rules.forEach((rule) => {
+        const moves = preMovesByRule(rule, start, position);
+        moves.forEach((premove) => {
+          premoves.push(premove);
+        });
+      });
+    }
+  }
+  if (kingSide) {
+    premoves.push({
+      start: preMoveColor === "w" ? "e1" : "e8",
+      end: preMoveColor === "w" ? "g1" : "g8",
+    });
+    //King onto rook
+    premoves.push({
+      start: preMoveColor === "w" ? "e1" : "e8",
+      end: preMoveColor === "w" ? "h1" : "h8",
+    });
+  }
+
+  if (queenSide) {
+    premoves.push({
+      start: preMoveColor === "w" ? "e1" : "e8",
+      end: preMoveColor === "w" ? "c1" : "c8",
+    });
+    premoves.push({
+      start: preMoveColor === "w" ? "e1" : "e8",
+      end: preMoveColor === "w" ? "a1" : "a8",
+    });
+  }
+  return premoves;
+}
+
+/**
+ * Get all the legal moves given current game stats
+ * @param game current game state
+ * @returns an array of the legal moves
+ */
+export function getMoves(game: GameState): Move[] {
   const { activeColor, position, enPassantTarget, castleRights } = game;
 
   const { kingSide, queenSide } = castleRights[activeColor];
 
-  let moves: Array<Omit<Move, "PGN">> = [];
-  let opponentControlledSquares: Array<Square> = [];
+  let moves: Omit<Move, "PGN">[] = [];
+  let opponentControlledSquares: Square[] = [];
 
   for (let [start, piece] of position) {
     //Evaluate pieces of the active color
@@ -798,7 +884,18 @@ export function move(gameInitial: Game, move: Move, elapsedTimeSeconds?: number)
   }
   //TODO: Check for insufficient Material
   const { position: updatedPosition, ...rest } = updatedGameState;
+  const pieces = Array.from(updatedPosition.entries()).map(([square, piece]) => {
+    return piece;
+  });
 
+  const whitePieces = pieces.filter((piece) => piece.color === "w");
+  const blackPieces = pieces.filter((piece) => piece.color === "b");
+  if (!isSufficientMaterial(whitePieces) && !isSufficientMaterial(blackPieces)) {
+    outcome = {
+      result: "d",
+      by: "insufficient",
+    };
+  }
   //Check for repitition
   if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
     outcome = { result: "d", by: "repitition" };
@@ -869,6 +966,17 @@ export function serializeMoves(moves: Array<Move>): Array<String> {
 //   move.split(":")
 // }
 
+export function isSufficientMaterial(pieces: Piece[]): boolean {
+  if (pieces.some((piece) => piece.type === "p" || piece.type === "q" || piece.type === "r")) return true;
+  let n = 0;
+  let b = 0;
+  pieces.forEach((piece) => {
+    if (piece.type === "n") n++;
+    if (piece.type === "b") b++;
+  });
+  if ((n && b) || n > 1 || b > 1) return true;
+  return false;
+}
 export function positionToBoard(position: Position): Board {
   return Array.from(position.entries());
 }

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, useContext } from "react";
+import { SettingsContext } from "@/context/settings";
 import useSound from "use-sound";
 import useVariationTree from "./useVariationTree";
 import useLocalEval, { Evaler } from "./useLocalEval";
@@ -9,11 +10,19 @@ import _ from "lodash";
 import { TreeNode } from "./useTreeData";
 import { ApiResponse } from "./useOpeningExplorer";
 import { pgnToTreeArray } from "./test";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 type Node = TreeNode<Chess.NodeData>;
-
+interface AnalysisData {
+  title: string;
+  descriptions?: string;
+  collectionIds: string[];
+  tags: string[];
+  visibility: "private" | "unlisted" | "public";
+}
 export interface AnalysisHook {
   currentKey: string | null;
   currentNode: Node | null;
+  saveAnalysis: (data: AnalysisData) => void;
   pgn: string;
   mainLine: Node[];
   rootNodes: Node[];
@@ -52,13 +61,38 @@ interface AnalysisOptions {
   initialTree?: TreeNode<Chess.NodeData>[];
   pgnSource?: string;
   evalEnabled: boolean;
+  id?: string;
 }
 const defaultOptions = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   evalEnabled: true,
 };
+import axios from "axios";
+import Analysis from "@/lib/db/entities/Analysis";
+const fetcher = async (id: string | undefined) => {
+  if (!id) return null;
+  const res = await axios.get(`/api/analysis/${id}`);
+  if (res.data) {
+    return res.data as Analysis;
+  } else {
+    return null;
+  }
+};
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
-  const options = { ...defaultOptions, ...initialOptions };
+  const [options, setOptions] = useState(() => {
+    return { ...defaultOptions, ...initialOptions };
+  });
+  const { settings } = useContext(SettingsContext);
+  const { id } = options;
+  const {
+    data: saved,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ["analysis", id],
+    queryFn: () => fetcher(id),
+  });
+
   const [evalEnabled, setEvalEnabled] = useState(true);
   const [startPosEval, setStartPosEval] = useState<Chess.FinalEvaluation | undefined>();
   const evaler = useLocalEval();
@@ -110,12 +144,12 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
 
   const explorer = useOpeningExplorer(currentGame);
   //Move sounds
-  const [playMove] = useSound("/assets/sounds/move.wav");
-  const [playCapture] = useSound("/assets/sounds/capture.wav");
-  const [playCastle] = useSound("/assets/sounds/castle.wav");
+  const [playMove] = useSound("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
+  const [playCapture] = useSound("/assets/sounds/capture.wav", { volume: settings.sound.volume / 100 });
+  const [playCastle] = useSound("/assets/sounds/castle.wav", { volume: settings.sound.volume / 100 });
   const lastMove = currentGame.lastMove;
   useEffect(() => {
-    if (lastMove) {
+    if (lastMove && settings.sound.moveSounds) {
       if (lastMove.capture) playCapture();
       else if (lastMove.isCastle) playCastle();
       else playMove();
@@ -247,8 +281,34 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   }, [moveQueue, currentGame, onMove, prevGame]);
 
+  const queryClient = useQueryClient();
+
+  const saveFn = useCallback(
+    async (data: Omit<AnalysisData, "pgn">) => {
+      if (!id) {
+        const res = await axios.post("/api/analysis/", { ...data, pgn });
+        if (res.data) return res.data as Analysis;
+      } else {
+        const res = await axios.put(`/api/analysis/${id}`, { ...data, pgn });
+        if (res.data) return res.data as Analysis;
+      }
+    },
+    [pgn, id]
+  );
+  const { mutate: saveAnalysis } = useMutation({
+    mutationFn: saveFn,
+    onSuccess: (data) => {
+      if (data) {
+        setOptions((options) => ({ ...options, id: data?.id }));
+        queryClient.setQueriesData(["analysis", id], data);
+        queryClient.invalidateQueries({ queryKey: ["analysis", id] });
+      }
+    },
+  });
+
   return {
     pgn,
+    saveAnalysis,
     mainLine,
     rootNodes: variationTree.rootNodes,
     currentGame,

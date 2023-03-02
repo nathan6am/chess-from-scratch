@@ -17,7 +17,7 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
     var notation = "";
     if (move.isCastle) {
         let coords = (0, Chess_1.squareToCoordinates)(move.end);
-        if (coords[0] === 6) {
+        if (coords[0] === 6 || coords[0] === 7) {
             notation = "O-O";
         }
         else {

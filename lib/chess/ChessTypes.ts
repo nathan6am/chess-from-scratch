@@ -11,7 +11,8 @@ export interface Piece {
   color: Color;
   type: PieceType;
   key: string;
-  targets?: Array<Square>;
+  targets?: Square[];
+  premoveTargets?: Square[];
 }
 
 export type Position = Map<Square, Piece>;
@@ -65,6 +66,12 @@ export type Move = {
   isCheckMate?: boolean;
   PGN: string;
 };
+
+export interface Premove {
+  start: Square;
+  end: Square;
+  promotion?: PieceType;
+}
 
 export enum FileEnum {
   a = 0,
