@@ -11,6 +11,7 @@ import {
   OneToMany,
   OneToOne,
   ILike,
+  JoinTable,
 } from "typeorm";
 import type { Relation } from "typeorm";
 import User from "./User";
@@ -43,7 +44,13 @@ export default class Analysis extends BaseEntity {
   tags: string[];
 
   @ManyToMany(() => Collection, (collection) => collection.analyses, { cascade: true })
-  @JoinColumn({ name: "collectionIds" })
+  @JoinTable({
+    name: "collections_join_table",
+    joinColumn: {
+      name: "collectionIds",
+      referencedColumnName: "id",
+    },
+  })
   collections: Relation<Collection[]>;
 
   static async addToCollections(id: string, collections: string[]) {

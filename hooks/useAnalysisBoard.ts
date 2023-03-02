@@ -12,9 +12,9 @@ import { ApiResponse } from "./useOpeningExplorer";
 import { pgnToTreeArray } from "./test";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 type Node = TreeNode<Chess.NodeData>;
-interface AnalysisData {
+export interface AnalysisData {
   title: string;
-  descriptions?: string;
+  description?: string;
   collectionIds: string[];
   tags: string[];
   visibility: "private" | "unlisted" | "public";
@@ -117,8 +117,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, [options.pgnSource, options.startPosition]);
   const variationTree = useVariationTree(initialTree);
 
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, pgn, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    pgn,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -145,8 +154,12 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const explorer = useOpeningExplorer(currentGame);
   //Move sounds
   const [playMove] = useSound("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
-  const [playCapture] = useSound("/assets/sounds/capture.wav", { volume: settings.sound.volume / 100 });
-  const [playCastle] = useSound("/assets/sounds/castle.wav", { volume: settings.sound.volume / 100 });
+  const [playCapture] = useSound("/assets/sounds/capture.wav", {
+    volume: settings.sound.volume / 100,
+  });
+  const [playCastle] = useSound("/assets/sounds/castle.wav", {
+    volume: settings.sound.volume / 100,
+  });
   const lastMove = currentGame.lastMove;
   useEffect(() => {
     if (lastMove && settings.sound.moveSounds) {

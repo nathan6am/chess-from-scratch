@@ -16,7 +16,7 @@ const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>)
             (ref.current ? ref.current.getBoundingClientRect()?.height / gridSize : 1)
         ),
       });
-    }, 32);
+    }, 5);
 
     window.addEventListener("pointermove", handleMouseMove);
 

@@ -1,4 +1,12 @@
-import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect } from "react";
+import React, {
+  useCallback,
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { SettingsContext } from "@/context/settings";
 import { mergeRefs } from "@/util/misc";
 import styles from "@/styles/Board.module.scss";
@@ -11,6 +19,7 @@ import Piece from "./Piece";
 import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 interface Props {
+  theme: string;
   orientation: Chess.Color;
   pieces: Chess.Board;
   legalMoves: Array<Chess.Move>;
@@ -30,7 +39,10 @@ interface Props {
 }
 
 // Hook to track the current square of the pointer
-function useCurrentSquare(orientation: Chess.Color, boardRef: React.RefObject<HTMLDivElement>): Chess.Square | null {
+function useCurrentSquare(
+  orientation: Chess.Color,
+  boardRef: React.RefObject<HTMLDivElement>
+): Chess.Square | null {
   const [currentSquare, setCurrentSquare] = useState<Chess.Square | null>(null);
   const { x, y } = usePointerCoordinates(8, boardRef);
   useEffect(() => {
@@ -50,6 +62,7 @@ function useCurrentSquare(orientation: Chess.Color, boardRef: React.RefObject<HT
 const Board = React.forwardRef<HTMLDivElement, Props>(
   (
     {
+      theme,
       orientation,
       pieces,
       legalMoves,
@@ -71,7 +84,7 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
     const boardRef = useRef<HTMLDivElement>(null);
 
     //Load board/pieces css
-    useBoardTheme("marble-2");
+    useBoardTheme(theme);
     usePieceSet(pieceSet);
 
     // Track the current square of the pointer
@@ -81,7 +94,10 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
     const [selectedPiece, setSelectedPiece] = useState<[Chess.Square, Chess.Piece] | null>(null);
 
     //Show Promotion Menu
-    const [promotionMove, setPromotionMove] = useState<{ start: Chess.Square; end: Chess.Square } | null>(null);
+    const [promotionMove, setPromotionMove] = useState<{
+      start: Chess.Square;
+      end: Chess.Square;
+    } | null>(null);
 
     useEffect(() => {
       setPromotionMove(null);
@@ -127,7 +143,17 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
         }
         setSelectedPiece(null);
       }
-    }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
+    }, [
+      currentSquare,
+      selectedPiece,
+      autoQueen,
+      legalMoves,
+      activeColor,
+      moveable,
+      onMove,
+      preMoveable,
+      onPremove,
+    ]);
 
     /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -150,7 +176,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
           if (piece.color !== activeColor) return;
 
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+          const move = legalMoves.find(
+            (move) => move.start === square && move.end === targetSquare
+          );
           //Return if no legal move is found
           if (!move) return;
 
@@ -197,7 +225,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
               if (!promotionMove) return;
               const move = legalMoves.find(
                 (move) =>
-                  move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                  move.start === promotionMove.start &&
+                  move.end === promotionMove.end &&
+                  move.promotion === type
               );
               if (move) {
                 setPromotionMove(null);
@@ -245,7 +275,8 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
               square={square}
               movementType={movementType}
               disabled={
-                (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                (moveable !== "both" && piece.color !== moveable) ||
+                (!preMoveable && piece.color !== activeColor)
               }
               orientation={orientation}
               onDrop={onDrop}
@@ -332,9 +363,9 @@ function RenderSquare({
         </span>
       )}
       <div
-        className={`${styles.contents} ${isTarget && showTargets && hovered && "target-hover-highlight"} ${
-          isSelected && styles.selected
-        } ${isLastMove && showHighlights && styles.lastmove}`}
+        className={`${styles.contents} ${
+          isTarget && showTargets && hovered && "target-hover-highlight"
+        } ${isSelected && styles.selected} ${isLastMove && showHighlights && styles.lastmove}`}
       >
         {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
@@ -349,7 +380,13 @@ interface PromotionProps {
   onSelect: (type: Chess.PieceType) => void;
   cancel?: () => void;
 }
-function PromotionMenu({ promotionMove, orientation, activeColor, onSelect, cancel }: PromotionProps) {
+function PromotionMenu({
+  promotionMove,
+  orientation,
+  activeColor,
+  onSelect,
+  cancel,
+}: PromotionProps) {
   if (!promotionMove) return <></>;
   const [file] = Chess.squareToCoordinates(promotionMove.end);
   const col = orientation === "w" ? 1 + file : 8 - file;

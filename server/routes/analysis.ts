@@ -47,7 +47,6 @@ router.post(
     const analysis = new Analysis();
     const collections = await Collection.getByIds(collectionIds);
     Object.assign(analysis, {
-      id: nanoid(),
       title,
       author: user,
       pgn,
