@@ -2,15 +2,22 @@ import * as Chess from "../../lib/chess";
 import { v4 as uuidv4 } from "uuid";
 import { TreeNode } from "../../hooks/useTreeData";
 import { notEmpty } from "../misc";
+//import fs from "fs";
 
+//const sampleData = fs.readFileSync("./sample.pgn", "utf-8");
+
+type ValueOf<T> = T[keyof T];
+type Entries<T> = [keyof T, ValueOf<T>][];
+
+const getEntries = <T extends object>(obj: T) => Object.entries(obj) as Entries<T>;
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
 const quoteDelimited = /"[^"]+"/g;
-interface TagJSON {
+interface TagData {
   name: string;
   value: string;
 }
-function parseTag(tag: string): TagJSON | undefined {
+function parseTag(tag: string): TagData | undefined {
   const string = tag.replace(bracketsExpr, "$1");
   const result = string.match(quoteDelimited);
   if (!result) return undefined;
@@ -24,8 +31,8 @@ function parseTag(tag: string): TagJSON | undefined {
 export function pgnToJson(pgn: string): any {
   let tags: string[] = [];
   let section: "tags" | "movetext" = "tags";
+  //Split PGN into tags/movetext sections
   const args = pgn.split(/(\r\n|\n|\r)/gm);
-  console.log(args);
   let movetext = "";
   args.forEach((arg) => {
     if (section === "tags") {
@@ -43,34 +50,86 @@ export function pgnToJson(pgn: string): any {
     }
   });
   const parsedTags = tags.map((tag) => parseTag(tag)).filter(notEmpty);
+
+  let tagData: PGNTagData = {};
+  parsedTags.forEach((tag) => {
+    const dictionary = getEntries(tagsDict);
+    const pair = dictionary.find(([key, value]) => {
+      return value === tag.name;
+    });
+
+    const key = pair && pair[0];
+    if (key) {
+      Object.assign(tagData, { [key]: tag.value });
+    }
+  });
   return {
-    tags: parsedTags,
-    movetext: movetext.trim(),
+    tagData,
+    movetext,
   };
 }
 
-interface PGNJson {
-  event: string;
-  site: string;
-  date: string;
-  round: string;
-  black: string;
-  white: string;
-  result: "*" | "0-1" | "1-0" | "1/2-1/2";
-  moveText: string;
-}
-interface NodeDataPartial {
-  PGN: string;
-  comment: string | null;
-  moveCount: [number, 0 | 1];
+export interface PGNTagData {
+  white?: string;
+  black?: string;
+  eloWhite?: string;
+  eloBlack?: string;
+  titleWhite?: string;
+  titleBlack?: string;
+  site?: string;
+  event?: string;
+  round?: string;
+  date?: string;
+  timeControl?: string;
+  result?: "*" | "1-0" | "0-1" | "1/2-1/2";
+  opening?: string;
+  variation?: string;
+  subVariation?: string;
+  eco?: string;
+  setUp?: "0" | "1";
+  fen?: string;
 }
 
-interface MaybeNodeDataPartial {
-  PGN: string | null;
-  comment: string | null;
-  moveCount: [number, 0 | 1];
-}
+const tagsDict: Record<keyof PGNTagData, string> = {
+  event: "Event",
+  site: "Site",
+  date: "Date",
+  round: "Round",
+  white: "White",
+  black: "Black",
+  eloWhite: "WhiteElo",
+  eloBlack: "BlackElo",
+  titleWhite: "WhiteTitle",
+  titleBlack: "BlackTitle",
+  result: "Result",
+  opening: "Opening",
+  variation: "Variation",
+  subVariation: "SubVariation",
+  eco: "ECO",
+  fen: "FEN",
+  setUp: "SetUp",
+  timeControl: "TimeControl",
+};
 
+function tagDataToPGNString(data: PGNTagData): string {
+  let tagsString = "";
+  Object.assign(data, {
+    event: data.event || "?",
+    site: data.site || "?",
+    date: data.date || "????.??.??",
+    round: data.round || "?",
+    white: data.white,
+    black: data.black,
+    result: data.result || "*",
+  });
+  const entries = getEntries(data);
+  entries.forEach(([key, value]) => {
+    const keyString = tagsDict[key];
+    if (value) tagsString += `[${keyString} "${value}"]\r\n`;
+  });
+  return tagsString;
+}
+//console.log(pgnToJson(sampleData));
 function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
@@ -94,11 +153,15 @@ export function mainLineFromTreeArray(treeArray: Node[]) {
   return path;
 }
 
-export function mainLineToMoveHistory(line: Node[]) {
-  
-}
+export function mainLineToMoveHistory(line: Node[]) {}
 
-export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
+/**
+ * Parse standard PGN movetext into initial tree for analysis board
+ * @param movetext Standard PGN movetext {@link http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c8.2|- as defined here}
+ * @param startPosition FEN string of the start position of the game
+ * @returns move tree with parsed data as ``Node[]``
+ */
+export function parseMoveText(movetext: string, startPosition?: string): Node[] {
   let map = new Map<string, Node>();
   const addNode = (data: Chess.NodeData, parentKey: string | null): Node | undefined => {
     const key = uuidv4();
@@ -126,7 +189,7 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
     return path;
   }
 
-  let stream = pgn.replace(/(\r\n|\n|\r)/gm, "");
+  let stream = movetext.replace(/(\r\n|\n|\r)/gm, "");
   const initialGame = Chess.createGame({ startPosition: startPosition });
   //let currentGame = initialGame;
   let reading = "unknown";
@@ -139,12 +202,16 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
   let moveCount = "1";
   let comment = "";
   let annotation = "";
+
+  //Stack to maintian move to return to when closing a variation
   let variationStack: Array<Node | null> = [];
   let currentParent: Node | null = null;
+
   const isDigit = (char: string): boolean => {
     const exp = /\d/;
     return exp.test(char);
   };
+  //Get the current game state as a game object based on the parent of the current node being parsed
   const getCurrentGame = () => {
     const node = currentParent;
     if (!node) return initialGame;
@@ -157,25 +224,26 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
       );
     }
   };
+  //Add the current node/data to the tree and reset values
   const postCurrentData = () => {
     const pgn = currentData.pgn;
     if (!pgn) throw new Error("Invalid PGN string");
-
     const currentGame = getCurrentGame();
+    //Verify the move text is a valid/legal move
     const move = currentGame.legalMoves.find((move) => move.PGN === pgn);
-
     if (!move) {
       console.log(pgn);
       throw new Error(`Invalid move: ${pgn}`);
     }
-
     const parentKey = currentParent?.key || null;
     const path = parentKey ? getPath(parentKey) : [];
+    //Generate node data from game/move
     const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
     data.comment = currentData.comment || null;
     data.annotations = currentData.annotations || [];
     const node = addNode(data, parentKey);
     if (!node) throw new Error("Something went wrong");
+    //Set parent to the newly created node and reset data
     currentParent = node;
     currentData = {
       comment: null,
@@ -213,11 +281,11 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
         }
         annotation = "";
         if (currentData.pgn) postCurrentData();
+        //Start a new variation;
         const path: Node[] = currentParent ? getPath(currentParent["key"]) : [];
         const prevParent = path[path.length - 2] || null;
         variationStack.push(currentParent);
         currentParent = prevParent;
-        console.log(`variationstack: ${variationStack.map((node) => node && node.data.PGN)}`);
         reading = "unknown";
       } else if (char === ")") {
         if (currentData.annotations) {
@@ -227,6 +295,7 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
         }
         annotation = "";
         if (currentData.pgn) postCurrentData();
+        //Close variation; pop last node off the variation stack and set to current parent
         const nextParent = variationStack.pop();
         currentParent = nextParent || null;
         reading = "unknown";
@@ -278,6 +347,8 @@ export function pgnToTreeArray(pgn: string, startPosition?: string): Node[] {
     }
     prevChar = char;
   }
+  //Add last node if not already in tree
   if (currentData.pgn) postCurrentData();
+  //Recursively build map into tree array
   return buildTreeArray(map);
 }

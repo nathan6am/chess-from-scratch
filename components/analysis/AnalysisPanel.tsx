@@ -30,7 +30,7 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
     setCurrentKey,
     path,
     currentNode,
-    pgn,
+    moveText,
     commentControls,
     setMoveQueue,
   } = analysis;
@@ -96,7 +96,7 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
               <Annotations />
             </Tab.Panel>
             <Tab.Panel>
-              <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
+              <Share boardRef={boardRef} pgn={moveText} fen={currentGame.fen} />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>

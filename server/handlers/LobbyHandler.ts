@@ -9,7 +9,6 @@ import { DateTime } from "luxon";
 import { notEmpty } from "../../util/misc";
 import User from "../../lib/db/entities/User";
 import { gameFromNodeData } from "../../lib/chess";
-import e from "express";
 
 export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);

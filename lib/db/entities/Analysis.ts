@@ -16,6 +16,7 @@ import {
 import type { Relation } from "typeorm";
 import User from "./User";
 import Collection from "./Collection";
+import type { PGNTagData } from "@/util/parsers/pgnParser";
 
 @Entity()
 export default class Analysis extends BaseEntity {
@@ -28,20 +29,34 @@ export default class Analysis extends BaseEntity {
   @Column({ nullable: false })
   pgn: string;
 
+  @Column()
+  authorId: string;
+
+  @Column({ nullable: true })
+  forkedFromId: string;
+
   @Column({ nullable: false })
   title: string;
 
   @Column({ nullable: true })
   description: string;
 
+  @ManyToOne(() => Analysis)
+  @JoinColumn({ name: "forkedFromId", referencedColumnName: "id" })
+  forkedFrom: Analysis;
+
   @ManyToOne(() => User, (user) => user.savedAnalyses)
+  @JoinColumn({ name: "authorId", referencedColumnName: "id" })
   author: Relation<User>;
 
   @Column({ nullable: false, default: "unlisted" })
   visibility: "private" | "unlisted" | "public";
 
-  @Column({ type: "text", array: true, default: [] })
-  tags: string[];
+  @Column({ type: "jsonb" })
+  tags: PGNTagData;
+
+  @Column()
+  moveText: string;
 
   @ManyToMany(() => Collection, (collection) => collection.analyses, { cascade: true })
   @JoinTable({

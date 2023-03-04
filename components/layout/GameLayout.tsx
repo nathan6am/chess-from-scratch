@@ -4,6 +4,7 @@ import styles from "@/styles/Board.module.scss";
 export interface LayoutComponentProps {
   children?: JSX.Element | JSX.Element[];
   className?: string;
+  auto?: boolean;
 }
 export function BoardColumn({ children, className }: LayoutComponentProps) {
   return (
@@ -44,9 +45,15 @@ export function PanelContainer({ children }: LayoutComponentProps) {
   return <div className="bg-[#121212] flex flex-col h-full">{children}</div>;
 }
 
-export function ScrollContainer({ children }: LayoutComponentProps) {
+export function ScrollContainer({ children, auto, className }: LayoutComponentProps) {
   return (
-    <div className="top-0 bottom-0 left-0 right-0 overflow-y-scroll absolute scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px]">
+    <div
+      className={`top-0 bottom-0 left-0 right-0 ${
+        auto ? "overflow-y-auto" : "overflow-y-scroll"
+      } absolute scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] ${
+        className || ""
+      }`}
+    >
       {children}
     </div>
   );

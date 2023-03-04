@@ -6,6 +6,7 @@ import Toggle from "../../Toggle";
 import { values } from "lodash";
 import ChangePasswordForm from "../../forms/ChangePasswordForm";
 import VolumeSlider from "./VolumeSlider";
+import { ScrollContainer } from "@/components/layout/GameLayout";
 export default function Options() {
   return (
     <div className="flex flex-row w-full h-full">
@@ -28,29 +29,33 @@ function MyTabs() {
         <MenuTab>Change Password</MenuTab>
         <MenuTab>Close Account</MenuTab>
       </Tab.List>
-      <Tab.Panels className="px-10 py-4 bg-white/[0.05] rounded-lg shadow-lg my-10 w-full mr-10 h-fit">
-        <Tab.Panel>
-          <RadioGroup value={visibility} onChange={setVisibility}>
-            <RadioGroup.Label>Visibility</RadioGroup.Label>
-            <RadioButton value="private" label="Private" />
-            <RadioButton value="unlisted" label="Unlisted" />
-            <RadioButton value="public" label="Public" />
-          </RadioGroup>
-        </Tab.Panel>
-        <Tab.Panel as={Fragment}>
-          <DisplayPanel />
-        </Tab.Panel>
-        <Tab.Panel>
-          <GameBehaviorPanel />
-        </Tab.Panel>
-        <Tab.Panel>
-          <SoundPanel />
-        </Tab.Panel>
-        <Tab.Panel>Content 5</Tab.Panel>
-        <Tab.Panel>
-          <ChangePasswordForm />
-        </Tab.Panel>
-      </Tab.Panels>
+      <div className="my-10 mr-10 h-inherit w-full relative rounded-l-lg overflow-hidden">
+        <ScrollContainer auto>
+          <Tab.Panels className="px-10 py-4 bg-white/[0.05] rounded-l-lg shadow-lg w-full h-fit ">
+            <Tab.Panel>
+              <RadioGroup value={visibility} onChange={setVisibility}>
+                <RadioGroup.Label>Visibility</RadioGroup.Label>
+                <RadioButton value="private" label="Private" />
+                <RadioButton value="unlisted" label="Unlisted" />
+                <RadioButton value="public" label="Public" />
+              </RadioGroup>
+            </Tab.Panel>
+            <Tab.Panel as={Fragment}>
+              <DisplayPanel />
+            </Tab.Panel>
+            <Tab.Panel>
+              <GameBehaviorPanel />
+            </Tab.Panel>
+            <Tab.Panel>
+              <SoundPanel />
+            </Tab.Panel>
+            <Tab.Panel>Content 5</Tab.Panel>
+            <Tab.Panel>
+              <ChangePasswordForm />
+            </Tab.Panel>
+          </Tab.Panels>
+        </ScrollContainer>
+      </div>
     </Tab.Group>
   );
 }

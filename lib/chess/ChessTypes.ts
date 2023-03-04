@@ -92,3 +92,14 @@ export interface NodeData extends HalfMove {
   halfMoveCount: number;
   outcome: Outcome;
 }
+
+export interface MoveTrainerNodeData extends NodeData {
+  hint?: {
+    square?: Square;
+    text?: string;
+  };
+  isValidAlternative: boolean;
+  prompt?: string;
+  boardAnnotaions: BoardAnnotation[];
+}
+export interface BoardAnnotation {}

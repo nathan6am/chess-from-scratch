@@ -23,7 +23,7 @@ export interface AnalysisHook {
   currentKey: string | null;
   currentNode: Node | null;
   saveAnalysis: (data: AnalysisData) => void;
-  pgn: string;
+  moveText: string;
   mainLine: Node[];
   rootNodes: Node[];
   currentGame: Chess.Game;
@@ -62,10 +62,12 @@ interface AnalysisOptions {
   pgnSource?: string;
   evalEnabled: boolean;
   id?: string;
+  readonly: boolean;
 }
 const defaultOptions = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   evalEnabled: true,
+  readonly: false,
 };
 import axios from "axios";
 import Analysis from "@/lib/db/entities/Analysis";
@@ -117,17 +119,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, [options.pgnSource, options.startPosition]);
   const variationTree = useVariationTree(initialTree);
 
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    pgn,
-    mainLine,
-    setCurrentKey,
-  } = variationTree;
+  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
+    variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -299,14 +292,14 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const saveFn = useCallback(
     async (data: Omit<AnalysisData, "pgn">) => {
       if (!id) {
-        const res = await axios.post("/api/analysis/", { ...data, pgn });
+        const res = await axios.post("/api/analysis/", { ...data, moveText });
         if (res.data) return res.data as Analysis;
       } else {
-        const res = await axios.put(`/api/analysis/${id}`, { ...data, pgn });
+        const res = await axios.put(`/api/analysis/${id}`, { ...data, moveText });
         if (res.data) return res.data as Analysis;
       }
     },
-    [pgn, id]
+    [moveText, id]
   );
   const { mutate: saveAnalysis } = useMutation({
     mutationFn: saveFn,
@@ -320,7 +313,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   });
 
   return {
-    pgn,
+    moveText,
     saveAnalysis,
     mainLine,
     rootNodes: variationTree.rootNodes,
