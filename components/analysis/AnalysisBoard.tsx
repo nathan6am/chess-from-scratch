@@ -22,7 +22,7 @@ export default function AnalysisBoard() {
     evalEnabled,
     setEvalEnabled,
     boardControls,
-    pgn,
+    moveText,
     mainLine,
     rootNodes,
     setCurrentKey,
