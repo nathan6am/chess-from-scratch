@@ -29,12 +29,14 @@ const schema = yup.object({
 type FormValues = {
   username: string;
   name?: string;
+  bio?: string;
 };
 
 type Profile = {
   username: string;
   rating: number;
   name?: string;
+  bio?: string;
   country?: string;
 };
 interface Props {
@@ -76,8 +78,9 @@ export default function SignUpForm({ profile }: Props) {
       if (data.name?.length) profile.name = data.name;
       const res = await axios.post("/api/user/complete-profile", profile);
       if (res.data.updated && res.data.profile) {
+        console.log(res.data);
         refresh({ ...user, type: "user" });
-        router.push("/play");
+        router.replace("/play");
       }
     }
   };

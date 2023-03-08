@@ -66,10 +66,19 @@ router.post(
 
 router.put(
   "/:id",
-  async (req: Request<{ id: string }, unknown, Partial<Omit<SavedAnalysis, "id" | "forkedFrom">>>, res) => {
+  verifyUser,
+  async (req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>, res) => {
+    const userid = req.user?.id;
     const { id } = req.params;
-    const updated = await Analysis.updateById(id, req.body);
-    res.status(200).json(updated);
+    const canEdit = await Analysis.verifyAuthor(id, userid);
+    if (canEdit) {
+      const updated = await Analysis.updateById(id, req.body);
+      res.status(200).json(updated);
+      return;
+    } else {
+      res.status(401).end();
+      return;
+    }
   }
 );
 
@@ -82,39 +91,6 @@ router.get("/:id", async (req, res) => {
       author: true,
       collections: true,
     },
-    select: {
-      moveText: true,
-      pgn: true,
-      id: true,
-      tags: {
-        white: true,
-        black: true,
-        eloWhite: true,
-        eloBlack: true,
-        titleWhite: true,
-        titleBlack: true,
-        site: true,
-        event: true,
-        round: true,
-        date: true,
-        timeControl: true,
-        result: true,
-        opening: true,
-        variation: true,
-        subVariation: true,
-        eco: true,
-        setUp: true,
-        fen: true,
-      },
-      collections: {
-        id: true,
-        title: true,
-      },
-      author: {
-        id: true,
-        name: true,
-      },
-    },
   });
   if (!analysis) return res.status(404).end("Analysis not found");
   if (analysis.visibility === "private") {
@@ -126,6 +102,28 @@ router.get("/:id", async (req, res) => {
   });
 });
 
-router.post("/:id/fork", verifyUser, async (req: VerifiedRequest, res) => {});
+router.post("/:id/fork", verifyUser, async (req: VerifiedRequest, res) => {
+  const user = req.verifiedUser;
+  if (!user) return res.status(401).end();
+  const { id } = req.params;
+  const { collections } = req.body;
+  try {
+    const analysis = await Analysis.findOneBy({ id });
+    if (!analysis) return res.status(404).end();
+    if (analysis.visibility === "private" && analysis.authorId !== user.id) return res.status(401).end();
+    const forked = new Analysis();
+    const { id: sourceId, authorId, collectionIds, forkedFromId, ...rest } = analysis;
+    Object.assign(forked, {
+      ...rest,
+      authorId: user.id,
+      forkedFromId: sourceId,
+      collectionIds: collections || [],
+    });
+    await forked.save();
+    res.status(200).json({ success: true, analysis: forked });
+  } catch (e) {
+    res.status(500).end();
+  }
+});
 
 export default router;

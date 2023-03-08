@@ -38,7 +38,38 @@ export default function Comments({ node, controls }: Props) {
           setEditing(false);
         }}
       >
-        <div className="w-full px-2 pt-2"></div>
+        <div className="w-full px-2 pt-2">
+          <textarea
+            ref={inputRef}
+            spellCheck={false}
+            placeholder="Add a comment"
+            className={`w-full rounded-md border border-white/[0.2] bg-[#161616] resize-none px-2 py-1 ${
+              editing ? "text-white" : "text-white/[0.8]"
+            }`}
+            id="commentInput"
+            disabled={!node}
+            rows={3}
+            value={commentInput}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (!node) return;
+                controls.updateComment(node.key, commentInput);
+                inputRef.current?.blur();
+                setEditing(false);
+              }
+            }}
+            onFocus={() => {
+              setEditing(true);
+            }}
+            onBlur={() => {
+              if (!edited) setEditing(false);
+            }}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[\r\n\v]+/g, "");
+              setCommentInput(value);
+            }}
+          />
+        </div>
         <div className={`flex flex-row w-full items-start px-2 justify-end`}>
           {!editing && (
             <button
@@ -48,8 +79,7 @@ export default function Comments({ node, controls }: Props) {
                 inputRef.current?.focus();
               }}
             >
-              <MdEdit className="inline mb-[2px]" />{" "}
-              <p className="inline group-hover:underline">Edit</p>
+              <MdEdit className="inline mb-[2px]" /> <p className="inline group-hover:underline">Edit</p>
             </button>
           )}
           {editing && (
@@ -66,10 +96,7 @@ export default function Comments({ node, controls }: Props) {
             </button>
           )}
           {editing && edited && (
-            <button
-              className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2"
-              type="submit"
-            >
+            <button className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2" type="submit">
               <MdOutlineSaveAlt className="inline mr-1 mb-[2px] text-lg" />
               Save
             </button>

@@ -5,7 +5,7 @@ import passportCustom from "passport-custom";
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
 import * as passportLocal from "passport-local";
-import User from "../../lib/db/entities/User";
+import User, { SessionUser } from "../../lib/db/entities/User";
 const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
@@ -62,8 +62,15 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((_req: any, id: string, done: any) => {
-  const user = JSON.parse(id);
-  done(null, user);
+  const sessionUser: SessionUser = JSON.parse(id);
+  if (sessionUser.type === "guest" || sessionUser.type === "user") {
+    done(null, sessionUser);
+  } else {
+    User.findOneBy({ id: sessionUser.id }).then((user) => {
+      if (!user) done("account does not exist", null);
+      else done(null, { id: user.id, username: user.username, type: user.type });
+    });
+  }
 });
 const router = express.Router();
 
@@ -121,7 +128,7 @@ router.post("/signup", async function (req, res, next) {
       if (err) {
         return next(err);
       } else {
-        return res.status(204).json({ user: result.created });
+        return res.status(201).json({ user: result.created });
       }
     });
   } else {

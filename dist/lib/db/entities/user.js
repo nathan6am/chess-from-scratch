@@ -22,12 +22,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var User_1;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Credential = exports.CompletedPuzzle = exports.Analysis = exports.Notification = exports.NotificationType = void 0;
+exports.Profile = exports.Credential = exports.CompletedPuzzle = exports.Notification = exports.NotificationType = void 0;
 const typeorm_1 = require("typeorm");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const settings_1 = require("../../../context/settings");
 const misc_1 = require("../../../util/misc");
 const User_Game_1 = __importDefault(require("./User_Game"));
+const Collection_1 = __importDefault(require("./Collection"));
+const Analysis_1 = __importDefault(require("./Analysis"));
 let User = User_1 = class User extends typeorm_1.BaseEntity {
     static usernameExists(username) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -48,7 +50,9 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             if (credentials.email) {
                 const user = yield this.findOne({
                     where: {
-                        email: credentials.email,
+                        credentials: {
+                            email: credentials.email,
+                        },
                     },
                     relations: {
                         credentials: true,
@@ -62,7 +66,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                 return {
                     username: user.username,
                     id: user.id,
-                    type: user.profileComplete ? "user" : "incomplete",
+                    type: user.type,
                 };
             }
             if (credentials.username) {
@@ -82,7 +86,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                 return {
                     username: user.username,
                     id: user.id,
-                    type: user.profileComplete ? "user" : "incomplete",
+                    type: user.type,
                 };
             }
             return null;
@@ -96,26 +100,33 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             return {
                 id: user.id,
                 username: user.username,
-                type: user.profileComplete ? "user" : "incomplete",
+                type: user.type,
             };
         });
     }
     static loginWithFacebook(profile) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield this.findOne({
+                relations: {
+                    credentials: true,
+                },
                 where: {
-                    facebookId: profile.facebookId,
+                    credentials: {
+                        facebookId: profile.facebookId,
+                    },
                 },
             });
             if (user) {
-                const { id, username, profileComplete } = user;
-                return { id, username, type: profileComplete ? "user" : "incomplete" };
+                const { id, username, type } = user;
+                return { id, username, type };
             }
             const newUser = new User_1();
+            const credentials = new Credential();
+            credentials.facebookId = profile.facebookId;
             Object.assign(newUser, {
-                facebookId: profile.facebookId,
                 name: profile.name,
             });
+            newUser.credentials = credentials;
             yield newUser.save();
             return {
                 id: newUser.id,
@@ -128,7 +139,8 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         return __awaiter(this, void 0, void 0, function* () {
             const { email, username, password } = account;
             const exists = yield this.createQueryBuilder("user")
-                .where("user.email = :email", { email: account.email })
+                .leftJoinAndSelect("user.credentials", "credentials")
+                .where("credentials.email = :email", { email: account.email })
                 .orWhere("LOWER(user.username) = LOWER(:username)", {
                 username: account.username,
             })
@@ -143,6 +155,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             const credentials = new Credential();
             const hash = bcrypt_1.default.hashSync(account.password, 10);
             credentials.hashedPassword = hash;
+            credentials.email = email;
             user.credentials = credentials;
             Object.assign(user, { email, username });
             yield user.save();
@@ -156,22 +169,60 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             return { created: created };
         });
     }
-    static updateCredentials(username, newPassword) {
+    static updateCredentials(userid, currentPassword, newPassword) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield this.findOne({
-                where: { username: username },
+                where: { id: userid },
                 relations: { credentials: true },
             });
-            if (user) {
+            if (user && bcrypt_1.default.compareSync(currentPassword, user.credentials.hashedPassword)) {
                 user.credentials.hashedPassword = bcrypt_1.default.hashSync(newPassword, 10);
-                user.save();
+                yield user.save();
+                return true;
             }
+            return false;
+        });
+    }
+    static getCollections(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.findOne({
+                where: { id: id },
+                relations: {
+                    collections: {
+                        analyses: {
+                            collections: true,
+                        },
+                    },
+                },
+            });
+            return (user === null || user === void 0 ? void 0 : user.collections) || [];
         });
     }
     static getProfile(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOneBy({ id });
+            const user = yield this.findOne({
+                where: {
+                    id,
+                },
+                relations: {
+                    profile: true,
+                },
+            });
             return user;
+        });
+    }
+    static createProfile(id, profileData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.findOneBy({ id });
+            if (!user)
+                throw new Error("User does not exist");
+            if (user.type === "user")
+                throw new Error("user already has profile");
+            const profile = new Profile();
+            Object.assign(profile, profileData);
+            user.profile = profile;
+            user.type = "user";
+            yield user.save();
         });
     }
     static getGames(id) {
@@ -218,22 +269,6 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "rating", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true, unique: true }),
-    __metadata("design:type", String)
-], User.prototype, "facebookId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "country", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true, unique: true }),
-    __metadata("design:type", String)
-], User.prototype, "googleId", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "email", void 0);
-__decorate([
     (0, typeorm_1.OneToMany)(() => Notification, (notifcation) => notifcation.user),
     __metadata("design:type", Object)
 ], User.prototype, "notifications", void 0);
@@ -242,17 +277,22 @@ __decorate([
     __metadata("design:type", Object)
 ], User.prototype, "games", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => Analysis, (analysis) => analysis.creator),
+    (0, typeorm_1.OneToMany)(() => Collection_1.default, (collection) => collection.user),
+    __metadata("design:type", Object)
+], User.prototype, "collections", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Analysis_1.default, (analysis) => analysis.author),
     __metadata("design:type", Object)
 ], User.prototype, "savedAnalyses", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: "jsonb", default: settings_1.defaultSettings }),
-    __metadata("design:type", Object)
-], User.prototype, "settings", void 0);
+    (0, typeorm_1.Column)({ default: "incomplete" }),
+    __metadata("design:type", String)
+], User.prototype, "type", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: false }),
-    __metadata("design:type", Boolean)
-], User.prototype, "profileComplete", void 0);
+    (0, typeorm_1.OneToOne)(() => Profile, (profile) => profile.id, { cascade: true }),
+    (0, typeorm_1.JoinColumn)(),
+    __metadata("design:type", Object)
+], User.prototype, "profile", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => Credential, (credential) => credential.id, { cascade: true }),
     (0, typeorm_1.JoinColumn)(),
@@ -309,25 +349,6 @@ Notification = __decorate([
     (0, typeorm_1.Entity)()
 ], Notification);
 exports.Notification = Notification;
-let Analysis = class Analysis {
-};
-__decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
-    __metadata("design:type", String)
-], Analysis.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: "json" }),
-    __metadata("design:type", Object)
-], Analysis.prototype, "tree", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => User, (user) => user.savedAnalyses),
-    (0, typeorm_1.JoinColumn)({ name: "creator_id" }),
-    __metadata("design:type", Object)
-], Analysis.prototype, "creator", void 0);
-Analysis = __decorate([
-    (0, typeorm_1.Entity)()
-], Analysis);
-exports.Analysis = Analysis;
 let CompletedPuzzle = class CompletedPuzzle {
 };
 __decorate([
@@ -354,10 +375,44 @@ __decorate([
     __metadata("design:type", Number)
 ], Credential.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: false }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Credential.prototype, "hashedPassword", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, unique: true }),
+    __metadata("design:type", String)
+], Credential.prototype, "facebookId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, unique: true }),
+    __metadata("design:type", String)
+], Credential.prototype, "googleId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Credential.prototype, "email", void 0);
 Credential = __decorate([
     (0, typeorm_1.Entity)()
 ], Credential);
 exports.Credential = Credential;
+let Profile = class Profile {
+};
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)(),
+    __metadata("design:type", Number)
+], Profile.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Profile.prototype, "bio", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Profile.prototype, "country", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "jsonb", default: settings_1.defaultSettings }),
+    __metadata("design:type", Object)
+], Profile.prototype, "settings", void 0);
+Profile = __decorate([
+    (0, typeorm_1.Entity)()
+], Profile);
+exports.Profile = Profile;

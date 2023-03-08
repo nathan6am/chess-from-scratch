@@ -17,12 +17,16 @@ exports.defaultSettings = {
         showValidMoves: true,
         showCoordinates: "inside",
         showCapturedMaterial: true,
-        boardTheme: "standard",
-        pieceTheme: "standard",
+        usePieceIcons: true,
+        boardTheme: "default",
+        pieceTheme: "default",
     },
     sound: {
         volume: 100,
         lowTimeWarning: true,
+        moveSounds: true,
+        invalidMoveSounds: true,
+        notifcationSounds: true,
     },
     UITheme: "dark",
 };

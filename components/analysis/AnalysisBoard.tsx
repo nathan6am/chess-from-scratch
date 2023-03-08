@@ -22,7 +22,7 @@ export default function AnalysisBoard() {
     evalEnabled,
     setEvalEnabled,
     boardControls,
-    pgn,
+    moveText,
     mainLine,
     rootNodes,
     setCurrentKey,
@@ -348,9 +348,7 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
         >
           {children}
         </button>

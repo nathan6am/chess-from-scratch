@@ -68,6 +68,11 @@ export default class Analysis extends BaseEntity {
   })
   collections: Relation<Collection[]>;
 
+  static async verifyAuthor(id: string, userid: string) {
+    const analysis = await this.findOneBy({ id });
+    if (!analysis) return false;
+    return analysis.authorId === userid;
+  }
   static async addToCollections(id: string, collections: string[]) {
     const analysis = await this.findOneBy({ id });
     if (!analysis) throw new Error("Analysis does not exits");

@@ -42,7 +42,8 @@ const User_1 = __importStar(require("./entities/User"));
 const Game_1 = __importDefault(require("./entities/Game"));
 const Puzzle_1 = __importDefault(require("./entities/Puzzle"));
 const User_Game_1 = __importDefault(require("./entities/User_Game"));
-const User_2 = require("./entities/User");
+const Analysis_1 = __importDefault(require("./entities/Analysis"));
+const Collection_1 = __importDefault(require("./entities/Collection"));
 const env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";
@@ -59,15 +60,7 @@ function initialize() {
             password,
             database,
             host,
-            entities: [
-                User_1.default,
-                Game_1.default,
-                Puzzle_1.default,
-                User_2.Analysis,
-                User_1.Notification,
-                User_Game_1.default,
-                User_1.Credential,
-            ],
+            entities: [User_1.default, Game_1.default, Puzzle_1.default, Analysis_1.default, User_1.Notification, User_Game_1.default, User_1.Credential, Collection_1.default, User_1.Profile],
             synchronize: true,
         });
         yield datasource.initialize();

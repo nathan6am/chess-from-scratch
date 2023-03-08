@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useContext } from "react";
+import { UserContext } from "@/context/user";
 import SideBar from "./SideBar";
 import TopBar from "./TopBar";
 import useProfile from "@/hooks/useProfile";
+import { useRouter } from "next/router";
 const PAGES = [
   { href: "/play", label: "Play", key: "play" },
   { href: "/puzzles", label: "Puzzles", key: "puzzles" },

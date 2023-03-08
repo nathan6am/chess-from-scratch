@@ -5,21 +5,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { PGNTagData } from "@/util/parsers/pgnParser";
 export interface SavedAnalysis {
-  id: string;
-  title: string;
-  description?: string;
-  collectionIds: string[];
-  tags: PGNTagData;
-  moveText: string;
-  pgn: string;
-  forkedFrom?: any;
-  visibility: "private" | "unlisted" | "public";
+  analysis: Analysis;
   readonly?: boolean;
 }
 
 const fetcher = async (id: string | null) => {
   if (!id) return null;
-  const res = await axios.get<Analysis>(`/api/analysis/${id}`);
+  const res = await axios.get<{ analysis: Analysis; readonly: boolean }>(`/api/analysis/${id}`);
   if (res.data) {
     return res.data;
   } else {
@@ -41,10 +33,12 @@ export default function useSavedAnalysis() {
     setId(id);
   };
 
-  const save = () => {};
+  const save = useMutation({
+    mutationFn: async () => {},
+  });
   const { mutate: saveAs } = useMutation({
     mutationFn: async (data: SavedAnalysis) => {
-      const { id, readonly, forkedFrom, ...rest } = data;
+      const { id, ...rest } = data.analysis;
       const response = await axios.post<Analysis>("/api/analysis/", { ...rest });
       if (response && response.data) return response.data as Analysis;
       else throw new Error("Save failed");
@@ -54,5 +48,14 @@ export default function useSavedAnalysis() {
       setId(data.id);
     },
   });
-  const fork = () => {};
+  const { mutate: fork } = useMutation({
+    mutationFn: async (data: { title: string; collectionIds: string[] }) => {
+      const response = await axios.post<{ success: boolean; analysis: Analysis }>(`/api/analysis/${id}/fork`, data);
+      if (response && response.data) return response.data.analysis;
+      else throw new Error("Fork failed");
+    },
+    onSuccess: (data) => {
+      setId(data.id);
+    },
+  });
 }

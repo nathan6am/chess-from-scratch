@@ -39,7 +39,12 @@ export async function getServerSideProps(context: NextPageContext) {
     res.end();
     return { props: {} };
   }
-  console.log(req?.user);
+  if (req.user.type === "incomplete") {
+    res.setHeader("location", "/complete-profile");
+    res.statusCode = 302;
+    res.end();
+    return { props: {} };
+  }
   return { props: { user: req?.user } };
 }
 

@@ -176,9 +176,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
             setBestMove(evaluation.bestMove);
             return;
           }
-        } catch (e) {
-          console.log(e);
-        }
+        } catch (e) {}
       }
       setCurrentDepth(0);
       //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument

@@ -43,21 +43,24 @@ router.post("/complete-profile", (req, res) => __awaiter(void 0, void 0, void 0,
         return res.status(401);
     if (((_b = req.user) === null || _b === void 0 ? void 0 : _b.type) === "guest")
         return res.status(401);
-    const profile = req.body;
-    const { name, username, rating, country } = profile;
-    const user = yield User_1.default.findOneBy({ id });
-    if (!user)
-        return res.status(404);
-    if (name)
-        user.name = name;
-    if (username)
-        user.username = username;
-    user.rating = parseInt(rating);
-    if (country)
-        user.country = country;
-    user.profileComplete = true;
-    const updated = yield user.save();
-    res.status(200).json({ updated: true, profile: updated });
+    try {
+        const profile = req.body;
+        const { name, username, rating, country, bio } = profile;
+        const user = yield User_1.default.findOneBy({ id });
+        if (!user)
+            return res.status(404);
+        User_1.default.createProfile(user.id, { country, bio });
+        if (name)
+            user.name = name;
+        if (username)
+            user.username = username;
+        user.rating = parseInt(rating);
+        const updated = yield user.save();
+        res.status(200).json({ updated: true, profile: updated });
+    }
+    catch (e) {
+        return res.status(400).end();
+    }
 }));
 router.get("/checkusername", function (req, res) {
     return __awaiter(this, void 0, void 0, function* () {

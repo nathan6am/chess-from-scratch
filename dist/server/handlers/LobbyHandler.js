@@ -211,8 +211,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                         const activeColor = game.data.activeColor;
                         const clock = game.clock;
                         //Correct the time remaining if both player have played a move
-                        if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 &&
-                            clock.lastMoveTimeISO !== null) {
+                        if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 && clock.lastMoveTimeISO !== null) {
                             clock.timeRemainingMs[activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[activeColor]);
                             if (game.players[activeColor] !== id) {
                                 //Ack if the connected player is not the current turn
@@ -261,13 +260,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         //Correct the time remaining before emitting
         const clock = lobby.currentGame.clock;
         if (clock.lastMoveTimeISO) {
-            lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] =
-                (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
+            lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
         }
         //Timeout event to end the game if the user hasn't played a move in the allotted time
-        socket
-            .timeout(timeoutMs)
-            .emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
+        socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
             var _b, _c, _d;
             if (err) {
                 const lobby = yield cache.getLobbyById(lobbyid);
@@ -282,11 +278,24 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
                     return;
                 //Set outcome by timeout and emit
-                //TODO: Check for insufficient material
-                lobby.currentGame.data.outcome = {
-                    result: lobby.currentGame.data.activeColor === "w" ? "b" : "w",
-                    by: "timeout",
+                const board = lobby.currentGame.data.board;
+                const pieces = {
+                    w: board.filter(([square, piece]) => piece.color === "w").map(([square, piece]) => piece),
+                    b: board.filter(([square, piece]) => piece.color === "b").map(([square, piece]) => piece),
                 };
+                const nextColor = lobby.currentGame.data.activeColor === "w" ? "b" : "w";
+                if (Chess.isSufficientMaterial(pieces[nextColor])) {
+                    lobby.currentGame.data.outcome = {
+                        result: nextColor,
+                        by: "timeout",
+                    };
+                }
+                else {
+                    lobby.currentGame.data.outcome = {
+                        result: "d",
+                        by: "timeout-w-insufficient",
+                    };
+                }
                 lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
                 yield cache.updateGame(lobbyid, lobby.currentGame);
                 yield handleGameResult(lobbyid, lobby.currentGame);
@@ -328,8 +337,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     if (((_d = lobby.currentGame) === null || _d === void 0 ? void 0 : _d.id) !== game.id || lobby.currentGame.data.outcome)
                         return;
                     //return if moves have been played since the initial request
-                    if (lobby.currentGame.data.moveHistory.flat().length !==
-                        game.data.moveHistory.flat().length)
+                    if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
                         return;
                     const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(lobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
                     //Rerequest with new timeout

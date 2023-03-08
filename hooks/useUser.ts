@@ -2,6 +2,7 @@ import useSWR from "swr";
 import { useEffect } from "react";
 import axios from "axios";
 import { SessionUser } from "@/lib/db/entities/User";
+import { useQuery } from "@tanstack/react-query";
 type User = {
   name: string | undefined;
   id: string;

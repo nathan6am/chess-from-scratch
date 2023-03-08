@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import User, { Notification, Credential } from "./entities/User";
+import User, { Notification, Credential, Profile } from "./entities/User";
 import Game from "./entities/Game";
 import Puzzle from "./entities/Puzzle";
 import User_Game from "./entities/User_Game";
@@ -22,7 +22,7 @@ export async function initialize() {
     password,
     database,
     host,
-    entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential, Collection],
+    entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential, Collection, Profile],
     synchronize: true,
   });
   await datasource.initialize();

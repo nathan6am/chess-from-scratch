@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 import { useLocalStorage } from "usehooks-ts";
+import useProfile from "@/hooks/useProfile";
 const queryClient = new QueryClient();
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -26,10 +27,14 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   };
   const { user, error, isValidating, mutate } = useUser();
   const router = useRouter();
+  const { mutate: refreshProfile } = useProfile();
   useEffect(() => {
     if (!user && !isValidating) {
       router.push("/login");
+    } else if (user && user.type === "incomplete") {
+      router.push("/complete-profile");
     }
+    refreshProfile();
   }, [user]);
   return (
     <QueryClientProvider client={queryClient}>

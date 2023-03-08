@@ -50,6 +50,8 @@ const auth_1 = __importDefault(require("./routes/auth"));
 const MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
 const redis_1 = require("redis");
 const user_1 = __importDefault(require("./routes/user"));
+const analysis_1 = __importDefault(require("./routes/analysis"));
+const collections_1 = __importDefault(require("./routes/collections"));
 const redisClient = (0, redis_1.createClient)();
 const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
 const cors_1 = __importDefault(require("cors"));
@@ -99,6 +101,8 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     app.use(passport_1.default.authenticate("session"));
     app.use("/api/auth", auth_1.default);
     app.use("/api/user", user_1.default);
+    app.use("/api/analysis", analysis_1.default);
+    app.use("/api/collections", collections_1.default);
     //Wrap middleware for socket.io
     const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
     const io = new socketio.Server(server, {

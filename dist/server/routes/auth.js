@@ -90,8 +90,18 @@ passport_1.default.serializeUser((user, done) => {
     done(null, JSON.stringify(user));
 });
 passport_1.default.deserializeUser((_req, id, done) => {
-    const user = JSON.parse(id);
-    done(null, user);
+    const sessionUser = JSON.parse(id);
+    if (sessionUser.type === "guest" || sessionUser.type === "user") {
+        done(null, sessionUser);
+    }
+    else {
+        User_1.default.findOneBy({ id: sessionUser.id }).then((user) => {
+            if (!user)
+                done("account does not exist", null);
+            else
+                done(null, { id: user.id, username: user.username, type: user.type });
+        });
+    }
 });
 const router = express_1.default.Router();
 router.get("/facebook", passport_1.default.authenticate("facebook"));
@@ -142,7 +152,7 @@ router.post("/signup", function (req, res, next) {
                     return next(err);
                 }
                 else {
-                    return res.status(204).json({ user: result.created });
+                    return res.status(201).json({ user: result.created });
                 }
             });
         }
@@ -163,18 +173,26 @@ router.get("/checkusername", function (req, res) {
         res.status(200).json({ valid: !exists });
     });
 });
-// router.post("/auth/updatetest", async function (req, res) {
-//   const credentials = req.body;
-//   if (
-//     credentials.password &&
-//     typeof credentials.password === "string" &&
-//     credentials.username &&
-//     typeof credentials.username === "string"
-//   ) {
-//     const user = await updateCredentials(credentials.username, credentials.password);
-//     res.status(200).send();
-//   }
-// });
+router.post("/change-password", function (req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const sessionUser = req.user;
+        if (!sessionUser || sessionUser.type === "guest") {
+            res.status(401).end();
+            return;
+        }
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            res.status(400).end();
+            return;
+        }
+        const updated = yield User_1.default.updateCredentials(sessionUser.id, currentPassword, newPassword);
+        if (updated)
+            return res.status(200).json({ updated: true });
+        else {
+            res.status(401).end();
+        }
+    });
+});
 router.get("/logout", function (req, res, next) {
     console.log("logging out");
     req.logout(function (err) {

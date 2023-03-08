@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.isSufficientMaterial = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 const ChessTypes_1 = require("./ChessTypes");
 const lodash_1 = __importDefault(require("lodash"));
 const FenParser_1 = require("./FenParser");
@@ -792,6 +792,17 @@ function move(gameInitial, move, elapsedTimeSeconds) {
     }
     //TODO: Check for insufficient Material
     const { position: updatedPosition } = updatedGameState, rest = __rest(updatedGameState, ["position"]);
+    const pieces = Array.from(updatedPosition.entries()).map(([square, piece]) => {
+        return piece;
+    });
+    const whitePieces = pieces.filter((piece) => piece.color === "w");
+    const blackPieces = pieces.filter((piece) => piece.color === "b");
+    if (!isSufficientMaterial(whitePieces) && !isSufficientMaterial(blackPieces)) {
+        outcome = {
+            result: "d",
+            by: "insufficient",
+        };
+    }
     //Check for repitition
     if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
         outcome = { result: "d", by: "repitition" };
@@ -844,6 +855,22 @@ exports.serializeMoves = serializeMoves;
 // export function deserializeMove(move: string): Move {
 //   move.split(":")
 // }
+function isSufficientMaterial(pieces) {
+    if (pieces.some((piece) => piece.type === "p" || piece.type === "q" || piece.type === "r"))
+        return true;
+    let n = 0;
+    let b = 0;
+    pieces.forEach((piece) => {
+        if (piece.type === "n")
+            n++;
+        if (piece.type === "b")
+            b++;
+    });
+    if ((n && b) || n > 1 || b > 1)
+        return true;
+    return false;
+}
+exports.isSufficientMaterial = isSufficientMaterial;
 function positionToBoard(position) {
     return Array.from(position.entries());
 }
