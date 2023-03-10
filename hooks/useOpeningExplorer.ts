@@ -88,7 +88,18 @@ const fetcher = async (game: Chess.Game) => {
   return response.data as ApiResponse;
 };
 
-export default function useOpeningExplorer(currentGame: Chess.Game, options?: Partial<Options>) {
+export interface ExplorerHook {
+  sourceGame: Chess.Game;
+  data: ApiResponse | undefined;
+  error: unknown;
+  isLoading: boolean;
+  fetchOTBGame: (gameid: string) => void;
+  otbGamePgn: string | null | undefined;
+  otbGameLoading: boolean;
+}
+
+export default function useOpeningExplorer(currentGame: Chess.Game, options?: Partial<Options>): ExplorerHook {
+  const [gameId, fetchOTBGame] = useState<string | null>(null);
   //Debounce game state for api calls
   const debouncedGame = useDebounce(currentGame, 700);
   //Ref to set loading state when currentGame changes before debounced game upates
@@ -104,7 +115,23 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
     queryKey: ["explorer", debouncedGame],
     queryFn: () => fetcher(debouncedGame),
   });
+
+  const {
+    data: otbGamePgn,
+    error: otbGameError,
+    isLoading: otbGameLoading,
+  } = useQuery({
+    queryKey: ["otbgame", gameId],
+    queryFn: async () => {
+      if (!gameId) return null;
+      const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
+      if (response && response.data) return response.data as string;
+    },
+  });
   return {
+    otbGameLoading,
+    fetchOTBGame,
+    otbGamePgn,
     data,
     error,
     isLoading: debounceSyncRef.current ? isLoading : true,

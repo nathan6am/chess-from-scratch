@@ -4,7 +4,7 @@ import useSound from "use-sound";
 import useVariationTree from "./useVariationTree";
 import useLocalEval, { Evaler } from "./useLocalEval";
 import useDebounce from "./useDebounce";
-import useOpeningExplorer from "./useOpeningExplorer";
+import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import { TreeNode } from "./useTreeData";
@@ -16,13 +16,14 @@ export interface AnalysisData {
   title: string;
   description?: string;
   collectionIds: string[];
-  tags: string[];
+  tagData: PGNTagData;
+  pgn: string;
   visibility: "private" | "unlisted" | "public";
 }
 export interface AnalysisHook {
+  loadPgn: (pgn: string) => void;
   currentKey: string | null;
   currentNode: Node | null;
-  saveAnalysis: (data: AnalysisData) => void;
   moveText: string;
   mainLine: Node[];
   rootNodes: Node[];
@@ -42,12 +43,7 @@ export interface AnalysisHook {
   currentLine: Node[];
   path: Node[];
   debouncedNode: Node | null;
-  explorer: {
-    sourceGame: Chess.Game;
-    data: ApiResponse | undefined;
-    error: unknown;
-    isLoading: boolean;
-  };
+  explorer: ExplorerHook;
   setMoveQueue: React.Dispatch<React.SetStateAction<string[]>>;
   commentControls: {
     updateComment: (nodeId: string, comment: string) => void;
@@ -71,31 +67,16 @@ const defaultOptions = {
 };
 import axios from "axios";
 import Analysis from "@/lib/db/entities/Analysis";
-const fetcher = async (id: string | undefined) => {
-  if (!id) return null;
-  const res = await axios.get(`/api/analysis/${id}`);
-  if (res.data) {
-    return res.data as Analysis;
-  } else {
-    return null;
-  }
-};
+import { PGNTagData, parsePgn } from "@/util/parsers/pgnParser";
+import useSavedAnalysis from "./useSavedAnalysis";
+
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
   const [options, setOptions] = useState(() => {
     return { ...defaultOptions, ...initialOptions };
   });
   const { settings } = useContext(SettingsContext);
   const { id } = options;
-  const {
-    data: saved,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ["analysis", id],
-    queryFn: () => fetcher(id),
-  });
-
-  const [evalEnabled, setEvalEnabled] = useState(true);
+  const [evalEnabled, setEvalEnabled] = useState(() => options.evalEnabled);
   const [startPosEval, setStartPosEval] = useState<Chess.FinalEvaluation | undefined>();
   const evaler = useLocalEval();
   const initialGame = useMemo<Chess.Game>(() => {
@@ -105,11 +86,15 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     });
     return game;
   }, []);
-
   const initialTree = useMemo(() => {
     if (options.pgnSource) {
       try {
-        const tree = pgnToTreeArray(options.pgnSource, options.startPosition);
+        const { tree, tagData } = parsePgn(options.pgnSource);
+        if (tagData.fen) {
+          setOptions((cur) => {
+            return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
+          });
+        }
         return tree;
       } catch (e) {
         console.log(e);
@@ -118,6 +103,20 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   }, [options.pgnSource, options.startPosition]);
   const variationTree = useVariationTree(initialTree);
+
+  const loadPgn = (pgn: string) => {
+    try {
+      const { tree, tagData } = parsePgn(pgn);
+      if (tagData.fen) {
+        setOptions((cur) => {
+          return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
+        });
+      }
+      variationTree.loadNewTree(tree);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
     variationTree;
@@ -287,34 +286,9 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   }, [moveQueue, currentGame, onMove, prevGame]);
 
-  const queryClient = useQueryClient();
-
-  const saveFn = useCallback(
-    async (data: Omit<AnalysisData, "pgn">) => {
-      if (!id) {
-        const res = await axios.post("/api/analysis/", { ...data, moveText });
-        if (res.data) return res.data as Analysis;
-      } else {
-        const res = await axios.put(`/api/analysis/${id}`, { ...data, moveText });
-        if (res.data) return res.data as Analysis;
-      }
-    },
-    [moveText, id]
-  );
-  const { mutate: saveAnalysis } = useMutation({
-    mutationFn: saveFn,
-    onSuccess: (data) => {
-      if (data) {
-        setOptions((options) => ({ ...options, id: data?.id }));
-        queryClient.setQueriesData(["analysis", id], data);
-        queryClient.invalidateQueries({ queryKey: ["analysis", id] });
-      }
-    },
-  });
-
   return {
+    loadPgn,
     moveText,
-    saveAnalysis,
     mainLine,
     rootNodes: variationTree.rootNodes,
     currentGame,

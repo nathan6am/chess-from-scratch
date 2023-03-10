@@ -111,6 +111,8 @@ export default class User extends BaseEntity {
           credentials: true,
         },
       });
+      console.log(credentials.username);
+      console.log(user);
       if (!user || !user.credentials) return null;
       const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
@@ -183,11 +185,11 @@ export default class User extends BaseEntity {
     }
     const user = new User();
     const credentials = new Credential();
-    const hash = bcrypt.hashSync(account.password, 10);
+    const hash = bcrypt.hashSync(password, 10);
     credentials.hashedPassword = hash;
     credentials.email = email;
     user.credentials = credentials;
-    Object.assign(user, { email, username });
+    Object.assign(user, { username });
     await user.save();
     if (!user) {
       return {
@@ -195,7 +197,7 @@ export default class User extends BaseEntity {
         fieldErrors: [{ field: "none", message: "Unable to create account" }],
       };
     }
-    const created = { id: user.id, username: user.username };
+    const created = { id: user.id, username: user.username, type: user.type };
     return { created: created };
   }
 
@@ -232,8 +234,20 @@ export default class User extends BaseEntity {
       },
       relations: {
         profile: true,
+        games: {
+          game: {
+            players: {
+              user: true,
+            },
+          },
+        },
       },
     });
+    return user;
+  }
+
+  static async findById(id: string) {
+    const user = await this.findOneBy({ id });
     return user;
   }
 

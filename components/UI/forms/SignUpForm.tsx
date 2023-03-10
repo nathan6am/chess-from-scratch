@@ -67,7 +67,7 @@ export default function SignUpForm() {
         });
       } else if (res.data.user) {
         refresh(res.data.user);
-        router.push("/play");
+        router.push("/complete-profile");
       }
     }
   };

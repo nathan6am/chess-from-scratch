@@ -19,7 +19,7 @@ interface Props {
   attemptMoves: (moves: string[]) => void;
 }
 
-import { parsePGN } from "../game/MoveHistory";
+import { replacePieceChars } from "../game/MoveHistory";
 import { ClipLoader } from "react-spinners";
 import NumbericInput from "../UI/NumbericInput";
 import { notEmpty } from "@/util/misc";
@@ -263,7 +263,7 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"
         onClick={onClick}
       >
-        {parsePGN(pgn, isWhite ? "w" : "b")}
+        {replacePieceChars(pgn, isWhite ? "w" : "b")}
       </span>
     </>
   );

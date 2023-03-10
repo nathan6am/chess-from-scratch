@@ -664,10 +664,10 @@ export function executeMove(
       [game.activeColor]: castleRights,
     },
   };
-  if (move.capture === "a8") updatedGame.castleRights.b.queenSide = false;
-  if (move.capture === "h8") updatedGame.castleRights.b.kingSide = false;
-  if (move.capture === "a1") updatedGame.castleRights.b.queenSide = false;
-  if (move.capture === "h1") updatedGame.castleRights.b.kingSide = false;
+  if (move.capture === "a8" || move.start === "a8") updatedGame.castleRights.b.queenSide = false;
+  if (move.capture === "h8" || move.start === "h8") updatedGame.castleRights.b.kingSide = false;
+  if (move.capture === "a1" || move.start === "a1") updatedGame.castleRights.w.queenSide = false;
+  if (move.capture === "h1" || move.start === "h1") updatedGame.castleRights.w.kingSide = false;
   return {
     updatedGameState: updatedGame,
     capturedPiece: capture,

@@ -21,10 +21,18 @@ export type TreeHook<T> = {
   getPly: (key: string) => number;
   findChild: (key: string | null, callbackFn: (node: TreeNode<T>) => boolean) => TreeNode<T> | undefined;
   getContinuation: (key: string | null) => TreeNode<T>[];
+  loadTree: (treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) => void;
+  findNode?: (predicate: (node: TreeNode<T>) => boolean, traversalMethod?: string) => TreeNode<T> | undefined;
 };
 
-function useTreeData<T extends object>(initialMap: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()): TreeHook<T> {
-  const map = useMemo(() => (initialMap instanceof Map ? initialMap : buildMapFromTreeArray(initialMap)), []);
+function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()): TreeHook<T> {
+  const [map, setMap] = useState<Map<string, TreeNode<T>>>(() =>
+    initialTree instanceof Map ? initialTree : buildMapFromTreeArray(initialTree)
+  );
+  function loadTree(treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) {
+    setMap(treeData instanceof Map ? treeData : buildMapFromTreeArray(treeData));
+    setTreeArray(buildTreeArray(map));
+  }
   const [treeArray, setTreeArray] = useState(buildTreeArray(map));
 
   function getNode(key: string): TreeNode<T> | undefined {
@@ -210,6 +218,7 @@ function useTreeData<T extends object>(initialMap: Map<string, TreeNode<T>> | Tr
     getDepth,
     getPly,
     findChild,
+    loadTree,
   };
 }
 

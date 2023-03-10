@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
 
 //Types
-import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game } from "../server/types/lobby";
+import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game, Connection } from "../server/types/lobby";
 import { Lobby, Player } from "server/types/lobby";
 
 //Util
@@ -39,7 +39,7 @@ export interface OnlineGame {
   };
   lobby: Lobby | null;
   currentGame: Game | null;
-  players: Player[];
+  players: Connection[];
   playerColor: Chess.Color;
   premoveQueue: Chess.Move[];
   currentBoard: Chess.Board | null;
@@ -67,12 +67,12 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
   const playerColor = useMemo<Chess.Color | null>(() => {
     if (game === null) return null;
     if (!user) return null;
-    if (game.players.w === user?.id) return "w";
-    if (game.players.b === user?.id) return "b";
+    if (game.players.w.id === user?.id) return "w";
+    if (game.players.b.id === user?.id) return "b";
     return null;
   }, [game, user]);
 
-  const players = lobby?.players;
+  const players = lobby?.connections;
 
   //Flattened move history
   const moveHistoryFlat = useMemo(() => {

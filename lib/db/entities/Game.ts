@@ -28,6 +28,9 @@ export default class Game extends BaseEntity {
   @Column("jsonb", { nullable: true })
   guestPlayer: { username: string; color: Color };
 
+  @Column({ default: false })
+  isCorrespondence: boolean;
+
   static async saveGame(
     players: Record<Color, Player>,
     outcome: Outcome,
@@ -40,8 +43,8 @@ export default class Game extends BaseEntity {
     game.players = [];
     await game.save();
     Object.entries(players).forEach(async ([color, player]) => {
-      if (player.user.type === "guest") {
-        game.guestPlayer = { username: player.username, color: color as Color };
+      if (player.type === "guest") {
+        game.guestPlayer = { username: player.username || "", color: color as Color };
       } else {
         const user = await User.findOneBy({ id: player.id });
         if (user) {
@@ -50,11 +53,7 @@ export default class Game extends BaseEntity {
           userGame.game = game;
           userGame.color = color as Color;
           userGame.result =
-            userGame.game.outcome?.result === "d"
-              ? "draw"
-              : userGame.game.outcome?.result === color
-              ? "win"
-              : "loss";
+            userGame.game.outcome?.result === "d" ? "draw" : userGame.game.outcome?.result === color ? "win" : "loss";
           if (user.rating) userGame.rating = user.rating;
           console.log(userGame);
           await userGame.save();

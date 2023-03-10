@@ -16,7 +16,6 @@ export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
   const {
     currentGame,
-    saveAnalysis,
     onMove,
     evaler,
     evalEnabled,
@@ -34,15 +33,23 @@ export default function AnalysisBoard() {
     explorer,
   } = analysis;
   const [orientation, setOrientation] = useState<Chess.Color>("w");
-  const [boardTheme, setBoardTheme] = useState("marble");
+  const [boardTheme, setBoardTheme] = useState("wood-1");
   const [pieceSet, setPieceSet] = useState("maestro");
   const boardRef = useRef<HTMLDivElement>(null);
   const { settings, updateSettings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
+  const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   return (
     <>
+      <PopupPlayer
+        loading={explorer.otbGameLoading}
+        shown={popupPlayerShown}
+        pgn={explorer.otbGamePgn || ""}
+        closePlayer={() => {
+          setPopupPlayerShown(false);
+        }}
+      />
       <SaveAnalysis
-        save={saveAnalysis}
         isOpen={saveModalShown}
         closeModal={() => {
           setSaveModalShown(false);
@@ -116,11 +123,11 @@ export default function AnalysisBoard() {
               </Tab.Panel>
               <Tab.Panel as={Fragment}>
                 <Explorer
-                  data={explorer.data}
-                  error={explorer.error}
-                  isLoading={explorer.isLoading}
-                  currentGame={explorer.sourceGame}
+                  explorer={explorer}
                   onMove={onMove}
+                  showPlayer={() => {
+                    setPopupPlayerShown(true);
+                  }}
                 />
               </Tab.Panel>
             </Tab.Group>

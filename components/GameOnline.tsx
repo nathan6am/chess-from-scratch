@@ -9,7 +9,7 @@ import Waiting from "./game/Waiting";
 
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
-import { Player } from "@/server/types/lobby";
+import { Connection, Player } from "@/server/types/lobby";
 import { BoardColumn, BoardRow, PanelColumn, PanelContainer } from "./layout/GameLayout";
 import { DurationObjectUnits } from "luxon";
 import GameControls from "./game/GameControls";
@@ -34,13 +34,13 @@ export default function GameOnline({ lobbyid }: Props) {
   } = onlineGame;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const players = useMemo(() => {
-    let result: Record<Chess.Color, Player | undefined> = {
+    let result: Record<Chess.Color, Connection | undefined> = {
       w: undefined,
       b: undefined,
     };
     if (!lobby || !currentGame) return result;
-    result.w = lobby.players.find((player) => player.id === currentGame.players.w);
-    result.b = lobby.players.find((player) => player.id === currentGame.players.b);
+    result.w = lobby.connections.find((player) => player.id === currentGame.players.w.id);
+    result.b = lobby.connections.find((player) => player.id === currentGame.players.b.id);
 
     return result;
   }, [lobby, currentGame]);
@@ -72,7 +72,7 @@ export default function GameOnline({ lobbyid }: Props) {
           </div>
           <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
             <div className="flex flex-row w-full justify-between">
-              {players.b && <PlayerCard player={players.b} connectionStatus={true} />}
+              {players.b && <PlayerCard connection={players.b} />}
               <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
             </div>
 
@@ -95,7 +95,7 @@ export default function GameOnline({ lobbyid }: Props) {
               onPremove={() => {}}
             />
             <div className="flex flex-row w-full justify-between">
-              {players.w && <PlayerCard player={players.w} connectionStatus={true} />}
+              {players.w && <PlayerCard connection={players.w} />}
               <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
             </div>
           </div>

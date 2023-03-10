@@ -1,24 +1,23 @@
-import { ApiResponse, DBGameData, MoveData } from "@/hooks/useOpeningExplorer";
+import { ApiResponse, DBGameData, ExplorerHook, MoveData } from "@/hooks/useOpeningExplorer";
 import React, { useCallback, useRef, useMemo, useEffect } from "react";
 import { ScrollContainer } from "../layout/GameLayout";
 import Loading from "../UI/Loading";
-import { parsePGN } from "../game/MoveHistory";
+import { replacePieceChars } from "../game/MoveHistory";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 interface Props {
-  isLoading: boolean;
-  error: unknown;
-  data: ApiResponse | undefined;
-  currentGame: Chess.Game;
+  explorer: ExplorerHook;
   onMove: (move: Chess.Move) => void;
+  showPlayer: () => void;
 }
-export default function Explorer({ data, error, isLoading, currentGame, onMove }: Props) {
+export default function Explorer({ explorer, onMove, showPlayer }: Props) {
+  const { data, error, isLoading, sourceGame } = explorer;
   const attemptMove = useCallback(
     (san: string) => {
-      const move = currentGame.legalMoves.find((move) => move.PGN === san);
+      const move = sourceGame.legalMoves.find((move) => move.PGN === san);
       if (move) onMove(move);
     },
-    [onMove, currentGame]
+    [onMove, sourceGame]
   );
 
   const prevOpening = useRef<{ name: string; eco: string } | null>(null);
@@ -59,7 +58,15 @@ export default function Explorer({ data, error, isLoading, currentGame, onMove }
           <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5]"></div>
         </div>
       </div>
-      <TopGames games={data?.topGames || []} sourceGame={currentGame} attemptMove={attemptMove} />
+      <TopGames
+        games={data?.topGames || []}
+        sourceGame={sourceGame}
+        attemptMove={attemptMove}
+        loadGame={(id: string) => {
+          explorer.fetchOTBGame(id);
+          showPlayer();
+        }}
+      />
     </div>
   );
 }
@@ -69,7 +76,7 @@ interface MoveRowProps {
   attemptMove: (san: string) => void;
 }
 function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
-  const notation = parsePGN(moveData.san, "w");
+  const notation = replacePieceChars(moveData.san, "w");
   const totalGames = moveData.white + moveData.black + moveData.draws;
   return (
     <div className="w-full flex flex-row py-1 pr-2 border-b border-white/[0.2]">
@@ -126,15 +133,22 @@ interface TopGameProps {
   games: DBGameData[];
   sourceGame: Chess.Game;
   attemptMove: (san: string) => void;
+  loadGame: (gameid: string) => void;
 }
-function TopGames({ games, sourceGame, attemptMove }: TopGameProps) {
+function TopGames({ games, sourceGame, attemptMove, loadGame }: TopGameProps) {
   return (
     <div className="w-full grow overflow-hidden flex flex-col">
       <div className="w-full bg-white/[0.1] py-1 px-3">Top Games</div>
       <div className="w-full grow relative">
         <ScrollContainer>
           {games.map((game) => (
-            <RenderGame key={game.id} game={game} sourceGame={sourceGame} attemptMove={attemptMove} />
+            <RenderGame
+              key={game.id}
+              game={game}
+              sourceGame={sourceGame}
+              attemptMove={attemptMove}
+              loadGame={loadGame}
+            />
           ))}
         </ScrollContainer>
       </div>
@@ -146,10 +160,12 @@ function RenderGame({
   game,
   sourceGame,
   attemptMove,
+  loadGame,
 }: {
   game: DBGameData;
   sourceGame: Chess.Game;
   attemptMove: (san: string) => void;
+  loadGame: (gameid: string) => void;
 }) {
   const movePGN = useMemo(() => {
     const uci = game.uci ? Chess.parseUciMove(game.uci) : null;
@@ -162,8 +178,13 @@ function RenderGame({
     );
   }, [game, sourceGame]);
   return (
-    <div className="flex flex-row w-full items-center border-b justify-between px-2 pr-4">
-      <div className="flex flex-row w-fit items-center ">
+    <div className="flex flex-row w-full items-center border-b justify-between px-2 pr-4 hover:bg-white/[0.1]">
+      <div
+        onClick={() => {
+          loadGame(game.id);
+        }}
+        className="flex flex-row w-fit items-center cursor-pointer"
+      >
         <div className="flex flex-col w-[220px] text-xs p-1 ">
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
@@ -187,7 +208,7 @@ function RenderGame({
         }}
         className="text-sm px-1 py-1 bg-white/[0.1] hover:bg-white/[0.2] rounded-sm w-[50px] mr-2 text-center"
       >
-        {movePGN || "-"}
+        {movePGN ? replacePieceChars(movePGN, sourceGame.activeColor) : "-"}
       </button>
     </div>
   );

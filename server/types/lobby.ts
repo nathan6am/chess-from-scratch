@@ -10,7 +10,7 @@ export interface Game {
   id: string;
   data: Chess.Game; //Raw game data of the game
   clock: Clock; //Clock time remaining for each color
-  players: Record<Chess.Color, string>; //Player ids of each color
+  players: Record<Chess.Color, Player>; //Player ids of each color
 }
 
 export interface Clock {
@@ -18,15 +18,16 @@ export interface Clock {
   lastMoveTimeISO: string | null; //Time of the last recieved move as an ISO string
   timeRemainingMs: Record<Chess.Color, number>; //Clock time remaining for each color
 }
-
-export interface Player {
-  id: string; //User id of the player
-  username: string;
-  primaryClientSocketId: string; //Socket id of the primary client connection to the game
-  lastPing?: number; //Last measured ping delay
+export interface Player extends SessionUser {
   rating?: number;
+}
+export interface Connection {
+  id: string;
+  player: Player;
+  lastClientSocketId: string; //Socket id of the primary client connection to the game
+  lastPing?: number; //Last measured ping delay
   score: number; //Game score in the current lobby
-  user: SessionUser;
+  connectionStatus: boolean; //Current connection status of the last socket
 }
 
 export interface Message {
@@ -37,9 +38,9 @@ export interface Message {
 
 export interface Lobby {
   id: string;
-  creator: string;
+  creatorId: string;
   reservedConnections: string[]; //User ids of any reserved connections, (the lobby creator, and the challenged player if applicable)
-  players: Player[];
+  connections: Connection[];
   options: LobbyOptions;
   currentGame: Game | null;
   chat: Message[];

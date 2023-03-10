@@ -11,7 +11,10 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
   const map = tree.map;
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
-
+  function loadNewTree(newTree: TreeNode<T>[]) {
+    setCurrentKey(null);
+    tree.loadTree(newTree);
+  }
   const currentNode = useMemo<TreeNode<T> | null>(() => {
     if (currentKey == null) return null;
     const node = tree.getNode(currentKey);
@@ -155,6 +158,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
 
   return {
     tree,
+    loadNewTree,
     moveText,
     mainLine,
     rootNodes,

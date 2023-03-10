@@ -89,7 +89,7 @@ function disambiguateMoves(
       return rankA !== rankB;
     })
   ) {
-    return `${notation}${FileEnum[squareToCoordinates(move.start)[0]]}`;
+    return `${notation}${squareToCoordinates(move.start)[1] + 1}`;
   } else {
     return `${notation}${move.start}`;
   }

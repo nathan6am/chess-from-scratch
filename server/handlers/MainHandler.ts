@@ -32,10 +32,10 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
     }
     const lobby: Lobby = {
       id: nanoid(10),
-      creator: userid,
+      creatorId: userid,
       reservedConnections: [userid],
       currentGame: null,
-      players: [], //Add to reserved connections, but not players until user joins the lobby page
+      connections: [], //Add to reserved connections, but not players until user joins the lobby page
       options: {
         rated: false,
         gameConfig: options.gameConfig || {

@@ -115,7 +115,6 @@ export default function Piece({
       position={position}
       onStop={(e, data) => {
         setPosition({ x: data.x, y: data.y });
-        onDrop();
         setDragging(false);
       }}
     >
@@ -138,6 +137,7 @@ export default function Piece({
           }
         }}
         onPointerUp={() => {
+          onDrop();
           if (movementType === "drag") {
             setSelectedPiece(null);
           } else {

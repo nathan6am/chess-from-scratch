@@ -104,8 +104,7 @@ nextApp.prepare().then(async () => {
   app.use("/api/collections", collectionsRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) =>
-    middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
 
   const io: socketio.Server = new socketio.Server<
     ClientToServerEvents,
@@ -128,6 +127,7 @@ nextApp.prepare().then(async () => {
     const passportUser = socket.request.session?.passport?.user;
     if (passportUser) {
       const user = JSON.parse(passportUser);
+      console.log(passportUser);
       socket.data.sessionUser = user;
       socket.data.userid = user.id;
     }
@@ -146,6 +146,7 @@ nextApp.prepare().then(async () => {
   lobbyNsp.use(wrap(passport.session()));
   lobbyNsp.use((socket: Socket, next) => {
     const passportUser = socket.request.session?.passport?.user;
+    console.log(`passportUser: ${passportUser}`);
     if (passportUser) {
       const user = JSON.parse(passportUser);
       socket.data.sessionUser = user;

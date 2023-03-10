@@ -6,7 +6,7 @@ import { MdArrowDropDown, MdExpandMore, MdOutlineMenuOpen, MdModeComment } from 
 import { BiHide } from "react-icons/bi";
 
 import { VscExpandAll } from "react-icons/vsc";
-import { parsePGN } from "../game/MoveHistory";
+import { replacePieceChars } from "../game/MoveHistory";
 interface Props {
   mainLine: TreeNode<Chess.NodeData>[];
   rootNodes: TreeNode<Chess.NodeData>[];
@@ -267,7 +267,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
       } `}
     >
       <div className="flex flex-row justify-between items-center">
-        <p>{node ? `${parsePGN(node.data.PGN, isWhite ? "w" : "b")}` : ". . ."}</p>
+        <p>{node ? `${replacePieceChars(node.data.PGN, isWhite ? "w" : "b")}` : ". . ."}</p>
       </div>
     </div>
   );
@@ -306,7 +306,9 @@ function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
             {Chess.moveCountToNotation(node.data.halfMoveCount)}
           </span>
         )}
-        <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>{parsePGN(node.data.PGN, isWhite ? "w" : "b")}</span>
+        <span className={`inline ${isWhite ? "" : "mr-[2px]"}`}>
+          {replacePieceChars(node.data.PGN, isWhite ? "w" : "b")}
+        </span>
       </span>
       {node.data.comment && " " + node.data.comment + " "}
     </>

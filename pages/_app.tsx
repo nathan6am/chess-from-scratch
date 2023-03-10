@@ -5,7 +5,7 @@ import { UserContext } from "@/context/user";
 import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
 import useUser from "@/hooks/useUser";
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
@@ -28,13 +28,19 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const { user, error, isValidating, mutate } = useUser();
   const router = useRouter();
   const { mutate: refreshProfile } = useProfile();
+  const prevUserRef = useRef(user?.id || null)
   useEffect(() => {
     if (!user && !isValidating) {
       router.push("/login");
+      prevUserRef.current = null
+      refreshProfile()
     } else if (user && user.type === "incomplete") {
       router.push("/complete-profile");
     }
-    refreshProfile();
+    if (user && user.id !== prevUserRef.current ) {
+      refreshProfile();
+    }
+    
   }, [user]);
   return (
     <QueryClientProvider client={queryClient}>

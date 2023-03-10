@@ -32,8 +32,7 @@ router.post(
         title: string;
         description?: string;
         collectionIds: string[];
-        tags: PGNTagData;
-        moveText: string;
+        tagData: PGNTagData;
         pgn: string;
         visibility: "private" | "unlisted" | "public";
       }
@@ -43,15 +42,14 @@ router.post(
     if (!req.user || req.user?.type === "guest") return res.status(401);
     const user = await User.findOneBy({ id: req.user.id });
     if (!user) return res.status(401);
-    const { title, description, collectionIds, tags, moveText, visibility, pgn } = req.body;
+    const { title, description, collectionIds, tagData, visibility, pgn } = req.body;
     const analysis = new Analysis();
     Object.assign(analysis, {
       title,
       authorId: user.id,
       pgn,
-      moveText,
       description: description || null,
-      tags,
+      tagData,
       visibility,
       collectionIds,
     });
@@ -70,13 +68,18 @@ router.put(
   async (req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>, res) => {
     const userid = req.user?.id;
     const { id } = req.params;
-    const canEdit = await Analysis.verifyAuthor(id, userid);
-    if (canEdit) {
-      const updated = await Analysis.updateById(id, req.body);
-      res.status(200).json(updated);
-      return;
-    } else {
-      res.status(401).end();
+    try {
+      const canEdit = await Analysis.verifyAuthor(id, userid);
+      if (canEdit) {
+        const updated = await Analysis.updateById(id, req.body);
+        res.status(200).json(updated);
+        return;
+      } else {
+        res.status(401).end();
+        return;
+      }
+    } catch (e) {
+      res.status(500).end();
       return;
     }
   }

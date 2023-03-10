@@ -8,7 +8,7 @@ import { notEmpty } from "../misc";
 
 type ValueOf<T> = T[keyof T];
 type Entries<T> = [keyof T, ValueOf<T>][];
-
+import { Game } from "@/server/types/lobby";
 const getEntries = <T extends object>(obj: T) => Object.entries(obj) as Entries<T>;
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
@@ -28,7 +28,7 @@ function parseTag(tag: string): TagData | undefined {
     value,
   };
 }
-export function pgnToJson(pgn: string): any {
+export function pgnToJson(pgn: string): { tagData: PGNTagData; movetext: string } {
   let tags: string[] = [];
   let section: "tags" | "movetext" = "tags";
   //Split PGN into tags/movetext sections
@@ -153,6 +153,16 @@ export function mainLineFromTreeArray(treeArray: Node[]) {
   return path;
 }
 
+export function parsePgn(pgn: string) {
+  const { tagData, movetext } = pgnToJson(pgn);
+  const startPosition = tagData.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const tree = parseMoveText(movetext, startPosition);
+  return {
+    tree,
+    tagData,
+  };
+}
+
 export function mainLineToMoveHistory(line: Node[]) {}
 
 /**
@@ -189,7 +199,11 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
     return path;
   }
 
-  let stream = movetext.replace(/(\r\n|\n|\r)/gm, "");
+  let stream = movetext.replace(/(\r\n|\n|\r)/gm, "").trim();
+  var lastIndex = stream.lastIndexOf(" ");
+
+  stream = stream.substring(0, lastIndex);
+  console.log(stream);
   const initialGame = Chess.createGame({ startPosition: startPosition });
   //let currentGame = initialGame;
   let reading = "unknown";
@@ -233,6 +247,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
     const move = currentGame.legalMoves.find((move) => move.PGN === pgn);
     if (!move) {
       console.log(pgn);
+      console.log(currentGame.legalMoves);
       throw new Error(`Invalid move: ${pgn}`);
     }
     const parentKey = currentParent?.key || null;
@@ -351,4 +366,40 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
   if (currentData.pgn) postCurrentData();
   //Recursively build map into tree array
   return buildTreeArray(map);
+}
+
+export function encodeGameToPgn(game: Game): string {
+  const { w, b } = game.players;
+  let tagData: PGNTagData = {
+    white: w.username || undefined,
+    black: b.username || undefined,
+    eloWhite: `${w.rating}` || undefined,
+    eloBlack: `${b.rating}` || undefined,
+    event: "NextChess Online Game",
+    result: encodeOutcome(game.data.outcome),
+  };
+  const tagSection = tagDataToPGNString(tagData);
+  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  return tagSection + "\r\n" + movetext;
+}
+
+export function moveHistoryToMoveText(moveHistory: Chess.MoveHistory) {
+  let moveText = "";
+  moveHistory.forEach((fullmove, idx) => {
+    moveText += `${idx + 1}. ${fullmove[0].PGN} ${fullmove[1]?.PGN || ""}`;
+  });
+}
+
+function encodeOutcome(outcome: Chess.Outcome) {
+  if (!outcome) return "*";
+  switch (outcome.result) {
+    case "w":
+      return "1-0";
+    case "b":
+      return "0-1";
+    case "d":
+      return "1/2-1/2";
+    default:
+      return "*";
+  }
 }

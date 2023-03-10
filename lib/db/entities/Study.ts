@@ -53,7 +53,7 @@ export default class Analysis extends BaseEntity {
   visibility: "private" | "unlisted" | "public";
 
   @Column({ type: "jsonb" })
-  tagData: PGNTagData;
+  tags: PGNTagData;
 
   @ManyToMany(() => Collection, (collection) => collection.analyses, { cascade: true })
   @JoinTable({
@@ -64,34 +64,4 @@ export default class Analysis extends BaseEntity {
     },
   })
   collections: Relation<Collection[]>;
-
-  static async verifyAuthor(id: string, userid: string) {
-    const analysis = await this.findOneBy({ id });
-    if (!analysis) return false;
-    return analysis.authorId === userid;
-  }
-  static async addToCollections(id: string, collections: string[]) {
-    const analysis = await this.findOneBy({ id });
-    if (!analysis) throw new Error("Analysis does not exits");
-    collections.forEach((collection) => {
-      analysis.collectionIds.push(collection);
-    });
-    const updated = await analysis.save();
-    return updated;
-  }
-  static async getAllByUser(userid: string) {
-    const analyses = await this.find({
-      where: {
-        author: { id: userid },
-      },
-    });
-    return analyses;
-  }
-  static async updateById(id: string, updates: Partial<Omit<Analysis, "id">>) {
-    const analysis = await this.findOneBy({ id });
-    if (!analysis) throw new Error("Analysis does not exits");
-    Object.assign(analysis, updates);
-    const updated = await analysis.save();
-    return updated;
-  }
 }

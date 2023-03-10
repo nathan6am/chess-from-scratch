@@ -18,7 +18,7 @@ enum PieceChars {
   wp = "♟",
 }
 //Convert PGN to use piece characters
-export function parsePGN(pgn: string, color: Chess.Color): string {
+export function replacePieceChars(pgn: string, color: Chess.Color): string {
   let result = pgn;
   if (pgn.charAt(0) === "O") {
     return result;
@@ -70,7 +70,7 @@ export default function MoveHistory({ moveHistory, usePieceIcons, jumpToOffset, 
                         currentOffset === offset - 1 ? "bg-blue-300/[0.2]" : ""
                       }`}
                     >
-                      {usePieceIcons ? parsePGN(fullMove[0].PGN, "w") : fullMove[0].PGN}
+                      {usePieceIcons ? replacePieceChars(fullMove[0].PGN, "w") : fullMove[0].PGN}
                     </td>
                     <td
                       onClick={() => {
@@ -78,7 +78,11 @@ export default function MoveHistory({ moveHistory, usePieceIcons, jumpToOffset, 
                       }}
                       className={`p-1 px-4 cursor-pointer ${currentOffset === offset - 2 ? "bg-blue-300/[0.2]" : ""}`}
                     >
-                      {fullMove[1]?.PGN ? (usePieceIcons ? parsePGN(fullMove[1].PGN, "b") : fullMove[1].PGN) : "-"}
+                      {fullMove[1]?.PGN
+                        ? usePieceIcons
+                          ? replacePieceChars(fullMove[1].PGN, "b")
+                          : fullMove[1].PGN
+                        : "-"}
                     </td>
                   </tr>
                 );
@@ -152,7 +156,7 @@ function RenderMove({ pgn, active, onClick, halfMoveCount }: MoveProps) {
         } ${active ? "bg-blue-400/[0.2] " : ""}`}
         onClick={onClick}
       >
-        {parsePGN(pgn, isWhite ? "w" : "b")}
+        {replacePieceChars(pgn, isWhite ? "w" : "b")}
       </span>
     </div>
   );
