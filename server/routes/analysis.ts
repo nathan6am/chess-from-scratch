@@ -40,7 +40,7 @@ router.post(
     res
   ) => {
     if (!req.user || req.user?.type === "guest") return res.status(401);
-    const user = await User.findOneBy({ id: req.user.id });
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(401);
     const { title, description, collectionIds, tagData, visibility, pgn } = req.body;
     const analysis = new Analysis();
@@ -65,7 +65,10 @@ router.post(
 router.put(
   "/:id",
   verifyUser,
-  async (req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>, res) => {
+  async (
+    req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>,
+    res
+  ) => {
     const userid = req.user?.id;
     const { id } = req.params;
     try {
@@ -113,7 +116,8 @@ router.post("/:id/fork", verifyUser, async (req: VerifiedRequest, res) => {
   try {
     const analysis = await Analysis.findOneBy({ id });
     if (!analysis) return res.status(404).end();
-    if (analysis.visibility === "private" && analysis.authorId !== user.id) return res.status(401).end();
+    if (analysis.visibility === "private" && analysis.authorId !== user.id)
+      return res.status(401).end();
     const forked = new Analysis();
     const { id: sourceId, authorId, collectionIds, forkedFromId, ...rest } = analysis;
     Object.assign(forked, {

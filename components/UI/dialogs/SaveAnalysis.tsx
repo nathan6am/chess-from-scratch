@@ -14,10 +14,12 @@ interface Props {
   isOpen: boolean;
   closeModal: () => void;
   save: (data: AnalysisData) => void;
+  moveText: string;
 }
 import { AnalysisData } from "@/hooks/useAnalysisBoard";
 import useCollections from "@/hooks/useCollections";
-export default function SaveAnalysis({ isOpen, closeModal, save }: Props) {
+import { tagDataToPGNString } from "@/util/parsers/pgnParser";
+export default function SaveAnalysis({ isOpen, closeModal, save, moveText }: Props) {
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
@@ -50,7 +52,7 @@ export default function SaveAnalysis({ isOpen, closeModal, save }: Props) {
                     Save Analysis
                   </Dialog.Title>
                   <div className="max-w-sm mx-auto mb-20">
-                    <SaveAnalysisForm save={save} />
+                    <SaveAnalysisForm save={save} moveText={moveText} />
                   </div>
                 </Dialog.Panel>
               </Transition.Child>
@@ -65,6 +67,7 @@ export default function SaveAnalysis({ isOpen, closeModal, save }: Props) {
 interface FormProps {
   initialData?: AnalysisData;
   save: (data: AnalysisData) => void;
+  moveText: string;
 }
 type FormValues = {
   title: string;
@@ -72,7 +75,7 @@ type FormValues = {
   tags: string[];
   collectionIds: string[];
 };
-function SaveAnalysisForm({ initialData, save }: FormProps) {
+function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
   const {
     register,
     handleSubmit,
@@ -88,14 +91,18 @@ function SaveAnalysisForm({ initialData, save }: FormProps) {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const title = data.title;
     const description = data.description;
-    const tags: string[] = [];
-    save({
+    const tagData = {};
+    const pgn = tagDataToPGNString(tagData) + "\r\n" + moveText + " *";
+    const saveData = {
       title,
       description,
-      tags,
+      tagData,
       visibility,
       collectionIds: [],
-    });
+      pgn,
+    };
+    console.log(saveData);
+    save(saveData);
   };
   return (
     <div>

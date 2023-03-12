@@ -7,7 +7,7 @@
 }
 
 .board-bg {
-  background-image: url("/assets/boardcss/marble-2.jpg");
+  background-image: url("/assets/boards/marble.jpg");
   background-size: contain;
 }
 
@@ -16,7 +16,7 @@
 }
 
 .lastmove-highlight {
-  background-color: rgba(17, 192, 255, 0.1);
+  background-color: rgba(17, 192, 255, 0.2);
 }
 
 .target-hover-highlight {
@@ -24,9 +24,9 @@
 }
 
 .on-light {
-  color: #191f20;
+  color: #121212;
 }
 
 .on-dark {
-  color: #b5a9a7;
+  color: #ffffff;
 }

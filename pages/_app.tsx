@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "../styles/previews.css";
 import type { AppProps } from "next/app";
 import { SocketContext, socket } from "../context/socket";
 import { UserContext } from "@/context/user";
@@ -28,25 +29,26 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const { user, error, isValidating, mutate } = useUser();
   const router = useRouter();
   const { mutate: refreshProfile } = useProfile();
-  const prevUserRef = useRef(user?.id || null)
+  const prevUserRef = useRef(user?.id || null);
   useEffect(() => {
     if (!user && !isValidating) {
       router.push("/login");
-      prevUserRef.current = null
-      refreshProfile()
+      prevUserRef.current = null;
+      refreshProfile();
     } else if (user && user.type === "incomplete") {
       router.push("/complete-profile");
     }
-    if (user && user.id !== prevUserRef.current ) {
+    if (user && user.id !== prevUserRef.current) {
       refreshProfile();
     }
-    
   }, [user]);
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsContext.Provider value={{ settings, updateSettings }}>
         <UserContext.Provider value={{ user, refresh: mutate }}>
-          <SocketContext.Provider value={socket}>{getLayout(<Component {...pageProps} />)}</SocketContext.Provider>
+          <SocketContext.Provider value={socket}>
+            {getLayout(<Component {...pageProps} />)}
+          </SocketContext.Provider>
         </UserContext.Provider>
       </SettingsContext.Provider>
     </QueryClientProvider>

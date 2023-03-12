@@ -1,12 +1,15 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useContext } from "react";
 import Board from "@/components/game/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import Result from "@/components/UI/dialogs/Result";
-import useChessOnline, { BoardControls as IBoardControls, GameControls as IGameControls } from "@/hooks/useChessOnline";
+import useChessOnline, {
+  BoardControls as IBoardControls,
+  GameControls as IGameControls,
+} from "@/hooks/useChessOnline";
 import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
-
+import { SettingsContext } from "@/context/settings";
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
 import { Connection, Player } from "@/server/types/lobby";
@@ -32,6 +35,7 @@ export default function GameOnline({ lobbyid }: Props) {
     boardControls,
     livePositionOffset,
   } = onlineGame;
+  const { settings } = useContext(SettingsContext);
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const players = useMemo(() => {
     let result: Record<Chess.Color, Connection | undefined> = {
@@ -54,12 +58,17 @@ export default function GameOnline({ lobbyid }: Props) {
     return <div>Connecting...</div>;
   }
   //TODO: Add connecting component
-  if (!currentGame) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
+  if (!currentGame)
+    return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
   const gameData = currentGame.data;
   return (
     <div className="flex flex-col h-full w-screen justify-center">
-      <Result outcome={gameData.outcome} isOpen={gameData.outcome ? true : false} close={() => {}} />
+      <Result
+        outcome={gameData.outcome}
+        isOpen={gameData.outcome ? true : false}
+        close={() => {}}
+      />
       <BoardRow>
         <BoardColumn>
           <div className="w-full lg:hidden">
@@ -77,20 +86,21 @@ export default function GameOnline({ lobbyid }: Props) {
             </div>
 
             <Board
-              movementType="both"
-              theme="blue"
-              pieceSet="maestro"
+              showCoordinates={settings.display.showCoordinates}
+              movementType={settings.gameBehavior.movementType}
+              theme={settings.display.boardTheme}
+              pieceSet={settings.display.pieceTheme}
               orientation={orientation}
               legalMoves={gameData.legalMoves}
               showHighlights={true}
               showTargets={true}
               pieces={currentBoard || gameData.board}
-              animationSpeed="normal"
+              animationSpeed={settings.display.animationSpeed}
               lastMove={lastMove}
               activeColor={gameData.activeColor}
               moveable={moveable ? playerColor || "none" : "none"}
-              preMoveable={false}
-              autoQueen={true}
+              preMoveable={settings.gameBehavior.allowPremoves}
+              autoQueen={settings.gameBehavior.autoQueen}
               onMove={gameControls.onMove}
               onPremove={() => {}}
             />

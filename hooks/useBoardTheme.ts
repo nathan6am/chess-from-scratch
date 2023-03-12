@@ -7,7 +7,7 @@ export default function useBoardTheme(theme: string) {
 
     link.type = "text/css";
     link.rel = "stylesheet";
-    link.href = `/assets/boardcss/${theme}.css`;
+    link.href = `/assets/boards/${theme}.css`;
 
     head.appendChild(link);
 

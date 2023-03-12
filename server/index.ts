@@ -15,6 +15,7 @@ import { createClient } from "redis";
 import userRouter from "./routes/user";
 import analysisRouter from "./routes/analysis";
 import collectionsRouter from "./routes/collections";
+import puzzleRouter from "./routes/puzzles";
 import {
   InterServerEvents,
   SocketData,
@@ -102,9 +103,11 @@ nextApp.prepare().then(async () => {
   app.use("/api/user", userRouter);
   app.use("/api/analysis", analysisRouter);
   app.use("/api/collections", collectionsRouter);
+  app.use("/api/puzzles", puzzleRouter);
 
   //Wrap middleware for socket.io
-  const wrap = (middleware: any) => (socket: any, next: any) => middleware(socket.request, {}, next);
+  const wrap = (middleware: any) => (socket: any, next: any) =>
+    middleware(socket.request, {}, next);
 
   const io: socketio.Server = new socketio.Server<
     ClientToServerEvents,

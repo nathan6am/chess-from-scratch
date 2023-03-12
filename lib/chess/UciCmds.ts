@@ -15,26 +15,36 @@ export function setSkillLevel(value: number, stockfish: Worker) {
     );
   stockfish.postMessage(`setoption name Skill Level value ${value}`);
 }
-const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 40000));
 
-export async function ready(stockfish: Worker) {
-  const isReady = new Promise((resolve, reject) => {
+export async function ready(stockfish: Worker): Promise<boolean> {
+  console.log("starting");
+  let timer: NodeJS.Timeout;
+  const isReady = new Promise<boolean>((resolve, reject) => {
     const handler = (e: MessageEvent) => {
+      console.log(e.data);
       if (e.data === "readyok") {
+        console.log("ready");
+        clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
         resolve(true);
       }
     };
     stockfish.addEventListener("message", handler);
     stockfish.postMessage("isready");
+    stockfish.postMessage("uci");
+    timer = setTimeout(() => {
+      stockfish.removeEventListener("message", handler);
+      reject(new Error("timeout waiting for response on command `uci`"));
+    }, 200000);
   });
 
-  const ready = await Promise.race([isReady, timeout]);
+  const ready = await isReady;
   return ready;
 }
 
 export async function startup(stockfish: Worker) {
   const isReady = await ready(stockfish);
+  let timer: NodeJS.Timeout;
   if (isReady) {
     const getOptions = new Promise((resolve, reject) => {
       let options: any[] = [];
@@ -68,25 +78,24 @@ export async function startup(stockfish: Worker) {
           });
           options.push({ name, type, defaultValue });
         } else if (args[0] === "uciok") {
+          clearTimeout(timer);
           stockfish.removeEventListener("message", handler);
           resolve(options);
         }
       };
       stockfish.addEventListener("message", handler);
       stockfish.postMessage("uci");
+      timer = setTimeout(() => {
+        stockfish.removeEventListener("message", handler);
+        reject(new Error("timeout waiting for response on command `uci`"));
+      }, 200000);
     });
 
-    const options = await Promise.race([getOptions, timeout]);
-    if (options) {
-      return {
-        ready: true,
-        options,
-      };
-    } else {
-      throw new Error("something went wrong");
-    }
-  } else {
-    throw new Error("engine timeout");
+    const options = await getOptions;
+    return {
+      ready: true,
+      options,
+    };
   }
 }
 
@@ -114,7 +123,18 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,

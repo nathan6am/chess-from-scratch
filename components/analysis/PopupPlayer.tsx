@@ -76,7 +76,9 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
                     {tagData?.white || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloWhite || "?"})`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${
+                      tagData?.eloWhite || "?"
+                    })`}</span>
                   </p>
                 </div>
                 <ResizableBox
@@ -87,20 +89,26 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   draggableOpts={{}}
                   minConstraints={[300, 300]}
                   maxConstraints={[900, 900]}
-                  className=""
+                  className={`${
+                    settings.display.showCoordinates === "outside" ? "p-[1.5em]" : ""
+                  } bg-[#121212] flex justify-center items-center`}
                   handle={(resizeHandle, ref) => (
                     <div
                       className="w-[20px] h-[20px] react-resizable-handle-se absolute bottom-0 right-0 z-[300]"
                       ref={ref}
                     >
-                      <div className="pointer-none h-full" style={{ overflow: "hidden", resize: "both" }}></div>
+                      <div
+                        className="pointer-none h-full"
+                        style={{ overflow: "hidden", resize: "both" }}
+                      ></div>
                     </div>
                   )}
                 >
                   <Board
+                    showCoordinates={settings.display.showCoordinates}
                     movementType="both"
-                    theme="wood-1"
-                    pieceSet="maestro"
+                    theme={settings.display.boardTheme}
+                    pieceSet={settings.display.pieceTheme}
                     orientation={orientation}
                     legalMoves={currentGame.legalMoves}
                     showHighlights={settings.display.showHighlights}
@@ -120,7 +128,9 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
                     {tagData?.black || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloBlack || "?"})`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${
+                      tagData?.eloBlack || "?"
+                    })`}</span>
                   </p>
                 </div>
               </div>
@@ -147,7 +157,7 @@ interface TapeProps {
 function MoveTape({ line, currentKey, jumpToKey }: TapeProps) {
   return (
     <>
-      <div className="pl-4 h-8 items-center flex flex-row w-full overflow-x-scroll scrollbar-none bg-black/[0.5]">
+      <div className="pl-4 h-8 items-center flex flex-row w-full overflow-x-scroll scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#121212] scrollbar-w-[8px] bg-black/[0.5]">
         {line.map((node, idx) => {
           return (
             <RenderMove
@@ -183,7 +193,9 @@ function RenderMove({ pgn, active, onClick, halfMoveCount }: MoveProps) {
   return (
     <div ref={ref} className="flex flex-row text-xs">
       {isWhite && (
-        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>{Chess.moveCountToNotation(halfMoveCount)}</span>
+        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>
+          {Chess.moveCountToNotation(halfMoveCount)}
+        </span>
       )}
       <span
         className={`cursor-pointer  mx-[2px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white/[0.7] ${

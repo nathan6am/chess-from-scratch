@@ -12,6 +12,9 @@ import { Tab, Menu, Transition } from "@headlessui/react";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { MdSettings } from "react-icons/md";
+import useSavedAnalysis from "@/hooks/useSavedAnalysis";
+import { tagDataToPGNString } from "@/util/parsers/pgnParser";
+import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
   const {
@@ -33,14 +36,40 @@ export default function AnalysisBoard() {
     explorer,
   } = analysis;
   const [orientation, setOrientation] = useState<Chess.Color>("w");
-  const [boardTheme, setBoardTheme] = useState("wood-1");
-  const [pieceSet, setPieceSet] = useState("maestro");
   const boardRef = useRef<HTMLDivElement>(null);
   const { settings, updateSettings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
+  const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
+  const saveManager = useSavedAnalysis();
+
+  const saveCurrent = () => {
+    const analysis = saveManager.data?.analysis;
+    if (!analysis) return;
+    const id = analysis.id;
+    const { title, collectionIds, description, visibility, tagData } = analysis;
+    const pgn = tagDataToPGNString(tagData) + "\r\n" + moveText + " *";
+
+    saveManager.save({
+      id,
+      data: {
+        title,
+        description,
+        collectionIds,
+        visibility,
+        tagData,
+        pgn,
+      },
+    });
+  };
   return (
     <>
+      <OptionsOverlay
+        isOpen={optionsOverlayShown}
+        closeModal={() => {
+          setOptionsOverlayShown(false);
+        }}
+      />
       <PopupPlayer
         loading={explorer.otbGameLoading}
         shown={popupPlayerShown}
@@ -50,6 +79,8 @@ export default function AnalysisBoard() {
         }}
       />
       <SaveAnalysis
+        moveText={moveText}
+        save={saveManager.saveAs}
         isOpen={saveModalShown}
         closeModal={() => {
           setSaveModalShown(false);
@@ -57,6 +88,10 @@ export default function AnalysisBoard() {
       />
       <div className="flex flex-col h-full w-full justify-center">
         <ToolBar
+          showOptions={() => {
+            setOptionsOverlayShown(true);
+          }}
+          saveCurrent={saveCurrent}
           showSave={() => {
             setSaveModalShown(true);
           }}
@@ -72,9 +107,10 @@ export default function AnalysisBoard() {
                 Caruana, F. <span className="inline opacity-50">(2818)</span>
               </p> */}
               <Board
+                showCoordinates={settings.display.showCoordinates}
                 movementType={settings.gameBehavior.movementType}
-                theme={boardTheme}
-                pieceSet={pieceSet}
+                theme={settings.display.boardTheme}
+                pieceSet={settings.display.pieceTheme}
                 ref={boardRef}
                 orientation={orientation}
                 legalMoves={currentGame.legalMoves}
@@ -168,7 +204,12 @@ function StyledTab({ children }: TabProps) {
   );
 }
 
-function ToolBar({ showSave }: { showSave: () => void }) {
+interface ToolBarProps {
+  showSave: () => void;
+  saveCurrent: () => void;
+  showOptions: () => void;
+}
+function ToolBar({ showSave, saveCurrent, showOptions }: ToolBarProps) {
   return (
     <div className="w-full h-8 bg-[#404040] justify-center items-center flex relative">
       <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-b from-transparent via-white/[0.03] via-white/[0.04] to-white/[0.02]"></div>
@@ -190,12 +231,12 @@ function ToolBar({ showSave }: { showSave: () => void }) {
               leaveTo="transform opacity-0 scale-95"
             >
               <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={showSave}>Save Analysis</MenuItem>
+                <MenuItem onClick={saveCurrent}>Save</MenuItem>
+                <MenuItem onClick={showSave}>Save As</MenuItem>
                 <MenuItem disabled onClick={() => {}}>
                   Edit Details
                 </MenuItem>
-                <MenuItem onClick={() => {}}>Save a Copy</MenuItem>
-                <MenuItem onClick={() => {}}>Add to Collection</MenuItem>
+                <MenuItem onClick={() => {}}>Fork</MenuItem>
                 <MenuItem onClick={() => {}}>Load Game</MenuItem>
               </Menu.Items>
             </Transition>
@@ -221,9 +262,8 @@ function ToolBar({ showSave }: { showSave: () => void }) {
                 <MenuItem onClick={() => {}}>Export PGN</MenuItem>
                 <MenuItem onClick={() => {}}>Download Image</MenuItem>
                 <MenuItem disabled onClick={() => {}}>
-                  Get Link
+                  Get Shareable Link
                 </MenuItem>
-                <MenuItem onClick={() => {}}>Visibility Settings</MenuItem>
               </Menu.Items>
             </Transition>
           </Menu>
@@ -248,8 +288,7 @@ function ToolBar({ showSave }: { showSave: () => void }) {
                 <MenuItem onClick={() => {}}>Delete from Here</MenuItem>
                 <MenuItem onClick={() => {}}>Delete from Start</MenuItem>
                 <MenuItem onClick={() => {}}>Make mainline</MenuItem>
-                <MenuItem onClick={() => {}}>Save to Move-trainer</MenuItem>
-                <MenuItem onClick={() => {}}>Save as New Analysis</MenuItem>
+                <MenuItem onClick={() => {}}>New Analysis from Current Line</MenuItem>
               </Menu.Items>
             </Transition>
           </Menu>
@@ -296,7 +335,7 @@ function ToolBar({ showSave }: { showSave: () => void }) {
               leaveTo="transform opacity-0 scale-95"
             >
               <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={() => {}}>Eval Settings</MenuItem>
+                <MenuItem onClick={showOptions}>App Settings</MenuItem>
                 <MenuItem onClick={() => {}}>Explorer Settings</MenuItem>
                 <MenuItem onClick={() => {}}>Layout</MenuItem>
                 <MenuItem onClick={() => {}}>Show Annotations on Board</MenuItem>
@@ -355,7 +394,9 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${
+            disabled ? "pointer-none text-white/[0.3]" : ""
+          }`}
         >
           {children}
         </button>

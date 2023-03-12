@@ -3,12 +3,14 @@ import { v4 as uuidv4 } from "uuid";
 import { TreeNode } from "../../hooks/useTreeData";
 import { notEmpty } from "../misc";
 //import fs from "fs";
-
+import _ from "lodash";
 //const sampleData = fs.readFileSync("./sample.pgn", "utf-8");
 
 type ValueOf<T> = T[keyof T];
 type Entries<T> = [keyof T, ValueOf<T>][];
 import { Game } from "@/server/types/lobby";
+import { cloneDeep } from "lodash";
+import { Puzzle } from "@/hooks/usePuzzleSolver";
 const getEntries = <T extends object>(obj: T) => Object.entries(obj) as Entries<T>;
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
@@ -111,9 +113,10 @@ const tagsDict: Record<keyof PGNTagData, string> = {
   timeControl: "TimeControl",
 };
 
-function tagDataToPGNString(data: PGNTagData): string {
+export function tagDataToPGNString(data: PGNTagData): string {
   let tagsString = "";
-  Object.assign(data, {
+  const dataToEncode = _.cloneDeep(data);
+  Object.assign(dataToEncode, {
     event: data.event || "?",
     site: data.site || "?",
     date: data.date || "????.??.??",
@@ -122,7 +125,7 @@ function tagDataToPGNString(data: PGNTagData): string {
     black: data.black,
     result: data.result || "*",
   });
-  const entries = getEntries(data);
+  const entries = getEntries(dataToEncode);
   entries.forEach(([key, value]) => {
     const keyString = tagsDict[key];
     if (value) tagsString += `[${keyString} "${value}"]\r\n`;
@@ -130,7 +133,10 @@ function tagDataToPGNString(data: PGNTagData): string {
   return tagsString;
 }
 //console.log(pgnToJson(sampleData));
-function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
+function buildTreeArray<T>(
+  map: Map<string, TreeNode<T>>,
+  parentKey: string | null = null
+): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -153,6 +159,28 @@ export function mainLineFromTreeArray(treeArray: Node[]) {
   return path;
 }
 
+export function treeFromLine(line: Chess.NodeData[]): Node[] {
+  let map = new Map<string, Node>();
+  let parentKey: string | null = null;
+  const addNode = (data: Chess.NodeData, parentKey: string | null): Node | undefined => {
+    const key = uuidv4();
+    const newNode = { key, data, parentKey: parentKey, children: [] };
+    map.set(newNode.key, newNode);
+    if (parentKey) {
+      const parentNode = map.get(parentKey);
+      if (!parentNode) throw new Error("Invalid parent key.");
+      parentNode.children.push(newNode);
+    }
+    return newNode;
+  };
+  line.forEach((nodeData) => {
+    const node = addNode(nodeData, parentKey);
+    if (!node) throw new Error("line parse failed");
+    parentKey = node.key;
+  });
+  return buildTreeArray(map);
+}
+
 export function parsePgn(pgn: string) {
   const { tagData, movetext } = pgnToJson(pgn);
   const startPosition = tagData.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -162,8 +190,6 @@ export function parsePgn(pgn: string) {
     tagData,
   };
 }
-
-export function mainLineToMoveHistory(line: Node[]) {}
 
 /**
  * Parse standard PGN movetext into initial tree for analysis board
@@ -280,7 +306,8 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       throw new Error("Invalid pgn");
     } else if (reading === "annotation") {
       if (char === " ") {
-        if (!annotation.length) throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (!annotation.length)
+          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
         if (currentData.annotations) {
           currentData.annotations.push(parseInt(annotation));
         } else {
@@ -322,7 +349,10 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       }
     } else if (char === "$") {
       reading = "annotation";
-    } else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
+    } else if (
+      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
+      isDigit(char)
+    ) {
       reading = "move-count";
       moveCount = char;
       if (currentData.pgn) postCurrentData();
@@ -379,7 +409,8 @@ export function encodeGameToPgn(game: Game): string {
     result: encodeOutcome(game.data.outcome),
   };
   const tagSection = tagDataToPGNString(tagData);
-  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  const movetext =
+    moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
   return tagSection + "\r\n" + movetext;
 }
 

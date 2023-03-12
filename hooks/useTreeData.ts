@@ -19,19 +19,28 @@ export type TreeHook<T> = {
   getSiblingIndex: (key: string) => number;
   getDepth: (key: string) => number;
   getPly: (key: string) => number;
-  findChild: (key: string | null, callbackFn: (node: TreeNode<T>) => boolean) => TreeNode<T> | undefined;
+  findChild: (
+    key: string | null,
+    callbackFn: (node: TreeNode<T>) => boolean
+  ) => TreeNode<T> | undefined;
   getContinuation: (key: string | null) => TreeNode<T>[];
   loadTree: (treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) => void;
-  findNode?: (predicate: (node: TreeNode<T>) => boolean, traversalMethod?: string) => TreeNode<T> | undefined;
+  findNode?: (
+    predicate: (node: TreeNode<T>) => boolean,
+    traversalMethod?: string
+  ) => TreeNode<T> | undefined;
 };
 
-function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()): TreeHook<T> {
+function useTreeData<T extends object>(
+  initialTree: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()
+): TreeHook<T> {
   const [map, setMap] = useState<Map<string, TreeNode<T>>>(() =>
     initialTree instanceof Map ? initialTree : buildMapFromTreeArray(initialTree)
   );
   function loadTree(treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) {
-    setMap(treeData instanceof Map ? treeData : buildMapFromTreeArray(treeData));
-    setTreeArray(buildTreeArray(map));
+    const newMap = treeData instanceof Map ? treeData : buildMapFromTreeArray(treeData);
+    setMap(newMap);
+    setTreeArray(buildTreeArray(newMap));
   }
   const [treeArray, setTreeArray] = useState(buildTreeArray(map));
 
@@ -46,7 +55,11 @@ function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | T
    * @param keygen An optional callback function to generate a key string for the node; if none is provided a new uuid will be generated
    * @returns The newly inserted node, or ``undefined`` if the parent key is invalid
    */
-  function addNode(data: T, parentKey: string | null, keygen?: () => string): TreeNode<T> | undefined {
+  function addNode(
+    data: T,
+    parentKey: string | null,
+    keygen?: () => string
+  ): TreeNode<T> | undefined {
     const key = keygen ? keygen() : uuidv4();
     const newNode = { key, data, parentKey: parentKey, children: [] };
     map.set(newNode.key, newNode);
@@ -102,7 +115,10 @@ function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | T
    * @param callbackFn A callback function for each child of the node; it takes the child node as an argument and should return a boolean
    * @returns The first child that satisfies the callback function or undefined
    */
-  function findChild(key: string | null, callbackFn: (node: TreeNode<T>) => boolean): TreeNode<T> | undefined {
+  function findChild(
+    key: string | null,
+    callbackFn: (node: TreeNode<T>) => boolean
+  ): TreeNode<T> | undefined {
     if (!key) {
       const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       return rootNodes.find((node) => callbackFn(node));
@@ -120,7 +136,10 @@ function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | T
    * @param callbackFn A callback function for each direct descendatn of the node; it takes the node as an argument and should return a boolean
    * @returns The first child that satisfies the callback function or undefined
    */
-  function findNextDescendant(node: TreeNode<T>, callbackFn: (node: TreeNode<T>) => boolean): string | undefined {
+  function findNextDescendant(
+    node: TreeNode<T>,
+    callbackFn: (node: TreeNode<T>) => boolean
+  ): string | undefined {
     if (callbackFn(node)) {
       return node.key;
     } else if (node.children.length > 0) {
@@ -159,7 +178,9 @@ function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | T
     return ply;
   }
   function getContinuation(key: string | null): TreeNode<T>[] {
-    const startNode = key ? getNode(key) : Array.from(map.values()).filter((node) => !node.parentKey)[0];
+    const startNode = key
+      ? getNode(key)
+      : Array.from(map.values()).filter((node) => !node.parentKey)[0];
     let path: TreeNode<T>[] = [];
     let currentNode: TreeNode<T> | undefined = startNode;
     while (currentNode) {
@@ -222,7 +243,10 @@ function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | T
   };
 }
 
-function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
+function buildTreeArray<T>(
+  map: Map<string, TreeNode<T>>,
+  parentKey: string | null = null
+): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }

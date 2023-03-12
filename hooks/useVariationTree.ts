@@ -6,7 +6,9 @@ import nodeTest from "node:test";
 import { gameFromNodeData, nodeDataFromMove } from "@/lib/chess";
 
 interface VariationTree {}
-export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(initialTree?: TreeNode<T>[]) {
+export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(
+  initialTree?: TreeNode<T>[]
+) {
   const tree = useTreeData<T>(initialTree || []);
   const map = tree.map;
   //Key of the selectedNode
@@ -74,9 +76,12 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
         movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       movetext += `${node.data.PGN} ${
-        node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""
+        node.data.annotations.length
+          ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
+          : ""
       } ${node.data.comment ? `{${node.data.comment}} ` : ""}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
+        movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }

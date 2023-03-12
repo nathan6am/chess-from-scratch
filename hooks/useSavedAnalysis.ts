@@ -51,6 +51,8 @@ export default function useSavedAnalysis(initialId?: string) {
   const { mutate: saveAs } = useMutation({
     mutationFn: async (data: AnalysisData) => {
       const response = await axios.post<Analysis>("/api/analysis/", data);
+      console.log(data);
+      console.log(response);
       if (response && response.data) return response.data as Analysis;
       else throw new Error("Save failed");
     },
@@ -61,7 +63,10 @@ export default function useSavedAnalysis(initialId?: string) {
   });
   const { mutate: fork } = useMutation({
     mutationFn: async (data: { title: string; collectionIds: string[] }) => {
-      const response = await axios.post<{ success: boolean; analysis: Analysis }>(`/api/analysis/${id}/fork`, data);
+      const response = await axios.post<{ success: boolean; analysis: Analysis }>(
+        `/api/analysis/${id}/fork`,
+        data
+      );
       if (response && response.data) return response.data.analysis;
       else throw new Error("Fork failed");
     },

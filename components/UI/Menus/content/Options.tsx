@@ -7,6 +7,8 @@ import { values } from "lodash";
 import ChangePasswordForm from "../../forms/ChangePasswordForm";
 import VolumeSlider from "./VolumeSlider";
 import { ScrollContainer } from "@/components/layout/GameLayout";
+import BoardSelect from "../../BoardSelect";
+import PieceSetSelect from "../../PieceSetSelect";
 export default function Options() {
   return (
     <div className="flex flex-row w-full h-full">
@@ -20,9 +22,12 @@ function MyTabs() {
   return (
     <Tab.Group vertical>
       <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
-        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">Options</div>
+        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
+          Options
+        </div>
         <MenuTab>Profile</MenuTab>
         <MenuTab>Display</MenuTab>
+        <MenuTab>Theme</MenuTab>
         <MenuTab>Game Behavior</MenuTab>
         <MenuTab>Sound</MenuTab>
         <MenuTab>Puzzles</MenuTab>
@@ -42,6 +47,9 @@ function MyTabs() {
             </Tab.Panel>
             <Tab.Panel as={Fragment}>
               <DisplayPanel />
+            </Tab.Panel>
+            <Tab.Panel as={Fragment}>
+              <ThemePanel />
             </Tab.Panel>
             <Tab.Panel>
               <GameBehaviorPanel />
@@ -131,6 +139,37 @@ function GameBehaviorPanel() {
             gameBehavior: {
               ...settings.gameBehavior,
               autoQueen: enabled,
+            },
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+function ThemePanel() {
+  const { settings, updateSettings } = useContext(SettingsContext);
+  return (
+    <div className="">
+      <h2 className="text-lg mb-4">Display Settings</h2>
+      <BoardSelect
+        value={settings.display.boardTheme}
+        onChange={(value) => {
+          updateSettings({
+            display: {
+              ...settings.display,
+              boardTheme: value,
+            },
+          });
+        }}
+      />
+      <PieceSetSelect
+        value={settings.display.pieceTheme}
+        onChange={(value) => {
+          updateSettings({
+            display: {
+              ...settings.display,
+              pieceTheme: value,
             },
           });
         }}

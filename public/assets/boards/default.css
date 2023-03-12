@@ -1,0 +1,30 @@
+.square-light {
+  background-color: #d9d1bf;
+}
+
+.square-dark {
+  background-color: #26647a;
+}
+
+.board-bg {
+}
+
+.selected-highlight {
+  background-color: rgba(255, 3, 62, 0.5);
+}
+
+.lastmove-highlight {
+  background-color: rgba(17, 192, 255, 0.5);
+}
+
+.target-hover-highlight {
+  background-color: rgba(255, 229, 59, 0.5);
+}
+
+.on-light {
+  color: #26647a;
+}
+
+.on-dark {
+  color: #d9d1bf;
+}

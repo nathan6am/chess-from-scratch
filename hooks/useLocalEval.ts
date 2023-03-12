@@ -71,7 +71,10 @@ export interface Evaler {
   currentOptions: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
-  getEvaluation: (fen: string, cachedEval?: FinalEvaluation | undefined) => Promise<FinalEvaluation | undefined>;
+  getEvaluation: (
+    fen: string,
+    cachedEval?: FinalEvaluation | undefined
+  ) => Promise<FinalEvaluation | undefined>;
   currentDepth: number;
   currentScore: EvalScore | null;
   error: Error | null;
@@ -108,7 +111,9 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+    stockfishRef.current = new Worker(
+      wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+    );
   }, []);
 
   //Verify engine is ready
@@ -118,22 +123,44 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     if (!window.Worker || !stockfishRef.current) return;
     const stockfish = stockfishRef.current;
     const initalize = async () => {
-      const status = await commands.startup(stockfish);
+      const status = await commands.ready(stockfish);
       return status;
     };
-    initalize().then((status) => {
-      if (status.ready === true) {
+    initalize().then((ready) => {
+      if (ready) {
         setIsReady(true);
-        //console.log(status.options);
       } else {
-        console.error("engine timeout error");
-        setError(new Error("Stockfish timeout error: no response"));
+        setIsReady(false);
+        setError(new Error());
       }
     });
     return () => {
       cancelled.current = true;
     };
   }, []);
+
+  //Restart on error
+  useEffect(() => {
+    if (error) {
+      stockfishRef.current?.terminate();
+      stockfishRef.current = new Worker(
+        wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+      );
+      const stockfish = stockfishRef.current;
+      setError(null);
+      const initalize = async () => {
+        const status = await commands.ready(stockfish);
+        return status;
+      };
+      initalize().then((ready) => {
+        if (ready) {
+          setIsReady(true);
+        } else {
+          setError(new Error());
+        }
+      });
+    }
+  }, [error, stockfishRef]);
 
   useEffect(() => {
     if (lastFen.current) getEvaluation(lastFen.current);
@@ -151,7 +178,11 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       const evaler = stockfishRef.current;
       if (inProgress) await commands.stop(evaler);
 
-      if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
+      if (
+        cachedEval &&
+        cachedEval.depth >= options.depth &&
+        cachedEval.lines.length >= options.multiPV
+      ) {
         setEvaluation(cachedEval);
         setCurrentDepth(cachedEval.depth);
         setCurrentScore(cachedEval.score);
@@ -201,6 +232,8 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       } catch (e) {
         if (e instanceof Error) {
           setError(e);
+        } else {
+          setError(new Error());
         }
         setInProgress(false);
       }
@@ -211,8 +244,17 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     const evaler = stockfishRef.current;
     if (!evaler) return;
     if (inProgress) {
-      await commands.stop(evaler);
-      setInProgress(false);
+      try {
+        await commands.stop(evaler);
+        setInProgress(false);
+      } catch (e) {
+        setIsReady(false);
+        if (e instanceof Error) {
+          setError(e);
+        } else {
+          setError(new Error());
+        }
+      }
     }
   };
 
