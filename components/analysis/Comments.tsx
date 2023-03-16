@@ -1,16 +1,16 @@
 import React, { useMemo, useState, useRef } from "react";
-import { ScrollContainer } from "../layout/GameLayout";
 import { TreeNode } from "@/hooks/useTreeData";
 import * as Chess from "@/lib/chess";
 import { MdEdit, MdSave, MdOutlineSaveAlt, MdDelete } from "react-icons/md";
+
 interface Props {
   node: TreeNode<Chess.NodeData> | null;
   controls: {
-    insertAnnotation: (nodeKey: string, code: number) => void;
-    removeAnnotation: (nodeKey: string, code: number) => void;
+    updateAnnotations: (nodeKey: string, code: number[]) => void;
     updateComment: (nodeKey: string, comment: string) => void;
   };
 }
+
 export default function Comments({ node, controls }: Props) {
   const [commentInput, setCommentInput] = useState<string>(node?.data.comment || "");
   const edited = useMemo(() => {

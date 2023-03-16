@@ -24,20 +24,29 @@ function setSkillLevel(value, stockfish) {
     stockfish.postMessage(`setoption name Skill Level value ${value}`);
 }
 exports.setSkillLevel = setSkillLevel;
-const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 40000));
 function ready(stockfish) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("starting");
+        let timer;
         const isReady = new Promise((resolve, reject) => {
             const handler = (e) => {
+                console.log(e.data);
                 if (e.data === "readyok") {
+                    console.log("ready");
+                    clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
                     resolve(true);
                 }
             };
             stockfish.addEventListener("message", handler);
             stockfish.postMessage("isready");
+            stockfish.postMessage("uci");
+            timer = setTimeout(() => {
+                stockfish.removeEventListener("message", handler);
+                reject(new Error("timeout waiting for response on command `uci`"));
+            }, 200000);
         });
-        const ready = yield Promise.race([isReady, timeout]);
+        const ready = yield isReady;
         return ready;
     });
 }
@@ -45,6 +54,7 @@ exports.ready = ready;
 function startup(stockfish) {
     return __awaiter(this, void 0, void 0, function* () {
         const isReady = yield ready(stockfish);
+        let timer;
         if (isReady) {
             const getOptions = new Promise((resolve, reject) => {
                 let options = [];
@@ -84,33 +94,41 @@ function startup(stockfish) {
                         options.push({ name, type, defaultValue });
                     }
                     else if (args[0] === "uciok") {
+                        clearTimeout(timer);
                         stockfish.removeEventListener("message", handler);
                         resolve(options);
                     }
                 };
                 stockfish.addEventListener("message", handler);
                 stockfish.postMessage("uci");
+                timer = setTimeout(() => {
+                    stockfish.removeEventListener("message", handler);
+                    reject(new Error("timeout waiting for response on command `uci`"));
+                }, 200000);
             });
-            const options = yield Promise.race([getOptions, timeout]);
-            if (options) {
-                return {
-                    ready: true,
-                    options,
-                };
-            }
-            else {
-                throw new Error("something went wrong");
-            }
-        }
-        else {
-            throw new Error("engine timeout");
+            const options = yield getOptions;
+            return {
+                ready: true,
+                options,
+            };
         }
     });
 }
 exports.startup = startup;
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args) {
-    const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+    const values = [
+        "depth",
+        "multipv",
+        "score",
+        "seldepth",
+        "time",
+        "nodes",
+        "nps",
+        "time",
+        "pv",
+        "hashfull",
+    ];
     let reading = "";
     let evaluation = {
         depth: 0,

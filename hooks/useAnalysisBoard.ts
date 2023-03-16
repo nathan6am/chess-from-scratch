@@ -47,8 +47,7 @@ export interface AnalysisHook {
   setMoveQueue: React.Dispatch<React.SetStateAction<string[]>>;
   commentControls: {
     updateComment: (nodeId: string, comment: string) => void;
-    removeAnnotation: (nodeId: string, annotation: number) => void;
-    insertAnnotation: (nodeId: string, annotation: number) => void;
+    updateAnnotations: (nodeId: string, annotations: number[]) => void;
   };
 }
 
@@ -182,12 +181,10 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     [variationTree.tree]
   );
 
-  const insertAnnotation = useCallback(
-    (nodeId: string, annotation: number) => {
+  const updateAnnotations = useCallback(
+    (nodeId: string, annotations: number[]) => {
       const node = variationTree.tree.getNode(nodeId);
       if (!node) return;
-      const annotations = node.data.annotations;
-      annotations.push(annotation);
       variationTree.tree.updateNode(nodeId, {
         annotations,
       });
@@ -195,17 +192,6 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     [variationTree.tree]
   );
 
-  const removeAnnotation = useCallback(
-    (nodeId: string, annotation: number) => {
-      const node = variationTree.tree.getNode(nodeId);
-      if (!node) return;
-      const annotations = node.data.annotations.filter((cur) => cur !== annotation);
-      variationTree.tree.updateNode(nodeId, {
-        annotations,
-      });
-    },
-    [variationTree.tree]
-  );
   //Debounce data change for evaler/api request
   const debouncedNode = useDebounce(currentNode, 300);
   const currentNodeKey = useRef<string | null>();
@@ -308,8 +294,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     explorer,
     commentControls: {
       updateComment,
-      removeAnnotation,
-      insertAnnotation,
+      updateAnnotations,
     },
   };
 }

@@ -112,11 +112,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: "jsonb" }),
     __metadata("design:type", Object)
-], Analysis.prototype, "tags", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], Analysis.prototype, "moveText", void 0);
+], Analysis.prototype, "tagData", void 0);
 __decorate([
     (0, typeorm_1.ManyToMany)(() => Collection_1.default, (collection) => collection.analyses, { cascade: true }),
     (0, typeorm_1.JoinTable)({

@@ -29,10 +29,7 @@ function parsePuzzleEntity(puzzle: PuzzleEntity): Puzzle {
   let halfMoveCount = game.fullMoveCount * 2 + (game.activeColor === "b" ? 1 : 0);
   moves.forEach((uciMove) => {
     const move = currentGame.legalMoves.find(
-      (move) =>
-        move.start === uciMove.start &&
-        move.end === uciMove.end &&
-        move.promotion === uciMove.promotion
+      (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
     );
     if (!move) throw new Error("invalid solution");
     solution.push(nodeDataFromMove(currentGame, move, halfMoveCount));
@@ -90,41 +87,41 @@ export default function usePuzzleQueue(initialOptions?: Partial<PuzzleQueueOptio
       else throw new Error();
     },
     onSuccess(data) {
-      console.log(data);
       try {
         const puzzles = data.map((entity) => parsePuzzleEntity(entity));
-        console.log(puzzles);
+        //Push the puzzles to the queue on success
         setQueue((queue) => [...queue, ...puzzles]);
       } catch (e) {
         console.error(e);
-        //refetch();
       }
     },
   });
 
   const puzzle = usePuzzle(currentPuzzle);
+
+  //Load the next puzzle
   const next = useCallback(() => {
     if (currentPuzzle && puzzle.solveState === "pending") return;
     if (!queue.length) return;
+
     if (!currentPuzzle) {
       let nextPuzzle = queue[0];
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     } else {
-      setHistory((cur) => [
-        ...cur,
-        { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false },
-      ]);
+      setHistory((cur) => [...cur, { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false }]);
       let nextPuzzle = queue[0];
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     }
   }, [queue, puzzle.solveState, currentPuzzle]);
+
   useEffect(() => {
+    //Automatically load the next puzzle if current puzzle is null
     if (!currentPuzzle && queue.length) {
-      console.log("here");
       next();
     }
+    //Fetch new puzzles when the queue length is below minimum threshold
     if (queue.length < 5) {
       refetch();
     }
@@ -144,16 +141,7 @@ function usePuzzle(puzzle: Puzzle | null) {
   const tree = useVariationTree();
   //Reset on puzzle change
 
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    mainLine,
-    setCurrentKey,
-  } = tree;
+  const { currentNode, path, continuation, currentKey, mainLine, setCurrentKey, stepBackward } = tree;
   const currentGame = useMemo(() => {
     if (!puzzle) return Chess.createGame({});
     if (currentNode)
@@ -164,6 +152,7 @@ function usePuzzle(puzzle: Puzzle | null) {
       );
     else return puzzle.game;
   }, [puzzle, currentNode]);
+
   const [orientation, setOrientation] = useState<Chess.Color>(puzzle?.playerColor || "w");
   const [solveState, setSolveState] = useState<"pending" | "solved" | "failed">("pending");
   const [hintUsed, setHintUsed] = useState(false);
@@ -171,25 +160,42 @@ function usePuzzle(puzzle: Puzzle | null) {
     () => currentKey === null || mainLine.some((node) => node.key === currentKey),
     [currentKey, mainLine]
   );
+  const [touchedKeys, setTouchedKeys] = useState<string[]>([]);
+  const visibleNodes = useMemo(() => {
+    const lastIdx = mainLine.findLastIndex((node) => touchedKeys.includes(node.key));
+    return mainLine.slice(0, lastIdx + 1);
+  }, [mainLine]);
+  const moveable = useMemo(() => {
+    if (continuation.length === 0) return false;
+    if (currentGame.activeColor !== puzzle?.playerColor) return false;
+    if (!isMainline) return false;
+    //if (currentKey === visibleNodes[visibleNodes.length - 1].key) return false;
+    return true;
+  }, [continuation, currentGame, currentKey, isMainline, visibleNodes]);
+
   const retry = useCallback(() => {
     if (isMainline) return;
     setCurrentKey(currentNode?.parentKey || null);
   }, [isMainline, path, currentNode]);
+  const annotation = useMemo(() => {
+    if (currentKey && !isMainline) return "puzzle-failed";
+    else if (currentKey && isMainline && continuation.length === 0) return "puzzle-solved";
+    return undefined;
+  }, [currentKey, isMainline, continuation]);
   useEffect(() => {
     if (!puzzle) return;
     if (!currentKey) return;
     const lastMove = mainLine[mainLine.length - 1];
     if (currentKey === lastMove.key && solveState !== "failed") setSolveState("solved");
   }, [mainLine, currentKey, puzzle]);
-  const moveable = useMemo(() => {
-    return continuation.length !== 0;
-  }, [continuation]);
+
   const onMove = useCallback(
     (move: Chess.Move) => {
       if (!moveable) return;
       const existingMoveKey = tree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
         tree.setCurrentKey(existingMoveKey);
+        setTouchedKeys((cur) => [...cur, existingMoveKey]);
       } else {
         setSolveState("failed");
         const halfMoveCount = currentNode?.data.halfMoveCount || 1;
@@ -222,10 +228,30 @@ function usePuzzle(puzzle: Puzzle | null) {
       opponentMoveQueued.current = true;
       setTimeout(() => {
         opponentMoveQueued.current = false;
-        tree.stepForward();
+        const nextMove = tree.stepForward();
+        if (nextMove) setTouchedKeys((cur) => [...cur, nextMove.key]);
       }, 500);
     }
   }, [currentGame, puzzle, tree, continuation, opponentMoveQueued]);
+  const stepForward = useCallback(() => {
+    const nextNode = continuation[0];
+    if (nextNode && touchedKeys.includes(nextNode.key)) {
+      setCurrentKey(nextNode.key);
+    }
+  }, [continuation, visibleNodes, touchedKeys]);
+  const jumpBackward = () => {
+    setCurrentKey(null);
+  };
+  const jumpForward = useCallback(() => {
+    setCurrentKey(visibleNodes[visibleNodes.length - 1].key);
+  }, [visibleNodes]);
+
+  const showSolution = useCallback(() => {
+    setSolveState("failed");
+    setTouchedKeys(mainLine.map((node) => node.key));
+    tree.stepForward();
+  }, []);
+
   useEffect(() => {
     if (!puzzle) return;
     if (lastPuzzleId.current === puzzle.id) return;
@@ -234,12 +260,21 @@ function usePuzzle(puzzle: Puzzle | null) {
     setOrientation(puzzle.playerColor);
     setSolveState("pending");
   }, [puzzle, tree.loadNewTree]);
+
   return {
     puzzle,
     orientation,
     currentGame,
     solveState,
+    annotation,
     retry,
     onMove,
+    moveable,
+    controls: {
+      stepForward,
+      stepBackward,
+      jumpBackward,
+      jumpForward,
+    },
   };
 }

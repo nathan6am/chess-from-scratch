@@ -105,7 +105,6 @@ class Redis {
         });
         //Generates a new game based on the lobby configuration
         this.newGame = (lobbyid) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
             const lobby = yield this.getLobbyById(lobbyid);
             if (!lobby)
                 throw new Error(`Lobby with id:'${lobbyid}' does not exist`);
@@ -113,12 +112,9 @@ class Redis {
             if (hasActiveGame)
                 throw new Error("Error creating game: Lobby currently has game in progress");
             //Verify both players are connected
-            if (lobby.players.length < 2)
+            if (lobby.connections.length < 2)
                 throw new Error("Not enough players connected to start game");
-            let players = {
-                w: "",
-                b: "",
-            };
+            let players;
             //Flip colors if the game is a rematch
             if (lobby.currentGame) {
                 players = {
@@ -128,11 +124,19 @@ class Redis {
             }
             else {
                 //Assign colors based on config
-                const playerA = lobby.creator;
-                const playerB = (_a = lobby.players.find((player) => player.id !== lobby.creator)) === null || _a === void 0 ? void 0 : _a.id;
-                if (!playerB)
+                const connectionA = lobby.connections.find((connection) => connection.id === lobby.creatorId);
+                if (!connectionA)
+                    throw new Error("lobby creator is not connected");
+                const playerA = connectionA.player;
+                const connectionB = lobby.connections.find((connection) => connection.id !== lobby.creatorId);
+                if (!connectionB)
                     throw new Error("Not enough players connected to start game");
+                const playerB = connectionB.player;
                 const creatorColor = lobby.options.color === "random" ? (0, misc_1.coinflip)("w", "b") : lobby.options.color;
+                players = {
+                    w: playerA,
+                    b: playerB,
+                };
                 players[creatorColor] = playerA;
                 players[creatorColor === "w" ? "b" : "w"] = playerB;
             }
@@ -186,37 +190,37 @@ class Redis {
             return chat;
         });
         //Connect a player to a lobby
-        this.connectToLobby = (lobbyid, player) => __awaiter(this, void 0, void 0, function* () {
+        this.connectToLobby = (lobbyid, connection) => __awaiter(this, void 0, void 0, function* () {
             const key = `lobby:${lobbyid}`;
-            const userid = player.id;
+            const userid = connection.id;
             const lobby = yield this.getLobbyById(lobbyid);
             if (!lobby)
                 throw new Error("Lobby does not exist");
             //Update the socket if the player is already connected
-            let updatedPlayers = lobby.players.map((existingPlayer) => {
-                if (existingPlayer.id === userid) {
-                    return Object.assign(Object.assign({}, existingPlayer), { primaryClientSocketId: player.primaryClientSocketId });
+            let updatedConnections = lobby.connections.map((existingConnection) => {
+                if (existingConnection.id === userid) {
+                    return Object.assign(Object.assign({}, existingConnection), { lastClientSocketId: connection.lastClientSocketId, connectionStatus: true });
                 }
-                return existingPlayer;
+                return existingConnection;
             });
             //Update the lobby and return if the player was already connected and only the socket was changed
-            if (updatedPlayers.some((player) => player.id === userid)) {
+            if (updatedConnections.some((connection) => connection.id === userid)) {
                 return yield this._updateLobby(lobbyid, {
-                    players: updatedPlayers,
+                    connections: updatedConnections,
                 });
             }
             //Push the plater and return if a connection is reserverd
             if (lobby.reservedConnections.includes(userid)) {
-                updatedPlayers.push(player);
+                updatedConnections.push(Object.assign(Object.assign({}, connection), { connectionStatus: true }));
                 return yield this._updateLobby(lobbyid, {
-                    players: updatedPlayers,
+                    connections: updatedConnections,
                 });
             }
             if (lobby.reservedConnections.length < 2) {
-                updatedPlayers.push(player);
+                updatedConnections.push(Object.assign(Object.assign({}, connection), { connectionStatus: true }));
                 return yield this._updateLobby(lobbyid, {
-                    reservedConnections: [...lobby.reservedConnections, player.id],
-                    players: updatedPlayers,
+                    reservedConnections: [...lobby.reservedConnections, connection.id],
+                    connections: updatedConnections,
                 });
             }
             throw new Error("Cannot connect to lobby");

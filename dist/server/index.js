@@ -52,6 +52,7 @@ const redis_1 = require("redis");
 const user_1 = __importDefault(require("./routes/user"));
 const analysis_1 = __importDefault(require("./routes/analysis"));
 const collections_1 = __importDefault(require("./routes/collections"));
+const puzzles_1 = __importDefault(require("./routes/puzzles"));
 const redisClient = (0, redis_1.createClient)();
 const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
 const cors_1 = __importDefault(require("cors"));
@@ -103,6 +104,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     app.use("/api/user", user_1.default);
     app.use("/api/analysis", analysis_1.default);
     app.use("/api/collections", collections_1.default);
+    app.use("/api/puzzles", puzzles_1.default);
     //Wrap middleware for socket.io
     const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
     const io = new socketio.Server(server, {
@@ -121,6 +123,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
         const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
         if (passportUser) {
             const user = JSON.parse(passportUser);
+            console.log(passportUser);
             socket.data.sessionUser = user;
             socket.data.userid = user.id;
         }
@@ -135,6 +138,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     lobbyNsp.use((socket, next) => {
         var _a, _b;
         const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+        console.log(`passportUser: ${passportUser}`);
         if (passportUser) {
             const user = JSON.parse(passportUser);
             socket.data.sessionUser = user;

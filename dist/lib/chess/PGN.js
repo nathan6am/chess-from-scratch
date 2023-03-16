@@ -89,7 +89,7 @@ function disambiguateMoves(move, position, alternateMoves) {
         let rankB = (0, Chess_1.squareToCoordinates)(altMove.start)[1];
         return rankA !== rankB;
     })) {
-        return `${notation}${ChessTypes_1.FileEnum[(0, Chess_1.squareToCoordinates)(move.start)[0]]}`;
+        return `${notation}${(0, Chess_1.squareToCoordinates)(move.start)[1] + 1}`;
     }
     else {
         return `${notation}${move.start}`;

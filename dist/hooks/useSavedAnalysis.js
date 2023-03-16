@@ -8,17 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -38,24 +27,39 @@ const fetcher = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 //Hook for managing loading/saving analysis from DB
-function useSavedAnalysis() {
-    const [id, setId] = (0, react_1.useState)(null);
+function useSavedAnalysis(initialId) {
+    const [id, setId] = (0, react_1.useState)(initialId || null);
+    const [autoSync, setAutoSync] = (0, react_1.useState)(false);
     const queryClient = (0, react_query_1.useQueryClient)();
     const { data, error, isLoading } = (0, react_query_1.useQuery)({
         queryKey: ["analysis", id],
         queryFn: () => fetcher(id),
         keepPreviousData: true,
+        onError: () => {
+            setId(null);
+        },
     });
     const load = (id) => {
         setId(id);
     };
-    const save = (0, react_query_1.useMutation)({
-        mutationFn: () => __awaiter(this, void 0, void 0, function* () { }),
+    const { mutate: save } = (0, react_query_1.useMutation)({
+        mutationFn: ({ id, data }) => __awaiter(this, void 0, void 0, function* () {
+            const response = yield axios_1.default.put(`/api/analysis/${id}`, data);
+            if (response && response.data)
+                return response.data;
+            else
+                throw new Error();
+        }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["analysis", id]);
+            setId(data.id);
+        },
     });
     const { mutate: saveAs } = (0, react_query_1.useMutation)({
         mutationFn: (data) => __awaiter(this, void 0, void 0, function* () {
-            const _a = data.analysis, { id } = _a, rest = __rest(_a, ["id"]);
-            const response = yield axios_1.default.post("/api/analysis/", Object.assign({}, rest));
+            const response = yield axios_1.default.post("/api/analysis/", data);
+            console.log(data);
+            console.log(response);
             if (response && response.data)
                 return response.data;
             else
@@ -78,5 +82,17 @@ function useSavedAnalysis() {
             setId(data.id);
         },
     });
+    return {
+        data,
+        error,
+        isLoading,
+        save,
+        saveAs,
+        fork,
+        load,
+        id,
+        autoSync,
+        setAutoSync,
+    };
 }
 exports.default = useSavedAnalysis;

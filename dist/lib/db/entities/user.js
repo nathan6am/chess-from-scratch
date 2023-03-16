@@ -78,6 +78,8 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                         credentials: true,
                     },
                 });
+                console.log(credentials.username);
+                console.log(user);
                 if (!user || !user.credentials)
                     return null;
                 const verified = yield bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
@@ -153,11 +155,11 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             }
             const user = new User_1();
             const credentials = new Credential();
-            const hash = bcrypt_1.default.hashSync(account.password, 10);
+            const hash = bcrypt_1.default.hashSync(password, 10);
             credentials.hashedPassword = hash;
             credentials.email = email;
             user.credentials = credentials;
-            Object.assign(user, { email, username });
+            Object.assign(user, { username });
             yield user.save();
             if (!user) {
                 return {
@@ -165,7 +167,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                     fieldErrors: [{ field: "none", message: "Unable to create account" }],
                 };
             }
-            const created = { id: user.id, username: user.username };
+            const created = { id: user.id, username: user.username, type: user.type };
             return { created: created };
         });
     }
@@ -206,8 +208,21 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                 },
                 relations: {
                     profile: true,
+                    games: {
+                        game: {
+                            players: {
+                                user: true,
+                            },
+                        },
+                    },
                 },
             });
+            return user;
+        });
+    }
+    static findById(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.findOneBy({ id });
             return user;
         });
     }

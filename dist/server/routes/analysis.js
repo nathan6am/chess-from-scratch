@@ -35,18 +35,17 @@ router.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     if (!req.user || ((_a = req.user) === null || _a === void 0 ? void 0 : _a.type) === "guest")
         return res.status(401);
-    const user = yield User_1.default.findOneBy({ id: req.user.id });
+    const user = yield User_1.default.findById(req.user.id);
     if (!user)
         return res.status(401);
-    const { title, description, collectionIds, tags, moveText, visibility, pgn } = req.body;
+    const { title, description, collectionIds, tagData, visibility, pgn } = req.body;
     const analysis = new Analysis_1.default();
     Object.assign(analysis, {
         title,
         authorId: user.id,
         pgn,
-        moveText,
         description: description || null,
-        tags,
+        tagData,
         visibility,
         collectionIds,
     });
@@ -62,14 +61,20 @@ router.put("/:id", verifyUser_1.default, (req, res) => __awaiter(void 0, void 0,
     var _b;
     const userid = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
     const { id } = req.params;
-    const canEdit = yield Analysis_1.default.verifyAuthor(id, userid);
-    if (canEdit) {
-        const updated = yield Analysis_1.default.updateById(id, req.body);
-        res.status(200).json(updated);
-        return;
+    try {
+        const canEdit = yield Analysis_1.default.verifyAuthor(id, userid);
+        if (canEdit) {
+            const updated = yield Analysis_1.default.updateById(id, req.body);
+            res.status(200).json(updated);
+            return;
+        }
+        else {
+            res.status(401).end();
+            return;
+        }
     }
-    else {
-        res.status(401).end();
+    catch (e) {
+        res.status(500).end();
         return;
     }
 }));

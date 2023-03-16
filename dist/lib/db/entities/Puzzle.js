@@ -17,11 +17,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var Puzzle_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 const typeorm_1 = require("typeorm");
-let Puzzle = class Puzzle extends typeorm_1.BaseEntity {
+let Puzzle = Puzzle_1 = class Puzzle extends typeorm_1.BaseEntity {
     static getPuzzles(options) {
-        return __awaiter(this, void 0, void 0, function* () { });
+        return __awaiter(this, void 0, void 0, function* () {
+            const defaultOptions = {
+                minRating: 0,
+                maxRating: 4000,
+                sampleSize: 25,
+                excludeIds: null,
+                themes: null,
+            };
+            const searchOptions = Object.assign(Object.assign({}, defaultOptions), options);
+            const { minRating, maxRating, sampleSize, excludeIds, themes } = searchOptions;
+            let query = Puzzle_1.createQueryBuilder()
+                .select()
+                .where("rating BETWEEN :minRating AND :maxRating", { minRating, maxRating });
+            if (themes) {
+                query = query.andWhere("themes && :selectedThemes", { selectedThemes: themes });
+            }
+            if (excludeIds) {
+                query = query.andWhere("id NOT IN (:...excludeIds)", { excludeIds });
+            }
+            query = query.orderBy("RANDOM()").limit(sampleSize);
+            return yield query.getMany();
+        });
     }
 };
 __decorate([
@@ -33,8 +55,8 @@ __decorate([
     __metadata("design:type", String)
 ], Puzzle.prototype, "fen", void 0);
 __decorate([
-    (0, typeorm_1.Column)("text", { array: true }),
-    __metadata("design:type", Array)
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
 ], Puzzle.prototype, "moves", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
@@ -68,7 +90,7 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Puzzle.prototype, "openingVariation", void 0);
-Puzzle = __decorate([
+Puzzle = Puzzle_1 = __decorate([
     (0, typeorm_1.Entity)()
 ], Puzzle);
 exports.default = Puzzle;

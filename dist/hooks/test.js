@@ -22,17 +22,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveHistoryToMoveText = exports.encodeGameToPgn = exports.parseMoveText = exports.parsePgn = exports.treeFromLine = exports.mainLineFromTreeArray = exports.tagDataToPGNString = exports.pgnToJson = void 0;
-const Chess = __importStar(require("../../lib/chess"));
+exports.pgnToTreeArray = void 0;
+const Chess = __importStar(require("../lib/chess"));
 const uuid_1 = require("uuid");
-const misc_1 = require("../misc");
-//import fs from "fs";
-const lodash_1 = __importDefault(require("lodash"));
-const getEntries = (obj) => Object.entries(obj);
+const misc_1 = require("../util/misc");
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
 const quoteDelimited = /"[^"]+"/g;
@@ -51,8 +45,8 @@ function parseTag(tag) {
 function pgnToJson(pgn) {
     let tags = [];
     let section = "tags";
-    //Split PGN into tags/movetext sections
     const args = pgn.split(/(\r\n|\n|\r)/gm);
+    console.log(args);
     let movetext = "";
     args.forEach((arg) => {
         if (section === "tags") {
@@ -76,65 +70,154 @@ function pgnToJson(pgn) {
         }
     });
     const parsedTags = tags.map((tag) => parseTag(tag)).filter(misc_1.notEmpty);
-    let tagData = {};
-    parsedTags.forEach((tag) => {
-        const dictionary = getEntries(tagsDict);
-        const pair = dictionary.find(([key, value]) => {
-            return value === tag.name;
-        });
-        const key = pair && pair[0];
-        if (key) {
-            Object.assign(tagData, { [key]: tag.value });
-        }
-    });
     return {
-        tagData,
-        movetext,
+        tags: parsedTags,
+        movetext: movetext.trim(),
     };
 }
-exports.pgnToJson = pgnToJson;
-const tagsDict = {
-    event: "Event",
-    site: "Site",
-    date: "Date",
-    round: "Round",
-    white: "White",
-    black: "Black",
-    eloWhite: "WhiteElo",
-    eloBlack: "BlackElo",
-    titleWhite: "WhiteTitle",
-    titleBlack: "BlackTitle",
-    result: "Result",
-    opening: "Opening",
-    variation: "Variation",
-    subVariation: "SubVariation",
-    eco: "ECO",
-    fen: "FEN",
-    setUp: "SetUp",
-    timeControl: "TimeControl",
-};
-function tagDataToPGNString(data) {
-    let tagsString = "";
-    const dataToEncode = lodash_1.default.cloneDeep(data);
-    Object.assign(dataToEncode, {
-        event: data.event || "?",
-        site: data.site || "?",
-        date: data.date || "????.??.??",
-        round: data.round || "?",
-        white: data.white,
-        black: data.black,
-        result: data.result || "*",
+const testString = `1. e4  d6  {asdssssd} 2. d4  e5  3. Nc3 $10 exd4  4. Qxd4  (4. Nb1  c5  5. Nf3  Nc6  6. Bd3  (6. c3  )(6. Ke2  ) 6... Nf6  {another comment} ) 4... Nc6  5. Bb5 `;
+function parsePGN(pgn) {
+    const tree = new Map();
+    function addNode(node, parentKey) {
+        console.log(node);
+        console.log(parentKey);
+        const newNode = Object.assign(Object.assign({}, node), { parentKey: parentKey });
+        tree.set(node.key, newNode);
+        if (parentKey) {
+            const parentNode = tree.get(parentKey);
+            if (!parentNode) {
+                console.log(`Error: parent node with key ${parentKey} not found`);
+                return;
+            }
+            parentNode.children.push(newNode);
+        }
+    }
+    const newNode = () => ({
+        key: (0, uuid_1.v4)(),
+        data: { PGN: null, comment: null, moveCount: [1, 0] },
+        children: [],
     });
-    const entries = getEntries(dataToEncode);
-    entries.forEach(([key, value]) => {
-        const keyString = tagsDict[key];
-        if (value)
-            tagsString += `[${keyString} "${value}"]\r\n`;
-    });
-    return tagsString;
+    let currentNode;
+    let currentMove = "";
+    let prevNode = null;
+    let inComment = false;
+    let comment = "";
+    let stackTrace = [];
+    let prevChar = " ";
+    let count = "";
+    let moveCounter = [1, 0];
+    let inMoveCount = false;
+    currentNode = newNode();
+    const isDigit = (char) => {
+        const exp = /\d/;
+        return exp.test(char);
+    };
+    for (const char of pgn) {
+        if (inComment) {
+            if (char === "}") {
+                inComment = false;
+                prevChar = char;
+                if (!currentNode)
+                    throw new Error("Invalid pgn");
+                currentNode.data.comment = comment;
+            }
+            comment += char;
+        }
+        else if (char === "{") {
+            inComment = true;
+        }
+        else if (char === "}" && !inComment) {
+            throw new Error("Invalid pgn");
+        }
+        else {
+            if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
+                if (inMoveCount)
+                    throw new Error("Invalid pgn");
+                inMoveCount = true;
+                count += char;
+                if (currentNode.data.PGN) {
+                    const node = currentNode;
+                    if (!node || !node.data.PGN)
+                        throw new Error("Invalid pgn");
+                    addNode(node, stackTrace[stackTrace.length - 1] || null);
+                    prevNode = Object.assign(Object.assign({}, node), { parentKey: stackTrace[stackTrace.length - 1] || null });
+                    currentNode = newNode();
+                    currentMove = "";
+                }
+                else {
+                    currentNode = newNode();
+                    currentMove = "";
+                }
+            }
+            else if (inMoveCount) {
+                if (char !== "." && char !== " " && !isDigit(char)) {
+                    console.log(char);
+                    console.log(prevChar);
+                    throw new Error("Invalid pgn");
+                }
+                if (isDigit(char)) {
+                    count += char;
+                }
+                if (char === "." && isDigit(prevChar)) {
+                    moveCounter[0] = parseInt(count);
+                    count = "";
+                }
+                if (char === "." && prevChar === ".") {
+                    moveCounter[1] = 1;
+                }
+                if (char === " ") {
+                    console.log("exit move count");
+                    inMoveCount = false;
+                    currentNode = newNode();
+                }
+            }
+            else if (char === "(") {
+                if (prevNode) {
+                    stackTrace.push(prevNode.key);
+                }
+                if (currentNode.data.PGN) {
+                    addNode(currentNode, stackTrace[stackTrace.length - 1] || null);
+                    prevNode = Object.assign(Object.assign({}, currentNode), { parentKey: stackTrace[stackTrace.length - 1] || null });
+                    currentNode = newNode();
+                    currentMove = "";
+                }
+            }
+            else if (char === ")") {
+                if (!currentNode)
+                    throw new Error("Invalid pgn");
+                if (!currentNode.data.PGN) {
+                    stackTrace.pop();
+                }
+                else {
+                    addNode(currentNode, stackTrace[stackTrace.length - 1] || null);
+                    prevNode = Object.assign(Object.assign({}, currentNode), { parentKey: stackTrace[stackTrace.length - 1] || null });
+                    stackTrace.pop();
+                    currentNode = newNode();
+                    currentMove = "";
+                }
+            }
+            else if (char === " ") {
+                if (!currentNode)
+                    throw new Error("Invalid pgn");
+                if (currentMove.length) {
+                    currentNode.data.PGN = currentMove;
+                }
+                currentMove = "";
+            }
+            else {
+                if (currentNode.data.PGN && prevChar === " ") {
+                    addNode(currentNode, stackTrace[stackTrace.length - 1] || null);
+                    prevNode = Object.assign(Object.assign({}, currentNode), { parentKey: stackTrace[stackTrace.length - 1] || null });
+                    currentMove = "";
+                    currentNode = newNode();
+                }
+                currentMove += char;
+            }
+        }
+        prevChar = char;
+    }
+    return tree;
 }
-exports.tagDataToPGNString = tagDataToPGNString;
-//console.log(pgnToJson(sampleData));
 function buildTreeArray(map, parentKey = null) {
     if (parentKey === null) {
         return Array.from(map.values()).filter((node) => !node.parentKey);
@@ -145,57 +228,7 @@ function buildTreeArray(map, parentKey = null) {
     }
     return parentNode.children;
 }
-function mainLineFromTreeArray(treeArray) {
-    const path = [];
-    let currentNode = treeArray[0];
-    while (currentNode) {
-        path.push(currentNode);
-        currentNode = currentNode.children[0];
-    }
-    return path;
-}
-exports.mainLineFromTreeArray = mainLineFromTreeArray;
-function treeFromLine(line) {
-    let map = new Map();
-    let parentKey = null;
-    const addNode = (data, parentKey) => {
-        const key = (0, uuid_1.v4)();
-        const newNode = { key, data, parentKey: parentKey, children: [] };
-        map.set(newNode.key, newNode);
-        if (parentKey) {
-            const parentNode = map.get(parentKey);
-            if (!parentNode)
-                throw new Error("Invalid parent key.");
-            parentNode.children.push(newNode);
-        }
-        return newNode;
-    };
-    line.forEach((nodeData) => {
-        const node = addNode(nodeData, parentKey);
-        if (!node)
-            throw new Error("line parse failed");
-        parentKey = node.key;
-    });
-    return buildTreeArray(map);
-}
-exports.treeFromLine = treeFromLine;
-function parsePgn(pgn) {
-    const { tagData, movetext } = pgnToJson(pgn);
-    const startPosition = tagData.fen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const tree = parseMoveText(movetext, startPosition);
-    return {
-        tree,
-        tagData,
-    };
-}
-exports.parsePgn = parsePgn;
-/**
- * Parse standard PGN movetext into initial tree for analysis board
- * @param movetext Standard PGN movetext {@link http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c8.2|- as defined here}
- * @param startPosition FEN string of the start position of the game
- * @returns move tree with parsed data as ``Node[]``
- */
-function parseMoveText(movetext, startPosition) {
+function pgnToTreeArray(pgn, startPosition) {
     let map = new Map();
     const addNode = (data, parentKey) => {
         const key = (0, uuid_1.v4)();
@@ -224,10 +257,7 @@ function parseMoveText(movetext, startPosition) {
         }
         return path;
     }
-    let stream = movetext.replace(/(\r\n|\n|\r)/gm, "").trim();
-    var lastIndex = stream.lastIndexOf(" ");
-    stream = stream.substring(0, lastIndex);
-    console.log(stream);
+    let stream = pgn.replace(/(\r\n|\n|\r)/gm, "");
     const initialGame = Chess.createGame({ startPosition: startPosition });
     //let currentGame = initialGame;
     let reading = "unknown";
@@ -240,14 +270,12 @@ function parseMoveText(movetext, startPosition) {
     let moveCount = "1";
     let comment = "";
     let annotation = "";
-    //Stack to maintian move to return to when closing a variation
     let variationStack = [];
     let currentParent = null;
     const isDigit = (char) => {
         const exp = /\d/;
         return exp.test(char);
     };
-    //Get the current game state as a game object based on the parent of the current node being parsed
     const getCurrentGame = () => {
         const node = currentParent;
         if (!node)
@@ -257,29 +285,24 @@ function parseMoveText(movetext, startPosition) {
             return Chess.gameFromNodeData(node.data, initialGame.config.startPosition, currentPath.map((node) => node.data));
         }
     };
-    //Add the current node/data to the tree and reset values
     const postCurrentData = () => {
         const pgn = currentData.pgn;
         if (!pgn)
             throw new Error("Invalid PGN string");
         const currentGame = getCurrentGame();
-        //Verify the move text is a valid/legal move
         const move = currentGame.legalMoves.find((move) => move.PGN === pgn);
         if (!move) {
             console.log(pgn);
-            console.log(currentGame.legalMoves);
             throw new Error(`Invalid move: ${pgn}`);
         }
         const parentKey = (currentParent === null || currentParent === void 0 ? void 0 : currentParent.key) || null;
         const path = parentKey ? getPath(parentKey) : [];
-        //Generate node data from game/move
         const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
         data.comment = currentData.comment || null;
         data.annotations = currentData.annotations || [];
         const node = addNode(data, parentKey);
         if (!node)
             throw new Error("Something went wrong");
-        //Set parent to the newly created node and reset data
         currentParent = node;
         currentData = {
             comment: null,
@@ -326,11 +349,11 @@ function parseMoveText(movetext, startPosition) {
                 annotation = "";
                 if (currentData.pgn)
                     postCurrentData();
-                //Start a new variation;
                 const path = currentParent ? getPath(currentParent["key"]) : [];
                 const prevParent = path[path.length - 2] || null;
                 variationStack.push(currentParent);
                 currentParent = prevParent;
+                console.log(`variationstack: ${variationStack.map((node) => node && node.data.PGN)}`);
                 reading = "unknown";
             }
             else if (char === ")") {
@@ -343,7 +366,6 @@ function parseMoveText(movetext, startPosition) {
                 annotation = "";
                 if (currentData.pgn)
                     postCurrentData();
-                //Close variation; pop last node off the variation stack and set to current parent
                 const nextParent = variationStack.pop();
                 currentParent = nextParent || null;
                 reading = "unknown";
@@ -413,47 +435,8 @@ function parseMoveText(movetext, startPosition) {
         }
         prevChar = char;
     }
-    //Add last node if not already in tree
     if (currentData.pgn)
         postCurrentData();
-    //Recursively build map into tree array
     return buildTreeArray(map);
 }
-exports.parseMoveText = parseMoveText;
-function encodeGameToPgn(game) {
-    const { w, b } = game.players;
-    let tagData = {
-        white: w.username || undefined,
-        black: b.username || undefined,
-        eloWhite: `${w.rating}` || undefined,
-        eloBlack: `${b.rating}` || undefined,
-        event: "NextChess Online Game",
-        result: encodeOutcome(game.data.outcome),
-    };
-    const tagSection = tagDataToPGNString(tagData);
-    const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
-    return tagSection + "\r\n" + movetext;
-}
-exports.encodeGameToPgn = encodeGameToPgn;
-function moveHistoryToMoveText(moveHistory) {
-    let moveText = "";
-    moveHistory.forEach((fullmove, idx) => {
-        var _a;
-        moveText += `${idx + 1}. ${fullmove[0].PGN} ${((_a = fullmove[1]) === null || _a === void 0 ? void 0 : _a.PGN) || ""}`;
-    });
-}
-exports.moveHistoryToMoveText = moveHistoryToMoveText;
-function encodeOutcome(outcome) {
-    if (!outcome)
-        return "*";
-    switch (outcome.result) {
-        case "w":
-            return "1-0";
-        case "b":
-            return "0-1";
-        case "d":
-            return "1/2-1/2";
-        default:
-            return "*";
-    }
-}
+exports.pgnToTreeArray = pgnToTreeArray;

@@ -34,8 +34,8 @@ let Game = Game_1 = class Game extends typeorm_1.BaseEntity {
             yield game.save();
             Object.entries(players).forEach(([color, player]) => __awaiter(this, void 0, void 0, function* () {
                 var _a, _b;
-                if (player.user.type === "guest") {
-                    game.guestPlayer = { username: player.username, color: color };
+                if (player.type === "guest") {
+                    game.guestPlayer = { username: player.username || "", color: color };
                 }
                 else {
                     const user = yield User_1.default.findOneBy({ id: player.id });
@@ -45,11 +45,7 @@ let Game = Game_1 = class Game extends typeorm_1.BaseEntity {
                         userGame.game = game;
                         userGame.color = color;
                         userGame.result =
-                            ((_a = userGame.game.outcome) === null || _a === void 0 ? void 0 : _a.result) === "d"
-                                ? "draw"
-                                : ((_b = userGame.game.outcome) === null || _b === void 0 ? void 0 : _b.result) === color
-                                    ? "win"
-                                    : "loss";
+                            ((_a = userGame.game.outcome) === null || _a === void 0 ? void 0 : _a.result) === "d" ? "draw" : ((_b = userGame.game.outcome) === null || _b === void 0 ? void 0 : _b.result) === color ? "win" : "loss";
                         if (user.rating)
                             userGame.rating = user.rating;
                         console.log(userGame);
@@ -91,6 +87,10 @@ __decorate([
     (0, typeorm_1.Column)("jsonb", { nullable: true }),
     __metadata("design:type", Object)
 ], Game.prototype, "guestPlayer", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Game.prototype, "isCorrespondence", void 0);
 Game = Game_1 = __decorate([
     (0, typeorm_1.Entity)()
 ], Game);

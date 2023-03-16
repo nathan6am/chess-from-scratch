@@ -1,6 +1,28 @@
-import React from "react";
+import React, { useState, Fragment, useMemo, useCallback } from "react";
+import { Listbox, Transition, Popover } from "@headlessui/react";
+import { MdExpand, MdCheck } from "react-icons/md";
+import { TreeNode } from "@/hooks/useTreeData";
+import * as Chess from "@/lib/chess";
+interface NAG {
+  code: number;
+  description: string;
+  unicode: string;
+}
 
-const annotationCategories = [
+interface AnnotationCategory {
+  name: string;
+  allowMultiple: boolean;
+  options: NAG[];
+}
+
+interface Props {
+  node: TreeNode<Chess.NodeData> | null;
+  controls: {
+    updateAnnotations: (nodeKey: string, code: number[]) => void;
+    updateComment: (nodeKey: string, comment: string) => void;
+  };
+}
+const annotationCategories: AnnotationCategory[] = [
   {
     name: "Move Classification",
     allowMultiple: false,
@@ -68,7 +90,7 @@ const annotationCategories = [
       },
       {
         code: 16,
-        description: "white has moderate advantage",
+        description: "White has moderate advantage",
         unicode: "\u00B1",
       },
       {
@@ -118,7 +140,7 @@ const annotationCategories = [
         unicode: "\u27F3  ",
       },
       {
-        code: 32,
+        code: 33,
         description: "Time/development Advantage (black)",
         unicode: "\u27F3  ",
       },
@@ -144,6 +166,11 @@ const annotationCategories = [
       },
       {
         code: 132,
+        description: "Counterplay (white)",
+        unicode: "\u21C6",
+      },
+      {
+        code: 133,
         description: "Counterplay (black)",
         unicode: "\u21C6",
       },
@@ -151,6 +178,107 @@ const annotationCategories = [
   },
 ];
 
-export default function Annotations() {
-  return <div>Annotations</div>;
+export default function Annotations({ node, controls }: Props) {
+  const selectedAnnotations = useMemo(() => {
+    return node?.data.annotations || [];
+  }, [node, node?.data.annotations]);
+  const updateAnnotations = useCallback(
+    (annotations: number[]) => {
+      if (!node) return;
+      controls.updateAnnotations(node.key, annotations);
+    },
+    [node, controls]
+  );
+
+  return (
+    <div>
+      Annotations
+      <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
+    </div>
+  );
+}
+
+interface SelectProps {
+  selected: number[];
+  disabled?: boolean;
+  updateAnnotations: (annotations: number[]) => void;
+}
+function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps) {
+  const onChange = useCallback(
+    (values: number[]) => {
+      const valueAdded = values.find((value) => !selected.includes(value));
+      if (!valueAdded) {
+        updateAnnotations(values);
+      } else {
+        const category = annotationCategories.find((category) =>
+          category.options.some((option) => option.code === valueAdded)
+        );
+        if (!category || category.allowMultiple) {
+          updateAnnotations(values);
+        } else {
+          const filterValues = category.options.map((option) => option.code);
+          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
+        }
+      }
+    },
+    [selected, updateAnnotations]
+  );
+  return (
+    <div className=" w-72">
+      <Listbox value={selected} onChange={onChange} multiple>
+        <div className="relative mt-1">
+          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+              <MdExpand className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </span>
+          </Listbox.Button>
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+            <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+              {annotationCategories.map((category, idx) => (
+                <div key={idx} className="border-b mb-2">
+                  <p className="opacity-50 px-4 py-1">{category.name}</p>
+                  <>
+                    {category.options.map((option) => (
+                      <Listbox.Option
+                        key={option.code}
+                        className={({ active }) =>
+                          `relative cursor-default select-none py-2 pl-8 pr-4 ${
+                            active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
+                          }`
+                        }
+                        value={option.code}
+                      >
+                        {({ selected }) => (
+                          <>
+                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                              <span className="inline text-sepia mr-1">{option.unicode}</span>
+                              {option.description}
+                            </span>
+                            {selected ? (
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-green-500">
+                                <MdCheck />
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </Listbox.Option>
+                    ))}
+                  </>
+                </div>
+              ))}
+            </Listbox.Options>
+          </Transition>
+        </div>
+      </Listbox>
+    </div>
+  );
+}
+
+function RenderCategory({ category }: { category: AnnotationCategory }) {
+  return (
+    // <div className="py-1 w-full border-y border-red-500">
+    //   <div>{category.name}</div>
+    <></>
+    // </div>
+  );
 }

@@ -1,48 +1,41 @@
-import React, { useState, useRef, Fragment, useContext } from "react";
-import useAnalysisBoard from "@/hooks/useAnalysisBoard";
+import React, { useState, useRef, Fragment, useContext, useMemo } from "react";
 import * as Chess from "@/lib/chess";
-import { BoardRow, BoardColumn, PanelColumnLg, LayoutComponentProps } from "../layout/GameLayout";
+
 import Board from "../game/Board";
 import EvalBar from "./EvalBar";
-import { SettingsContext } from "@/context/settings";
+import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import BoardControls from "../game/BoardControls";
+import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
 import PopupPlayer from "./PopupPlayer";
 import Explorer from "./Explorer";
 import { Tab, Menu, Transition } from "@headlessui/react";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { MdSettings } from "react-icons/md";
+
+import { SettingsContext } from "@/context/settings";
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
+import useAnalysisBoard from "@/hooks/useAnalysisBoard";
+
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
-import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
+
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
-  const {
-    currentGame,
-    onMove,
-    evaler,
-    evalEnabled,
-    setEvalEnabled,
-    boardControls,
-    moveText,
-    mainLine,
-    rootNodes,
-    setCurrentKey,
-    path,
-    currentKey,
-    debouncedNode,
-    currentNode,
-    commentControls,
-    explorer,
-  } = analysis;
-  const [orientation, setOrientation] = useState<Chess.Color>("w");
   const boardRef = useRef<HTMLDivElement>(null);
-  const { settings, updateSettings } = useContext(SettingsContext);
+  const { currentGame, onMove, evaler, evalEnabled, setEvalEnabled, boardControls, moveText, explorer, currentNode } =
+    analysis;
+  const [orientation, setOrientation] = useState<Chess.Color>("w");
+  const { settings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
+  const lastMoveAnnotation = useMemo(() => {
+    return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
+  }, [currentNode, currentNode?.data.annotations]);
   const saveManager = useSavedAnalysis();
-
+  const flipBoard = () => {
+    setOrientation((cur) => (cur === "w" ? "b" : "w"));
+  };
   const saveCurrent = () => {
     const analysis = saveManager.data?.analysis;
     if (!analysis) return;
@@ -107,6 +100,7 @@ export default function AnalysisBoard() {
                 Caruana, F. <span className="inline opacity-50">(2818)</span>
               </p> */}
               <Board
+                lastMoveAnnotation={lastMoveAnnotation}
                 showCoordinates={settings.display.showCoordinates}
                 movementType={settings.gameBehavior.movementType}
                 theme={settings.display.boardTheme}
@@ -167,12 +161,7 @@ export default function AnalysisBoard() {
                 />
               </Tab.Panel>
             </Tab.Group>
-            <BoardControls
-              controls={boardControls}
-              flipBoard={() => {
-                setOrientation((cur) => (cur === "w" ? "b" : "w"));
-              }}
-            />
+            <BoardControls controls={boardControls} flipBoard={flipBoard} />
           </PanelColumnLg>
         </BoardRow>
       </div>
@@ -394,9 +383,7 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
         >
           {children}
         </button>

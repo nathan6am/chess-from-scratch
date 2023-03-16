@@ -55,22 +55,21 @@ function LobbyHandler(io, nsp, socket, redisClient) {
     });
     //Retrieve the socket instance for the next player to move in a lobby
     const getNextPlayerSocket = (lobbyid) => __awaiter(this, void 0, void 0, function* () {
-        var _a;
         const currentLobby = yield cache.getLobbyById(lobbyid);
         if (!currentLobby)
             return;
         if (!currentLobby.currentGame)
             return;
-        const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
-        const nextPlayerSocketId = (_a = currentLobby.players.find((player) => player.id === nextPlayerId)) === null || _a === void 0 ? void 0 : _a.primaryClientSocketId;
-        if (!nextPlayerSocketId)
+        const nextPlayer = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
+        const nextPlayerConnection = currentLobby.connections.find((player) => player.id === nextPlayer.id);
+        if (!nextPlayerConnection)
             return;
+        const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
         const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
         return nextPlayerSocket;
     });
     //Start a game in a given lobby
     function startGame(lobbyid) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             const lobby = yield cache.getLobbyById(lobbyid);
             if (!lobby)
@@ -79,9 +78,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             if (!game)
                 throw new Error("Unable to start game");
             const playerW = game.players.w;
-            const playerWhiteSocketId = (_a = lobby.players.find((player) => player.id === playerW)) === null || _a === void 0 ? void 0 : _a.primaryClientSocketId;
-            if (!playerWhiteSocketId)
+            const playerWhiteConnection = lobby.connections.find((player) => player.id === playerW.id);
+            if (!playerWhiteConnection)
                 throw new Error("Conection mismatch");
+            const playerWhiteSocketId = playerWhiteConnection.lastClientSocketId;
             const whiteSocket = yield socketInstanceById(playerWhiteSocketId);
             //Abort the game if the player is not connected
             if (!whiteSocket) {
@@ -98,40 +98,43 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             if (!lobby || !lobby.currentGame)
                 return;
             const updated = yield cache.updateGame(lobbyid, game);
-            const playerW = lobby.players.find((player) => player.id === game.players.w);
-            const playerB = lobby.players.find((player) => player.id === game.players.b);
-            if (!playerW || !playerB)
-                throw new Error("player mismatch");
-            const players = { w: playerW, b: playerB };
-            console.log(players);
+            const connectionWhite = lobby.connections.find((connection) => connection.id === game.players.w.id);
+            const connectionBlack = lobby.connections.find((connection) => connection.id === game.players.b.id);
+            if (!connectionBlack || !connectionWhite)
+                throw new Error("connections mismatched");
+            const connections = { w: connectionWhite, b: connectionBlack };
             const outcome = updated.data.outcome;
             if (!outcome)
                 return;
             //update game scores
             if (outcome.result === "d") {
-                lobby.players = lobby.players.map((player) => {
-                    return Object.assign(Object.assign({}, player), { score: player.score + 0.5 });
+                lobby.connections = lobby.connections.map((connection) => {
+                    return Object.assign(Object.assign({}, connection), { score: connection.score + 0.5 });
                 });
             }
             else {
-                lobby.players = lobby.players.map((player) => {
-                    if (outcome.result === "w" && player.id === playerW.id) {
-                        return Object.assign(Object.assign({}, player), { score: player.score + 1 });
+                lobby.connections = lobby.connections.map((connection) => {
+                    if (outcome.result === "w" && connection.id === connectionWhite.id) {
+                        return Object.assign(Object.assign({}, connection), { score: connection.score + 1 });
                     }
-                    else if (outcome.result === "b" && player.id === playerB.id) {
-                        return Object.assign(Object.assign({}, player), { score: player.score + 1 });
+                    else if (outcome.result === "b" && connection.id === connectionBlack.id) {
+                        return Object.assign(Object.assign({}, connection), { score: connection.score + 1 });
                     }
                     else
-                        return player;
+                        return connection;
                 });
             }
-            yield cache.updateLobby(lobbyid, { players: lobby.players });
+            yield cache.updateLobby(lobbyid, { connections: lobby.connections });
             const data = updated.data;
             const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+            const players = {
+                w: connections.w.player,
+                b: connections.b.player,
+            };
             nsp.to(lobbyid).emit("game:outcome", updated);
-            nsp.to(lobbyid).emit("lobby:update", { players: lobby.players });
+            nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
             //Save the game to db if any user is not a guest
-            if (lobby.players.some((player) => player.user.type !== "guest")) {
+            if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
                 console.log(game.id);
                 const saved = yield Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
                 console.log(saved);
@@ -155,39 +158,39 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 throw new Error("Lobby does not exist");
             //Verify the user has permission to join the lobby or a free slot is available
             if (lobby.reservedConnections.includes(id) ||
-                (lobby.reservedConnections.length < 2 && lobby.players.length < 2)) {
-                let player;
+                (lobby.reservedConnections.length < 2 && lobby.connections.length < 2)) {
+                let connection;
                 if (type !== "guest") {
                     //Get the user's current rating if the user is not a guest
-                    const user = yield User_1.default.findOneBy({ id });
+                    const user = yield User_1.default.findById(id);
+                    console.log(id);
                     if (!user)
                         throw new Error("Unauthenticated");
-                    console.log(user);
-                    player = {
+                    //console.log(user);
+                    connection = {
                         id,
-                        username: username || "",
-                        rating: user.rating,
+                        player: Object.assign(Object.assign({}, sessionUser), { rating: user.rating }),
                         score: 0,
-                        primaryClientSocketId: socket.id,
-                        user: sessionUser,
+                        lastClientSocketId: socket.id,
+                        connectionStatus: true,
                     };
                 }
                 else {
-                    player = {
+                    connection = {
                         id,
-                        username: sessionUser.username || "",
+                        player: sessionUser,
                         score: 0,
-                        primaryClientSocketId: socket.id,
-                        user: sessionUser,
+                        lastClientSocketId: socket.id,
+                        connectionStatus: true,
                     };
                 }
                 //Check if the player was already connected from a previous client and notify any concurrent
                 //clients of the same user
-                const previousClient = lobby.players.find((existingPlayer) => existingPlayer.id === id);
+                const previousClient = lobby.connections.find((existingConn) => existingConn.id === id);
                 if (previousClient) {
-                    const clientToRemove = previousClient.primaryClientSocketId;
-                    const clients = lobby.players
-                        .map((player) => player.primaryClientSocketId)
+                    const clientToRemove = previousClient.lastClientSocketId;
+                    const clients = lobby.connections
+                        .map((conn) => conn.lastClientSocketId)
                         .filter((socketId) => socketId !== clientToRemove);
                     clients.push(socket.id);
                     const inLobby = yield nsp.in(lobbyid).fetchSockets();
@@ -200,7 +203,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     nsp.to(id).except(socket.id).emit("newclient");
                 }
                 //Update the cached lobby and add the socket to the room
-                const updated = yield cache.connectToLobby(lobbyid, player);
+                const updated = yield cache.connectToLobby(lobbyid, connection);
                 socket.join(lobbyid);
                 if (updated.currentGame) {
                     if (updated.currentGame.data.outcome) {
@@ -213,10 +216,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                         //Correct the time remaining if both player have played a move
                         if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 && clock.lastMoveTimeISO !== null) {
                             clock.timeRemainingMs[activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[activeColor]);
-                            if (game.players[activeColor] !== id) {
+                            if (game.players[activeColor].id !== id) {
                                 //Ack if the connected player is not the current turn
                                 nsp.to(lobbyid).emit("lobby:update", {
-                                    players: updated.players,
+                                    connections: updated.connections,
                                     reservedConnections: updated.reservedConnections,
                                 });
                                 ack({ status: true, data: updated, error: null });
@@ -231,10 +234,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 //Return the lobby to the client and start the game if both players are connected and
                 ack({ status: true, data: updated, error: null });
                 nsp.to(lobbyid).emit("lobby:update", {
-                    players: updated.players,
+                    connections: updated.connections,
                     reservedConnections: updated.reservedConnections,
                 });
-                if (updated.players.length === 2 && lobby.currentGame === null)
+                if (updated.connections.length === 2 && lobby.currentGame === null)
                     startGame(lobbyid);
                 return;
             }
@@ -264,7 +267,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         }
         //Timeout event to end the game if the user hasn't played a move in the allotted time
         socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
-            var _b, _c, _d;
+            var _a, _b;
             if (err) {
                 const lobby = yield cache.getLobbyById(lobbyid);
                 if (!lobby)
@@ -272,7 +275,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 if (!lobby.currentGame)
                     return;
                 //return if the game has an outcome or a new game has started
-                if (((_b = lobby.currentGame) === null || _b === void 0 ? void 0 : _b.id) !== game.id || lobby.currentGame.data.outcome)
+                if (((_a = lobby.currentGame) === null || _a === void 0 ? void 0 : _a.id) !== game.id || lobby.currentGame.data.outcome)
                     return;
                 //return if moves have been played since the initial request
                 if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
@@ -315,10 +318,11 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                         return;
                     if (!currentLobby.currentGame)
                         return;
-                    const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
-                    const nextPlayerSocketId = (_c = currentLobby.players.find((player) => player.id === nextPlayerId)) === null || _c === void 0 ? void 0 : _c.primaryClientSocketId;
-                    if (!nextPlayerSocketId)
+                    const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor].id;
+                    const nextPlayerConnection = currentLobby.connections.find((player) => player.id === nextPlayerId);
+                    if (!nextPlayerConnection)
                         return;
+                    const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
                     const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
                     //TODO: set abandonment timeout
                     if (!nextPlayerSocket)
@@ -334,7 +338,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     if (!lobby.currentGame)
                         return;
                     //return if the game has an outcome or a new game has started
-                    if (((_d = lobby.currentGame) === null || _d === void 0 ? void 0 : _d.id) !== game.id || lobby.currentGame.data.outcome)
+                    if (((_b = lobby.currentGame) === null || _b === void 0 ? void 0 : _b.id) !== game.id || lobby.currentGame.data.outcome)
                         return;
                     //return if moves have been played since the initial request
                     if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
@@ -394,9 +398,9 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         const lobby = yield cache.getLobbyById(lobbyid);
         if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
             return;
-        if (!lobby.players.some((player) => player.id === user.id))
+        if (!lobby.connections.some((player) => player.id === user.id))
             return;
-        const playerColor = lobby.currentGame.players.w === user.id ? "w" : "b";
+        const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
         const game = lobby.currentGame;
         game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
         const updated = yield cache.updateGame(lobbyid, game);

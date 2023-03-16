@@ -10,8 +10,8 @@ html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell,
-    Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans,
+    Helvetica Neue, sans-serif;
 }
 
 a {
@@ -188,6 +188,10 @@ a {
 .react-resizable-handle-s {
   bottom: 0;
   transform: rotate(45deg);
+}
+
+:root {
+  --rt-opacity: 0.9;
 }
 
 @keyframes shimmer {

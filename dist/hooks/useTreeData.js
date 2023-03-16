@@ -2,8 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 const uuid_1 = require("uuid");
-function useTreeData(initialMap = new Map()) {
-    const map = (0, react_1.useMemo)(() => (initialMap instanceof Map ? initialMap : buildMapFromTreeArray(initialMap)), []);
+function useTreeData(initialTree = new Map()) {
+    const [map, setMap] = (0, react_1.useState)(() => initialTree instanceof Map ? initialTree : buildMapFromTreeArray(initialTree));
+    function loadTree(treeData) {
+        const newMap = treeData instanceof Map ? treeData : buildMapFromTreeArray(treeData);
+        setMap(newMap);
+        setTreeArray(buildTreeArray(newMap));
+    }
     const [treeArray, setTreeArray] = (0, react_1.useState)(buildTreeArray(map));
     function getNode(key) {
         return map.get(key);
@@ -129,7 +134,9 @@ function useTreeData(initialMap = new Map()) {
         return ply;
     }
     function getContinuation(key) {
-        const startNode = key ? getNode(key) : Array.from(map.values()).filter((node) => !node.parentKey)[0];
+        const startNode = key
+            ? getNode(key)
+            : Array.from(map.values()).filter((node) => !node.parentKey)[0];
         let path = [];
         let currentNode = startNode;
         while (currentNode) {
@@ -187,6 +194,7 @@ function useTreeData(initialMap = new Map()) {
         getDepth,
         getPly,
         findChild,
+        loadTree,
     };
 }
 function buildTreeArray(map, parentKey = null) {
