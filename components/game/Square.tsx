@@ -47,11 +47,15 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -80,15 +84,25 @@ export default function Square({
         if (isTarget) onSelectTarget();
         else clearSelection();
       }}
-      className={`${styles.square} ${color === "w" ? "square-light" : "square-dark"} cursor-pointer`}
+      className={`${styles.square} ${
+        color === "w" ? "square-light" : "square-dark"
+      } cursor-pointer`}
     >
       {showRank && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
+          } ${textSize}`}
+        >
           {rank}
         </span>
       )}
       {showFile && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
+          } ${textSize}`}
+        >
           {file}
         </span>
       )}
@@ -101,7 +115,9 @@ export default function Square({
         {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
       <div
-        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.targetHover} opacity-80`}
+        className={`${styles.contents} ${
+          isTarget && showTargets && hovered && styles.targetHover
+        } opacity-80`}
       ></div>
     </div>
   );

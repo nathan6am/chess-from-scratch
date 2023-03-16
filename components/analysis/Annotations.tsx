@@ -3,10 +3,11 @@ import { Listbox, Transition, Popover } from "@headlessui/react";
 import { MdExpand, MdCheck } from "react-icons/md";
 import { TreeNode } from "@/hooks/useTreeData";
 import * as Chess from "@/lib/chess";
-interface NAG {
+export interface NAG {
   code: number;
   description: string;
   unicode: string;
+  className?: string;
 }
 
 interface AnnotationCategory {
@@ -193,7 +194,11 @@ export default function Annotations({ node, controls }: Props) {
   return (
     <div>
       Annotations
-      <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
+      <AnnotationSelect
+        updateAnnotations={updateAnnotations}
+        selected={selectedAnnotations}
+        disabled={!node}
+      />
     </div>
   );
 }
@@ -217,7 +222,9 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           updateAnnotations(values);
         } else {
           const filterValues = category.options.map((option) => option.code);
-          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
+          updateAnnotations(
+            values.filter((value) => value === valueAdded || !filterValues.includes(value))
+          );
         }
       }
     },
@@ -232,7 +239,12 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
               <MdExpand className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </span>
           </Listbox.Button>
-          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
             <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
@@ -250,7 +262,11 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
                       >
                         {({ selected }) => (
                           <>
-                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                            <span
+                              className={`block truncate ${
+                                selected ? "font-medium" : "font-normal"
+                              }`}
+                            >
                               <span className="inline text-sepia mr-1">{option.unicode}</span>
                               {option.description}
                             </span>
@@ -274,11 +290,147 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
   );
 }
 
-function RenderCategory({ category }: { category: AnnotationCategory }) {
-  return (
-    // <div className="py-1 w-full border-y border-red-500">
-    //   <div>{category.name}</div>
-    <></>
-    // </div>
-  );
-}
+const dictionary = [
+  {
+    code: 1,
+    description: "Good Move",
+    unicode: "\u0021",
+    className: "text-green-400",
+  },
+  {
+    code: 2,
+    description: "Mistake",
+    unicode: "\u003F",
+    className: "text-amber-400",
+  },
+  {
+    code: 3,
+    description: "Brilliant Move",
+    unicode: "\u203C",
+    className: "text-teal-400",
+  },
+  {
+    code: 4,
+    description: "Blunder",
+    unicode: "\u2047",
+    className: "text-red-400",
+  },
+  {
+    code: 5,
+    description: "Interesting Move",
+    unicode: "\u2049",
+    className: "text-purple-400",
+  },
+  {
+    code: 6,
+    description: "Dubious Move",
+    unicode: "\u2048",
+    className: "text-fuchsia-400",
+  },
+  {
+    code: 7,
+    description: "Forced Move",
+    unicode: "\u25A1",
+  },
+
+  {
+    code: 10,
+    description: "Equal Position",
+    unicode: "\u003D",
+  },
+  {
+    code: 13,
+    description: "Unclear Position",
+    unicode: "\u221E ",
+  },
+  {
+    code: 14,
+    description: "White has slight advantage",
+    unicode: "\u2A72",
+  },
+  {
+    code: 15,
+    description: "Black has slight advantage",
+    unicode: "\u2A71",
+  },
+  {
+    code: 16,
+    description: "White has moderate advantage",
+    unicode: "\u00B1",
+  },
+  {
+    code: 17,
+    description: "Black has moderate advantage",
+    unicode: "\u2213",
+  },
+  {
+    code: 18,
+    description: "White has decisive advantage",
+    unicode: "\u002B\u002D",
+  },
+  {
+    code: 19,
+    description: "Black has decisive advantage",
+    unicode: "\u002D\u002B",
+  },
+  {
+    code: 22,
+    description: "Zugzwang (white)",
+    unicode: "\u2A00",
+  },
+  {
+    code: 23,
+    description: "Zugzwang (black)",
+    unicode: "\u2A00",
+  },
+  {
+    code: 26,
+    description: "Space sdvantage (white)",
+    unicode: "\u25CB ",
+  },
+  {
+    code: 27,
+    description: "Space sdvantage (black)",
+    unicode: "\u25CB ",
+  },
+  {
+    code: 32,
+    description: "Time/development Advantage (white)",
+    unicode: "\u27F3  ",
+  },
+  {
+    code: 33,
+    description: "Time/development Advantage (black)",
+    unicode: "\u27F3  ",
+  },
+  {
+    code: 36,
+    description: "Initiative (white)",
+    unicode: "\u2191",
+  },
+  {
+    code: 37,
+    description: "Initiative (black)",
+    unicode: "\u2191",
+  },
+  {
+    code: 40,
+    description: "White has the attack",
+    unicode: "\u2192",
+  },
+  {
+    code: 41,
+    description: "Black has the attack",
+    unicode: "\u2192",
+  },
+  {
+    code: 132,
+    description: "Counterplay (white)",
+    unicode: "\u21C6",
+  },
+  {
+    code: 133,
+    description: "Counterplay (black)",
+    unicode: "\u21C6",
+  },
+];
