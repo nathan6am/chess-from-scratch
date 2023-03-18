@@ -162,7 +162,7 @@ export default function Piece({
           bottom: 0,
           left: 0,
           //transform: `translate(${coordinates[0] * squareSize}px, ${coordinates[1]}px)`,
-          zIndex: dragging ? 15 : 10,
+          zIndex: dragging ? 40 : 10,
         }}
         ref={nodeRef}
       >

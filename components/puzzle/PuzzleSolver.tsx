@@ -5,6 +5,7 @@ import React, { useContext, useState } from "react";
 import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
 import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
+import BoardControls from "../game/BoardControls";
 export default function PuzzleSolver() {
   const { puzzle, history, next } = usePuzzleQueue();
   const { settings } = useContext(SettingsContext);
@@ -39,13 +40,25 @@ export default function PuzzleSolver() {
           </BoardColumn>
         </div>
         <PanelColumn>
-          <div className="h-full w-full">
-            <CheckBox label="filter" indeterminate checked={checked} onChange={setChecked}></CheckBox>
+          <div className="h-full w-full bg-[#303030]">
             <p>{puzzle.solveState}</p>
-            <button onClick={puzzle.retry}>Retry</button>
-            <button onClick={next}>Next Puzzle</button>
-            <PuzzlePanel />
+            <div className="flex flex-col">
+              <button onClick={puzzle.retry}>Retry</button>
+              <button onClick={next}>Next Puzzle</button>
+              <button onClick={puzzle.showSolution}>View the Solution</button>
+            </div>
+            <div className="w-full p-3">
+              {puzzle.puzzle ? (
+                <h2>
+                  {puzzle.puzzle.playerColor === "w" ? "Find the best move for white" : "Find the best move for black"}
+                </h2>
+              ) : (
+                <h2>Loading puzzles</h2>
+              )}
+            </div>
           </div>
+
+          <BoardControls controls={puzzle.controls} />
         </PanelColumn>
       </BoardRow>
     </>

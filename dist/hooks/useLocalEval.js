@@ -177,11 +177,10 @@ function useLocalEval(initialOptions) {
         else {
             lastFen.current = fen;
             const evaler = stockfishRef.current;
-            if (inProgress)
-                yield commands.stop(evaler);
-            if (cachedEval &&
-                cachedEval.depth >= options.depth &&
-                cachedEval.lines.length >= options.multiPV) {
+            if (inProgress) {
+                yield stop();
+            }
+            if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
                 setEvaluation(cachedEval);
                 setCurrentDepth(cachedEval.depth);
                 setCurrentScore(cachedEval.score);
@@ -221,6 +220,8 @@ function useLocalEval(initialOptions) {
             setInProgress(true);
             setFinished(false);
             try {
+                console.log("getting eval");
+                console.log(fen);
                 const result = yield commands.getEvaluation(evaler, Object.assign({ fen: fen }, options), cb);
                 setEvaluation(result);
                 setCurrentDepth(result.depth);
@@ -230,12 +231,7 @@ function useLocalEval(initialOptions) {
                 return result;
             }
             catch (e) {
-                if (e instanceof Error) {
-                    setError(e);
-                }
-                else {
-                    setError(new Error());
-                }
+                console.log(e);
                 setInProgress(false);
             }
         }

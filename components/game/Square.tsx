@@ -2,6 +2,7 @@ import styles from "@/styles/Board.module.scss";
 import React, { useMemo } from "react";
 import * as Chess from "@/lib/chess";
 import classnames from "classnames";
+import { opacity } from "html2canvas/dist/types/css/property-descriptors/opacity";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -14,6 +15,7 @@ interface SquareProps {
   isLastMove: boolean;
   isPremoved: boolean;
   color: Chess.Color;
+  markedColor?: string;
   activeColor: Chess.Color;
   onSelectTarget: any;
   hovered: boolean;
@@ -26,6 +28,7 @@ interface SquareProps {
 
 export default function Square({
   id,
+  markedColor,
   squareSize,
   showCoordinates,
   isTarget,
@@ -47,15 +50,11 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -66,16 +65,16 @@ export default function Square({
   }, [squareSize]);
 
   const insideClasses = {
-    rank: `absolute top-[1px] md:top-[2px] xl:top-[3px] left-[2px] md:left-[3px] xl:left-[4px] ${
+    rank: `select-none absolute top-[1px] md:top-[2px] xl:top-[3px] left-[2px] md:left-[3px] xl:left-[4px] ${
       color === "w" ? "on-light" : "on-dark"
     } opacity-80`,
-    file: `absolute bottom-[1px] md:bottom-[2px] xl:bottom-[3px] right-[2px] md:right-[3px] xl:right-[4px] ${
+    file: ` select-none absolute bottom-[1px] md:bottom-[2px] xl:bottom-[3px] right-[2px] md:right-[3px] xl:right-[4px] ${
       color === "w" ? "on-light" : "on-dark"
     } opacity-80`,
   };
   const outsideClasses = {
-    rank: ` absolute left-[-1em] top-[calc(50%-0.5em)]  opacity-80`,
-    file: ` absolute bottom-[-1.5em] left-[calc(50%-0.5em)]  opacity-80`,
+    rank: `select-none absolute left-[-1em] top-[calc(50%-0.5em)]  opacity-80`,
+    file: `select-none absolute bottom-[-1.5em] left-[calc(50%-0.5em)]  opacity-80`,
   };
   return (
     <div
@@ -84,25 +83,17 @@ export default function Square({
         if (isTarget) onSelectTarget();
         else clearSelection();
       }}
-      className={`${styles.square} ${
-        color === "w" ? "square-light" : "square-dark"
-      } cursor-pointer`}
+      className={`${styles.square} ${color === "w" ? "square-light" : "square-dark"} ${
+        isTarget ? "cursor-pointer" : ""
+      }`}
     >
       {showRank && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
           {rank}
         </span>
       )}
       {showFile && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
           {file}
         </span>
       )}
@@ -114,10 +105,13 @@ export default function Square({
       >
         {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
+      {markedColor && (
+        <div className={`${styles.contents}`}>
+          <div className={styles.ring} style={{ border: `12px solid ${markedColor}`, opacity: "70%", zIndex: 30 }} />
+        </div>
+      )}
       <div
-        className={`${styles.contents} ${
-          isTarget && showTargets && hovered && styles.targetHover
-        } opacity-80`}
+        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.targetHover} opacity-80`}
       ></div>
     </div>
   );
@@ -195,7 +189,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
         )}
       >
         <div
-          className={classnames("font-semibold text-center ", {
+          className={classnames("select-none font-semibold text-center ", {
             "text-xl mb-[1px] ": size === "sm",
             "text-2xl mb-[2px]": size === "lg",
           })}

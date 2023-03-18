@@ -1,17 +1,18 @@
-import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect } from "react";
+import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect, use } from "react";
 import Square from "./Square";
 import { mergeRefs } from "@/util/misc";
 import styles from "@/styles/Board.module.scss";
 import * as Chess from "@/lib/chess";
 import { AnimSpeedEnum } from "@/context/settings";
-import usePointerCoordinates from "@/hooks/usePointerCoordinates";
 import { useResizeDetector } from "react-resize-detector";
 import _ from "lodash";
 import Piece from "./Piece";
 import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
-
+import BoardArrows from "../analysis/BoardArrows";
+import useBoardArrows from "@/hooks/useBoardArrows";
+import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
   showCoordinates: "hidden" | "inside" | "outside";
   theme: string;
@@ -32,24 +33,6 @@ interface Props {
   premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
   pieceSet: string;
   lastMoveAnnotation?: number | string;
-}
-
-// Hook to track the current square of the pointer
-function useCurrentSquare(orientation: Chess.Color, boardRef: React.RefObject<HTMLDivElement>): Chess.Square | null {
-  const [currentSquare, setCurrentSquare] = useState<Chess.Square | null>(null);
-  const { x, y } = usePointerCoordinates(8, boardRef);
-  useEffect(() => {
-    // Only accept coordinated within the board
-    if (x <= 7 && x >= 0 && y <= 7 && y >= 0) {
-      const coordinates: [number, number] = orientation === "w" ? [x, 7 - y] : [7 - x, y];
-      setCurrentSquare(Chess.toSquare(coordinates));
-    } else {
-      //Set the current square to null if the pointer is outside the board
-      setCurrentSquare(null);
-    }
-  }, [x, y, orientation]);
-
-  return currentSquare;
 }
 
 const Board = React.forwardRef<HTMLDivElement, Props>(
@@ -102,7 +85,7 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
   selected piece and the target square */
     const onDrop = useCallback(() => {
       if (!currentSquare || !selectedPiece) {
-        console.log("here");
+        //console.log("here");
         return;
       } else {
         const [square, piece] = selectedPiece;
@@ -197,80 +180,100 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
     const { width } = useResizeDetector<HTMLDivElement>({ targetRef: boardRef });
     const squareSize = (width || 0) / 8;
 
+    const arrowManager = useBoardArrows(currentSquare);
+    const lastMoveRef = useRef(lastMove);
+    useEffect(() => {
+      if (_.isEqual(lastMove, lastMoveRef.current)) {
+        return;
+      } else {
+        lastMoveRef.current = lastMove;
+        arrowManager.clear();
+      }
+    }, [lastMove, lastMoveRef, arrowManager]);
     return (
       <>
-        <div
-          className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
-          ref={mergeRefs([ref, boardRef])}
-        >
-          <PromotionMenu
-            cancel={() => setPromotionMove(null)}
-            orientation={orientation}
-            promotionMove={promotionMove}
-            activeColor={activeColor}
-            onSelect={(type) => {
-              if (!promotionMove) return;
-              const move = legalMoves.find(
-                (move) =>
-                  move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
-              );
-              if (move) {
-                setPromotionMove(null);
-                onMove(move);
-              } else {
-                setPromotionMove(null);
-              }
+        <BoardArrows arrows={arrowManager.arrows} pendingArrow={arrowManager.pendingArrow}>
+          <div
+            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
+            ref={mergeRefs([ref, boardRef])}
+            onContextMenu={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
             }}
-          />
-          {boardMap.map((row) =>
-            row.map((square) => {
-              const piece = pieces.find((piece) => piece[0] === square);
-              return (
-                <Square
-                  showCoordinates={showCoordinates}
-                  activeColor={activeColor}
-                  id={square}
-                  key={square}
-                  piece={piece ? piece[1] : null}
-                  isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
-                  isSelected={(selectedPiece && selectedPiece[0] === square) || false}
-                  square={square}
-                  color={Chess.getSquareColor(square)}
-                  onSelectTarget={() => {
-                    onSelectTarget(square);
-                  }}
-                  setSelectedPiece={setSelectedPiece}
-                  isPremoved={false}
-                  showTargets={showTargets}
-                  showHighlights={showHighlights}
-                  clearSelection={clearSelection}
-                  squareSize={squareSize}
-                  hovered={currentSquare === square}
-                  isLastMove={lastMove?.start === square || lastMove?.end === square}
-                  annotation={(lastMove?.end === square && lastMoveAnnotation) || undefined}
-                  orientation={orientation}
-                />
-              );
-            })
-          )}
-          {pieces.map(([square, piece]) => (
-            <Piece
-              selectedPiece={selectedPiece}
-              animationSpeed={AnimSpeedEnum[animationSpeed]}
-              setSelectedPiece={setSelectedPiece}
-              key={`${piece.key}${orientation}`}
-              piece={piece}
-              square={square}
-              movementType={movementType}
-              disabled={
-                (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
-              }
+          >
+            <PromotionMenu
+              cancel={() => setPromotionMove(null)}
               orientation={orientation}
-              onDrop={onDrop}
-              squareSize={squareSize}
+              promotionMove={promotionMove}
+              activeColor={activeColor}
+              onSelect={(type) => {
+                if (!promotionMove) return;
+                const move = legalMoves.find(
+                  (move) =>
+                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                );
+                if (move) {
+                  setPromotionMove(null);
+                  onMove(move);
+                } else {
+                  setPromotionMove(null);
+                }
+              }}
             />
-          ))}
-        </div>
+            {boardMap.map((row) =>
+              row.map((square) => {
+                const piece = pieces.find((piece) => piece[0] === square);
+                return (
+                  <Square
+                    markedColor={arrowManager.markedSquares.find((marked) => marked.square === square)?.color}
+                    showCoordinates={showCoordinates}
+                    activeColor={activeColor}
+                    id={square}
+                    key={square}
+                    piece={piece ? piece[1] : null}
+                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                    isSelected={(selectedPiece && selectedPiece[0] === square) || false}
+                    square={square}
+                    color={Chess.getSquareColor(square)}
+                    onSelectTarget={() => {
+                      onSelectTarget(square);
+                    }}
+                    setSelectedPiece={setSelectedPiece}
+                    isPremoved={false}
+                    showTargets={showTargets}
+                    showHighlights={showHighlights}
+                    clearSelection={() => {
+                      clearSelection();
+                      arrowManager.clear();
+                    }}
+                    squareSize={squareSize}
+                    hovered={currentSquare === square}
+                    isLastMove={lastMove?.start === square || lastMove?.end === square}
+                    annotation={(lastMove?.end === square && lastMoveAnnotation) || undefined}
+                    orientation={orientation}
+                  />
+                );
+              })
+            )}
+            {pieces.map(([square, piece]) => (
+              <Piece
+                selectedPiece={selectedPiece}
+                animationSpeed={AnimSpeedEnum[animationSpeed]}
+                setSelectedPiece={setSelectedPiece}
+                key={`${piece.key}${orientation}`}
+                piece={piece}
+                square={square}
+                movementType={movementType}
+                disabled={
+                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                }
+                orientation={orientation}
+                onDrop={onDrop}
+                squareSize={squareSize}
+              />
+            ))}
+          </div>
+        </BoardArrows>
       </>
     );
   }

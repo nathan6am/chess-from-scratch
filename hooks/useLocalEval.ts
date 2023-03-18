@@ -71,10 +71,7 @@ export interface Evaler {
   currentOptions: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
-  getEvaluation: (
-    fen: string,
-    cachedEval?: FinalEvaluation | undefined
-  ) => Promise<FinalEvaluation | undefined>;
+  getEvaluation: (fen: string, cachedEval?: FinalEvaluation | undefined) => Promise<FinalEvaluation | undefined>;
   currentDepth: number;
   currentScore: EvalScore | null;
   error: Error | null;
@@ -111,9 +108,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(
-      wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
-    );
+    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
   }, []);
 
   //Verify engine is ready
@@ -143,9 +138,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   useEffect(() => {
     if (error) {
       stockfishRef.current?.terminate();
-      stockfishRef.current = new Worker(
-        wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
-      );
+      stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
       const stockfish = stockfishRef.current;
       setError(null);
       const initalize = async () => {
@@ -176,13 +169,10 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
     } else {
       lastFen.current = fen;
       const evaler = stockfishRef.current;
-      if (inProgress) await commands.stop(evaler);
-
-      if (
-        cachedEval &&
-        cachedEval.depth >= options.depth &&
-        cachedEval.lines.length >= options.multiPV
-      ) {
+      if (inProgress) {
+        await stop();
+      }
+      if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
         setEvaluation(cachedEval);
         setCurrentDepth(cachedEval.depth);
         setCurrentScore(cachedEval.score);
@@ -222,6 +212,8 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       setInProgress(true);
       setFinished(false);
       try {
+        console.log("getting eval");
+        console.log(fen);
         const result = await commands.getEvaluation(evaler, { fen: fen, ...options }, cb);
         setEvaluation(result);
         setCurrentDepth(result.depth);
@@ -230,11 +222,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
         setFinished(true);
         return result;
       } catch (e) {
-        if (e instanceof Error) {
-          setError(e);
-        } else {
-          setError(new Error());
-        }
+        console.log(e);
         setInProgress(false);
       }
     }

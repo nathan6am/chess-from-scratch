@@ -22,17 +22,8 @@ import BoardArrows from "./BoardArrows";
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
   const boardRef = useRef<HTMLDivElement>(null);
-  const {
-    currentGame,
-    onMove,
-    evaler,
-    evalEnabled,
-    setEvalEnabled,
-    boardControls,
-    moveText,
-    explorer,
-    currentNode,
-  } = analysis;
+  const { currentGame, onMove, evaler, evalEnabled, setEvalEnabled, boardControls, moveText, explorer, currentNode } =
+    analysis;
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const { settings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
@@ -108,29 +99,27 @@ export default function AnalysisBoard() {
               <p className="absolute bottom-[-2em] p-1 px-4 bg-white/[0.1]">
                 Caruana, F. <span className="inline opacity-50">(2818)</span>
               </p> */}
-              <BoardArrows>
-                <Board
-                  lastMoveAnnotation={lastMoveAnnotation}
-                  showCoordinates={settings.display.showCoordinates}
-                  movementType={settings.gameBehavior.movementType}
-                  theme={settings.display.boardTheme}
-                  pieceSet={settings.display.pieceTheme}
-                  ref={boardRef}
-                  orientation={orientation}
-                  legalMoves={currentGame.legalMoves}
-                  showHighlights={settings.display.showHighlights}
-                  showTargets={settings.display.showValidMoves}
-                  pieces={currentGame.board}
-                  animationSpeed={settings.display.animationSpeed}
-                  lastMove={currentGame.lastMove}
-                  activeColor={currentGame.activeColor}
-                  moveable={"both"}
-                  preMoveable={false}
-                  autoQueen={settings.gameBehavior.autoQueen}
-                  onMove={onMove}
-                  onPremove={() => {}}
-                />
-              </BoardArrows>
+              <Board
+                lastMoveAnnotation={lastMoveAnnotation}
+                showCoordinates={settings.display.showCoordinates}
+                movementType={settings.gameBehavior.movementType}
+                theme={settings.display.boardTheme}
+                pieceSet={settings.display.pieceTheme}
+                ref={boardRef}
+                orientation={orientation}
+                legalMoves={currentGame.legalMoves}
+                showHighlights={settings.display.showHighlights}
+                showTargets={settings.display.showValidMoves}
+                pieces={currentGame.board}
+                animationSpeed={settings.display.animationSpeed}
+                lastMove={currentGame.lastMove}
+                activeColor={currentGame.activeColor}
+                moveable={"both"}
+                preMoveable={false}
+                autoQueen={settings.gameBehavior.autoQueen}
+                onMove={onMove}
+                onPremove={() => {}}
+              />
             </BoardColumn>
             {evalEnabled && evaler.currentOptions.showEvalBar && (
               <EvalBar
@@ -394,9 +383,7 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
         >
           {children}
         </button>

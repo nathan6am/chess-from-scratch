@@ -162,14 +162,14 @@ function usePuzzle(puzzle: Puzzle | null) {
   );
   const [touchedKeys, setTouchedKeys] = useState<string[]>([]);
   const visibleNodes = useMemo(() => {
-    const lastIdx = mainLine.findLastIndex((node) => touchedKeys.includes(node.key));
-    return mainLine.slice(0, lastIdx + 1);
+    const lastIdx = mainLine.findIndex((node) => !touchedKeys.includes(node.key));
+    return mainLine.slice(0, lastIdx);
   }, [mainLine]);
   const moveable = useMemo(() => {
     if (continuation.length === 0) return false;
     if (currentGame.activeColor !== puzzle?.playerColor) return false;
     if (!isMainline) return false;
-    //if (currentKey === visibleNodes[visibleNodes.length - 1].key) return false;
+    if (currentKey !== visibleNodes[visibleNodes.length - 1].key) return false;
     return true;
   }, [continuation, currentGame, currentKey, isMainline, visibleNodes]);
 
@@ -224,7 +224,8 @@ function usePuzzle(puzzle: Puzzle | null) {
   useEffect(() => {
     if (!puzzle) return;
     if (opponentMoveQueued.current) return;
-    if (currentGame.activeColor !== puzzle.playerColor && continuation.length > 0) {
+    if (currentGame.activeColor !== puzzle.playerColor) {
+      if (visibleNodes.length && currentKey !== visibleNodes[visibleNodes.length - 1].key) return;
       opponentMoveQueued.current = true;
       setTimeout(() => {
         opponentMoveQueued.current = false;
@@ -232,7 +233,7 @@ function usePuzzle(puzzle: Puzzle | null) {
         if (nextMove) setTouchedKeys((cur) => [...cur, nextMove.key]);
       }, 500);
     }
-  }, [currentGame, puzzle, tree, continuation, opponentMoveQueued]);
+  }, [currentGame, puzzle, tree, currentKey, opponentMoveQueued, visibleNodes]);
   const stepForward = useCallback(() => {
     const nextNode = continuation[0];
     if (nextNode && touchedKeys.includes(nextNode.key)) {
@@ -249,8 +250,11 @@ function usePuzzle(puzzle: Puzzle | null) {
   const showSolution = useCallback(() => {
     setSolveState("failed");
     setTouchedKeys(mainLine.map((node) => node.key));
+    if (!isMainline) {
+      setCurrentKey(currentNode?.parentKey || null);
+    }
     tree.stepForward();
-  }, []);
+  }, [currentKey, tree, isMainline, mainLine]);
 
   useEffect(() => {
     if (!puzzle) return;
@@ -267,6 +271,7 @@ function usePuzzle(puzzle: Puzzle | null) {
     currentGame,
     solveState,
     annotation,
+    showSolution,
     retry,
     onMove,
     moveable,

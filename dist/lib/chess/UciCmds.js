@@ -26,13 +26,10 @@ function setSkillLevel(value, stockfish) {
 exports.setSkillLevel = setSkillLevel;
 function ready(stockfish) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log("starting");
         let timer;
         const isReady = new Promise((resolve, reject) => {
             const handler = (e) => {
-                console.log(e.data);
                 if (e.data === "readyok") {
-                    console.log("ready");
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
                     resolve(true);
@@ -117,18 +114,7 @@ function startup(stockfish) {
 exports.startup = startup;
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args) {
-    const values = [
-        "depth",
-        "multipv",
-        "score",
-        "seldepth",
-        "time",
-        "nodes",
-        "nps",
-        "time",
-        "pv",
-        "hashfull",
-    ];
+    const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
     let reading = "";
     let evaluation = {
         depth: 0,
@@ -269,12 +255,15 @@ function stop(stockfish, timeout) {
     return __awaiter(this, void 0, void 0, function* () {
         let timer;
         const stop = new Promise((resolve, reject) => {
+            console.log("stopping");
             const handler = (e) => {
+                console.log(e.data);
                 const args = e.data.split(" ");
                 if (args[0] === "bestmove") {
                     //clear timeout on correct response
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
+                    console.log("stopped");
                     resolve(true);
                 }
             };

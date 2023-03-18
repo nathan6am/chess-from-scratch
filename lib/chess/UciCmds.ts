@@ -17,13 +17,10 @@ export function setSkillLevel(value: number, stockfish: Worker) {
 }
 
 export async function ready(stockfish: Worker): Promise<boolean> {
-  console.log("starting");
   let timer: NodeJS.Timeout;
   const isReady = new Promise<boolean>((resolve, reject) => {
     const handler = (e: MessageEvent) => {
-      console.log(e.data);
       if (e.data === "readyok") {
-        console.log("ready");
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
         resolve(true);
@@ -123,18 +120,7 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = [
-    "depth",
-    "multipv",
-    "score",
-    "seldepth",
-    "time",
-    "nodes",
-    "nps",
-    "time",
-    "pv",
-    "hashfull",
-  ];
+  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -308,12 +294,15 @@ export function parseUciMove(uci: string): UCIMove {
 export async function stop(stockfish: Worker, timeout?: number) {
   let timer: NodeJS.Timeout;
   const stop = new Promise<boolean>((resolve, reject) => {
+    console.log("stopping");
     const handler = (e: MessageEvent) => {
+      console.log(e.data);
       const args = e.data.split(" ");
       if (args[0] === "bestmove") {
         //clear timeout on correct response
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
+        console.log("stopped");
         resolve(true);
       }
     };
