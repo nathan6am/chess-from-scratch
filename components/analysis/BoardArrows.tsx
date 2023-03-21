@@ -1,10 +1,17 @@
 import React from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
 import { Square } from "@/lib/chess";
+import { ArrowColor } from "@/hooks/useBoardArrows";
+export const ColorEnum: Record<ArrowColor, string> = {
+  R: "#b91c1c",
+  G: "#15803d",
+  O: "#b45309",
+  B: "#0369a1",
+};
 export interface Arrow {
   start: Square;
   end?: Square;
-  color: string;
+  color: ArrowColor;
 }
 interface Props {
   children?: JSX.Element | JSX.Element[];
@@ -44,7 +51,7 @@ function RenderArrow({ arrow }: ArrowProps) {
         path={"straight"}
         startAnchor="middle"
         endAnchor="middle"
-        color={arrow.color}
+        color={ColorEnum[arrow.color]}
         zIndex={30}
         strokeWidth={24}
         headSize={2.5}

@@ -1,4 +1,13 @@
-import React, { useCallback, useState, useEffect, useContext, useMemo, useRef, useLayoutEffect, use } from "react";
+import React, {
+  useCallback,
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useRef,
+  useLayoutEffect,
+  useImperativeHandle,
+} from "react";
 import Square from "./Square";
 import { mergeRefs } from "@/util/misc";
 import styles from "@/styles/Board.module.scss";
@@ -11,7 +20,7 @@ import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
 import BoardArrows from "../analysis/BoardArrows";
-import useBoardArrows from "@/hooks/useBoardArrows";
+import useBoardArrows, { ArrowColor } from "@/hooks/useBoardArrows";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
   showCoordinates: "hidden" | "inside" | "outside";
@@ -33,9 +42,17 @@ interface Props {
   premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
   pieceSet: string;
   lastMoveAnnotation?: number | string;
+  showAnnotation?: boolean;
+  lockArrows?: boolean;
+  arrowColor?: ArrowColor;
+  disableArrows?: boolean;
 }
 
-const Board = React.forwardRef<HTMLDivElement, Props>(
+export interface BoardHandle extends HTMLDivElement {
+  // Add any additional methods that you want to expose
+  clearArrows: () => void;
+}
+const Board = React.forwardRef<BoardHandle, Props>(
   (
     {
       showCoordinates,
@@ -56,6 +73,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
       onPremove,
       pieceSet,
       lastMoveAnnotation,
+      lockArrows,
+      arrowColor,
+      disableArrows,
     }: Props,
     ref
   ) => {
@@ -122,7 +142,17 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
         }
         setSelectedPiece(null);
       }
-    }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
+    }, [
+      currentSquare,
+      selectedPiece,
+      autoQueen,
+      legalMoves,
+      activeColor,
+      moveable,
+      onMove,
+      preMoveable,
+      onPremove,
+    ]);
 
     /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -133,25 +163,21 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
           return;
         } else {
           const [square, piece] = selectedPiece;
-
           //Just in case, guard against non moveable pieces
           if (piece.color !== moveable && moveable !== "both") return;
-
           //Queue premove if the piece isn't of the active turn color and do not continue
           if (piece.color !== activeColor && preMoveable) {
             onPremove(square, targetSquare);
           }
-
           if (piece.color !== activeColor) return;
-
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+          const move = legalMoves.find(
+            (move) => move.start === square && move.end === targetSquare
+          );
           //Return if no legal move is found
           if (!move) return;
-
           //Call onMove if the move is not a promotion
           if (!move.promotion) onMove(move);
-
           // Auto promote to queen if enabled in settings, otherwise show the promotion menu
           if (move.promotion && autoQueen) {
             onMove({ ...move, promotion: "q" });
@@ -180,21 +206,36 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
     const { width } = useResizeDetector<HTMLDivElement>({ targetRef: boardRef });
     const squareSize = (width || 0) / 8;
 
-    const arrowManager = useBoardArrows(currentSquare);
+    const arrowManager = useBoardArrows({
+      currentSquare,
+      lockArrows,
+      color: arrowColor,
+      disabled: disableArrows,
+    });
+    const exposedMethods = {
+      clearArrows: () => {
+        arrowManager.clear();
+      },
+      ...boardRef.current,
+    } as BoardHandle;
+    useImperativeHandle(ref, () => exposedMethods, [exposedMethods]);
     const lastMoveRef = useRef(lastMove);
     useEffect(() => {
       if (_.isEqual(lastMove, lastMoveRef.current)) {
         return;
       } else {
         lastMoveRef.current = lastMove;
-        arrowManager.clear();
+        if (!lockArrows) arrowManager.clear();
       }
     }, [lastMove, lastMoveRef, arrowManager]);
+
     return (
       <>
         <BoardArrows arrows={arrowManager.arrows} pendingArrow={arrowManager.pendingArrow}>
           <div
-            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
+            className={`${styles.board} relative mx-0 ${
+              showCoordinates === "outside" ? "m-2" : ""
+            } board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onContextMenu={(e) => {
               e.stopPropagation();
@@ -210,7 +251,9 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                    move.start === promotionMove.start &&
+                    move.end === promotionMove.end &&
+                    move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -225,13 +268,17 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
                 const piece = pieces.find((piece) => piece[0] === square);
                 return (
                   <Square
-                    markedColor={arrowManager.markedSquares.find((marked) => marked.square === square)?.color}
+                    markedColor={
+                      arrowManager.markedSquares.find((marked) => marked.square === square)?.color
+                    }
                     showCoordinates={showCoordinates}
                     activeColor={activeColor}
                     id={square}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                    isTarget={
+                      (selectedPiece && selectedPiece[1].targets?.includes(square)) || false
+                    }
                     isSelected={(selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
@@ -265,7 +312,8 @@ const Board = React.forwardRef<HTMLDivElement, Props>(
                 square={square}
                 movementType={movementType}
                 disabled={
-                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                  (moveable !== "both" && piece.color !== moveable) ||
+                  (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}

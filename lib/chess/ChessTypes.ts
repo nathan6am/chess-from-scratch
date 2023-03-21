@@ -1,3 +1,5 @@
+import { Arrow } from "../../components/analysis/BoardArrows";
+import { MarkedSquare } from "../../hooks/useBoardArrows";
 import { FinalEvaluation } from "./UciCmds";
 export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type File = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
@@ -91,6 +93,10 @@ export interface NodeData extends HalfMove {
   evaluation?: FinalEvaluation;
   halfMoveCount: number;
   outcome: Outcome;
+  boardAnnotaion?: {
+    markedSquares: MarkedSquare[];
+    arrows: Arrow[];
+  };
 }
 
 export interface MoveTrainerNodeData extends NodeData {
@@ -100,6 +106,5 @@ export interface MoveTrainerNodeData extends NodeData {
   };
   isValidAlternative: boolean;
   prompt?: string;
-  boardAnnotaions: BoardAnnotation[];
 }
 export interface BoardAnnotation {}

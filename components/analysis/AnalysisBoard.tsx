@@ -1,4 +1,4 @@
-import React, { useState, useRef, Fragment, useContext, useMemo } from "react";
+import React, { useState, useRef, Fragment, useContext, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 
 import Board from "../game/Board";
@@ -12,18 +12,28 @@ import { Tab, Menu, Transition } from "@headlessui/react";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { MdSettings } from "react-icons/md";
-
+import { BoardHandle } from "../game/Board";
 import { SettingsContext } from "@/context/settings";
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
-
+import useCurrentSquare from "@/hooks/useCurrentSquare";
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
 import BoardArrows from "./BoardArrows";
+import { ArrowColor } from "@/hooks/useBoardArrows";
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
-  const boardRef = useRef<HTMLDivElement>(null);
-  const { currentGame, onMove, evaler, evalEnabled, setEvalEnabled, boardControls, moveText, explorer, currentNode } =
-    analysis;
+  const boardRef = useRef<BoardHandle>(null);
+  const {
+    currentGame,
+    onMove,
+    evaler,
+    evalEnabled,
+    setEvalEnabled,
+    boardControls,
+    moveText,
+    explorer,
+    currentNode,
+  } = analysis;
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const { settings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
@@ -55,6 +65,10 @@ export default function AnalysisBoard() {
       },
     });
   };
+  const clearArrows = useCallback(() => {
+    boardRef.current?.clearArrows();
+  }, [boardRef]);
+  const [arrowColor, setArrowColor] = useState<ArrowColor>("O");
   return (
     <>
       <OptionsOverlay
@@ -118,6 +132,7 @@ export default function AnalysisBoard() {
                 preMoveable={false}
                 autoQueen={settings.gameBehavior.autoQueen}
                 onMove={onMove}
+                arrowColor={arrowColor}
                 onPremove={() => {}}
               />
             </BoardColumn>
@@ -383,7 +398,9 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${
+            disabled ? "pointer-none text-white/[0.3]" : ""
+          }`}
         >
           {children}
         </button>

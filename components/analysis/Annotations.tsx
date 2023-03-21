@@ -1,6 +1,7 @@
 import React, { useState, Fragment, useMemo, useCallback } from "react";
 import { Listbox, Transition, Popover } from "@headlessui/react";
-import { MdExpand, MdCheck } from "react-icons/md";
+import { MdExpand, MdCheck, MdEditNote } from "react-icons/md";
+import { CgRemoveR } from "react-icons/cg";
 import { TreeNode } from "@/hooks/useTreeData";
 import * as Chess from "@/lib/chess";
 export interface NAG {
@@ -192,13 +193,26 @@ export default function Annotations({ node, controls }: Props) {
   );
 
   return (
-    <div>
+    <div className="p-3">
       Annotations
-      <AnnotationSelect
-        updateAnnotations={updateAnnotations}
-        selected={selectedAnnotations}
-        disabled={!node}
-      />
+      <div className="flex flex-row items-center">
+        <AnnotationSelect
+          updateAnnotations={updateAnnotations}
+          selected={selectedAnnotations}
+          disabled={!node}
+        />
+        <a
+          data-tooltip-id="my-tooltip"
+          data-tooltip-content="Clear all"
+          data-tooltip-place="right"
+          onClick={() => {
+            updateAnnotations([]);
+          }}
+          className="text-red-400 hover:text-red-500 cursor-pointer"
+        >
+          <CgRemoveR className="inline ml-1" />
+        </a>
+      </div>
     </div>
   );
 }
@@ -231,12 +245,20 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
     [selected, updateAnnotations]
   );
   return (
-    <div className=" w-72">
+    <div className=" w-60">
       <Listbox value={selected} onChange={onChange} multiple>
         <div className="relative mt-1">
-          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+          <Listbox.Button className="text-white/[0.8] text-sm relative w-full cursor-pointer rounded-lg bg-white/[0.1] py-2 pl-3 pr-10 text-left shadow-md focus:outline-none hover:bg-white/[0.2] hover:text-white">
+            Annotate With Glyphs
+            <>
+              {selected.length > 0 && (
+                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">
+                  {selected.length}
+                </span>
+              )}
+            </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <MdExpand className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <MdEditNote className="h-5 w-5" aria-hidden="true" />
             </span>
           </Listbox.Button>
           <Transition

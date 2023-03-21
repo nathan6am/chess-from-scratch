@@ -2,7 +2,8 @@ import styles from "@/styles/Board.module.scss";
 import React, { useMemo } from "react";
 import * as Chess from "@/lib/chess";
 import classnames from "classnames";
-import { opacity } from "html2canvas/dist/types/css/property-descriptors/opacity";
+import { ColorEnum } from "../analysis/BoardArrows";
+import { ArrowColor } from "@/hooks/useBoardArrows";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -15,7 +16,7 @@ interface SquareProps {
   isLastMove: boolean;
   isPremoved: boolean;
   color: Chess.Color;
-  markedColor?: string;
+  markedColor?: ArrowColor;
   activeColor: Chess.Color;
   onSelectTarget: any;
   hovered: boolean;
@@ -50,11 +51,15 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -88,12 +93,20 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
+          } ${textSize}`}
+        >
           {rank}
         </span>
       )}
       {showFile && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
+          } ${textSize}`}
+        >
           {file}
         </span>
       )}
@@ -107,11 +120,16 @@ export default function Square({
       </div>
       {markedColor && (
         <div className={`${styles.contents}`}>
-          <div className={styles.ring} style={{ border: `12px solid ${markedColor}`, opacity: "70%", zIndex: 30 }} />
+          <div
+            className={styles.ring}
+            style={{ border: `12px solid ${ColorEnum[markedColor]}`, opacity: "70%", zIndex: 30 }}
+          />
         </div>
       )}
       <div
-        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.targetHover} opacity-80`}
+        className={`${styles.contents} ${
+          isTarget && showTargets && hovered && styles.targetHover
+        } opacity-80`}
       ></div>
     </div>
   );

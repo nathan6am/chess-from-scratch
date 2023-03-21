@@ -105,6 +105,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   )}
                 >
                   <Board
+                    disableArrows
                     showCoordinates={settings.display.showCoordinates}
                     movementType="both"
                     theme={settings.display.boardTheme}

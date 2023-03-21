@@ -2,12 +2,29 @@ import { Arrow } from "@/components/analysis/BoardArrows";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { Square } from "@/lib/chess";
 
-interface MarkedSquare {
+export interface MarkedSquare {
   square: Square;
-  color: string;
+  color: ArrowColor;
 }
-export default function useBoardArrows(currentSquare: Square | null) {
-  const [color, setColor] = useState("#15803d");
+
+interface Args {
+  currentSquare: Square | null;
+  lockArrows?: boolean;
+  color?: ArrowColor;
+  disabled?: boolean;
+}
+export type ArrowColor = "R" | "G" | "O" | "B";
+
+export default function useBoardArrows({
+  currentSquare,
+  lockArrows,
+  color: colorOverride,
+  disabled,
+}: Args) {
+  const color = useMemo(() => {
+    return colorOverride || "G";
+  }, [colorOverride]);
+
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [markedSquares, setMarkedSquares] = useState<MarkedSquare[]>([]);
   const [currentArrowStart, setCurrentArrowStart] = useState<Square | null>(null);
@@ -27,7 +44,8 @@ export default function useBoardArrows(currentSquare: Square | null) {
   const toggleMarkedSquare = useCallback(
     (square: Square) => {
       setMarkedSquares((cur) => {
-        if (cur.some((marked) => marked.square === square)) return cur.filter((marked) => marked.square !== square);
+        if (cur.some((marked) => marked.square === square))
+          return cur.filter((marked) => marked.square !== square);
         else return [...cur, { square, color }];
       });
     },
@@ -36,8 +54,12 @@ export default function useBoardArrows(currentSquare: Square | null) {
   const finalize = () => {
     if (currentArrow) {
       setArrows((cur) => {
-        if (cur.some((arrow) => arrow.start === currentArrow.start && arrow.end === currentArrow.end)) {
-          return cur.filter((arrow) => !(arrow.start === currentArrow.start && arrow.end === currentArrow.end));
+        if (
+          cur.some((arrow) => arrow.start === currentArrow.start && arrow.end === currentArrow.end)
+        ) {
+          return cur.filter(
+            (arrow) => !(arrow.start === currentArrow.start && arrow.end === currentArrow.end)
+          );
         } else {
           return [...cur, currentArrow];
         }
@@ -54,6 +76,7 @@ export default function useBoardArrows(currentSquare: Square | null) {
   };
 
   useEffect(() => {
+    if (disabled) return;
     const downhandler = (e: MouseEvent) => {
       if (currentSquare) {
         if (e.button === 2) start(currentSquare);
@@ -77,7 +100,7 @@ export default function useBoardArrows(currentSquare: Square | null) {
       document.removeEventListener("mouseup", uphandler);
       document.removeEventListener("contextmenu", contextmenuHandler);
     };
-  }, [currentSquare, start, finalize, clear]);
+  }, [currentSquare, start, finalize, clear, lockArrows]);
   return {
     arrows,
     pendingArrow: currentArrow,
