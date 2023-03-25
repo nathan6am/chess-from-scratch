@@ -114,6 +114,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
   const { data, error, isLoading } = useQuery({
     queryKey: ["explorer", debouncedGame],
     queryFn: () => fetcher(debouncedGame),
+    keepPreviousData: true,
   });
 
   const {

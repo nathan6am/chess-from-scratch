@@ -93,7 +93,18 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
               <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
             </Tab.Panel>
             <Tab.Panel>
-              <Annotations key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Annotations
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+                markupControls={{
+                  color: analysis.markupControls.arrowColor,
+                  setSelectedColor: analysis.markupControls.setArrowColor,
+                  clear: analysis.markupControls.onClear,
+                  locked: false,
+                  toggleLocked: () => {},
+                }}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <Share boardRef={boardRef} pgn={moveText} fen={currentGame.fen} />

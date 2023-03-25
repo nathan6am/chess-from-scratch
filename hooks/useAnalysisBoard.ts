@@ -11,6 +11,7 @@ import { TreeNode } from "./useTreeData";
 import { ApiResponse } from "./useOpeningExplorer";
 import { pgnToTreeArray } from "./test";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowColor } from "./useBoardMarkup";
 type Node = TreeNode<Chess.NodeData>;
 export interface AnalysisData {
   title: string;
@@ -49,6 +50,13 @@ export interface AnalysisHook {
     updateComment: (nodeId: string, comment: string) => void;
     updateAnnotations: (nodeId: string, annotations: number[]) => void;
   };
+  markupControls: {
+    onArrow: (arrow: Arrow) => void;
+    onMarkSquare: (square: MarkedSquare) => void;
+    onClear: () => void;
+    arrowColor: ArrowColor;
+    setArrowColor: (color: ArrowColor) => void;
+  };
 }
 
 interface AnalysisOptions {
@@ -64,10 +72,11 @@ const defaultOptions = {
   evalEnabled: true,
   readonly: false,
 };
-import axios from "axios";
-import Analysis from "@/lib/db/entities/Analysis";
+
 import { PGNTagData, parsePgn } from "@/util/parsers/pgnParser";
 import useSavedAnalysis from "./useSavedAnalysis";
+import { Arrow } from "@/components/analysis/BoardArrows";
+import { MarkedSquare } from "./useBoardMarkup";
 
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
   const [options, setOptions] = useState(() => {
@@ -192,6 +201,39 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     [variationTree.tree]
   );
 
+  const updateArrows = useCallback(
+    (nodeId: string, arrows: Arrow[]) => {
+      const node = variationTree.tree.getNode(nodeId);
+      if (!node) return;
+      variationTree.tree.updateNode(nodeId, {
+        arrows,
+      });
+    },
+    [variationTree.tree]
+  );
+  const updateMarkedSquares = useCallback(
+    (nodeId: string, markedSquares: MarkedSquare[]) => {
+      const node = variationTree.tree.getNode(nodeId);
+      if (!node) return;
+      variationTree.tree.updateNode(nodeId, {
+        markedSquares,
+      });
+    },
+    [variationTree.tree]
+  );
+
+  const clearMarkup = useCallback(
+    (nodeId: string) => {
+      const node = variationTree.tree.getNode(nodeId);
+      if (!node) return;
+      variationTree.tree.updateNode(nodeId, {
+        markedSquares: [],
+        arrows: [],
+      });
+    },
+    [variationTree.tree]
+  );
+
   //Debounce data change for evaler/api request
   const debouncedNode = useDebounce(currentNode, 300);
   const currentNodeKey = useRef<string | null>();
@@ -271,6 +313,43 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       console.error("Invalid move in move queue");
     }
   }, [moveQueue, currentGame, onMove, prevGame]);
+  const onArrow = useCallback(
+    (arrow: Arrow) => {
+      if (!currentNode) return;
+      const currentArrows = currentNode.data.arrows || [];
+      if (currentArrows.some((cur) => cur.start === arrow.start && cur.end === arrow.end)) {
+        updateArrows(
+          currentNode.key,
+          currentArrows.filter((cur) => !(cur.start === arrow.start && cur.end === arrow.end))
+        );
+      } else {
+        updateArrows(currentNode.key, [...currentArrows, arrow]);
+      }
+    },
+    [currentNode, updateArrows]
+  );
+
+  const onMarkSquare = useCallback(
+    (markedSquare: MarkedSquare) => {
+      if (!currentNode) return;
+      const currentMarkedSquares = currentNode.data.markedSquares || [];
+      if (currentMarkedSquares.some((cur) => cur.square === markedSquare.square)) {
+        updateMarkedSquares(
+          currentNode.key,
+          currentMarkedSquares.filter((cur) => cur.square !== markedSquare.square)
+        );
+      } else {
+        updateMarkedSquares(currentNode.key, [...currentMarkedSquares, markedSquare]);
+      }
+    },
+    [currentNode, updateMarkedSquares]
+  );
+
+  const onClear = useCallback(() => {
+    if (!currentNode) return;
+    clearMarkup(currentNode.key);
+  }, [currentNode, clearMarkup]);
+  const [arrowColor, setArrowColor] = useState<ArrowColor>("O");
 
   return {
     loadPgn,
@@ -295,6 +374,13 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     commentControls: {
       updateComment,
       updateAnnotations,
+    },
+    markupControls: {
+      onClear,
+      onArrow,
+      onMarkSquare,
+      arrowColor,
+      setArrowColor,
     },
   };
 }

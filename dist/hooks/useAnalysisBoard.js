@@ -150,6 +150,31 @@ function useAnalysisBoard(initialOptions) {
             annotations,
         });
     }, [variationTree.tree]);
+    const updateArrows = (0, react_1.useCallback)((nodeId, arrows) => {
+        const node = variationTree.tree.getNode(nodeId);
+        if (!node)
+            return;
+        variationTree.tree.updateNode(nodeId, {
+            arrows,
+        });
+    }, [variationTree.tree]);
+    const updateMarkedSquares = (0, react_1.useCallback)((nodeId, markedSquares) => {
+        const node = variationTree.tree.getNode(nodeId);
+        if (!node)
+            return;
+        variationTree.tree.updateNode(nodeId, {
+            markedSquares,
+        });
+    }, [variationTree.tree]);
+    const clearMarkup = (0, react_1.useCallback)((nodeId) => {
+        const node = variationTree.tree.getNode(nodeId);
+        if (!node)
+            return;
+        variationTree.tree.updateNode(nodeId, {
+            markedSquares: [],
+            arrows: [],
+        });
+    }, [variationTree.tree]);
     //Debounce data change for evaler/api request
     const debouncedNode = (0, useDebounce_1.default)(currentNode, 300);
     const currentNodeKey = (0, react_1.useRef)();
@@ -250,6 +275,11 @@ function useAnalysisBoard(initialOptions) {
         commentControls: {
             updateComment,
             updateAnnotations,
+        },
+        markupControls: {
+            updateArrows,
+            updateMarkedSquares,
+            clearMarkup,
         },
     };
 }

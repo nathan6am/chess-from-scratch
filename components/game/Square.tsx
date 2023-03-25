@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import * as Chess from "@/lib/chess";
 import classnames from "classnames";
 import { ColorEnum } from "../analysis/BoardArrows";
-import { ArrowColor } from "@/hooks/useBoardArrows";
+import { ArrowColor } from "@/hooks/useBoardMarkup";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -51,15 +51,11 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -93,20 +89,12 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
           {rank}
         </span>
       )}
       {showFile && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
           {file}
         </span>
       )}
@@ -122,14 +110,12 @@ export default function Square({
         <div className={`${styles.contents}`}>
           <div
             className={styles.ring}
-            style={{ border: `12px solid ${ColorEnum[markedColor]}`, opacity: "70%", zIndex: 30 }}
+            style={{ border: `12px solid ${ColorEnum[markedColor]}`, opacity: "70%", zIndex: 16 }}
           />
         </div>
       )}
       <div
-        className={`${styles.contents} ${
-          isTarget && showTargets && hovered && styles.targetHover
-        } opacity-80`}
+        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.targetHover} opacity-80`}
       ></div>
     </div>
   );

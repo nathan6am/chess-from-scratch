@@ -20,11 +20,12 @@ import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
 import BoardArrows from "../analysis/BoardArrows";
-import useBoardArrows, { ArrowColor } from "@/hooks/useBoardArrows";
+import useBoardMarkup, { ArrowColor, MarkedSquare, useArrowState } from "@/hooks/useBoardMarkup";
+import { Arrow } from "../analysis/BoardArrows";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
-  showCoordinates: "hidden" | "inside" | "outside";
-  theme: string;
+  showCoordinates: "hidden" | "inside" | "outside"; //Where or if to display the rank and file indictors
+  theme: string; //Board theme
   orientation: Chess.Color;
   pieces: Chess.Board;
   legalMoves: Array<Chess.Move>;
@@ -37,14 +38,19 @@ interface Props {
   showTargets: boolean;
   showHighlights: boolean;
   autoQueen: boolean;
-  onMove: (move: Chess.Move) => void;
+  onMove: (move: Chess.Move) => void; //Callback to execute when a move it attempted
   onPremove: (start: Chess.Square, end: Chess.Square) => void;
   premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
-  pieceSet: string;
-  lastMoveAnnotation?: number | string;
-  showAnnotation?: boolean;
-  lockArrows?: boolean;
-  arrowColor?: ArrowColor;
+  pieceSet: string; //Piece theme
+  lastMoveAnnotation?: number | string; //Annotation to show on the board for the last move
+  showAnnotation?: boolean; //Whether or not to show annotations on board
+  arrows?: Arrow[];
+  markedSquares?: MarkedSquare[];
+  onArrow?: (arrow: Arrow) => void;
+  onMarkSquare?: (markedSquare: MarkedSquare) => void;
+  onClear?: () => void;
+  markupColor?: ArrowColor;
+  overrideArrows?: boolean;
   disableArrows?: boolean;
 }
 
@@ -73,8 +79,13 @@ const Board = React.forwardRef<BoardHandle, Props>(
       onPremove,
       pieceSet,
       lastMoveAnnotation,
-      lockArrows,
-      arrowColor,
+      arrows,
+      onArrow,
+      onClear,
+      onMarkSquare,
+      markedSquares,
+      markupColor = "G",
+      overrideArrows,
       disableArrows,
     }: Props,
     ref
@@ -142,17 +153,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
         }
         setSelectedPiece(null);
       }
-    }, [
-      currentSquare,
-      selectedPiece,
-      autoQueen,
-      legalMoves,
-      activeColor,
-      moveable,
-      onMove,
-      preMoveable,
-      onPremove,
-    ]);
+    }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
 
     /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -171,9 +172,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
           }
           if (piece.color !== activeColor) return;
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find(
-            (move) => move.start === square && move.end === targetSquare
-          );
+          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
           //Return if no legal move is found
           if (!move) return;
           //Call onMove if the move is not a promotion
@@ -205,37 +204,20 @@ const Board = React.forwardRef<BoardHandle, Props>(
     //Track the dimensions of the board/squares on resize events
     const { width } = useResizeDetector<HTMLDivElement>({ targetRef: boardRef });
     const squareSize = (width || 0) / 8;
-
-    const arrowManager = useBoardArrows({
-      currentSquare,
-      lockArrows,
-      color: arrowColor,
+    const localArrows = useArrowState();
+    const currentArrow = useBoardMarkup({
       disabled: disableArrows,
+      color: markupColor,
+      currentSquare,
+      onArrow: onArrow && overrideArrows ? onArrow : localArrows.onArrow,
+      onMarkSquare: onMarkSquare && overrideArrows ? onMarkSquare : localArrows.onMarkSquare,
     });
-    const exposedMethods = {
-      clearArrows: () => {
-        arrowManager.clear();
-      },
-      ...boardRef.current,
-    } as BoardHandle;
-    useImperativeHandle(ref, () => exposedMethods, [exposedMethods]);
-    const lastMoveRef = useRef(lastMove);
-    useEffect(() => {
-      if (_.isEqual(lastMove, lastMoveRef.current)) {
-        return;
-      } else {
-        lastMoveRef.current = lastMove;
-        if (!lockArrows) arrowManager.clear();
-      }
-    }, [lastMove, lastMoveRef, arrowManager]);
 
     return (
       <>
-        <BoardArrows arrows={arrowManager.arrows} pendingArrow={arrowManager.pendingArrow}>
+        <BoardArrows arrows={arrows || (overrideArrows ? [] : localArrows.arrows)} pendingArrow={currentArrow}>
           <div
-            className={`${styles.board} relative mx-0 ${
-              showCoordinates === "outside" ? "m-2" : ""
-            } board-bg`}
+            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onContextMenu={(e) => {
               e.stopPropagation();
@@ -251,9 +233,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start &&
-                    move.end === promotionMove.end &&
-                    move.promotion === type
+                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -266,19 +246,20 @@ const Board = React.forwardRef<BoardHandle, Props>(
             {boardMap.map((row) =>
               row.map((square) => {
                 const piece = pieces.find((piece) => piece[0] === square);
+                const markedColor = markedSquares
+                  ? markedSquares.find((marked) => marked.square === square)?.color
+                  : overrideArrows
+                  ? undefined
+                  : localArrows.markedSquares.find((marked) => marked.square === square)?.color;
                 return (
                   <Square
-                    markedColor={
-                      arrowManager.markedSquares.find((marked) => marked.square === square)?.color
-                    }
+                    markedColor={markedColor}
                     showCoordinates={showCoordinates}
                     activeColor={activeColor}
                     id={square}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={
-                      (selectedPiece && selectedPiece[1].targets?.includes(square)) || false
-                    }
+                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
                     isSelected={(selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
@@ -291,7 +272,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     showHighlights={showHighlights}
                     clearSelection={() => {
                       clearSelection();
-                      arrowManager.clear();
+                      if (onClear) onClear();
+                      localArrows.clear();
                     }}
                     squareSize={squareSize}
                     hovered={currentSquare === square}
@@ -312,8 +294,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 square={square}
                 movementType={movementType}
                 disabled={
-                  (moveable !== "both" && piece.color !== moveable) ||
-                  (!preMoveable && piece.color !== activeColor)
+                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}

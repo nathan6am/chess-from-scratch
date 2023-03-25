@@ -10,26 +10,17 @@ export interface MarkedSquare {
 interface Args {
   currentSquare: Square | null;
   lockArrows?: boolean;
-  color?: ArrowColor;
+  color: ArrowColor;
+  onArrow: (arrow: Arrow) => void;
+  onMarkSquare: (square: MarkedSquare) => void;
   disabled?: boolean;
 }
 export type ArrowColor = "R" | "G" | "O" | "B";
 
-export default function useBoardArrows({
-  currentSquare,
-  lockArrows,
-  color: colorOverride,
-  disabled,
-}: Args) {
-  const color = useMemo(() => {
-    return colorOverride || "G";
-  }, [colorOverride]);
-
-  const [arrows, setArrows] = useState<Arrow[]>([]);
-  const [markedSquares, setMarkedSquares] = useState<MarkedSquare[]>([]);
+export default function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }: Args) {
   const [currentArrowStart, setCurrentArrowStart] = useState<Square | null>(null);
-  const start = (Square: Square | null) => {
-    setCurrentArrowStart(currentSquare);
+  const start = (square: Square | null) => {
+    setCurrentArrowStart(square);
   };
 
   const currentArrow = useMemo<Arrow | null>(() => {
@@ -41,38 +32,16 @@ export default function useBoardArrows({
     };
   }, [currentArrowStart, currentSquare, color]);
 
-  const toggleMarkedSquare = useCallback(
-    (square: Square) => {
-      setMarkedSquares((cur) => {
-        if (cur.some((marked) => marked.square === square))
-          return cur.filter((marked) => marked.square !== square);
-        else return [...cur, { square, color }];
-      });
-    },
-    [color]
-  );
   const finalize = () => {
     if (currentArrow) {
-      setArrows((cur) => {
-        if (
-          cur.some((arrow) => arrow.start === currentArrow.start && arrow.end === currentArrow.end)
-        ) {
-          return cur.filter(
-            (arrow) => !(arrow.start === currentArrow.start && arrow.end === currentArrow.end)
-          );
-        } else {
-          return [...cur, currentArrow];
-        }
-      });
+      onArrow(currentArrow);
       setCurrentArrowStart(null);
-    } else if (currentArrowStart) {
-      if (currentSquare === currentArrowStart) toggleMarkedSquare(currentSquare);
+    } else if (currentArrowStart && currentArrowStart === currentSquare) {
+      onMarkSquare({ color, square: currentArrowStart });
+      setCurrentArrowStart(null);
+    } else {
       setCurrentArrowStart(null);
     }
-  };
-  const clear = () => {
-    setArrows([]);
-    setMarkedSquares([]);
   };
 
   useEffect(() => {
@@ -100,13 +69,40 @@ export default function useBoardArrows({
       document.removeEventListener("mouseup", uphandler);
       document.removeEventListener("contextmenu", contextmenuHandler);
     };
-  }, [currentSquare, start, finalize, clear, lockArrows]);
+  }, [currentSquare, start, finalize, lockArrows]);
+  return currentArrow;
+}
+
+export function useArrowState() {
+  const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [markedSquares, setMarkedSquares] = useState<MarkedSquare[]>([]);
+  const onArrow = (newArrow: Arrow) => {
+    setArrows((current) => {
+      if (current.some((arrow) => arrow.start === newArrow.start && arrow.end === newArrow.end)) {
+        return current.filter((arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end));
+      } else {
+        return [...current, newArrow];
+      }
+    });
+  };
+  const onMarkSquare = (markedSquare: MarkedSquare) => {
+    setMarkedSquares((current) => {
+      if (current.some((square) => square.square === markedSquare.square)) {
+        return current.filter((square) => square.square !== markedSquare.square);
+      } else {
+        return [...current, markedSquare];
+      }
+    });
+  };
+  const clear = () => {
+    setArrows([]);
+    setMarkedSquares([]);
+  };
   return {
     arrows,
-    pendingArrow: currentArrow,
-    start,
-    finalize,
-    clear,
     markedSquares,
+    onArrow,
+    onMarkSquare,
+    clear,
   };
 }

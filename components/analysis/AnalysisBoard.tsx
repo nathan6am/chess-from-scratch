@@ -16,10 +16,7 @@ import { BoardHandle } from "../game/Board";
 import { SettingsContext } from "@/context/settings";
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
-import useCurrentSquare from "@/hooks/useCurrentSquare";
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
-import BoardArrows from "./BoardArrows";
-import { ArrowColor } from "@/hooks/useBoardArrows";
 export default function AnalysisBoard() {
   const analysis = useAnalysisBoard();
   const boardRef = useRef<BoardHandle>(null);
@@ -33,6 +30,7 @@ export default function AnalysisBoard() {
     moveText,
     explorer,
     currentNode,
+    markupControls,
   } = analysis;
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const { settings } = useContext(SettingsContext);
@@ -65,10 +63,7 @@ export default function AnalysisBoard() {
       },
     });
   };
-  const clearArrows = useCallback(() => {
-    boardRef.current?.clearArrows();
-  }, [boardRef]);
-  const [arrowColor, setArrowColor] = useState<ArrowColor>("O");
+
   return (
     <>
       <OptionsOverlay
@@ -114,6 +109,12 @@ export default function AnalysisBoard() {
                 Caruana, F. <span className="inline opacity-50">(2818)</span>
               </p> */}
               <Board
+                overrideArrows={currentNode?.data ? true : false}
+                onArrow={markupControls.onArrow}
+                onMarkSquare={markupControls.onMarkSquare}
+                onClear={markupControls.onClear}
+                arrows={currentNode?.data.arrows}
+                markedSquares={currentNode?.data.markedSquares}
                 lastMoveAnnotation={lastMoveAnnotation}
                 showCoordinates={settings.display.showCoordinates}
                 movementType={settings.gameBehavior.movementType}
@@ -132,7 +133,7 @@ export default function AnalysisBoard() {
                 preMoveable={false}
                 autoQueen={settings.gameBehavior.autoQueen}
                 onMove={onMove}
-                arrowColor={arrowColor}
+                markupColor={markupControls.arrowColor}
                 onPremove={() => {}}
               />
             </BoardColumn>
@@ -398,9 +399,7 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
         >
           {children}
         </button>

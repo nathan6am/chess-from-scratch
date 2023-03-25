@@ -4,6 +4,10 @@ import { MdExpand, MdCheck, MdEditNote } from "react-icons/md";
 import { CgRemoveR } from "react-icons/cg";
 import { TreeNode } from "@/hooks/useTreeData";
 import * as Chess from "@/lib/chess";
+import { ArrowColor } from "@/hooks/useBoardMarkup";
+import { ColorEnum } from "./BoardArrows";
+import { RadioGroup } from "@headlessui/react";
+import classNames from "classnames";
 export interface NAG {
   code: number;
   description: string;
@@ -22,6 +26,13 @@ interface Props {
   controls: {
     updateAnnotations: (nodeKey: string, code: number[]) => void;
     updateComment: (nodeKey: string, comment: string) => void;
+  };
+  markupControls: {
+    color: ArrowColor;
+    setSelectedColor: (color: ArrowColor) => void;
+    clear: () => void;
+    locked: boolean;
+    toggleLocked: () => void;
   };
 }
 const annotationCategories: AnnotationCategory[] = [
@@ -180,7 +191,7 @@ const annotationCategories: AnnotationCategory[] = [
   },
 ];
 
-export default function Annotations({ node, controls }: Props) {
+export default function Annotations({ node, controls, markupControls }: Props) {
   const selectedAnnotations = useMemo(() => {
     return node?.data.annotations || [];
   }, [node, node?.data.annotations]);
@@ -194,13 +205,15 @@ export default function Annotations({ node, controls }: Props) {
 
   return (
     <div className="p-3">
-      Annotations
+      <MarkupControls
+        selectedColor={markupControls.color}
+        setSelectedColor={markupControls.setSelectedColor}
+        clear={markupControls.clear}
+        locked={markupControls.locked}
+        toggleLocked={markupControls.toggleLocked}
+      />
       <div className="flex flex-row items-center">
-        <AnnotationSelect
-          updateAnnotations={updateAnnotations}
-          selected={selectedAnnotations}
-          disabled={!node}
-        />
+        <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
         <a
           data-tooltip-id="my-tooltip"
           data-tooltip-content="Clear all"
@@ -236,9 +249,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           updateAnnotations(values);
         } else {
           const filterValues = category.options.map((option) => option.code);
-          updateAnnotations(
-            values.filter((value) => value === valueAdded || !filterValues.includes(value))
-          );
+          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
         }
       }
     },
@@ -252,21 +263,14 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
             Annotate With Glyphs
             <>
               {selected.length > 0 && (
-                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">
-                  {selected.length}
-                </span>
+                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">{selected.length}</span>
               )}
             </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
               <MdEditNote className="h-5 w-5" aria-hidden="true" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
@@ -284,11 +288,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
                       >
                         {({ selected }) => (
                           <>
-                            <span
-                              className={`block truncate ${
-                                selected ? "font-medium" : "font-normal"
-                              }`}
-                            >
+                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
                               <span className="inline text-sepia mr-1">{option.unicode}</span>
                               {option.description}
                             </span>
@@ -308,6 +308,36 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           </Transition>
         </div>
       </Listbox>
+    </div>
+  );
+}
+interface MarkupControlProps {
+  selectedColor: ArrowColor;
+  setSelectedColor: (color: ArrowColor) => void;
+  clear: () => void;
+  locked: boolean;
+  toggleLocked: () => void;
+}
+function MarkupControls({ selectedColor, setSelectedColor, clear, locked, toggleLocked }: MarkupControlProps) {
+  return (
+    <div className="w-full p-3 bg-[#303030]">
+      <RadioGroup value={selectedColor} onChange={setSelectedColor}>
+        <div className="flex flex-row">
+          {Object.entries(ColorEnum).map(([key, value]) => (
+            <RadioGroup.Option value={key} key={key}>
+              {({ active, checked }) => (
+                <div
+                  className={classNames("h-6 w-6 rounded-sm cursor-pointer mx-2", {
+                    "border-2 border-white/[0.8]": checked,
+                    "border-2 border-white/[0.3]": active && !checked,
+                  })}
+                  style={{ backgroundColor: value }}
+                ></div>
+              )}
+            </RadioGroup.Option>
+          ))}
+        </div>
+      </RadioGroup>
     </div>
   );
 }
