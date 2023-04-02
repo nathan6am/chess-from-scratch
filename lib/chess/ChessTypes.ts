@@ -5,6 +5,16 @@ export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type File = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 export type Square = `${File}${Rank}`;
 
+export function isSquare(str: string): str is Square {
+  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  if (str.length !== 2) return false;
+  const file = str.charAt(0);
+  const rank = parseInt(str.charAt(1));
+  if (!files.includes(file)) return false;
+  if (rank < 1 || rank > 8) return false;
+  return true;
+}
+
 export type PieceType = "k" | "q" | "n" | "r" | "b" | "p";
 export type Color = "w" | "b";
 
@@ -93,7 +103,7 @@ export interface NodeData extends HalfMove {
   evaluation?: FinalEvaluation;
   halfMoveCount: number;
   outcome: Outcome;
-
+  timeRemaining?: number;
   markedSquares?: MarkedSquare[];
   arrows?: Arrow[];
 }

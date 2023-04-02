@@ -1,7 +1,7 @@
 import { default as PuzzleEntity } from "@/lib/db/entities/Puzzle";
 import * as Chess from "@/lib/chess";
 import { gameFromNodeData, nodeDataFromMove, parseUciMove } from "@/lib/chess";
-import _, { initial } from "lodash";
+import _ from "lodash";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useRef, useCallback, useEffect, useContext } from "react";
 import axios from "axios";
@@ -9,7 +9,7 @@ import { treeFromLine } from "@/util/parsers/pgnParser";
 import useVariationTree from "./useVariationTree";
 import useSound from "use-sound";
 import { SettingsContext } from "@/context/settings";
-import { main } from "@popperjs/core";
+
 export interface Puzzle {
   id: string;
   solution: Chess.NodeData[];
@@ -172,7 +172,6 @@ function usePuzzle(puzzle: Puzzle | null) {
     if (currentKey !== visibleNodes[visibleNodes.length - 1].key) return false;
     return true;
   }, [continuation, currentGame, currentKey, isMainline, visibleNodes]);
-
   const retry = useCallback(() => {
     if (isMainline) return;
     setCurrentKey(currentNode?.parentKey || null);
@@ -188,7 +187,13 @@ function usePuzzle(puzzle: Puzzle | null) {
     const lastMove = mainLine[mainLine.length - 1];
     if (currentKey === lastMove.key && solveState !== "failed") setSolveState("solved");
   }, [mainLine, currentKey, puzzle]);
-
+  const prompt = useMemo(() => {
+    if (!currentNode) return "";
+    if (mainLine[0] && mainLine[0].key === currentNode.key) return "start";
+    if (isMainline && continuation.length === 0) return "solved";
+    if (currentNode && isMainline) return "continue";
+    if (currentNode && !isMainline) return "failed";
+  }, [currentNode, isMainline, mainLine, continuation]);
   const onMove = useCallback(
     (move: Chess.Move) => {
       if (!moveable) return;
@@ -281,5 +286,6 @@ function usePuzzle(puzzle: Puzzle | null) {
       jumpBackward,
       jumpForward,
     },
+    prompt,
   };
 }

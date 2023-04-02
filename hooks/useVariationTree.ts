@@ -4,11 +4,10 @@ import * as Chess from "@/lib/chess";
 import { v4 as uuidv4 } from "uuid";
 import nodeTest from "node:test";
 import { gameFromNodeData, nodeDataFromMove } from "@/lib/chess";
+import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
 
 interface VariationTree {}
-export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(
-  initialTree?: TreeNode<T>[]
-) {
+export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(initialTree?: TreeNode<T>[]) {
   const tree = useTreeData<T>(initialTree || []);
   const map = tree.map;
   //Key of the selectedNode
@@ -76,12 +75,9 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
         movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       movetext += `${node.data.PGN} ${
-        node.data.annotations.length
-          ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
-          : ""
-      } ${node.data.comment ? `{${node.data.comment}} ` : ""}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
-        movetext += ")";
+        node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""
+      } ${encodeCommentFromNodeData(node.data)}`;
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }

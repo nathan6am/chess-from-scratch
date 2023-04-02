@@ -6,6 +6,7 @@ import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
 import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
 import BoardControls from "../game/BoardControls";
+import { BsFillCheckSquareFill, BsFillXSquareFill, BsCheckLg } from "react-icons/bs";
 export default function PuzzleSolver() {
   const { puzzle, history, next } = usePuzzleQueue();
   const { settings } = useContext(SettingsContext);
@@ -49,9 +50,7 @@ export default function PuzzleSolver() {
             </div>
             <div className="w-full p-3">
               {puzzle.puzzle ? (
-                <h2>
-                  {puzzle.puzzle.playerColor === "w" ? "Find the best move for white" : "Find the best move for black"}
-                </h2>
+                <PuzzlePrompt playerColor={puzzle.puzzle.playerColor} prompt={puzzle.prompt} />
               ) : (
                 <h2>Loading puzzles</h2>
               )}
@@ -62,5 +61,35 @@ export default function PuzzleSolver() {
         </PanelColumn>
       </BoardRow>
     </>
+  );
+}
+
+interface PromptProps {
+  prompt?: string;
+  playerColor: "w" | "b";
+}
+
+function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
+  return (
+    <div className="flex flex-row">
+      {prompt === "start" && (
+        <>
+          <div className={`h-6 w-6 rounded-sm ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
+          <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
+        </>
+      )}
+      {prompt === "continue" && (
+        <>
+          <BsCheckLg className="text-green-500" />
+          <p>Best Move! Keep Going...</p>
+        </>
+      )}
+      {prompt === "failed" && (
+        <>
+          <BsFillXSquareFill className="text-red-500" />
+          <p>That's not it</p>
+        </>
+      )}
+    </div>
   );
 }

@@ -2,21 +2,117 @@ import * as Chess from "../../lib/chess";
 import { v4 as uuidv4 } from "uuid";
 import { TreeNode } from "../../hooks/useTreeData";
 import { notEmpty } from "../misc";
+import { Duration } from "luxon";
 //import fs from "fs";
 import _ from "lodash";
 //const sampleData = fs.readFileSync("./sample.pgn", "utf-8");
-
+const sampleArrows = "[%csl Rd4,Gd5] this is the rest of the comment[%cal Rc8f5,Ra8d8,Re8c8]";
 type ValueOf<T> = T[keyof T];
 type Entries<T> = [keyof T, ValueOf<T>][];
 import { Game } from "@/server/types/lobby";
+import { ArrowColor, MarkedSquare } from "@/hooks/useBoardMarkup";
+import { Arrow } from "@/components/analysis/BoardArrows";
 const getEntries = <T extends object>(obj: T) => Object.entries(obj) as Entries<T>;
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
 const quoteDelimited = /"[^"]+"/g;
+const commandDelimited = /\[%[^\[\]]+\]/g;
+const commandTypeExpr = /\B\%\w+/;
 interface TagData {
   name: string;
   value: string;
 }
+
+interface pgnCommand {
+  type: "%csl" | "%cal" | "%clk";
+  value: string;
+}
+
+function extractCommands(comment: string) {
+  const knownTypes: Array<"%csl" | "%cal" | "%clk"> = ["%csl", "%cal", "%clk"];
+  const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
+  const remainingComment = comment.replace(commandDelimited, "").trim();
+  let commands: pgnCommand[] = [];
+  if (commandsRaw && commandsRaw.length) {
+    commandsRaw.forEach((str) => {
+      const commandType = str.match(commandTypeExpr);
+      if (!commandType || !commandType[0]) return;
+      const type = knownTypes.find((type) => type === commandType[0]);
+      const value = str.replace(commandTypeExpr, "").trim();
+      if (type && value) {
+        commands.push({ type, value });
+      }
+    });
+  }
+  return {
+    commands,
+    remainingComment,
+  };
+}
+
+console.log(extractCommands(sampleArrows));
+function isArrowColor(str: string): str is ArrowColor {
+  const colors = ["R", "O", "G", "B"];
+  if (colors.includes(str)) return true;
+  return false;
+}
+function parseCommands(commands: pgnCommand[]): Partial<Chess.NodeData> {
+  let data: Partial<Chess.NodeData> = {};
+  commands.forEach((command) => {
+    if (command.type === "%csl") {
+      const markedSquareNotations = command.value.split(",");
+      let markedSquares: MarkedSquare[] = [];
+      markedSquareNotations.forEach((notation) => {
+        const color = notation.charAt(0);
+        const square = notation.slice(1);
+        if (Chess.isSquare(square) && isArrowColor(color)) {
+          markedSquares.push({ color, square });
+        }
+      });
+      if (markedSquares.length) data.markedSquares = markedSquares;
+    } else if (command.type === "%cal") {
+      const arrowNotations = command.value.split(",");
+      let arrows: Arrow[] = [];
+      arrowNotations.forEach((str) => {
+        const color = str.charAt(0);
+        const [start, end] = str
+          .slice(1)
+          .split(/(.{2})/)
+          .filter((x) => x.length === 2);
+        if (isArrowColor(color) && Chess.isSquare(start) && Chess.isSquare(end)) {
+          arrows.push({ color, start, end });
+        }
+      });
+      if (arrows.length) data.arrows = arrows;
+    } else if (command.type === "%clk") {
+      const timeRemaining = Duration.fromISOTime(command.value).toMillis();
+      data.timeRemaining = timeRemaining;
+    }
+  });
+
+  return data;
+}
+
+export function encodeCommentFromNodeData(data: Chess.NodeData): string {
+  let commentString = "";
+  if (data.timeRemaining) {
+    commentString += `[%clk ${Duration.fromMillis(data.timeRemaining).toISOTime()}] `;
+  }
+  if (data.markedSquares && data.markedSquares.length) {
+    commentString += `[%csl ${data.markedSquares
+      .map((markedSquare) => `${markedSquare.color}${markedSquare.square}`)
+      .join(",")}] `;
+  }
+  if (data.arrows && data.arrows.length) {
+    commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
+  }
+  if (data.comment) {
+    commentString += data.comment;
+  }
+  if (commentString.length) return `{${commentString}}`;
+  else return "";
+}
+
 function parseTag(tag: string): TagData | undefined {
   const string = tag.replace(bracketsExpr, "$1");
   const result = string.match(quoteDelimited);
