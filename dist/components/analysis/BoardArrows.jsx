@@ -51,7 +51,7 @@ function BoardArrows({ children, arrows, pendingArrow }) {
 exports.default = BoardArrows;
 function RenderArrow({ arrow }) {
     if (arrow.end) {
-        return (<react_xarrows_1.default SVGcanvasProps={{ className: "opacity-60 pointer-none" }} start={arrow.start} end={arrow.end} path={"straight"} startAnchor="middle" endAnchor="middle" color={exports.ColorEnum[arrow.color]} zIndex={16} strokeWidth={24} headSize={2.5} headShape={headShapeArrow1}/>);
+        return (<react_xarrows_1.default SVGcanvasProps={{ className: "opacity-60 pointer-none" }} start={arrow.start} end={arrow.end} path={"straight"} startAnchor="middle" endAnchor="middle" color={exports.ColorEnum[arrow.color]} zIndex={17} strokeWidth={20} headSize={2.5} headShape={headShapeArrow1}/>);
     }
     return <></>;
 }

@@ -87,7 +87,7 @@ function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
       {prompt === "failed" && (
         <>
           <BsFillXSquareFill className="text-red-500" />
-          <p>That's not it</p>
+          <p>{`That's not it`}</p>
         </>
       )}
     </div>

@@ -169,7 +169,7 @@ function usePuzzle(puzzle: Puzzle | null) {
     if (continuation.length === 0) return false;
     if (currentGame.activeColor !== puzzle?.playerColor) return false;
     if (!isMainline) return false;
-    if (currentKey !== visibleNodes[visibleNodes.length - 1].key) return false;
+    if (currentKey !== visibleNodes[visibleNodes.length - 1]?.key) return false;
     return true;
   }, [continuation, currentGame, currentKey, isMainline, visibleNodes]);
   const retry = useCallback(() => {
@@ -188,12 +188,11 @@ function usePuzzle(puzzle: Puzzle | null) {
     if (currentKey === lastMove.key && solveState !== "failed") setSolveState("solved");
   }, [mainLine, currentKey, puzzle]);
   const prompt = useMemo(() => {
-    if (!currentNode) return "";
-    if (mainLine[0] && mainLine[0].key === currentNode.key) return "start";
-    if (isMainline && continuation.length === 0) return "solved";
-    if (currentNode && isMainline) return "continue";
     if (currentNode && !isMainline) return "failed";
-  }, [currentNode, isMainline, mainLine, continuation]);
+    if (isMainline && currentNode && visibleNodes.length === 1) return "start";
+    if (isMainline && currentNode && continuation.length > 0) return "continue";
+    return "solved";
+  }, [visibleNodes, mainLine, currentNode]);
   const onMove = useCallback(
     (move: Chess.Move) => {
       if (!moveable) return;

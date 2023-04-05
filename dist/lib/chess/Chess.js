@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.positionToBoard = exports.isSufficientMaterial = exports.serializeMoves = exports.exportFEN = exports.exportPGN = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.boardToPosition = exports.positionToBoard = exports.isSufficientMaterial = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 const ChessTypes_1 = require("./ChessTypes");
 const lodash_1 = __importDefault(require("lodash"));
 const FenParser_1 = require("./FenParser");
@@ -241,10 +241,7 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([
-                        currentCoordinates[0],
-                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
-                    ]),
+                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
                 });
             }
             else {
@@ -463,16 +460,14 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w"
-        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
-        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -492,7 +487,7 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -854,18 +849,6 @@ function injectTargets(board, legalMoves) {
     });
     return withTargets;
 }
-//export function takeback(game: Game): Game {}
-function exportPGN() { }
-exports.exportPGN = exportPGN;
-function exportFEN() { }
-exports.exportFEN = exportFEN;
-function serializeMoves(moves) {
-    return moves.map((move) => `${move.start}:${move.end}:${move.capture || "-"}:${move.isCheck ? "+" : ""}${move.promotion ? ":=" + move.promotion : ""}`);
-}
-exports.serializeMoves = serializeMoves;
-// export function deserializeMove(move: string): Move {
-//   move.split(":")
-// }
 function isSufficientMaterial(pieces) {
     if (pieces.some((piece) => piece.type === "p" || piece.type === "q" || piece.type === "r"))
         return true;
@@ -889,6 +872,7 @@ exports.positionToBoard = positionToBoard;
 function boardToPosition(board) {
     return new Map(board);
 }
+exports.boardToPosition = boardToPosition;
 function getSquareColor(square) {
     const coordinates = squareToCoordinates(square);
     const testColor = coordinates[0] % 2 === coordinates[1] % 2;

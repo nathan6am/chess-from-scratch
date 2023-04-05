@@ -252,6 +252,34 @@ function useAnalysisBoard(initialOptions) {
             console.error("Invalid move in move queue");
         }
     }, [moveQueue, currentGame, onMove, prevGame]);
+    const onArrow = (0, react_1.useCallback)((arrow) => {
+        if (!currentNode)
+            return;
+        const currentArrows = currentNode.data.arrows || [];
+        if (currentArrows.some((cur) => cur.start === arrow.start && cur.end === arrow.end)) {
+            updateArrows(currentNode.key, currentArrows.filter((cur) => !(cur.start === arrow.start && cur.end === arrow.end)));
+        }
+        else {
+            updateArrows(currentNode.key, [...currentArrows, arrow]);
+        }
+    }, [currentNode, updateArrows]);
+    const onMarkSquare = (0, react_1.useCallback)((markedSquare) => {
+        if (!currentNode)
+            return;
+        const currentMarkedSquares = currentNode.data.markedSquares || [];
+        if (currentMarkedSquares.some((cur) => cur.square === markedSquare.square)) {
+            updateMarkedSquares(currentNode.key, currentMarkedSquares.filter((cur) => cur.square !== markedSquare.square));
+        }
+        else {
+            updateMarkedSquares(currentNode.key, [...currentMarkedSquares, markedSquare]);
+        }
+    }, [currentNode, updateMarkedSquares]);
+    const onClear = (0, react_1.useCallback)(() => {
+        if (!currentNode)
+            return;
+        clearMarkup(currentNode.key);
+    }, [currentNode, clearMarkup]);
+    const [arrowColor, setArrowColor] = (0, react_1.useState)("O");
     return {
         loadPgn,
         moveText,
@@ -277,9 +305,11 @@ function useAnalysisBoard(initialOptions) {
             updateAnnotations,
         },
         markupControls: {
-            updateArrows,
-            updateMarkedSquares,
-            clearMarkup,
+            onClear,
+            onArrow,
+            onMarkSquare,
+            arrowColor,
+            setArrowColor,
         },
     };
 }

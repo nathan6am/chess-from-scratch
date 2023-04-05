@@ -1,6 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FileEnum = void 0;
+exports.FileEnum = exports.isSquare = void 0;
+function isSquare(str) {
+    const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    if (str.length !== 2)
+        return false;
+    const file = str.charAt(0);
+    const rank = parseInt(str.charAt(1));
+    if (!files.includes(file))
+        return false;
+    if (rank < 1 || rank > 8)
+        return false;
+    return true;
+}
+exports.isSquare = isSquare;
 var FileEnum;
 (function (FileEnum) {
     FileEnum[FileEnum["a"] = 0] = "a";

@@ -50,7 +50,7 @@ function extractCommands(comment: string) {
   };
 }
 
-console.log(extractCommands(sampleArrows));
+//console.log(extractCommands(sampleArrows));
 function isArrowColor(str: string): str is ArrowColor {
   const colors = ["R", "O", "G", "B"];
   if (colors.includes(str)) return true;

@@ -26,16 +26,112 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveHistoryToMoveText = exports.encodeGameToPgn = exports.parseMoveText = exports.parsePgn = exports.treeFromLine = exports.mainLineFromTreeArray = exports.tagDataToPGNString = exports.pgnToJson = void 0;
+exports.moveHistoryToMoveText = exports.encodeGameToPgn = exports.parseMoveText = exports.parsePgn = exports.treeFromLine = exports.mainLineFromTreeArray = exports.tagDataToPGNString = exports.pgnToJson = exports.encodeCommentFromNodeData = void 0;
 const Chess = __importStar(require("../../lib/chess"));
 const uuid_1 = require("uuid");
 const misc_1 = require("../misc");
+const luxon_1 = require("luxon");
 //import fs from "fs";
 const lodash_1 = __importDefault(require("lodash"));
+//const sampleData = fs.readFileSync("./sample.pgn", "utf-8");
+const sampleArrows = "[%csl Rd4,Gd5] this is the rest of the comment[%cal Rc8f5,Ra8d8,Re8c8]";
 const getEntries = (obj) => Object.entries(obj);
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
 const quoteDelimited = /"[^"]+"/g;
+const commandDelimited = /\[%[^\[\]]+\]/g;
+const commandTypeExpr = /\B\%\w+/;
+function extractCommands(comment) {
+    var _a;
+    const knownTypes = ["%csl", "%cal", "%clk"];
+    const commandsRaw = (_a = comment.match(commandDelimited)) === null || _a === void 0 ? void 0 : _a.map((str) => str.replace(bracketsExpr, "$1"));
+    const remainingComment = comment.replace(commandDelimited, "").trim();
+    let commands = [];
+    if (commandsRaw && commandsRaw.length) {
+        commandsRaw.forEach((str) => {
+            const commandType = str.match(commandTypeExpr);
+            if (!commandType || !commandType[0])
+                return;
+            const type = knownTypes.find((type) => type === commandType[0]);
+            const value = str.replace(commandTypeExpr, "").trim();
+            if (type && value) {
+                commands.push({ type, value });
+            }
+        });
+    }
+    return {
+        commands,
+        remainingComment,
+    };
+}
+//console.log(extractCommands(sampleArrows));
+function isArrowColor(str) {
+    const colors = ["R", "O", "G", "B"];
+    if (colors.includes(str))
+        return true;
+    return false;
+}
+function parseCommands(commands) {
+    let data = {};
+    commands.forEach((command) => {
+        if (command.type === "%csl") {
+            const markedSquareNotations = command.value.split(",");
+            let markedSquares = [];
+            markedSquareNotations.forEach((notation) => {
+                const color = notation.charAt(0);
+                const square = notation.slice(1);
+                if (Chess.isSquare(square) && isArrowColor(color)) {
+                    markedSquares.push({ color, square });
+                }
+            });
+            if (markedSquares.length)
+                data.markedSquares = markedSquares;
+        }
+        else if (command.type === "%cal") {
+            const arrowNotations = command.value.split(",");
+            let arrows = [];
+            arrowNotations.forEach((str) => {
+                const color = str.charAt(0);
+                const [start, end] = str
+                    .slice(1)
+                    .split(/(.{2})/)
+                    .filter((x) => x.length === 2);
+                if (isArrowColor(color) && Chess.isSquare(start) && Chess.isSquare(end)) {
+                    arrows.push({ color, start, end });
+                }
+            });
+            if (arrows.length)
+                data.arrows = arrows;
+        }
+        else if (command.type === "%clk") {
+            const timeRemaining = luxon_1.Duration.fromISOTime(command.value).toMillis();
+            data.timeRemaining = timeRemaining;
+        }
+    });
+    return data;
+}
+function encodeCommentFromNodeData(data) {
+    let commentString = "";
+    if (data.timeRemaining) {
+        commentString += `[%clk ${luxon_1.Duration.fromMillis(data.timeRemaining).toISOTime()}] `;
+    }
+    if (data.markedSquares && data.markedSquares.length) {
+        commentString += `[%csl ${data.markedSquares
+            .map((markedSquare) => `${markedSquare.color}${markedSquare.square}`)
+            .join(",")}] `;
+    }
+    if (data.arrows && data.arrows.length) {
+        commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
+    }
+    if (data.comment) {
+        commentString += data.comment;
+    }
+    if (commentString.length)
+        return `{${commentString}}`;
+    else
+        return "";
+}
+exports.encodeCommentFromNodeData = encodeCommentFromNodeData;
 function parseTag(tag) {
     const string = tag.replace(bracketsExpr, "$1");
     const result = string.match(quoteDelimited);

@@ -48,4 +48,5 @@ function useBoardEditor(startPosition: Chess.Board) {
       setErrorMessage("Invalid FEN");
     }
   };
+
 }

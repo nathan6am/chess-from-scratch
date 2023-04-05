@@ -122,6 +122,16 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     [currentKey, tree]
   );
 
+  //Delete variation from current node
+  function deleteVariation() {
+    if (currentKey === null) return;
+    const node = tree.getNode(currentKey);
+    if (!node) return;
+    const parentKey = node.parentKey;
+    setCurrentKey(parentKey);
+    tree.deleteNode(currentKey);
+  }
+
   //Insert a move after the move or create a variation if the move is not a last child
   function addMove(data: T) {
     //Check if the move already exists in the tree

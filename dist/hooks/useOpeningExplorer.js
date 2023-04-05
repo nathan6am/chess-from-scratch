@@ -89,6 +89,7 @@ function useOpeningExplorer(currentGame, options) {
     const { data, error, isLoading } = (0, react_query_1.useQuery)({
         queryKey: ["explorer", debouncedGame],
         queryFn: () => fetcher(debouncedGame),
+        keepPreviousData: true,
     });
     const { data: otbGamePgn, error: otbGameError, isLoading: otbGameLoading, } = (0, react_query_1.useQuery)({
         queryKey: ["otbgame", gameId],

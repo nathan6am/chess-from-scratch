@@ -8,10 +8,8 @@ import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import { TreeNode } from "./useTreeData";
-import { ApiResponse } from "./useOpeningExplorer";
-import { pgnToTreeArray } from "./test";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowColor } from "./useBoardMarkup";
+
 type Node = TreeNode<Chess.NodeData>;
 export interface AnalysisData {
   title: string;

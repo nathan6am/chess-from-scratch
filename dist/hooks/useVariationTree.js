@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const useTreeData_1 = __importDefault(require("./useTreeData"));
 const react_1 = require("react");
+const pgnParser_1 = require("@/util/parsers/pgnParser");
 function useVariationTree(initialTree) {
     const tree = (0, useTreeData_1.default)(initialTree || []);
     const map = tree.map;
@@ -73,9 +74,7 @@ function useVariationTree(initialTree) {
             if (depthChange !== 0 || index !== 0 || isWhite) {
                 movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
             }
-            movetext += `${node.data.PGN} ${node.data.annotations.length
-                ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
-                : ""} ${node.data.comment ? `{${node.data.comment}} ` : ""}`;
+            movetext += `${node.data.PGN} ${node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""} ${(0, pgnParser_1.encodeCommentFromNodeData)(node.data)}`;
             if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
                 movetext += ")";
             if (node.children[0]) {
