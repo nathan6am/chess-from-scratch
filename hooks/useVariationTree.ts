@@ -1,15 +1,11 @@
 import useTreeData, { TreeNode } from "./useTreeData";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
-import { v4 as uuidv4 } from "uuid";
-import nodeTest from "node:test";
-import { gameFromNodeData, nodeDataFromMove } from "@/lib/chess";
 import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
 
 interface VariationTree {}
 export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(initialTree?: TreeNode<T>[]) {
   const tree = useTreeData<T>(initialTree || []);
-  const map = tree.map;
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
   function loadNewTree(newTree: TreeNode<T>[]) {
@@ -112,6 +108,18 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return path;
   }, [currentKey, tree]);
 
+  const promoteVariation = useCallback<(key: string) => void>(() => {
+    if (currentKey === null) return;
+    const index = tree.getSiblingIndex(currentKey);
+    if (index === 0) return;
+    tree.setSiblingIndex(currentKey, index - 1);
+  }, [currentKey, tree]);
+
+  const promoteToMainline = useCallback<(key: string) => void>(() => {
+    if (currentKey === null) return;
+    tree.setSiblingIndex(currentKey, 0);
+  }, [currentKey, tree]);
+
   //Find the key of a given next move if the variation already exists, otherwise returns undefined
   const findNextMove = useCallback<(uci: string) => string | undefined>(
     (uci: string) => {
@@ -180,6 +188,9 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     currentNode,
     setCurrentKey,
     currentKey,
+    promoteToMainline,
+    promoteVariation,
+    deleteVariation,
     stepBackward,
     stepForward,
     treeArray: tree.treeArray,
