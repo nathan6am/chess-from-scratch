@@ -1,6 +1,7 @@
 import "../styles/globals.css";
 import "../styles/previews.css";
 import "react-tooltip/dist/react-tooltip.css";
+import "react-contexify/dist/ReactContexify.css";
 import { Tooltip } from "react-tooltip";
 import type { AppProps } from "next/app";
 import { SocketContext, socket } from "../context/socket";
@@ -51,7 +52,13 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
           <SocketContext.Provider value={socket}>
             <Tooltip
               id="my-tooltip"
-              style={{ backgroundColor: "#464646", color: "#fff", opacity: "100%", zIndex: 300, maxWidth: "30em" }}
+              style={{
+                backgroundColor: "#464646",
+                color: "#fff",
+                opacity: "100%",
+                zIndex: 300,
+                maxWidth: "30em",
+              }}
             ></Tooltip>
             {getLayout(<Component {...pageProps} />)}
           </SocketContext.Provider>

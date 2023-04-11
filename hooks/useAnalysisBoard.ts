@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef, useContext } from "react";
 import { SettingsContext } from "@/context/settings";
 import useSound from "use-sound";
-import useVariationTree from "./useVariationTree";
+import useVariationTree, { VariationTree } from "./useVariationTree";
 import useLocalEval, { Evaler } from "./useLocalEval";
 import useDebounce from "./useDebounce";
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
@@ -20,6 +20,7 @@ export interface AnalysisData {
   visibility: "private" | "unlisted" | "public";
 }
 export interface AnalysisHook {
+  tree: VariationTree;
   loadPgn: (pgn: string) => void;
   currentKey: string | null;
   currentNode: Node | null;
@@ -72,7 +73,6 @@ const defaultOptions = {
 };
 
 import { PGNTagData, parsePgn } from "@/util/parsers/pgnParser";
-import useSavedAnalysis from "./useSavedAnalysis";
 import { Arrow } from "@/components/analysis/BoardArrows";
 import { MarkedSquare } from "./useBoardMarkup";
 
@@ -124,8 +124,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   };
 
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    moveText,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -350,6 +359,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const [arrowColor, setArrowColor] = useState<ArrowColor>("O");
 
   return {
+    tree: variationTree,
     loadPgn,
     moveText,
     mainLine,

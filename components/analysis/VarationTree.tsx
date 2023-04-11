@@ -2,30 +2,33 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import * as Chess from "@/lib/chess";
 import { TreeHook, TreeNode } from "@/hooks/useTreeData";
 import { MdArrowDropDown, MdExpandMore, MdOutlineMenuOpen, MdModeComment } from "react-icons/md";
-
+import { useContextMenu, Menu, Item, Separator, ItemParams } from "react-contexify";
 import { BiHide } from "react-icons/bi";
 
 import { VscExpandAll } from "react-icons/vsc";
 import { replacePieceChars } from "../game/MoveHistory";
 import { NAG } from "./Annotations";
 import { notEmpty } from "@/util/misc";
+import { AnalysisHook } from "@/hooks/useAnalysisBoard";
 interface Props {
-  mainLine: TreeNode<Chess.NodeData>[];
-  rootNodes: TreeNode<Chess.NodeData>[];
-  selectedKey: string | null;
-  setSelectedKey: any;
-  path: Node[];
+  analysis: AnalysisHook;
+}
+
+interface ItemProps {
+  key: string;
+  node: Node;
 }
 
 type Row = { nodes: [Node | null, Node | null]; variations?: Node[] };
 type Node = TreeNode<Chess.NodeData>;
-export default function VarationTree({
-  mainLine,
-  selectedKey,
-  setSelectedKey,
-  path,
-  rootNodes,
-}: Props) {
+export default function VarationTree({ analysis }: Props) {
+  const { show } = useContextMenu({
+    id: "node-context-menu",
+  });
+  const showContextMenu = (e: React.MouseEvent, node: Node) => {
+    show({ event: e, props: { node } });
+  };
+  const { rootNodes, mainLine, currentKey, setCurrentKey, path, currentNode } = analysis;
   const rootVariations = useMemo(() => rootNodes.slice(1), [rootNodes]);
   const mainlineRows = useMemo(() => {
     let currentRow: [Node | null, Node | null] = [null, null];
@@ -58,19 +61,23 @@ export default function VarationTree({
     return rows;
   }, [mainLine]);
   return (
-    <div className="w-full flex flex-col bg-[#121212] divide-y divide-white/[0.2]">
-      {mainlineRows.map((row, idx) => {
-        return (
-          <RenderRow
-            path={path}
-            key={idx}
-            row={row}
-            selectedKey={selectedKey}
-            setSelectedKey={setSelectedKey}
-          />
-        );
-      })}
-    </div>
+    <>
+      <NodeContextMenu analysis={analysis} />
+      <div className="w-full flex flex-col bg-[#121212] divide-y divide-white/[0.2]">
+        {mainlineRows.map((row, idx) => {
+          return (
+            <RenderRow
+              showContextMenu={showContextMenu}
+              path={path}
+              key={idx}
+              row={row}
+              selectedKey={currentKey}
+              setSelectedKey={setCurrentKey}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -81,9 +88,17 @@ interface VariationProps {
   setSelectedKey: any;
   depth?: number;
   rootVariations?: Node[];
+  showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
 
-function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: VariationProps) {
+function RenderVariation({
+  node,
+  selectedKey,
+  setSelectedKey,
+  depth,
+  path,
+  showContextMenu,
+}: VariationProps) {
   const { line, subVariations } = getVariation(node);
   const [expanded, setExpanded] = useState<boolean>(true);
   const forceExpand = useMemo(() => {
@@ -122,6 +137,7 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
           {line.map((node, index) => {
             return (
               <RenderNode
+                showContextMenu={showContextMenu}
                 node={node}
                 index={index}
                 key={node.key}
@@ -137,6 +153,7 @@ function RenderVariation({ node, selectedKey, setSelectedKey, depth, path }: Var
         <div className="pl-3">
           {subVariations.map((node) => (
             <RenderVariation
+              showContextMenu={showContextMenu}
               key={node.key}
               node={node}
               selectedKey={selectedKey}
@@ -173,8 +190,9 @@ interface RowProps {
   setSelectedKey: any;
   selectedKey: string | null;
   path: Node[];
+  showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
-function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
+function RenderRow({ row, selectedKey, setSelectedKey, path, showContextMenu }: RowProps) {
   const { nodes, variations } = row;
   //Auto expand
   const [expanded, setExpanded] = useState(true);
@@ -199,6 +217,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
         <div className="w-full h-full grid grid-cols-2 bg-[#161616]">
           {nodes.map((node, idx) => (
             <RenderRowEntry
+              showContextMenu={showContextMenu}
               key={idx}
               node={node}
               selectedKey={selectedKey}
@@ -250,6 +269,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path }: RowProps) {
           <>
             {variations.map((node) => (
               <RenderVariation
+                showContextMenu={showContextMenu}
                 key={node.key}
                 node={node}
                 selectedKey={selectedKey}
@@ -268,8 +288,9 @@ interface RowEntryProps {
   node: Node | null;
   selectedKey: string | null;
   setSelectedKey: any;
+  showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
-function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
+function RenderRowEntry({ node, selectedKey, setSelectedKey, showContextMenu }: RowEntryProps) {
   const ref = useRef<HTMLDivElement>(null);
   const selected = node?.key === selectedKey;
   const isWhite = node && node.data.halfMoveCount % 2 !== 0;
@@ -282,10 +303,15 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey }: RowEntryProps) {
   return (
     <div
       ref={ref}
-      onContextMenu={() => {}}
       onClick={() => {
         if (node) {
           setSelectedKey(node.key);
+        }
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (node) {
+          showContextMenu(e, node);
         }
       }}
       className={` border-white/[0.2] border-r h-full p-2 ${
@@ -319,9 +345,10 @@ interface NodeProps {
   selectedKey: string | null;
   setSelectedKey: (key: string) => void;
   index: number;
+  showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
 
-function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
+function RenderNode({ node, selectedKey, setSelectedKey, index, showContextMenu }: NodeProps) {
   const annotations = node.data.annotations;
   const isWhite = node.data.halfMoveCount % 2 !== 0;
   const selected = selectedKey === node.key;
@@ -359,6 +386,10 @@ function RenderNode({ node, selectedKey, setSelectedKey, index }: NodeProps) {
         key={node.key}
         onClick={() => {
           setSelectedKey(node.key);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          showContextMenu(e, node);
         }}
       >
         {(isWhite || index === 0) && (
@@ -568,5 +599,55 @@ function MoveText({
     <span className={`inline ${className || ""}`}>
       <span className={`inline ${moveAssesment?.className || ""}`}>{moveStr}</span> {annotationStr}
     </span>
+  );
+}
+
+function NodeContextMenu({ analysis }: { analysis: AnalysisHook }) {
+  function handleItemClick({ id, event, props }: ItemParams<ItemProps, any>) {
+    const key = props?.node.key;
+    switch (id) {
+      case "delete":
+        if (!key) return;
+        analysis.tree.deleteVariation(key);
+        break;
+      case "promote":
+        if (!key) return;
+        analysis.tree.promoteVariation(key);
+        break;
+      case "makeMainline":
+        if (!key) return;
+        analysis.tree.promoteToMainline(key);
+        break;
+      case "clearAnnotations":
+        if (!key) return;
+        analysis.commentControls.updateAnnotations(key, []);
+        break;
+      case "clearComments":
+        if (!key) return;
+        analysis.commentControls.updateComment(key, "");
+        break;
+      default:
+        break;
+    }
+  }
+  return (
+    <Menu id="node-context-menu" theme="dark" animation="fade">
+      <Item id="delete" onClick={handleItemClick}>
+        Delete From Here
+      </Item>
+      <Item id="promote" onClick={handleItemClick}>
+        Promote Variation
+      </Item>
+      <Item id="makeMainline" onClick={handleItemClick}>
+        Make Mainline
+      </Item>
+      <Separator />
+      <Item id="clearAnnotations" onClick={handleItemClick}>
+        Clear Annotations
+      </Item>
+      <Item id="clearComments" onClick={handleItemClick}>
+        Clear Comments
+      </Item>
+    </Menu>
   );
 }

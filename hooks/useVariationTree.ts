@@ -1,10 +1,31 @@
-import useTreeData, { TreeNode } from "./useTreeData";
+import useTreeData, { TreeHook, TreeNode } from "./useTreeData";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
+export interface VariationTree<T extends Chess.NodeData = Chess.NodeData> {
+  tree: TreeHook<T>;
+  loadNewTree: (tree: TreeNode<T>[]) => void;
+  moveText: string;
+  mainLine: TreeNode<T>[];
+  rootNodes: TreeNode<T>[];
+  findNextMove: (uci: string) => string | undefined;
+  addMove: (data: T) => void;
+  path: TreeNode<T>[];
+  continuation: TreeNode<T>[];
+  currentNode: TreeNode<T> | null;
+  setCurrentKey: React.Dispatch<React.SetStateAction<string | null>>;
+  currentKey: string | null;
+  promoteToMainline: (key: string) => void;
+  promoteVariation: (key: string) => void;
+  deleteVariation: (key: string) => void;
+  stepBackward: () => TreeNode<T> | null;
+  stepForward: () => TreeNode<T> | null;
+  treeArray: TreeNode<T>[];
+}
 
-interface VariationTree {}
-export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(initialTree?: TreeNode<T>[]) {
+export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(
+  initialTree?: TreeNode<T>[]
+): VariationTree<T> {
   const tree = useTreeData<T>(initialTree || []);
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
@@ -71,9 +92,12 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
         movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       movetext += `${node.data.PGN} ${
-        node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""
+        node.data.annotations.length
+          ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
+          : ""
       } ${encodeCommentFromNodeData(node.data)}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
+        movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
@@ -108,17 +132,36 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return path;
   }, [currentKey, tree]);
 
-  const promoteVariation = useCallback<(key: string) => void>(() => {
-    if (currentKey === null) return;
-    const index = tree.getSiblingIndex(currentKey);
-    if (index === 0) return;
-    tree.setSiblingIndex(currentKey, index - 1);
-  }, [currentKey, tree]);
+  const promoteVariation = useCallback<(key: string) => void>(
+    (key: string) => {
+      const node = tree.getNode(key);
+      if (!node) return;
+      const index = tree.getSiblingIndex(key);
+      if (index === 0) {
+        const variationStart = tree.findFirstAncestor(
+          key,
+          (node) => tree.getSiblingIndex(node.key) !== 0
+        );
+        if (!variationStart) return;
+        tree.setSiblingIndex(variationStart.key, tree.getSiblingIndex(variationStart.key) - 1);
+      } else {
+        tree.setSiblingIndex(key, index - 1);
+      }
+    },
+    [tree]
+  );
 
-  const promoteToMainline = useCallback<(key: string) => void>(() => {
-    if (currentKey === null) return;
-    tree.setSiblingIndex(currentKey, 0);
-  }, [currentKey, tree]);
+  const promoteToMainline = useCallback<(key: string) => void>(
+    (key: string) => {
+      const node = tree.getNode(key);
+      if (!node) return;
+      const pathReversed = tree.getPath(key).reverse();
+      pathReversed.forEach((node) => {
+        tree.setSiblingIndex(node.key, 0);
+      });
+    },
+    [tree]
+  );
 
   //Find the key of a given next move if the variation already exists, otherwise returns undefined
   const findNextMove = useCallback<(uci: string) => string | undefined>(
@@ -131,13 +174,15 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
   );
 
   //Delete variation from current node
-  function deleteVariation() {
-    if (currentKey === null) return;
-    const node = tree.getNode(currentKey);
+  function deleteVariation(key: string) {
+    const node = tree.getNode(key);
     if (!node) return;
-    const parentKey = node.parentKey;
-    setCurrentKey(parentKey);
-    tree.deleteNode(currentKey);
+    const continuation = tree.getContinuation(key).map((node) => node.key);
+    if (currentKey && (continuation.includes(currentKey) || key === currentKey)) {
+      const parentKey = node.parentKey;
+      setCurrentKey(parentKey);
+    }
+    tree.deleteNode(key);
   }
 
   //Insert a move after the move or create a variation if the move is not a last child

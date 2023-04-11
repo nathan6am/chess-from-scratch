@@ -120,7 +120,18 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -310,8 +321,9 @@ export async function stop(stockfish: Worker, timeout?: number) {
     stockfish.postMessage("stop");
     timer = setTimeout(() => {
       stockfish.removeEventListener("message", handler);
-      reject(new Error("timeout waiting for response on command `stop`"));
-    }, timeout || 20000);
+      //assume stopped
+      resolve(true);
+    }, timeout || 4000);
   });
   const stopped = await stop;
   return stopped;

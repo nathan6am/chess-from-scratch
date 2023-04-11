@@ -7,6 +7,7 @@ import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
 import BoardControls from "../game/BoardControls";
 import { BsFillCheckSquareFill, BsFillXSquareFill, BsCheckLg } from "react-icons/bs";
+import { MdRestartAlt } from "react-icons/md";
 export default function PuzzleSolver() {
   const { puzzle, history, next } = usePuzzleQueue();
   const { settings } = useContext(SettingsContext);
@@ -48,16 +49,21 @@ export default function PuzzleSolver() {
               <button onClick={next}>Next Puzzle</button>
               <button onClick={puzzle.showSolution}>View the Solution</button>
             </div>
-            <div className="w-full p-3">
-              {puzzle.puzzle ? (
-                <PuzzlePrompt playerColor={puzzle.puzzle.playerColor} prompt={puzzle.prompt} />
-              ) : (
-                <h2>Loading puzzles</h2>
-              )}
-            </div>
           </div>
-
-          <BoardControls controls={puzzle.controls} />
+          <div className="w-full">
+            {puzzle.puzzle ? (
+              <PuzzlePrompt
+                playerColor={puzzle.puzzle.playerColor}
+                prompt={puzzle.prompt}
+                retry={puzzle.retry}
+                next={next}
+              />
+            ) : (
+              <h2>Loading puzzles</h2>
+            )}
+          </div>
+          <div className="w-full flex flex-row"></div>
+          <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
         </PanelColumn>
       </BoardRow>
     </>
@@ -65,28 +71,32 @@ export default function PuzzleSolver() {
 }
 
 interface PromptProps {
+  retry: () => void;
+  next: () => void;
   prompt?: string;
   playerColor: "w" | "b";
 }
 
 function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row items-center bg-[#242424] p-3 justify-center py-6">
       {prompt === "start" && (
         <>
-          <div className={`h-6 w-6 rounded-sm ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
+          <div
+            className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}
+          ></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
       {prompt === "continue" && (
         <>
-          <BsCheckLg className="text-green-500" />
+          <BsCheckLg className="text-green-500 mr-2" />
           <p>Best Move! Keep Going...</p>
         </>
       )}
       {prompt === "failed" && (
         <>
-          <BsFillXSquareFill className="text-red-500" />
+          <BsFillXSquareFill className="text-red-500 mr-2" />
           <p>{`That's not it`}</p>
         </>
       )}
