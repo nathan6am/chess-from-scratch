@@ -104,6 +104,21 @@ function useTreeData(initialTree = new Map()) {
             return undefined;
         }
     }
+    function findFirstAncestor(key, callbackFn) {
+        const node = getNode(key);
+        if (!node)
+            return undefined;
+        if (!node.parentKey)
+            return undefined;
+        let parentNode = getNode(node.parentKey);
+        while (parentNode) {
+            if (callbackFn(parentNode))
+                return parentNode;
+            if (!parentNode.parentKey)
+                return undefined;
+            parentNode = getNode(parentNode.parentKey);
+        }
+    }
     function getPath(key) {
         const destNode = getNode(key);
         if (!destNode)
@@ -165,6 +180,33 @@ function useTreeData(initialTree = new Map()) {
         }
         return parentNode.children.indexOf(node);
     }
+    function setSiblingIndex(key, index) {
+        let targetIndex = index;
+        const siblings = getSiblings(key);
+        if (index > siblings.length - 1)
+            targetIndex = siblings.length - 1;
+        if (index < 0)
+            targetIndex = siblings.length - 1 + index;
+        if (targetIndex < 0)
+            targetIndex = 0;
+        const node = map.get(key);
+        if (!node) {
+            return;
+        }
+        if (node.parentKey === null) {
+            const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
+            rootNodes.splice(targetIndex, 0, rootNodes.splice(rootNodes.indexOf(node), 1)[0]);
+            setTreeArray(buildTreeArray(map));
+            return;
+        }
+        const parentNode = map.get(node.parentKey);
+        if (!parentNode) {
+            return;
+        }
+        parentNode.children.splice(targetIndex, 0, parentNode.children.splice(parentNode.children.indexOf(node), 1)[0]);
+        setTreeArray(buildTreeArray(map));
+    }
+    //Get the siblings of a node
     function getSiblings(key) {
         const node = map.get(key);
         if (!node) {
@@ -189,11 +231,13 @@ function useTreeData(initialTree = new Map()) {
         getPath,
         getContinuation,
         getSiblingIndex,
+        setSiblingIndex,
         getSiblings,
         getNode,
         getDepth,
         getPly,
         findChild,
+        findFirstAncestor,
         loadTree,
     };
 }

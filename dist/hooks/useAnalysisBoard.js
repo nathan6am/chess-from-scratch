@@ -89,7 +89,7 @@ function useAnalysisBoard(initialOptions) {
             console.error(e);
         }
     };
-    const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } = variationTree;
+    const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey, } = variationTree;
     (0, react_1.useEffect)(() => {
         const arrowKeyHandler = (e) => {
             if (e.code === "ArrowRight") {
@@ -281,6 +281,7 @@ function useAnalysisBoard(initialOptions) {
     }, [currentNode, clearMarkup]);
     const [arrowColor, setArrowColor] = (0, react_1.useState)("O");
     return {
+        tree: variationTree,
         loadPgn,
         moveText,
         mainLine,

@@ -8,7 +8,6 @@ const react_1 = require("react");
 const pgnParser_1 = require("@/util/parsers/pgnParser");
 function useVariationTree(initialTree) {
     const tree = (0, useTreeData_1.default)(initialTree || []);
-    const map = tree.map;
     //Key of the selectedNode
     const [currentKey, setCurrentKey] = (0, react_1.useState)(null);
     function loadNewTree(newTree) {
@@ -74,7 +73,9 @@ function useVariationTree(initialTree) {
             if (depthChange !== 0 || index !== 0 || isWhite) {
                 movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
             }
-            movetext += `${node.data.PGN} ${node.data.annotations.length ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ") : ""} ${(0, pgnParser_1.encodeCommentFromNodeData)(node.data)}`;
+            movetext += `${node.data.PGN} ${node.data.annotations.length
+                ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
+                : ""} ${(0, pgnParser_1.encodeCommentFromNodeData)(node.data)}`;
             if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
                 movetext += ")";
             if (node.children[0]) {
@@ -108,6 +109,30 @@ function useVariationTree(initialTree) {
         const path = tree.getContinuation(currentKey);
         return path;
     }, [currentKey, tree]);
+    const promoteVariation = (0, react_1.useCallback)((key) => {
+        const node = tree.getNode(key);
+        if (!node)
+            return;
+        const index = tree.getSiblingIndex(key);
+        if (index === 0) {
+            const variationStart = tree.findFirstAncestor(key, (node) => tree.getSiblingIndex(node.key) !== 0);
+            if (!variationStart)
+                return;
+            tree.setSiblingIndex(variationStart.key, tree.getSiblingIndex(variationStart.key) - 1);
+        }
+        else {
+            tree.setSiblingIndex(key, index - 1);
+        }
+    }, [tree]);
+    const promoteToMainline = (0, react_1.useCallback)((key) => {
+        const node = tree.getNode(key);
+        if (!node)
+            return;
+        const pathReversed = tree.getPath(key).reverse();
+        pathReversed.forEach((node) => {
+            tree.setSiblingIndex(node.key, 0);
+        });
+    }, [tree]);
     //Find the key of a given next move if the variation already exists, otherwise returns undefined
     const findNextMove = (0, react_1.useCallback)((uci) => {
         const nextMove = tree.findChild(currentKey, (node) => node.data.uci === uci);
@@ -115,6 +140,18 @@ function useVariationTree(initialTree) {
             return undefined;
         return nextMove.key;
     }, [currentKey, tree]);
+    //Delete variation from current node
+    function deleteVariation(key) {
+        const node = tree.getNode(key);
+        if (!node)
+            return;
+        const continuation = tree.getContinuation(key).map((node) => node.key);
+        if (currentKey && (continuation.includes(currentKey) || key === currentKey)) {
+            const parentKey = node.parentKey;
+            setCurrentKey(parentKey);
+        }
+        tree.deleteNode(key);
+    }
     //Insert a move after the move or create a variation if the move is not a last child
     function addMove(data) {
         //Check if the move already exists in the tree
@@ -159,6 +196,9 @@ function useVariationTree(initialTree) {
         currentNode,
         setCurrentKey,
         currentKey,
+        promoteToMainline,
+        promoteVariation,
+        deleteVariation,
         stepBackward,
         stepForward,
         treeArray: tree.treeArray,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, Fragment, useContext, useMemo, useCallback } from "react";
+import React, { useState, useRef, Fragment, useContext, useMemo, useCallback, useEffect } from "react";
 import * as Chess from "@/lib/chess";
 
 import Board from "../game/Board";
@@ -17,7 +17,13 @@ import { SettingsContext } from "@/context/settings";
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
-export default function AnalysisBoard() {
+import { useRouter } from "next/router";
+
+interface Props {
+  initialId: string | null;
+  sourceGameId: string | null;
+}
+export default function AnalysisBoard({ initialId }: Props) {
   const analysis = useAnalysisBoard();
   const boardRef = useRef<BoardHandle>(null);
   const {
@@ -32,6 +38,12 @@ export default function AnalysisBoard() {
     currentNode,
     markupControls,
   } = analysis;
+  const router = useRouter();
+  const id = router.query.id as string | undefined;
+
+  const currentIdRef = useRef<string | null | undefined>(id);
+  const initialLoad = useRef(initialId ? false : true);
+  const saveManager = useSavedAnalysis();
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const { settings } = useContext(SettingsContext);
   const [saveModalShown, setSaveModalShown] = useState(false);
@@ -40,7 +52,24 @@ export default function AnalysisBoard() {
   const lastMoveAnnotation = useMemo(() => {
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
-  const saveManager = useSavedAnalysis();
+
+  useEffect(() => {
+    if (!id) return;
+    if (!saveManager.data?.analysis) return;
+    if (!initialLoad.current) {
+      console.log("initial load");
+      analysis.loadPgn(saveManager.data.analysis.pgn);
+      initialLoad.current = true;
+      currentIdRef.current = id;
+      return;
+    }
+    if (id === currentIdRef.current) return;
+    //Only load if the id was changed from null/undefined (prevents reloading on saving)
+    if (currentIdRef.current) {
+      analysis.loadPgn(saveManager.data.analysis.pgn);
+    }
+    currentIdRef.current = id;
+  }, [id, currentIdRef, saveManager.data, analysis.loadPgn, initialLoad]);
   const flipBoard = () => {
     setOrientation((cur) => (cur === "w" ? "b" : "w"));
   };
@@ -82,7 +111,7 @@ export default function AnalysisBoard() {
       />
       <SaveAnalysis
         moveText={moveText}
-        save={saveManager.saveAs}
+        save={saveManager.saveNew}
         isOpen={saveModalShown}
         closeModal={() => {
           setSaveModalShown(false);

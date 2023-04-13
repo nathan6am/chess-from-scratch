@@ -120,18 +120,7 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = [
-    "depth",
-    "multipv",
-    "score",
-    "seldepth",
-    "time",
-    "nodes",
-    "nps",
-    "time",
-    "pv",
-    "hashfull",
-  ];
+  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -280,7 +269,6 @@ export async function getEvaluation(
     stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
     stockfish.postMessage("position fen " + options.fen);
     stockfish.postMessage("go depth " + options.depth);
-    stockfish.postMessage("eval");
     timer = setTimeout(() => {
       stockfish.removeEventListener("message", handler);
       reject(new Error("timeout waiting for response on command `evaluation`"));
@@ -291,6 +279,29 @@ export async function getEvaluation(
   return final;
 }
 
+export async function getStaticEvaluation(evaler: Worker, fen: string): Promise<FinalEvaluation> {
+  const stockfish = evaler;
+
+  const evaluation = new Promise<any>((resolve, reject) => {
+    let timer: NodeJS.Timeout;
+    const handler = (e: MessageEvent) => {
+      //console.log(e.data);
+    };
+    stockfish.addEventListener("message", handler);
+    stockfish.postMessage(`setoption name Use NNUE value true`);
+    stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+    stockfish.postMessage("debug on");
+    stockfish.postMessage("position fen " + fen);
+    stockfish.postMessage("eval");
+    timer = setTimeout(() => {
+      stockfish.removeEventListener("message", handler);
+      resolve(true);
+    }, 10000);
+  });
+
+  const staticEval = await evaluation;
+  return staticEval;
+}
 export function parseUciMove(uci: string): UCIMove {
   const args: string[] = uci.trim().match(/.{1,2}/g) || [];
   if (!args[0] || ![args[1]]) throw new Error("invalid uci move");
@@ -307,7 +318,6 @@ export async function stop(stockfish: Worker, timeout?: number) {
   const stop = new Promise<boolean>((resolve, reject) => {
     console.log("stopping");
     const handler = (e: MessageEvent) => {
-      console.log(e.data);
       const args = e.data.split(" ");
       if (args[0] === "bestmove") {
         //clear timeout on correct response
@@ -323,7 +333,7 @@ export async function stop(stockfish: Worker, timeout?: number) {
       stockfish.removeEventListener("message", handler);
       //assume stopped
       resolve(true);
-    }, timeout || 4000);
+    }, timeout || 500);
   });
   const stopped = await stop;
   return stopped;

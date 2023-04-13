@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Analysis from "@/lib/db/entities/Analysis";
 import Collection from "@/lib/db/entities/Collection";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { AnalysisData } from "./useAnalysisBoard";
+import { PGNTagData } from "@/util/parsers/pgnParser";
+import { useRouter } from "next/router";
 export interface SavedAnalysis {
   analysis: Analysis;
   readonly?: boolean;
@@ -19,9 +21,22 @@ const fetcher = async (id: string | null) => {
   }
 };
 
+interface Options {
+  initialId?: string;
+  moveText: string;
+  tags: PGNTagData;
+}
 //Hook for managing loading/saving analysis from DB
-export default function useSavedAnalysis(initialId?: string) {
-  const [id, setId] = useState<string | null>(initialId || null);
+export default function useSavedAnalysis() {
+  const router = useRouter();
+  const id = router.query.id as string;
+  const load = useCallback(
+    (id: string | null) => {
+      if (id === null) return router.push(`/study/analyze`, undefined, { shallow: true });
+      router.push(`/study/analyze?id=${id}`, `/study/analyze?id=${id}`, { shallow: true });
+    },
+    [router]
+  );
   const [autoSync, setAutoSync] = useState<boolean>(false);
   const queryClient = useQueryClient();
   const { data, error, isLoading } = useQuery({
@@ -29,14 +44,9 @@ export default function useSavedAnalysis(initialId?: string) {
     queryFn: () => fetcher(id),
     keepPreviousData: true,
     onError: () => {
-      setId(null);
+      load(null);
     },
   });
-
-  const load = (id: string) => {
-    setId(id);
-  };
-
   const { mutate: save } = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: AnalysisData }) => {
       const response = await axios.put<Analysis>(`/api/analysis/${id}`, data);
@@ -45,10 +55,10 @@ export default function useSavedAnalysis(initialId?: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(["analysis", id]);
-      setId(data.id);
+      load(data.id);
     },
   });
-  const { mutate: saveAs } = useMutation({
+  const { mutate: saveNew } = useMutation({
     mutationFn: async (data: AnalysisData) => {
       const response = await axios.post<Analysis>("/api/analysis/", data);
       console.log(data);
@@ -58,20 +68,17 @@ export default function useSavedAnalysis(initialId?: string) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(["analysis", id]);
-      setId(data.id);
+      load(data.id);
     },
   });
   const { mutate: fork } = useMutation({
     mutationFn: async (data: { title: string; collectionIds: string[] }) => {
-      const response = await axios.post<{ success: boolean; analysis: Analysis }>(
-        `/api/analysis/${id}/fork`,
-        data
-      );
+      const response = await axios.post<{ success: boolean; analysis: Analysis }>(`/api/analysis/${id}/fork`, data);
       if (response && response.data) return response.data.analysis;
       else throw new Error("Fork failed");
     },
     onSuccess: (data) => {
-      setId(data.id);
+      load(data.id);
     },
   });
 
@@ -80,7 +87,7 @@ export default function useSavedAnalysis(initialId?: string) {
     error,
     isLoading,
     save,
-    saveAs,
+    saveNew,
     fork,
     load,
     id,

@@ -313,6 +313,33 @@ function getMaterialCount(position) {
     return { w, b };
 }
 exports.getMaterialCount = getMaterialCount;
+function getPieceCount(position) {
+    let w = {
+        k: 0,
+        n: 0,
+        b: 0,
+        p: 0,
+        r: 0,
+        q: 0,
+    };
+    let b = {
+        k: 0,
+        n: 0,
+        b: 0,
+        p: 0,
+        r: 0,
+        q: 0,
+    };
+    for (let [square, piece] of position) {
+        if (piece.color === "w") {
+            w[piece.type]++;
+        }
+        else {
+            b[piece.type]++;
+        }
+    }
+    return { w, b };
+}
 //Determine if a give move results in a check
 function moveIsCheck(game, move) {
     var _a;

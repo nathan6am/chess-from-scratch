@@ -127,7 +127,7 @@ function encodeCommentFromNodeData(data) {
         commentString += data.comment;
     }
     if (commentString.length)
-        return `{${commentString}}`;
+        return `{${commentString}} `;
     else
         return "";
 }
@@ -370,8 +370,15 @@ function parseMoveText(movetext, startPosition) {
         const path = parentKey ? getPath(parentKey) : [];
         //Generate node data from game/move
         const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
-        data.comment = currentData.comment || null;
         data.annotations = currentData.annotations || [];
+        if (currentData.comment) {
+            const { commands, remainingComment } = extractCommands(currentData.comment);
+            data.comment = remainingComment;
+            Object.assign(data, parseCommands(commands));
+        }
+        else {
+            data.comment = null;
+        }
         const node = addNode(data, parentKey);
         if (!node)
             throw new Error("Something went wrong");

@@ -94,6 +94,7 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
   const [currentDepth, setCurrentDepth] = useState<number>(0);
   const [bestMove, setBestMove] = useState<commands.UCIMove | null>(null);
   const [evaluation, setEvaluation] = useState<FinalEvaluation | null>(null);
+  const [staticEval, setStaticEval] = useState<any | null>(null);
   const [finished, setFinished] = useState<boolean>(false);
   const lastFen = useRef<string>();
   const wasmSupported =
@@ -172,6 +173,11 @@ export default function useLocalEval(initialOptions?: Partial<Options>): Evaler 
       if (inProgress) {
         await stop();
       }
+      // try {
+      //   await commands.getStaticEvaluation(evaler, fen);
+      // } catch (e) {
+      //   setStaticEval(null);
+      // }
       if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
         setEvaluation(cachedEval);
         setCurrentDepth(cachedEval.depth);

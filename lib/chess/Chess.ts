@@ -352,6 +352,33 @@ export function getMaterialCount(position: Position): Record<Color, number> {
   }
   return { w, b };
 }
+function getPieceCount(position: Position): Record<Color, Record<PieceType, number>> {
+  let w: Record<PieceType, number> = {
+    k: 0,
+    n: 0,
+    b: 0,
+    p: 0,
+    r: 0,
+    q: 0,
+  };
+  let b: Record<PieceType, number> = {
+    k: 0,
+    n: 0,
+    b: 0,
+    p: 0,
+    r: 0,
+    q: 0,
+  };
+  for (let [square, piece] of position) {
+    if (piece.color === "w") {
+      w[piece.type]++;
+    } else {
+      b[piece.type]++;
+    }
+  }
+  return { w, b };
+}
+
 //Determine if a give move results in a check
 function moveIsCheck(game: GameState, move: Omit<Move, "PGN">): boolean {
   const { updatedGameState } = executeMove(game, move);

@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 const react_query_1 = require("@tanstack/react-query");
 const axios_1 = __importDefault(require("axios"));
+const router_1 = require("next/router");
 const fetcher = (id) => __awaiter(void 0, void 0, void 0, function* () {
     if (!id)
         return null;
@@ -27,8 +28,14 @@ const fetcher = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 //Hook for managing loading/saving analysis from DB
-function useSavedAnalysis(initialId) {
-    const [id, setId] = (0, react_1.useState)(initialId || null);
+function useSavedAnalysis() {
+    const router = (0, router_1.useRouter)();
+    const id = router.query.id;
+    const load = (0, react_1.useCallback)((id) => {
+        if (id === null)
+            return router.push(`/study/analyze`, undefined, { shallow: true });
+        router.push(`/study/analyze?id=${id}`, `/study/analyze?id=${id}`, { shallow: true });
+    }, [router]);
     const [autoSync, setAutoSync] = (0, react_1.useState)(false);
     const queryClient = (0, react_query_1.useQueryClient)();
     const { data, error, isLoading } = (0, react_query_1.useQuery)({
@@ -36,12 +43,9 @@ function useSavedAnalysis(initialId) {
         queryFn: () => fetcher(id),
         keepPreviousData: true,
         onError: () => {
-            setId(null);
+            load(null);
         },
     });
-    const load = (id) => {
-        setId(id);
-    };
     const { mutate: save } = (0, react_query_1.useMutation)({
         mutationFn: ({ id, data }) => __awaiter(this, void 0, void 0, function* () {
             const response = yield axios_1.default.put(`/api/analysis/${id}`, data);
@@ -52,10 +56,10 @@ function useSavedAnalysis(initialId) {
         }),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["analysis", id]);
-            setId(data.id);
+            load(data.id);
         },
     });
-    const { mutate: saveAs } = (0, react_query_1.useMutation)({
+    const { mutate: saveNew } = (0, react_query_1.useMutation)({
         mutationFn: (data) => __awaiter(this, void 0, void 0, function* () {
             const response = yield axios_1.default.post("/api/analysis/", data);
             console.log(data);
@@ -67,7 +71,7 @@ function useSavedAnalysis(initialId) {
         }),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["analysis", id]);
-            setId(data.id);
+            load(data.id);
         },
     });
     const { mutate: fork } = (0, react_query_1.useMutation)({
@@ -79,7 +83,7 @@ function useSavedAnalysis(initialId) {
                 throw new Error("Fork failed");
         }),
         onSuccess: (data) => {
-            setId(data.id);
+            load(data.id);
         },
     });
     return {
@@ -87,7 +91,7 @@ function useSavedAnalysis(initialId) {
         error,
         isLoading,
         save,
-        saveAs,
+        saveNew,
         fork,
         load,
         id,

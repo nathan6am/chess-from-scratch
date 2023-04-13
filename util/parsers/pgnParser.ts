@@ -30,9 +30,7 @@ interface pgnCommand {
 
 function extractCommands(comment: string) {
   const knownTypes: Array<"%csl" | "%cal" | "%clk"> = ["%csl", "%cal", "%clk"];
-  const commandsRaw = comment
-    .match(commandDelimited)
-    ?.map((str) => str.replace(bracketsExpr, "$1"));
+  const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
   const remainingComment = comment.replace(commandDelimited, "").trim();
   let commands: pgnCommand[] = [];
   if (commandsRaw && commandsRaw.length) {
@@ -106,9 +104,7 @@ export function encodeCommentFromNodeData(data: Chess.NodeData): string {
       .join(",")}] `;
   }
   if (data.arrows && data.arrows.length) {
-    commentString += `[%cal ${data.arrows
-      .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
-      .join(",")}] `;
+    commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
   }
   if (data.comment) {
     commentString += data.comment;
@@ -231,10 +227,7 @@ export function tagDataToPGNString(data: PGNTagData): string {
   return tagsString;
 }
 //console.log(pgnToJson(sampleData));
-function buildTreeArray<T>(
-  map: Map<string, TreeNode<T>>,
-  parentKey: string | null = null
-): TreeNode<T>[] {
+function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -378,8 +371,14 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
     const path = parentKey ? getPath(parentKey) : [];
     //Generate node data from game/move
     const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
-    data.comment = currentData.comment || null;
     data.annotations = currentData.annotations || [];
+    if (currentData.comment) {
+      const { commands, remainingComment } = extractCommands(currentData.comment);
+      data.comment = remainingComment;
+      Object.assign(data, parseCommands(commands));
+    } else {
+      data.comment = null;
+    }
     const node = addNode(data, parentKey);
     if (!node) throw new Error("Something went wrong");
     //Set parent to the newly created node and reset data
@@ -404,8 +403,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       throw new Error("Invalid pgn");
     } else if (reading === "annotation") {
       if (char === " ") {
-        if (!annotation.length)
-          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (!annotation.length) throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
         if (currentData.annotations) {
           currentData.annotations.push(parseInt(annotation));
         } else {
@@ -447,10 +445,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       }
     } else if (char === "$") {
       reading = "annotation";
-    } else if (
-      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
-      isDigit(char)
-    ) {
+    } else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
       reading = "move-count";
       moveCount = char;
       if (currentData.pgn) postCurrentData();
@@ -507,8 +502,7 @@ export function encodeGameToPgn(game: Game): string {
     result: encodeOutcome(game.data.outcome),
   };
   const tagSection = tagDataToPGNString(tagData);
-  const movetext =
-    moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
   return tagSection + "\r\n" + movetext;
 }
 

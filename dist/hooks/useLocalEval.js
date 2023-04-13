@@ -103,6 +103,7 @@ function useLocalEval(initialOptions) {
     const [currentDepth, setCurrentDepth] = (0, react_1.useState)(0);
     const [bestMove, setBestMove] = (0, react_1.useState)(null);
     const [evaluation, setEvaluation] = (0, react_1.useState)(null);
+    const [staticEval, setStaticEval] = (0, react_1.useState)(null);
     const [finished, setFinished] = (0, react_1.useState)(false);
     const lastFen = (0, react_1.useRef)();
     const wasmSupported = typeof WebAssembly === "object" &&
@@ -180,6 +181,11 @@ function useLocalEval(initialOptions) {
             if (inProgress) {
                 yield stop();
             }
+            // try {
+            //   await commands.getStaticEvaluation(evaler, fen);
+            // } catch (e) {
+            //   setStaticEval(null);
+            // }
             if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
                 setEvaluation(cachedEval);
                 setCurrentDepth(cachedEval.depth);

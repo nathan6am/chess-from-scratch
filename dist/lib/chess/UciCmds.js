@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stop = exports.parseUciMove = exports.getEvaluation = exports.startup = exports.ready = exports.setSkillLevel = exports.limitStrength = exports.initialize = void 0;
+exports.stop = exports.parseUciMove = exports.getStaticEvaluation = exports.getEvaluation = exports.startup = exports.ready = exports.setSkillLevel = exports.limitStrength = exports.initialize = void 0;
 function initialize(stockfish) {
     stockfish.postMessage("uci");
 }
@@ -227,7 +227,6 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
             stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
             stockfish.postMessage("position fen " + options.fen);
             stockfish.postMessage("go depth " + options.depth);
-            stockfish.postMessage("eval");
             timer = setTimeout(() => {
                 stockfish.removeEventListener("message", handler);
                 reject(new Error("timeout waiting for response on command `evaluation`"));
@@ -238,6 +237,30 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
     });
 }
 exports.getEvaluation = getEvaluation;
+function getStaticEvaluation(evaler, fen) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const stockfish = evaler;
+        const evaluation = new Promise((resolve, reject) => {
+            let timer;
+            const handler = (e) => {
+                //console.log(e.data);
+            };
+            stockfish.addEventListener("message", handler);
+            stockfish.postMessage(`setoption name Use NNUE value true`);
+            stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+            stockfish.postMessage("debug on");
+            stockfish.postMessage("position fen " + fen);
+            stockfish.postMessage("eval");
+            timer = setTimeout(() => {
+                stockfish.removeEventListener("message", handler);
+                resolve(true);
+            }, 10000);
+        });
+        const staticEval = yield evaluation;
+        return staticEval;
+    });
+}
+exports.getStaticEvaluation = getStaticEvaluation;
 function parseUciMove(uci) {
     const args = uci.trim().match(/.{1,2}/g) || [];
     if (!args[0] || ![args[1]])
@@ -257,7 +280,6 @@ function stop(stockfish, timeout) {
         const stop = new Promise((resolve, reject) => {
             console.log("stopping");
             const handler = (e) => {
-                console.log(e.data);
                 const args = e.data.split(" ");
                 if (args[0] === "bestmove") {
                     //clear timeout on correct response
@@ -271,8 +293,9 @@ function stop(stockfish, timeout) {
             stockfish.postMessage("stop");
             timer = setTimeout(() => {
                 stockfish.removeEventListener("message", handler);
-                reject(new Error("timeout waiting for response on command `stop`"));
-            }, timeout || 20000);
+                //assume stopped
+                resolve(true);
+            }, timeout || 500);
         });
         const stopped = yield stop;
         return stopped;

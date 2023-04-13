@@ -5,7 +5,6 @@ const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>,
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (disabled) return;
     const handleMouseMove = throttle((event: PointerEvent) => {
       setPosition({
         x: Math.floor(
@@ -17,7 +16,12 @@ const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>,
             (ref.current ? ref.current.getBoundingClientRect()?.height / gridSize : 1)
         ),
       });
-    }, 5);
+    }, 32);
+    if (disabled) {
+      window.removeEventListener("pointermove", handleMouseMove);
+      return;
+    }
+
     window.addEventListener("pointermove", handleMouseMove);
 
     return () => {
