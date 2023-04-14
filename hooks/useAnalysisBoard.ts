@@ -363,7 +363,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     loadPgn,
     moveText,
     mainLine,
-    rootNodes: variationTree.rootNodes,
+    rootNodes: variationTree.treeArray,
     currentGame,
     onMove,
     evaler,

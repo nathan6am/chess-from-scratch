@@ -36,12 +36,8 @@ function useVariationTree(initialTree) {
         return path;
     }, [tree]);
     const rootNodes = (0, react_1.useMemo)(() => {
-        const root = tree.treeArray[0];
-        if (!root)
-            return [];
-        const nodes = tree.getSiblings(root.key);
-        return nodes;
-    }, [tree]);
+        return tree.treeArray;
+    }, [tree.treeArray]);
     function treeArrayToMoveText(treeArray) {
         let movetext = "";
         let stack = [];

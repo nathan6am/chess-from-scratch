@@ -33,12 +33,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     setCurrentKey(null);
     tree.loadTree(newTree);
   }
-  const currentNode = useMemo<TreeNode<T> | null>(() => {
-    if (currentKey == null) return null;
-    const node = tree.getNode(currentKey);
-    if (!node) return null;
-    return node;
-  }, [currentKey, tree]);
+  const currentNode = currentKey ? tree.getNode(currentKey) || null : null;
 
   const moveText = useMemo(() => {
     return treeArrayToMoveText(tree.treeArray);
@@ -55,12 +50,9 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return path;
   }, [tree]);
 
-  const rootNodes = useMemo<TreeNode<T>[]>(() => {
-    const root = tree.treeArray[0];
-    if (!root) return [];
-    const nodes = tree.getSiblings(root.key);
-    return nodes;
-  }, [tree]);
+  const rootNodes = useMemo(() => {
+    return tree.treeArray;
+  }, [tree.treeArray]);
 
   function treeArrayToMoveText(treeArray: TreeNode<T>[]) {
     let movetext = "";

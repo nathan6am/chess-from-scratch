@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import _ from "lodash";
-import { DraggableCore, DraggableData, DraggableEventHandler } from "react-draggable";
+import {
+  DraggableCore,
+  DraggableData,
+  DraggableEvent,
+  DraggableEventHandler,
+} from "react-draggable";
 import * as Chess from "@/lib/chess";
 import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
@@ -21,6 +26,8 @@ const throttle = (f: any) => {
   return result;
 };
 interface PieceProps {
+  hidden?: boolean;
+  disableTransition?: boolean;
   boardRef: React.RefObject<HTMLDivElement>;
   piece: Chess.Piece;
   selectedPiece: [Chess.Square, Chess.Piece] | null;
@@ -46,6 +53,8 @@ export default function Piece({
   movementType,
   animationSpeed,
   boardRef,
+  hidden,
+  disableTransition,
 }: PieceProps) {
   const selectedRef = useRef<boolean>(false);
   //Prevent deprecated findDomNode warning
@@ -78,7 +87,9 @@ export default function Piece({
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (nodeRef.current) {
-            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
+            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
+              coordinates[1] * 100
+            }%)`;
           }
           setPosition({
             x: coordinates[0] * 100,
@@ -89,30 +100,22 @@ export default function Piece({
       //update the previous square
       previousSquare.current = square;
     } else {
+      console.log("here");
       const positionNew = {
         x: coordinates[0] * 100,
         y: coordinates[1] * 100,
       };
-      if (nodeRef.current) {
-        nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
+      if (position.x !== positionNew.x || position.y !== positionNew.y) {
+        if (nodeRef.current) {
+          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
+            coordinates[1] * 100
+          }%)`;
+        }
+        setPosition(positionNew);
       }
-      setPosition(positionNew);
     }
-  }, [square, dragging, orientation, coordinates, nodeRef]);
+  }, [square, dragging, orientation, coordinates, nodeRef, position]);
 
-  useLayoutEffect(() => {
-    if (dragging) return;
-    if (square !== previousSquare.current) {
-      return;
-    } else {
-      //if the position has changed, but not the square, update the position without animation
-      const positionNew = {
-        x: coordinates[0] * 100,
-        y: coordinates[1] * 100,
-      };
-      setPosition(positionNew);
-    }
-  }, [square, dragging, orientation, squareSize, coordinates, animationSpeed]);
   const draggable = movementType === "both" || movementType === "drag";
   const boardSize = useMemo(() => squareSize * 8, [squareSize]);
   const onStart = useCallback<DraggableEventHandler>(
@@ -123,26 +126,29 @@ export default function Piece({
     },
     [squareSize]
   );
+  const onDrag = useCallback(
+    _.throttle<DraggableEventHandler>((e: DraggableEvent, data: DraggableData) => {
+      const max = boardSize;
+      const x = data.x > 0 ? (data.x > max ? max : data.x) : 0;
+      const y = data.y > 0 ? (data.y > max ? max : data.y) : 0;
+      if (nodeRef.current)
+        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${
+          y - squareSize / 2
+        }px)`;
+    }, 16),
+    [boardSize, squareSize]
+  );
   const onStop = useCallback<DraggableEventHandler>(
     (e, data) => {
+      onDrag.cancel();
       const percentX = (data.x / squareSize) * 100 - 50;
       const percentY = (data.y / squareSize) * 100 - 50;
       setPosition({ x: percentX, y: percentY });
       setDragging(false);
     },
-    [squareSize]
+    [squareSize, onDrag]
   );
 
-  const onDrag = useCallback<DraggableEventHandler>(
-    throttle((e: MouseEvent, data: DraggableData) => {
-      const max = boardSize;
-      const x = data.x > 0 ? (data.x > max ? max : data.x) : 0;
-      const y = data.y > 0 ? (data.y > max ? max : data.y) : 0;
-      if (nodeRef.current)
-        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${y - squareSize / 2}px)`;
-    }),
-    [boardSize, squareSize]
-  );
   return (
     <DraggableCore
       disabled={!draggable}
@@ -172,7 +178,10 @@ export default function Piece({
             setDragging(true);
             setSelectedPiece([square, piece]);
             const pointer = [e.clientX, e.clientY];
-            const piecePos = [nodeRef?.current?.getBoundingClientRect().x, nodeRef?.current?.getBoundingClientRect().y];
+            const piecePos = [
+              nodeRef?.current?.getBoundingClientRect().x,
+              nodeRef?.current?.getBoundingClientRect().y,
+            ];
             //Snap to cursor
             // setPosition((position) => {
             //   console.log(position.x);
@@ -205,9 +214,9 @@ export default function Piece({
           }
         }}
         style={{
-          transition: dragging ? "" : `all ${animationSpeed}s`,
+          transition: dragging || disableTransition ? "" : `all ${animationSpeed}s`,
           cursor: draggable ? (dragging ? "grabbing" : "grab") : "pointer",
-          display: "flex",
+          display: hidden ? "none" : "flex",
           justifyContent: "center",
           alignItems: "center",
           width: "12.5%",
@@ -230,16 +239,6 @@ export default function Piece({
             height: `90%`,
           }}
         />
-        {/* <img
-          src={`/assets/pieces/standard/${piece.color}${piece.type}.png`}
-          alt={`${piece.color}${piece.type}`}
-          height={squareSize * 0.9}
-          className={styles.piece}
-          width={squareSize * 0.9}
-          style={{
-            pointerEvents: "none",
-          }}
-        /> */}
       </div>
     </DraggableCore>
   );

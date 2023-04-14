@@ -1,8 +1,9 @@
 import { SettingsContext } from "@/context/settings";
 import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import PuzzlePanel from "./PuzzlePanel";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
+
 import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
 import BoardControls from "../game/BoardControls";
@@ -13,12 +14,20 @@ export default function PuzzleSolver() {
   const { settings } = useContext(SettingsContext);
   const currentGame = puzzle.currentGame;
   const [checked, setChecked] = useState(true);
+  const hidePiecesRef = React.useRef<boolean>(true);
+  useEffect(() => {
+    hidePiecesRef.current = true;
+    setTimeout(() => {
+      hidePiecesRef.current = false;
+    }, 300);
+  }, [puzzle.puzzle]);
   return (
     <>
       <BoardRow>
         <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
           <BoardColumn>
             <Board
+              disableTransitions={hidePiecesRef.current}
               lastMoveAnnotation={puzzle.annotation}
               key={puzzle.puzzle?.id || "empty"}
               showCoordinates={settings.display.showCoordinates}

@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, RefObject } from "react";
 import { throttle } from "lodash";
 
-const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>, disabled?: boolean) => {
+const usePointerCoordinates = (
+  gridSize: number,
+  ref: RefObject<HTMLDivElement>,
+  disabled?: boolean
+) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -16,7 +20,7 @@ const usePointerCoordinates = (gridSize: number, ref: RefObject<HTMLDivElement>,
             (ref.current ? ref.current.getBoundingClientRect()?.height / gridSize : 1)
         ),
       });
-    }, 32);
+    }, 16);
     if (disabled) {
       window.removeEventListener("pointermove", handleMouseMove);
       return;

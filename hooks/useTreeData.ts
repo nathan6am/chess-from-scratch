@@ -242,6 +242,8 @@ function useTreeData<T extends object>(
     if (node.parentKey === null) {
       const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       rootNodes.splice(targetIndex, 0, rootNodes.splice(rootNodes.indexOf(node), 1)[0]);
+      rootNodes.forEach((node) => map.delete(node.key));
+      rootNodes.forEach((node) => map.set(node.key, node));
       setTreeArray(buildTreeArray(map));
       return;
     }

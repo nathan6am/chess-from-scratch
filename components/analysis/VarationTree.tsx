@@ -28,8 +28,8 @@ export default function VarationTree({ analysis }: Props) {
   const showContextMenu = (e: React.MouseEvent, node: Node) => {
     show({ event: e, props: { node } });
   };
-  const { rootNodes, mainLine, currentKey, setCurrentKey, path, currentNode } = analysis;
-  const rootVariations = useMemo(() => rootNodes.slice(1), [rootNodes]);
+  const { tree, mainLine, currentKey, setCurrentKey, path, currentNode } = analysis;
+  const rootVariations = useMemo(() => tree.treeArray.slice(1), [tree.treeArray]);
   const mainlineRows = useMemo(() => {
     let currentRow: [Node | null, Node | null] = [null, null];
     let rows: Row[] = [];

@@ -285,7 +285,7 @@ function useAnalysisBoard(initialOptions) {
         loadPgn,
         moveText,
         mainLine,
-        rootNodes: variationTree.rootNodes,
+        rootNodes: variationTree.treeArray,
         currentGame,
         onMove,
         evaler,
