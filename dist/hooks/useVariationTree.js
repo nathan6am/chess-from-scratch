@@ -14,14 +14,7 @@ function useVariationTree(initialTree) {
         setCurrentKey(null);
         tree.loadTree(newTree);
     }
-    const currentNode = (0, react_1.useMemo)(() => {
-        if (currentKey == null)
-            return null;
-        const node = tree.getNode(currentKey);
-        if (!node)
-            return null;
-        return node;
-    }, [currentKey, tree]);
+    const currentNode = currentKey ? tree.getNode(currentKey) || null : null;
     const moveText = (0, react_1.useMemo)(() => {
         return treeArrayToMoveText(tree.treeArray);
     }, [tree]);

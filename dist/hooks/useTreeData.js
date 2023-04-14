@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
-const ROOT_KEY = "root";
 const uuid_1 = require("uuid");
 function useTreeData(initialTree = new Map()) {
     const [map, setMap] = (0, react_1.useState)(() => initialTree instanceof Map ? initialTree : buildMapFromTreeArray(initialTree));
@@ -12,14 +11,7 @@ function useTreeData(initialTree = new Map()) {
     }
     const [treeArray, setTreeArray] = (0, react_1.useState)(buildTreeArray(map));
     function getNode(key) {
-        if (key === ROOT_KEY)
-            return undefined;
-        const node = map.get(key);
-        if (!node) {
-            console.log(`Error: node with key ${key} not found`);
-            return undefined;
-        }
-        return node;
+        return map.get(key);
     }
     /**
      * Insert a node into the tree
@@ -38,10 +30,6 @@ function useTreeData(initialTree = new Map()) {
                 throw new Error("Invalid parent key.");
             parentNode.children.push(newNode);
         }
-        else {
-            const rootNode = map.get(ROOT_KEY);
-            rootNode.children.push(newNode);
-        }
         setTreeArray(buildTreeArray(map));
         return newNode;
     }
@@ -51,7 +39,7 @@ function useTreeData(initialTree = new Map()) {
      * @param data The updated data for the node(can be partial)
      */
     function updateNode(key, data) {
-        const node = getNode(key);
+        const node = map.get(key);
         if (!node) {
             console.log(`Error: node with key ${key} not found`);
             return;
@@ -64,7 +52,7 @@ function useTreeData(initialTree = new Map()) {
      * @param key The key of the node to delete
      */
     function deleteNode(key) {
-        const node = getNode(key);
+        const node = map.get(key);
         if (!node) {
             console.log(`Error: node with key ${key} not found`);
             return;
@@ -88,9 +76,8 @@ function useTreeData(initialTree = new Map()) {
      */
     function findChild(key, callbackFn) {
         if (!key) {
-            const rootNode = map.get(ROOT_KEY);
-            const nodes = rootNode.children;
-            return nodes.find((node) => callbackFn(node));
+            const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
+            return rootNodes.find((node) => callbackFn(node));
         }
         const node = getNode(key);
         if (!node)
@@ -162,8 +149,9 @@ function useTreeData(initialTree = new Map()) {
         return ply;
     }
     function getContinuation(key) {
-        var _a;
-        const startNode = key ? getNode(key) : (_a = map.get(ROOT_KEY)) === null || _a === void 0 ? void 0 : _a.children[0];
+        const startNode = key
+            ? getNode(key)
+            : Array.from(map.values()).filter((node) => !node.parentKey)[0];
         let path = [];
         let currentNode = startNode;
         while (currentNode) {
@@ -178,14 +166,13 @@ function useTreeData(initialTree = new Map()) {
     }
     //Get the index of a node amongst it's siblings
     function getSiblingIndex(key) {
-        const node = getNode(key);
+        const node = map.get(key);
         if (!node) {
             return -1;
         }
         if (node.parentKey === null) {
-            const root = map.get(ROOT_KEY);
-            const nodes = root.children;
-            return nodes.indexOf(node);
+            const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
+            return rootNodes.indexOf(node);
         }
         const parentNode = map.get(node.parentKey);
         if (!parentNode) {
@@ -202,13 +189,16 @@ function useTreeData(initialTree = new Map()) {
             targetIndex = siblings.length - 1 + index;
         if (targetIndex < 0)
             targetIndex = 0;
-        const node = getNode(key);
+        const node = map.get(key);
         if (!node) {
             return;
         }
         if (node.parentKey === null) {
-            const root = map.get(ROOT_KEY);
-            root.children.splice(targetIndex, 0, root.children.splice(root.children.indexOf(node), 1)[0]);
+            const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
+            rootNodes.splice(targetIndex, 0, rootNodes.splice(rootNodes.indexOf(node), 1)[0]);
+            rootNodes.forEach((node) => map.delete(node.key));
+            rootNodes.forEach((node) => map.set(node.key, node));
+            setTreeArray(buildTreeArray(map));
             return;
         }
         const parentNode = map.get(node.parentKey);
@@ -220,13 +210,13 @@ function useTreeData(initialTree = new Map()) {
     }
     //Get the siblings of a node
     function getSiblings(key) {
-        const node = getNode(key);
+        const node = map.get(key);
         if (!node) {
             return [];
         }
         if (node.parentKey === null) {
-            const root = map.get(ROOT_KEY);
-            return root.children;
+            const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
+            return rootNodes;
         }
         const parentNode = map.get(node.parentKey);
         if (!parentNode) {
@@ -253,17 +243,18 @@ function useTreeData(initialTree = new Map()) {
         loadTree,
     };
 }
-function buildTreeArray(map, parentKey = ROOT_KEY) {
+function buildTreeArray(map, parentKey = null) {
+    if (parentKey === null) {
+        return Array.from(map.values()).filter((node) => !node.parentKey);
+    }
     const parentNode = map.get(parentKey);
     if (!parentNode) {
-        return [];
+        return Array.from(map.values()).filter((node) => !node.parentKey);
     }
     return parentNode.children;
 }
 function buildMapFromTreeArray(treeArray) {
-    const map = new Map([
-        [ROOT_KEY, { key: ROOT_KEY, children: [] }],
-    ]);
+    const map = new Map();
     const buildMapRecursive = (array, parentKey) => {
         array.forEach((node) => {
             map.set(node.key, node);

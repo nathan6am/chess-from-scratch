@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import _ from "lodash";
-import {
-  DraggableCore,
-  DraggableData,
-  DraggableEvent,
-  DraggableEventHandler,
-} from "react-draggable";
+import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
 import * as Chess from "@/lib/chess";
 import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
@@ -56,6 +51,7 @@ export default function Piece({
   hidden,
   disableTransition,
 }: PieceProps) {
+  const transitionRef = useRef<boolean>(false);
   const selectedRef = useRef<boolean>(false);
   //Prevent deprecated findDomNode warning
   const nodeRef = React.useRef<HTMLDivElement>(null);
@@ -78,7 +74,10 @@ export default function Piece({
     x: coordinates[0],
     y: coordinates[1],
   });
-
+  //Prevent inital transition animation
+  useEffect(() => {
+    transitionRef.current = true;
+  }, [transitionRef]);
   useEffect(() => {
     if (dragging) return;
     if (square !== previousSquare.current) {
@@ -87,9 +86,7 @@ export default function Piece({
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (nodeRef.current) {
-            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
-              coordinates[1] * 100
-            }%)`;
+            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
           }
           setPosition({
             x: coordinates[0] * 100,
@@ -100,21 +97,18 @@ export default function Piece({
       //update the previous square
       previousSquare.current = square;
     } else {
-      console.log("here");
       const positionNew = {
         x: coordinates[0] * 100,
         y: coordinates[1] * 100,
       };
       if (position.x !== positionNew.x || position.y !== positionNew.y) {
         if (nodeRef.current) {
-          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
-            coordinates[1] * 100
-          }%)`;
+          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
         }
         setPosition(positionNew);
       }
     }
-  }, [square, dragging, orientation, coordinates, nodeRef, position]);
+  }, [square, dragging, orientation, coordinates, nodeRef, position, previousSquare]);
 
   const draggable = movementType === "both" || movementType === "drag";
   const boardSize = useMemo(() => squareSize * 8, [squareSize]);
@@ -132,9 +126,7 @@ export default function Piece({
       const x = data.x > 0 ? (data.x > max ? max : data.x) : 0;
       const y = data.y > 0 ? (data.y > max ? max : data.y) : 0;
       if (nodeRef.current)
-        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${
-          y - squareSize / 2
-        }px)`;
+        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${y - squareSize / 2}px)`;
     }, 16),
     [boardSize, squareSize]
   );
@@ -159,17 +151,6 @@ export default function Piece({
       onDrag={onDrag}
       onStop={onStop}
     >
-      {/* // <Draggable
-    //   disabled={!draggable}
-    //   nodeRef={nodeRef}
-    //   allowAnyClick={false}
-    //   bounds="parent"
-    //   //position={position}
-    //   onStop={(e, data) => {
-    //     setPosition({ x: data.x, y: data.y });
-    //     setDragging(false);
-    //   }}
-    // > */}
       <div
         onPointerDown={(e) => {
           if (disabled) return;
@@ -177,25 +158,6 @@ export default function Piece({
           if (draggable) {
             setDragging(true);
             setSelectedPiece([square, piece]);
-            const pointer = [e.clientX, e.clientY];
-            const piecePos = [
-              nodeRef?.current?.getBoundingClientRect().x,
-              nodeRef?.current?.getBoundingClientRect().y,
-            ];
-            //Snap to cursor
-            // setPosition((position) => {
-            //   console.log(position.x);
-            //   const offsetX = (((pointer[0] - (piecePos[0] || 0)) * 8) / squareSize) * 100 + 50;
-            //   const test = {
-            //     x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
-            //     y: position.y + pointer[1] - ((piecePos[1] || 0) + squareSize / 2),
-            //   };
-            //   console.log(test);
-            //   return {
-            //     x: position.x + pointer[0] - ((piecePos[0] || 0) + squareSize / 2),
-            //     y: position.y + pointer[1] - ((piecePos[1] || 0) + squareSize / 2),
-            //   };
-            // });
           } else {
             setSelectedPiece([square, piece]);
           }
@@ -214,7 +176,7 @@ export default function Piece({
           }
         }}
         style={{
-          transition: dragging || disableTransition ? "" : `all ${animationSpeed}s`,
+          transition: dragging || disableTransition || transitionRef.current === false ? "" : `all ${animationSpeed}s`,
           cursor: draggable ? (dragging ? "grabbing" : "grab") : "pointer",
           display: hidden ? "none" : "flex",
           justifyContent: "center",
@@ -226,7 +188,7 @@ export default function Piece({
           top: 0,
           left: 0,
           transform: `translate(${position.x}%, ${position.y}%)`,
-          zIndex: dragging ? 40 : 10,
+          zIndex: dragging ? 31 : 10,
           willChange: "transform",
         }}
         ref={nodeRef}
