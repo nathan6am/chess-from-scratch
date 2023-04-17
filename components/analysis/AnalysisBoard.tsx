@@ -1,4 +1,12 @@
-import React, { useState, useRef, Fragment, useContext, useMemo, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  Fragment,
+  useContext,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import * as Chess from "@/lib/chess";
 
 import Board from "../game/Board";
@@ -189,9 +197,6 @@ export default function AnalysisBoard({ initialId }: Props) {
                 <StyledTab>
                   <p>Review</p>
                 </StyledTab>
-                <div className="h-inherit w-10">
-                  <MdSettings />
-                </div>
               </Tab.List>
               <Tab.Panel as={Fragment}>
                 <AnalysisPanel analysis={analysis} boardRef={boardRef} />
@@ -428,7 +433,9 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${
+            disabled ? "pointer-none text-white/[0.3]" : ""
+          }`}
         >
           {children}
         </button>

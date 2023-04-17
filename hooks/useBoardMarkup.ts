@@ -15,9 +15,16 @@ interface Args {
   onMarkSquare: (square: MarkedSquare) => void;
   disabled?: boolean;
 }
-export type ArrowColor = "R" | "G" | "O" | "B";
+export type ArrowColor = "R" | "G" | "O" | "B" | "Y";
 
-export default function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }: Args) {
+export default function useBoardMarkup({
+  currentSquare,
+  lockArrows,
+  color,
+  disabled,
+  onArrow,
+  onMarkSquare,
+}: Args) {
   const [currentArrowStart, setCurrentArrowStart] = useState<Square | null>(null);
   const start = (square: Square | null) => {
     setCurrentArrowStart(square);
@@ -79,7 +86,9 @@ export function useArrowState() {
   const onArrow = (newArrow: Arrow) => {
     setArrows((current) => {
       if (current.some((arrow) => arrow.start === newArrow.start && arrow.end === newArrow.end)) {
-        return current.filter((arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end));
+        return current.filter(
+          (arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end)
+        );
       } else {
         return [...current, newArrow];
       }

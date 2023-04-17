@@ -7,6 +7,7 @@ export const ColorEnum: Record<ArrowColor, string> = {
   G: "#15803d",
   O: "#b45309",
   B: "#0369a1",
+  Y: "#eab308",
 };
 export interface Arrow {
   start: Square;

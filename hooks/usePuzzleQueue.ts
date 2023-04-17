@@ -200,11 +200,13 @@ function usePuzzle(puzzle: Puzzle | null) {
   }, [mainLine, currentKey, puzzle]);
 
   const prompt = useMemo(() => {
+    if (mainLine.length && mainLine.every((node) => touchedKeys.includes(node.key)))
+      return "solved";
     if (currentNode && !isMainline) return "failed";
     if (visibleNodes.length <= 1) return "start";
     if (continuation.length > 0) return "continue";
-    return "solved";
-  }, [visibleNodes, mainLine, currentNode]);
+    return "loading";
+  }, [visibleNodes, mainLine, currentNode, touchedKeys]);
   const onMove = useCallback(
     (move: Chess.Move) => {
       if (!moveable) return;

@@ -25,7 +25,7 @@ const defaultOptions: Options = {
 };
 
 enum Endpoints {
-  "lichess" = "https://explorer.lichess.ovh/lichess",
+  "lichess" = "https://explorer.lichess.ovh/lichess?topGames=15",
   "masters" = "https://explorer.lichess.ovh/masters",
 }
 
@@ -74,10 +74,10 @@ const reduceMoves = (history: Chess.MoveHistory): string =>
     .map((halfMove) => Chess.MoveToUci(halfMove.move))
     .join(",");
 
-const fetcher = async (game: Chess.Game) => {
+const fetcher = async (game: Chess.Game, database: "lichess" | "masters") => {
   const fen = game.config.startPosition;
   const play = reduceMoves(game.moveHistory);
-  const endpoint = Endpoints["masters"];
+  const endpoint = Endpoints[database];
   const response = await axios.get(endpoint, {
     params: {
       fen,
@@ -89,6 +89,8 @@ const fetcher = async (game: Chess.Game) => {
 };
 
 export interface ExplorerHook {
+  database: "lichess" | "masters";
+  setDatabase: (database: "lichess" | "masters") => void;
   sourceGame: Chess.Game;
   data: ApiResponse | undefined;
   error: unknown;
@@ -98,7 +100,10 @@ export interface ExplorerHook {
   otbGameLoading: boolean;
 }
 
-export default function useOpeningExplorer(currentGame: Chess.Game, options?: Partial<Options>): ExplorerHook {
+export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHook {
+  const [database, setDatabase] = useState<"lichess" | "masters">("lichess");
+  const [mastersFilters, setMastersFilters] = useState<{}>({});
+  const [lichessFilters, setLichessFilters] = useState<{}>({});
   const [gameId, fetchOTBGame] = useState<string | null>(null);
   //Debounce game state for api calls
   const debouncedGame = useDebounce(currentGame, 700);
@@ -112,8 +117,8 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
     }
   }, [currentGame, debouncedGame, debounceSyncRef]);
   const { data, error, isLoading } = useQuery({
-    queryKey: ["explorer", debouncedGame],
-    queryFn: () => fetcher(debouncedGame),
+    queryKey: ["explorer", debouncedGame, database],
+    queryFn: () => fetcher(debouncedGame, database),
     keepPreviousData: true,
   });
 
@@ -122,14 +127,23 @@ export default function useOpeningExplorer(currentGame: Chess.Game, options?: Pa
     error: otbGameError,
     isLoading: otbGameLoading,
   } = useQuery({
-    queryKey: ["otbgame", gameId],
+    queryKey: ["otbgame", gameId, database],
     queryFn: async () => {
       if (!gameId) return null;
-      const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
-      if (response && response.data) return response.data as string;
+      if (database === "lichess") {
+        const response = await axios.get(`https://lichess.org/game/export/${gameId}`, {});
+        console.log(response);
+        if (response && response.data) return response.data as string;
+      } else if (database === "masters") {
+        const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
+        if (response && response.data) return response.data as string;
+      }
+      throw new Error();
     },
   });
   return {
+    database,
+    setDatabase,
     otbGameLoading,
     fetchOTBGame,
     otbGamePgn,

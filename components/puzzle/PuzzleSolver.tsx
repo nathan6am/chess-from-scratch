@@ -1,7 +1,7 @@
 import { SettingsContext } from "@/context/settings";
 import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import PuzzlePanel from "./PuzzlePanel";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
 
 import CheckBox from "../UI/CheckBox";
@@ -17,9 +17,11 @@ export default function PuzzleSolver() {
   const hidePiecesRef = React.useRef<boolean>(true);
   useEffect(() => {
     hidePiecesRef.current = true;
-    setTimeout(() => {
-      hidePiecesRef.current = false;
-    }, 300);
+    if (puzzle.puzzle) {
+      setTimeout(() => {
+        hidePiecesRef.current = false;
+      }, 100);
+    }
   }, [puzzle.puzzle]);
   return (
     <>
@@ -27,6 +29,7 @@ export default function PuzzleSolver() {
         <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
           <BoardColumn>
             <Board
+              keyPrefix={puzzle.puzzle?.id || "empty"}
               disableTransitions={hidePiecesRef.current}
               lastMoveAnnotation={puzzle.annotation}
               key={puzzle.puzzle?.id || "empty"}
@@ -111,4 +114,21 @@ function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
       )}
     </div>
   );
+}
+
+interface PuzzleControlsProps {
+  retry: () => void;
+  next: () => void;
+  showSolution: () => void;
+  getHint: () => void;
+
+  prompt?: string;
+  solveState: string;
+}
+function PuzzleControls({ prompt, solveState }: PuzzleControlsProps) {
+  const buttonsToShow = useMemo(() => {
+    if (solveState === "solved") return ["analysis", "next"];
+    if (prompt === "failed") return ["retry", "showSolution"];
+    if (prompt === "start" || prompt === "continue") return ["getHint", "showSolution"];
+  }, [solveState, prompt]);
 }

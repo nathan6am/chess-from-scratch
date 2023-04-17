@@ -24,6 +24,7 @@ import useBoardMarkup, { ArrowColor, MarkedSquare, useArrowState } from "@/hooks
 import { Arrow } from "../analysis/BoardArrows";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
+  keyPrefix?: string;
   hidePieces?: boolean;
   disableTransitions?: boolean;
   showCoordinates: "hidden" | "inside" | "outside"; //Where or if to display the rank and file indictors
@@ -91,6 +92,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
       markupColor = "G",
       overrideArrows,
       disableArrows,
+      keyPrefix = "",
     }: Props,
     ref
   ) => {
@@ -321,7 +323,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 selectedPiece={selectedPiece}
                 animationSpeed={AnimSpeedEnum[animationSpeed]}
                 setSelectedPiece={setSelectedPiece}
-                key={`${piece.key}${orientation}`}
+                key={`${keyPrefix}${piece.key}${orientation}`}
                 piece={piece}
                 square={square}
                 movementType={movementType}
