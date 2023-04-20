@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import { Tab } from "@headlessui/react";
 import EvalInfo from "./EvalInfo";
@@ -11,11 +11,13 @@ import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
 import Annotations from "./Annotations";
 import Share from "./Share";
+import Explorer from "./Explorer";
 interface Props {
   analysis: AnalysisHook;
   boardRef: React.RefObject<HTMLDivElement>;
+  showPlayer: () => void;
 }
-export default function AnalysisPanel({ analysis, boardRef }: Props) {
+export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props) {
   const [expanded, setExpanded] = useState(true);
   const {
     onMove,
@@ -40,21 +42,41 @@ export default function AnalysisPanel({ analysis, boardRef }: Props) {
   };
   return (
     <>
-      <div className="shadow-md">
-        <EvalInfo
-          evaler={evaler}
-          enabled={evalEnabled}
-          setEnabled={setEvalEnabled}
-          moveKey={evalEnabled ? debouncedNode?.key || "root" : "disabled"}
-          currentGame={currentGame}
-          attemptMoves={attemptMoves}
-        />
-      </div>
-      <div className="w-full grow relative bg-white/[0.05]">
-        <ScrollContainer>
-          <VarationTree analysis={analysis} />
-        </ScrollContainer>
-      </div>
+      <Tab.Group>
+        <Tab.List className="flex bg-[#121212] shadow-lg">
+          <TopTab>
+            <p>Analyze</p>
+          </TopTab>
+          <TopTab>
+            <p>Explorer</p>
+          </TopTab>
+          <TopTab>
+            <p>Review</p>
+          </TopTab>
+        </Tab.List>
+        <Tab.Panel as={Fragment}>
+          <>
+            <div className="shadow-md">
+              <EvalInfo
+                evaler={evaler}
+                enabled={evalEnabled}
+                setEnabled={setEvalEnabled}
+                moveKey={evalEnabled ? debouncedNode?.key || "root" : "disabled"}
+                currentGame={currentGame}
+                attemptMoves={attemptMoves}
+              />
+            </div>
+            <div className="w-full grow relative bg-white/[0.05]">
+              <ScrollContainer>
+                <VarationTree analysis={analysis} />
+              </ScrollContainer>
+            </div>
+          </>
+        </Tab.Panel>
+        <Tab.Panel as={Fragment}>
+          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={showPlayer} />
+        </Tab.Panel>
+      </Tab.Group>
       <div className="w-full border-t border-white/[0.2] ">
         <Tab.Group>
           <Tab.List className="flex bg-[#121212] pt-1 shadow-lg relative">
@@ -138,4 +160,23 @@ function StyledTab({ children }: TabProps) {
     </Tab>
   );
 }
-function CommentsPanel() {}
+interface TabProps {
+  children?: JSX.Element | JSX.Element[] | string;
+}
+function TopTab({ children }: TabProps) {
+  return (
+    <Tab
+      className={({ selected }) =>
+        classNames(
+          "flex-1 border-b border-b-4 py-2 text-md text-white/[0.7] px-4",
+          "focus:outline-none ",
+          selected
+            ? "bg-[#303030] border-sepia"
+            : "bg-[#262626] border-[#262626] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+        )
+      }
+    >
+      {children}
+    </Tab>
+  );
+}
