@@ -1,12 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  Fragment,
-  useContext,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useRef, Fragment, useContext, useMemo, useCallback, useEffect } from "react";
 import * as Chess from "@/lib/chess";
 
 import Board from "../game/Board";
@@ -28,10 +20,12 @@ import { tagDataToPGNString } from "@/util/parsers/pgnParser";
 import { useRouter } from "next/router";
 
 interface Props {
-  initialId: string | null;
-  sourceGameId: string | null;
+  initialId?: string | null;
+  sourceGameId?: string | null;
+  sourceGameType?: "masters" | "lichess" | null;
+  fromFen?: string;
 }
-export default function AnalysisBoard({ initialId }: Props) {
+export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
   const analysis = useAnalysisBoard();
   const boardRef = useRef<BoardHandle>(null);
   const {
@@ -50,7 +44,7 @@ export default function AnalysisBoard({ initialId }: Props) {
   const id = router.query.id as string | undefined;
 
   const currentIdRef = useRef<string | null | undefined>(id);
-  const initialLoad = useRef(initialId ? false : true);
+  const initialLoad = useRef(initialId || sourceGameId ? false : true);
   const saveManager = useSavedAnalysis();
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const { settings } = useContext(SettingsContext);
@@ -60,6 +54,28 @@ export default function AnalysisBoard({ initialId }: Props) {
   const lastMoveAnnotation = useMemo(() => {
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
+
+  useEffect(() => {
+    if (id) return;
+    if (!sourceGameId) return;
+    if (initialLoad.current) return;
+    if (!sourceGameType) {
+      initialLoad.current = true;
+      return;
+    }
+    console.log(sourceGameId, sourceGameType);
+    analysis.explorer
+      .fetchGameAsync(sourceGameId, sourceGameType)
+      .then((game) => {
+        initialLoad.current = true;
+        if (!game) return;
+        analysis.loadPgn(game);
+      })
+      .catch((e) => {
+        initialLoad.current = true;
+        console.error(e);
+      });
+  }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
 
   useEffect(() => {
     if (!id) return;
@@ -112,7 +128,10 @@ export default function AnalysisBoard({ initialId }: Props) {
       <PopupPlayer
         loading={explorer.otbGameLoading}
         shown={popupPlayerShown}
-        pgn={explorer.otbGamePgn || ""}
+        pgn={explorer.otbGame?.pgn || ""}
+        link={
+          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
+        }
         closePlayer={() => {
           setPopupPlayerShown(false);
         }}
@@ -433,9 +452,7 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
         >
           {children}
         </button>

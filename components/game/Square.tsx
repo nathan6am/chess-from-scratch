@@ -4,6 +4,7 @@ import * as Chess from "@/lib/chess";
 import classnames from "classnames";
 import { ColorEnum } from "../analysis/BoardArrows";
 import { ArrowColor } from "@/hooks/useBoardMarkup";
+import { BiSquareRounded } from "react-icons/bi";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -108,14 +109,20 @@ export default function Square({
       </div>
       {markedColor && (
         <div className={`${styles.contents}`}>
-          <div
+          {/* <div
             className={styles.ring}
             style={{ border: `12px solid ${ColorEnum[markedColor]}`, opacity: "70%", zIndex: 16 }}
+          /> */}
+          <BiSquareRounded
+            color={`${ColorEnum[markedColor]}`}
+            style={{ opacity: "70%", zIndex: 16, height: "100%", width: "100%", transform: "scale(1.2)" }}
           />
         </div>
       )}
       <div
-        className={`${styles.contents} ${isTarget && showTargets && hovered && styles.targetHover} opacity-80`}
+        className={`${styles.contents} ${
+          isTarget && showTargets && hovered && styles.targetHover
+        } opacity-60 z-[18] pointer-none`}
       ></div>
     </div>
   );
@@ -137,7 +144,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
       code: 2,
       description: "Mistake",
       unicode: "\u003F",
-      className: "bg-amber-500",
+      className: "bg-amber-600",
     },
     {
       code: 3,
@@ -161,7 +168,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
       code: 6,
       description: "Dubious Move",
       unicode: "\u2048",
-      className: "bg-fuchsia-500",
+      className: "bg-yellow-500",
     },
     {
       code: "puzzle-failed",
@@ -184,7 +191,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
     return (
       <span
         className={classnames(
-          "absolute rounded-full shadow-md z-20 flex items-center justify-center",
+          "absolute rounded-full shadow-md z-[20] flex items-center justify-center",
           details.className,
           {
             "h-[24px] w-[24px] top-[-8px] right-[-8px]": size === "sm",

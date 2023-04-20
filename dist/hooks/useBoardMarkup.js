@@ -29,6 +29,21 @@ function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, o
             setCurrentArrowStart(null);
         }
     };
+    const onMouseDown = (e) => {
+        if (currentSquare) {
+            if (e.button === 2)
+                start(currentSquare);
+            //else clear();
+        }
+    };
+    const onMouseUp = (e) => {
+        if (e.button === 2) {
+            finalize();
+        }
+    };
+    const onContextMenu = (e) => {
+        e.preventDefault();
+    };
     (0, react_1.useEffect)(() => {
         if (disabled)
             return;
@@ -48,7 +63,7 @@ function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, o
             if (currentSquare)
                 e.preventDefault();
         };
-        document.addEventListener("mousedown", downhandler);
+        //document.addEventListener("mousedown", downhandler);
         document.addEventListener("mouseup", uphandler);
         document.addEventListener("contextmenu", contextmenuHandler);
         return () => {
@@ -57,7 +72,7 @@ function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, o
             document.removeEventListener("contextmenu", contextmenuHandler);
         };
     }, [currentSquare, start, finalize, lockArrows]);
-    return currentArrow;
+    return { currentArrow, onMouseDown, onMouseUp, onContextMenu };
 }
 exports.default = useBoardMarkup;
 function useArrowState() {

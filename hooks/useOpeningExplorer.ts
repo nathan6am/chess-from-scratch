@@ -61,7 +61,11 @@ export interface DBGameData {
   year: number;
   month: string;
 }
-
+interface OTBGameData {
+  id: string;
+  pgn: string;
+  type: "lichess" | "masters";
+}
 interface PlayerInfo {
   name: string;
   rating: number;
@@ -96,8 +100,9 @@ export interface ExplorerHook {
   error: unknown;
   isLoading: boolean;
   fetchOTBGame: (gameid: string) => void;
-  otbGamePgn: string | null | undefined;
+  otbGame: OTBGameData | null | undefined;
   otbGameLoading: boolean;
+  fetchGameAsync: (gameid: string, gameType: "lichess" | "masters") => Promise<string | undefined>;
 }
 
 export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHook {
@@ -123,33 +128,59 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
   });
 
   const {
-    data: otbGamePgn,
+    data: otbGame,
     error: otbGameError,
     isLoading: otbGameLoading,
   } = useQuery({
-    queryKey: ["otbgame", gameId, database],
+    queryKey: ["otbgame", gameId],
     queryFn: async () => {
       if (!gameId) return null;
       if (database === "lichess") {
         const response = await axios.get(`https://lichess.org/game/export/${gameId}`, {});
         console.log(response);
-        if (response && response.data) return response.data as string;
+        if (response && response.data) {
+          const pgn = response.data as string;
+          return {
+            pgn,
+            id: gameId,
+            type: "lichess",
+          } as OTBGameData;
+        }
       } else if (database === "masters") {
         const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
-        if (response && response.data) return response.data as string;
+        if (response && response.data) {
+          const pgn = response.data as string;
+          return {
+            pgn,
+            id: gameId,
+            type: "masters",
+          } as OTBGameData;
+        }
       }
       throw new Error();
     },
   });
+
+  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
+    if (gameType === "lichess") {
+      const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
+      if (response && response.data) return response.data as string;
+    } else if (gameType === "masters") {
+      const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameid}`);
+      if (response && response.data) return response.data as string;
+    }
+    return undefined;
+  };
   return {
     database,
     setDatabase,
     otbGameLoading,
     fetchOTBGame,
-    otbGamePgn,
+    otbGame,
     data,
     error,
     isLoading: debounceSyncRef.current ? isLoading : true,
     sourceGame: debouncedGame,
+    fetchGameAsync,
   };
 }

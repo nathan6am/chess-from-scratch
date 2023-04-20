@@ -7,17 +7,20 @@ import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import { ResizableBox } from "react-resizable";
 import BoardControls from "../game/BoardControls";
 import { FadeLoader, ClipLoader } from "react-spinners";
+import { IoMdOpen } from "react-icons/io";
+import Link from "next/link";
 interface Props {
   shown: boolean;
   pgn: string;
   closePlayer: () => void;
   loading: boolean;
+  link?: string;
 }
 import * as Chess from "@/lib/chess";
 import useGameViewer from "@/hooks/useGameReplay";
 import { replacePieceChars } from "../game/MoveHistory";
 import { TreeNode } from "@/hooks/useTreeData";
-export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props) {
+export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: Props) {
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const replay = useGameViewer({ pgn });
   const { currentGame, boardControls, currentKey, setCurrentKey, currentLine, tagData } = replay;
@@ -63,6 +66,15 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   )}
                 </div>
                 <button onClick={closePlayer}>Close</button>
+                <Link
+                  href={link || ""}
+                  data-tooltip-id="my-tooltip"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  data-tooltip-content="Open in new anlaysis"
+                >
+                  <IoMdOpen />
+                </Link>
               </div>
 
               <div className="w-full h-8 relative">
@@ -76,9 +88,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
                     {tagData?.white || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${
-                      tagData?.eloWhite || "?"
-                    })`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloWhite || "?"})`}</span>
                   </p>
                 </div>
                 <ResizableBox
@@ -97,15 +107,13 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                       className="w-[20px] h-[20px] react-resizable-handle-se absolute bottom-0 right-0 z-[300]"
                       ref={ref}
                     >
-                      <div
-                        className="pointer-none h-full"
-                        style={{ overflow: "hidden", resize: "both" }}
-                      ></div>
+                      <div className="pointer-none h-full" style={{ overflow: "hidden", resize: "both" }}></div>
                     </div>
                   )}
                 >
                   <Board
-                    disableArrows
+                    //disableArrows
+                    squareIdPrefix="popup-board"
                     showCoordinates={settings.display.showCoordinates}
                     movementType="both"
                     theme={settings.display.boardTheme}
@@ -129,9 +137,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading }: Props)
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
                     {tagData?.black || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${
-                      tagData?.eloBlack || "?"
-                    })`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloBlack || "?"})`}</span>
                   </p>
                 </div>
               </div>
@@ -194,9 +200,7 @@ function RenderMove({ pgn, active, onClick, halfMoveCount }: MoveProps) {
   return (
     <div ref={ref} className="flex flex-row text-xs">
       {isWhite && (
-        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>
-          {Chess.moveCountToNotation(halfMoveCount)}
-        </span>
+        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>{Chess.moveCountToNotation(halfMoveCount)}</span>
       )}
       <span
         className={`cursor-pointer  mx-[2px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white/[0.7] ${

@@ -91,14 +91,7 @@ interface VariationProps {
   showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
 
-function RenderVariation({
-  node,
-  selectedKey,
-  setSelectedKey,
-  depth,
-  path,
-  showContextMenu,
-}: VariationProps) {
+function RenderVariation({ node, selectedKey, setSelectedKey, depth, path, showContextMenu }: VariationProps) {
   const { line, subVariations } = getVariation(node);
   const [expanded, setExpanded] = useState<boolean>(true);
   const forceExpand = useMemo(() => {
@@ -111,11 +104,7 @@ function RenderVariation({
     }
   }, [forceExpand]);
   return (
-    <div
-      className={`w-full ${
-        (depth || 0) > 0 ? "border-dotted border-l" : ""
-      } border-white/[0.2] text-sm`}
-    >
+    <div className={`w-full ${(depth || 0) > 0 ? "border-dotted border-l" : ""} border-white/[0.2] text-sm`}>
       <div className="flex flex-wrap py-2 pl-4 pr-2 relative rounded">
         <p className="text-sepia/[0.8] indent-[-1.5em] pl-[1.5em]">
           {subVariations.length > 0 && (
@@ -199,8 +188,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path, showContextMenu }: 
   const firstNode = nodes.find((node) => node !== null);
   const comment = nodes.find((node) => node?.data.comment?.length)?.data.comment;
   const forceExpand = useMemo(
-    () =>
-      path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
+    () => path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
     [path, variations]
   );
   useEffect(() => {
@@ -315,11 +303,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey, showContextMenu }: 
         }
       }}
       className={` border-white/[0.2] border-r h-full p-2 ${
-        selected
-          ? "bg-blue-400/[0.2] cursor-pointer"
-          : node
-          ? "hover:bg-white/[0.1] cursor-pointer"
-          : ""
+        selected ? "bg-blue-400/[0.2] cursor-pointer" : node ? "hover:bg-white/[0.1] cursor-pointer" : ""
       } `}
     >
       <div className="flex flex-row justify-between items-center">
@@ -406,9 +390,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index, showContextMenu 
           />
         </span>
       </span>
-      {annotationStr.length > 0 && (
-        <span className="inline text-white/[0.8] mr-1">{annotationStr}</span>
-      )}
+      {annotationStr.length > 0 && <span className="inline text-white/[0.8] mr-1">{annotationStr}</span>}
       {node.data.comment && " " + node.data.comment + " "}
     </>
   );
@@ -449,7 +431,7 @@ const dictionary: NAG[] = [
     code: 6,
     description: "Dubious Move",
     unicode: "\u2048",
-    className: "text-fuchsia-400",
+    className: "text-yellow-500",
   },
   {
     code: 7,
@@ -565,13 +547,7 @@ interface MoveTextProps {
   className?: string;
   usePieceIcons?: boolean;
 }
-function MoveText({
-  pgn,
-  color = "w",
-  annotations = [],
-  className,
-  usePieceIcons = true,
-}: MoveTextProps) {
+function MoveText({ pgn, color = "w", annotations = [], className, usePieceIcons = true }: MoveTextProps) {
   const nags = useMemo(() => {
     return annotations
       .sort((a, b) => a - b)

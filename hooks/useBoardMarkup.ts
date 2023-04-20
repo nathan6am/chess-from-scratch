@@ -1,5 +1,5 @@
 import { Arrow } from "@/components/analysis/BoardArrows";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, MouseEventHandler } from "react";
 import { Square } from "@/lib/chess";
 
 export interface MarkedSquare {
@@ -17,14 +17,7 @@ interface Args {
 }
 export type ArrowColor = "R" | "G" | "O" | "B" | "Y";
 
-export default function useBoardMarkup({
-  currentSquare,
-  lockArrows,
-  color,
-  disabled,
-  onArrow,
-  onMarkSquare,
-}: Args) {
+export default function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }: Args) {
   const [currentArrowStart, setCurrentArrowStart] = useState<Square | null>(null);
   const start = (square: Square | null) => {
     setCurrentArrowStart(square);
@@ -51,6 +44,21 @@ export default function useBoardMarkup({
     }
   };
 
+  const onMouseDown: MouseEventHandler<HTMLDivElement> = (e) => {
+    if (currentSquare) {
+      if (e.button === 2) start(currentSquare);
+      //else clear();
+    }
+  };
+  const onMouseUp: MouseEventHandler<HTMLDivElement> = (e) => {
+    if (e.button === 2) {
+      finalize();
+    }
+  };
+  const onContextMenu: MouseEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+  };
+
   useEffect(() => {
     if (disabled) return;
     const downhandler = (e: MouseEvent) => {
@@ -67,7 +75,7 @@ export default function useBoardMarkup({
     const contextmenuHandler = (e: MouseEvent) => {
       if (currentSquare) e.preventDefault();
     };
-    document.addEventListener("mousedown", downhandler);
+    //document.addEventListener("mousedown", downhandler);
     document.addEventListener("mouseup", uphandler);
     document.addEventListener("contextmenu", contextmenuHandler);
 
@@ -77,7 +85,7 @@ export default function useBoardMarkup({
       document.removeEventListener("contextmenu", contextmenuHandler);
     };
   }, [currentSquare, start, finalize, lockArrows]);
-  return currentArrow;
+  return { currentArrow, onMouseDown, onMouseUp, onContextMenu };
 }
 
 export function useArrowState() {
@@ -86,9 +94,7 @@ export function useArrowState() {
   const onArrow = (newArrow: Arrow) => {
     setArrows((current) => {
       if (current.some((arrow) => arrow.start === newArrow.start && arrow.end === newArrow.end)) {
-        return current.filter(
-          (arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end)
-        );
+        return current.filter((arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end));
       } else {
         return [...current, newArrow];
       }

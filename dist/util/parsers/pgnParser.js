@@ -104,8 +104,9 @@ function parseCommands(commands) {
                 data.arrows = arrows;
         }
         else if (command.type === "%clk") {
-            const timeRemaining = luxon_1.Duration.fromISOTime(command.value).toMillis();
-            data.timeRemaining = timeRemaining;
+            const [hours, minutes, seconds] = command.value.split(":").map((str) => parseInt(str));
+            const timeRemaining = luxon_1.Duration.fromObject({ hours, minutes, seconds });
+            data.timeRemaining = timeRemaining.toMillis();
         }
     });
     return data;
@@ -360,7 +361,7 @@ function parseMoveText(movetext, startPosition) {
             throw new Error("Invalid PGN string");
         const currentGame = getCurrentGame();
         //Verify the move text is a valid/legal move
-        const move = currentGame.legalMoves.find((move) => move.PGN === pgn);
+        let move = currentGame.legalMoves.find((move) => move.PGN === pgn.replace("#", "+"));
         if (!move) {
             console.log(pgn);
             console.log(currentGame.legalMoves);
