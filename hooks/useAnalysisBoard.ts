@@ -22,6 +22,7 @@ export interface AnalysisData {
 export interface AnalysisHook {
   tree: VariationTree;
   loadPgn: (pgn: string) => void;
+  pgn: string;
   currentKey: string | null;
   currentNode: Node | null;
   moveText: string;
@@ -72,7 +73,7 @@ const defaultOptions = {
   readonly: false,
 };
 
-import { PGNTagData, parsePgn } from "@/util/parsers/pgnParser";
+import { PGNTagData, parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
 import { Arrow } from "@/components/analysis/BoardArrows";
 import { MarkedSquare } from "./useBoardMarkup";
 
@@ -84,7 +85,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const { id } = options;
   const [evalEnabled, setEvalEnabled] = useState(() => options.evalEnabled);
   const [startPosEval, setStartPosEval] = useState<Chess.FinalEvaluation | undefined>();
-  const evaler = useLocalEval();
+  const [tagData, setTagData] = useState<PGNTagData>({});
+
   const initialGame = useMemo<Chess.Game>(() => {
     const game = Chess.createGame({
       startPosition: options.startPosition,
@@ -118,23 +120,22 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
           return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
         });
       }
+      console.log(tagData);
+      setTagData({
+        event: tagData.event === "?" ? undefined : tagData.event,
+        site: tagData.site === "?" ? undefined : tagData.site,
+        date: tagData.date === "????.??.??" ? undefined : tagData.date,
+        round: tagData.round === "?" ? undefined : tagData.round,
+        ...tagData,
+      });
       variationTree.loadNewTree(tree);
     } catch (e) {
       console.error(e);
     }
   };
 
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    moveText,
-    mainLine,
-    setCurrentKey,
-  } = variationTree;
+  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
+    variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -158,6 +159,11 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     );
   }, [currentNode, initialGame, options.startPosition, path]);
 
+  const pgn = useMemo(() => {
+    const tagSection = tagDataToPGNString(tagData);
+    return tagSection + "\r\n" + moveText + (tagData?.result || "*");
+  }, [moveText, tagData]);
+
   const explorer = useOpeningExplorer(currentGame);
   //Move sounds
   const [playMove] = useSound("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
@@ -177,13 +183,19 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, [lastMove, playMove, playCapture, playCastle]);
 
   const cacheEvaluation = useCallback(
-    (nodeId: string, evaluation: Chess.FinalEvaluation) => {
-      variationTree.tree.updateNode(nodeId, {
-        evaluation,
-      });
+    (evaluation: Chess.FinalEvaluation) => {
+      if (currentKey === null) setStartPosEval(evaluation);
+      else
+        variationTree.tree.updateNode(currentKey, {
+          evaluation,
+        });
     },
-    [variationTree.tree]
+    [variationTree.tree, currentKey]
   );
+  const cachedEvaluation = useMemo(() => {
+    if (currentNode) return currentNode.data.evaluation || null;
+    else return startPosEval || null;
+  }, [currentNode, startPosEval]);
 
   const updateComment = useCallback(
     (nodeId: string, comment: string) => {
@@ -242,37 +254,48 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   );
 
   //Debounce data change for evaler/api request
+
   const debouncedNode = useDebounce(currentNode, 300);
-  const currentNodeKey = useRef<string | null>();
-  useEffect(() => {
-    if (currentNodeKey.current === (debouncedNode?.key || null)) {
-      return;
+  const debouncedGame = useDebounce(currentGame, 300);
+  const debouncedFen = useMemo(() => {
+    const game = debouncedGame;
+    let fen = game.fen;
+    if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
+      const args = fen.split(" ");
+      args[3] = "-";
+      fen = args.join(" ");
     }
-    if (!evalEnabled) {
-      evaler.stop();
-    }
-    if (evaler.isReady && evalEnabled) {
-      currentNodeKey.current = debouncedNode?.key || null;
-      if (!debouncedNode) {
-        evaler.getEvaluation(initialGame.fen, startPosEval).then((result) => {
-          if (result) {
-            setStartPosEval(result);
-          }
-        });
-      } else {
-        let fen = debouncedNode.data.fen;
-        const game = Chess.gameFromNodeData(debouncedNode.data);
-        if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
-          const args = fen.split(" ");
-          args[3] = "-";
-          fen = args.join(" ");
-        }
-        evaler.getEvaluation(fen, debouncedNode.data.evaluation).then((result) => {
-          if (result) cacheEvaluation(debouncedNode.key, result);
-        });
-      }
-    }
-  }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
+    return fen;
+  }, [debouncedGame]);
+  const evaler = useLocalEval({
+    disabled: !evalEnabled,
+    fen: debouncedFen,
+    cacheEval: cacheEvaluation,
+    cachedEval: cachedEvaluation,
+  });
+  // useEffect(() => {
+  //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
+  //     return;
+  //   }
+  //   if (!evalEnabled) {
+  //     evaler.stop();
+  //   }
+  //   if (evaler.isReady && evalEnabled) {
+  //     currentNodeKey.current = debouncedNode?.key || null;
+  //     if (!debouncedNode) {
+  //       evaler.getEvaluation(initialGame.fen, startPosEval).then((result) => {
+  //         if (result) {
+  //           setStartPosEval(result);
+  //         }
+  //       });
+  //     } else {
+
+  //       evaler.getEvaluation(fen, debouncedNode.data.evaluation).then((result) => {
+  //         if (result) cacheEvaluation(debouncedNode.key, result);
+  //       });
+  //     }
+  //   }
+  // }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
 
   const currentLine = useMemo(() => {
     return [...path, ...continuation];
@@ -356,12 +379,13 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     if (!currentNode) return;
     clearMarkup(currentNode.key);
   }, [currentNode, clearMarkup]);
-  const [arrowColor, setArrowColor] = useState<ArrowColor>("O");
+  const [arrowColor, setArrowColor] = useState<ArrowColor>("G");
 
   return {
     tree: variationTree,
     loadPgn,
     moveText,
+    pgn,
     mainLine,
     rootNodes: variationTree.treeArray,
     currentGame,

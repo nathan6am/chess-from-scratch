@@ -106,7 +106,7 @@ export interface ExplorerHook {
 }
 
 export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHook {
-  const [database, setDatabase] = useState<"lichess" | "masters">("lichess");
+  const [database, setDatabase] = useState<"lichess" | "masters">("masters");
   const [mastersFilters, setMastersFilters] = useState<{}>({});
   const [lichessFilters, setLichessFilters] = useState<{}>({});
   const [gameId, fetchOTBGame] = useState<string | null>(null);

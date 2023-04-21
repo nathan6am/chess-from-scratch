@@ -6,6 +6,7 @@ export interface VariationTree<T extends Chess.NodeData = Chess.NodeData> {
   tree: TreeHook<T>;
   loadNewTree: (tree: TreeNode<T>[]) => void;
   moveText: string;
+  moveTextRaw: string;
   mainLine: TreeNode<T>[];
   rootNodes: TreeNode<T>[];
   findNextMove: (uci: string) => string | undefined;
@@ -39,6 +40,10 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return treeArrayToMoveText(tree.treeArray);
   }, [tree]);
 
+  const moveTextRaw = useMemo(() => {
+    return treeArrayToMoveText(tree.treeArray, false);
+  }, [tree]);
+
   const mainLine = useMemo<TreeNode<T>[]>(() => {
     const root = tree.treeArray[0];
     let path: TreeNode<T>[] = [];
@@ -54,7 +59,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return tree.treeArray;
   }, [tree.treeArray]);
 
-  function treeArrayToMoveText(treeArray: TreeNode<T>[]) {
+  function treeArrayToMoveText(treeArray: TreeNode<T>[], annotate: boolean = true) {
     let movetext = "";
     let stack: TreeNode<T>[] = [];
     let previousVariationDepth = 0;
@@ -84,12 +89,11 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
         movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       movetext += `${node.data.PGN} ${
-        node.data.annotations.length
+        node.data.annotations.length && annotate
           ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
           : ""
-      } ${encodeCommentFromNodeData(node.data)}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
-        movetext += ")";
+      } ${annotate ? encodeCommentFromNodeData(node.data) : node.data.comment || ""}`;
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
@@ -130,10 +134,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
       if (!node) return;
       const index = tree.getSiblingIndex(key);
       if (index === 0) {
-        const variationStart = tree.findFirstAncestor(
-          key,
-          (node) => tree.getSiblingIndex(node.key) !== 0
-        );
+        const variationStart = tree.findFirstAncestor(key, (node) => tree.getSiblingIndex(node.key) !== 0);
         if (!variationStart) return;
         tree.setSiblingIndex(variationStart.key, tree.getSiblingIndex(variationStart.key) - 1);
       } else {
@@ -216,6 +217,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     tree,
     loadNewTree,
     moveText,
+    moveTextRaw,
     mainLine,
     rootNodes,
     findNextMove,

@@ -101,6 +101,7 @@ interface EvalOptions {
   fen: string;
   useNNUE: boolean;
   multiPV: number;
+  showLinesAfterDepth: number;
 }
 
 export interface EvalInfo {
@@ -179,6 +180,7 @@ export interface PartialEval {
   score: { type: "cp" | "mate"; value: number };
   depth: number;
   bestMove?: UCIMove;
+  lines?: Line[];
 }
 export type UCIMove = {
   start: Square;
@@ -208,8 +210,9 @@ export interface FinalEvaluation {
 }
 export async function getEvaluation(
   evaler: Worker,
-  options: EvalOptions = { depth: 10, fen: "", useNNUE: false, multiPV: 3 },
-  callback: (patialEval: PartialEval) => void
+  options: EvalOptions = { depth: 10, fen: "", useNNUE: false, multiPV: 3, showLinesAfterDepth: 15 },
+  onEvalUpdate: (partialEval: PartialEval) => void,
+  onLineUpdate: (lines: Line[]) => void
 ): Promise<FinalEvaluation> {
   const stockfish = evaler;
   let info: EvalInfo;
@@ -231,21 +234,32 @@ export async function getEvaluation(
           };
           if (evalInfo.multiPV === 1) {
             info = evalInfo;
-            callback({
+            if (!info) return;
+            onEvalUpdate({
               score,
               depth: evalInfo.depth,
               bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
             });
           }
           multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
+          if (evalInfo.depth >= options.showLinesAfterDepth) {
+            //console.log(multiPVs);
+            onLineUpdate(
+              multiPVs.map((variation) => ({
+                score: variation.score,
+                moves: variation.moves.map((uci) => parseUciMove(uci)),
+              }))
+            );
+          }
         }
       }
 
       if (args[0] === "bestmove") {
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
-        if (info.depth !== options.depth) {
+        if (!info || info?.depth !== options.depth) {
           reject("depth not reached");
+          return;
         }
         const finalEval: FinalEvaluation = {
           lines: multiPVs.map((variation) => ({
@@ -272,7 +286,7 @@ export async function getEvaluation(
     timer = setTimeout(() => {
       stockfish.removeEventListener("message", handler);
       reject(new Error("timeout waiting for response on command `evaluation`"));
-    }, 400000);
+    }, 90000000);
   });
 
   const final = await evaluation;
@@ -316,14 +330,14 @@ export function parseUciMove(uci: string): UCIMove {
 export async function stop(stockfish: Worker, timeout?: number) {
   let timer: NodeJS.Timeout;
   const stop = new Promise<boolean>((resolve, reject) => {
-    console.log("stopping");
+    //console.log("stopping");
     const handler = (e: MessageEvent) => {
       const args = e.data.split(" ");
       if (args[0] === "bestmove") {
         //clear timeout on correct response
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
-        console.log("stopped");
+        //console.log("stopped");
         resolve(true);
       }
     };

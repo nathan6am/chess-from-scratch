@@ -71,16 +71,29 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
     ],
   });
   const parsedLines = useMemo(() => {
-    if (evaler.inProgress || !enabled || !evaler.evaluation) {
+    if (!enabled) {
       return [];
     }
-    const lines = evaler.evaluation.lines.map((line) => ({
-      ...line,
-      moves: uciMovesToPgn(line, currentGame),
-      moveCount: currentGame.moveHistory.flat().filter(notEmpty).length + 1,
-    }));
-    return lines;
-  }, [enabled, evaler.inProgress, evaler.evaluation]);
+    if (evaler.currentDepth < evaler.currentOptions.showLinesAfterDepth) {
+      return [];
+    }
+    if (!evaler.inProgress && evaler.evaluation) {
+      const lines = evaler.evaluation.lines.map((line) => ({
+        ...line,
+        moves: uciMovesToPgn(line, currentGame),
+        moveCount: currentGame.moveHistory.flat().filter(notEmpty).length + 1,
+      }));
+      return lines;
+    }
+    if (evaler.currentLines) {
+      return evaler.currentLines.map((line) => ({
+        ...line,
+        moves: uciMovesToPgn(line, currentGame),
+        moveCount: currentGame.moveHistory.flat().filter(notEmpty).length + 1,
+      }));
+    }
+    return [];
+  }, [enabled, evaler.inProgress, evaler.evaluation, evaler.currentLines]);
   const score = useMemo(() => {
     if (evaler.currentScore) return parseScore(evaler.currentScore);
     else return "+0.0";
@@ -168,6 +181,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
               {/* <p>Best move: {`${bestMove || ""}`}</p> */}
               <>
                 {evaler.inProgress &&
+                  (evaler.currentDepth < evaler.currentOptions.showLinesAfterDepth || !evaler.currentLines) &&
                   Array.from(Array(evaler.currentOptions.multiPV).keys()).map((_, idx) => {
                     return (
                       <div key={idx} className="flex flex-row items-center h-6 w-full ">
@@ -186,8 +200,9 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
                     );
                   })}
               </>
-              {evaler.evaluation &&
-                !evaler.inProgress &&
+              {evaler.currentDepth >= evaler.currentOptions.showLinesAfterDepth &&
+                evaler.currentLines &&
+                evaler.currentLines.length > 0 &&
                 parsedLines.map((line, idx) => {
                   return <RenderLine key={idx} line={line} attemptMoves={attemptMoves} currentGame={currentGame} />;
                 })}
@@ -310,6 +325,15 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
         max={30}
         onChange={(val) => {
           evaler.updateOptions({ depth: val });
+        }}
+      />
+      <NumbericInput
+        label="Show Lines After Depth"
+        value={evaler.currentOptions.showLinesAfterDepth}
+        min={evaler.currentOptions.depth < 10 ? evaler.currentOptions.depth : 10}
+        max={evaler.currentOptions.depth}
+        onChange={(val) => {
+          evaler.updateOptions({ showLinesAfterDepth: val });
         }}
       />
       <Toggle

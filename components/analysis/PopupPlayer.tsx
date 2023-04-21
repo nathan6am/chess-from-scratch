@@ -7,7 +7,7 @@ import useAnalysisBoard from "@/hooks/useAnalysisBoard";
 import { ResizableBox } from "react-resizable";
 import BoardControls from "../game/BoardControls";
 import { FadeLoader, ClipLoader } from "react-spinners";
-import { IoMdOpen } from "react-icons/io";
+import { IoMdOpen, IoMdClose, IoMdMore } from "react-icons/io";
 import Link from "next/link";
 interface Props {
   shown: boolean;
@@ -20,6 +20,7 @@ import * as Chess from "@/lib/chess";
 import useGameViewer from "@/hooks/useGameReplay";
 import { replacePieceChars } from "../game/MoveHistory";
 import { TreeNode } from "@/hooks/useTreeData";
+import { result } from "lodash";
 export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: Props) {
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const replay = useGameViewer({ pgn });
@@ -50,31 +51,41 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                 );
               })}
           </div> */}
-              <div className="w-full px-4 py-2 handle flex flex-row justify-between">
-                <div>
-                  {loading ? (
-                    <p className="opacity-70">
-                      <span className="inline mr-1">
-                        <ClipLoader className="inline" color="white" size={14} />
-                      </span>
-                      Loading Game
-                    </p>
-                  ) : (
-                    <p>
-                      {tagData?.event || ""} - {tagData?.date || ""}
-                    </p>
-                  )}
+              <div className="w-full pl-4 pr-1 py-2 handle flex flex-row justify-between ">
+                <div className="grow relative cursor-move">
+                  <div className="absolute top-0 bottom-0 left-0 right-0 flex items-center pointer-none">
+                    {loading ? (
+                      <p className="opacity-70">
+                        <span className="inline mr-1">
+                          <ClipLoader className="inline" color="white" size={14} />
+                        </span>
+                        Loading Game
+                      </p>
+                    ) : (
+                      <h4 className="truncate">
+                        {tagData?.event || ""} - {tagData?.date || ""}
+                      </h4>
+                    )}
+                  </div>
                 </div>
-                <button onClick={closePlayer}>Close</button>
-                <Link
-                  href={link || ""}
-                  data-tooltip-id="my-tooltip"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                  data-tooltip-content="Open in new anlaysis"
-                >
-                  <IoMdOpen />
-                </Link>
+                <div className="flex flex-row items-center w-fit whitespace-nowrap">
+                  <button>
+                    <IoMdMore className="text-white/[0.8] hover:text-white text-2xl" />
+                  </button>
+                  <Link
+                    className="mr-1 text-xl text-white/[0.8] hover:text-white"
+                    href={link || ""}
+                    data-tooltip-id="my-tooltip"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    data-tooltip-content="Open in New Analysis Board"
+                  >
+                    <IoMdOpen />
+                  </Link>
+                  <button onClick={closePlayer} data-tooltip-id="my-tooltip" data-tooltip-content="Close Player">
+                    <IoMdClose className=" text-white/[0.8] hover:text-white text-2xl " />
+                  </button>
+                </div>
               </div>
 
               <div className="w-full h-8 relative">
@@ -112,6 +123,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                   )}
                 >
                   <Board
+                    overrideTheme
                     //disableArrows
                     squareIdPrefix="popup-board"
                     showCoordinates={settings.display.showCoordinates}
@@ -160,8 +172,9 @@ interface TapeProps {
   line: TreeNode<Chess.NodeData>[];
   currentKey: string | null;
   jumpToKey: (key: string) => void;
+  result?: string;
 }
-function MoveTape({ line, currentKey, jumpToKey }: TapeProps) {
+function MoveTape({ line, currentKey, jumpToKey, result }: TapeProps) {
   return (
     <>
       <div className="pl-4 h-8 items-center flex flex-row w-full overflow-x-scroll scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#121212] scrollbar-w-[8px] bg-black/[0.5]">
@@ -178,6 +191,9 @@ function MoveTape({ line, currentKey, jumpToKey }: TapeProps) {
             />
           );
         })}
+        <div className="flex flex-row text-sm mr-2">
+          <span className={` ml-[2px] opacity-80 text-white font-bold`}>{result || "1-0"}</span>
+        </div>
       </div>
     </>
   );

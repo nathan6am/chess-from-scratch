@@ -31,6 +31,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
     currentKey,
     setCurrentKey,
     path,
+    pgn,
     currentNode,
     moveText,
     commentControls,
@@ -88,17 +89,17 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
             >
               {expanded ? <VscCollapseAll className="" /> : <VscExpandAll />}
             </button>
-            <StyledTab>
+            <StyledTab expand={() => setExpanded(true)}>
               <p>
                 <MdModeComment className="inline mr-1" /> Comment
               </p>
             </StyledTab>
-            <StyledTab>
+            <StyledTab expand={() => setExpanded(true)}>
               <p>
                 <FaExclamationCircle className="inline mr-1" /> Annotate
               </p>
             </StyledTab>
-            <StyledTab>
+            <StyledTab expand={() => setExpanded(true)}>
               <p>
                 <BsShareFill className="inline mr-1 mb-1 text-sm" /> Share
               </p>
@@ -106,11 +107,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments
-                key={currentNode?.key || "none"}
-                node={currentNode}
-                controls={commentControls}
-              />
+              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -127,7 +124,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
               />
             </Tab.Panel>
             <Tab.Panel>
-              <Share boardRef={boardRef} pgn={moveText} fen={currentGame.fen} />
+              <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
@@ -140,19 +137,19 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-interface TabProps {
+interface StyledTabProps {
   children?: JSX.Element | JSX.Element[] | string;
+  expand: () => void;
 }
-function StyledTab({ children }: TabProps) {
+function StyledTab({ children, expand }: StyledTabProps) {
   return (
     <Tab
+      onClick={expand}
       className={({ selected }) =>
         classNames(
           "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected
-            ? "bg-[#202020]"
-            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

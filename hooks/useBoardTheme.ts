@@ -1,7 +1,8 @@
 import { useLayoutEffect } from "react";
 
-export default function useBoardTheme(theme: string) {
+export default function useBoardTheme(theme: string, override?: boolean) {
   useLayoutEffect(() => {
+    if (override) return;
     var head = document.head;
     var link = document.createElement("link");
 

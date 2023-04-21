@@ -24,9 +24,11 @@ import useBoardMarkup, { ArrowColor, MarkedSquare, useArrowState } from "@/hooks
 import { Arrow } from "../analysis/BoardArrows";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
+  editMode?: boolean;
   squareIdPrefix?: string;
   keyPrefix?: string;
   hidePieces?: boolean;
+  overrideTheme?: boolean;
   disableTransitions?: boolean;
   showCoordinates: "hidden" | "inside" | "outside"; //Where or if to display the rank and file indictors
   theme: string; //Board theme
@@ -66,6 +68,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
   (
     {
       disableTransitions,
+      overrideTheme,
       squareIdPrefix,
       hidePieces,
       showCoordinates,
@@ -101,8 +104,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
     const boardRef = useRef<HTMLDivElement>(null);
 
     //Load board/pieces css
-    useBoardTheme(theme);
-    usePieceSet(pieceSet);
+    useBoardTheme(theme, overrideTheme);
+    usePieceSet(pieceSet, overrideTheme);
 
     // Track the current square of the pointer
     const currentSquare = useCurrentSquare(orientation, boardRef);
