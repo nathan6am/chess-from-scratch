@@ -38,12 +38,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const react_1 = require("react");
 const commands = __importStar(require("@/lib/chess/UciCmds"));
 const axios_1 = __importDefault(require("axios"));
+const lodash_1 = __importDefault(require("lodash"));
+const useDebouncedCallback_1 = __importDefault(require("./useDebouncedCallback"));
+const useThrottledValue_1 = __importDefault(require("./useThrottledValue"));
 const defaultOptions = {
     useCloud: true,
     multiPV: 3,
     useNNUE: true,
     depth: 18,
     showEvalBar: true,
+    showLinesAfterDepth: 12,
 };
 function pvToLine(pv) {
     if (pv.cp === undefined && pv.mate === undefined)
@@ -95,12 +99,14 @@ function convertCloudEval(cloudEval, activeColor) {
         score,
     };
 }
-function useLocalEval(initialOptions) {
+function useLocalEval({ initialOptions, fen, cachedEval, cacheEval, disabled, }) {
     const [options, setOptions] = (0, react_1.useState)(Object.assign(Object.assign({}, initialOptions), defaultOptions));
     const [error, setError] = (0, react_1.useState)(null);
     const [inProgress, setInProgress] = (0, react_1.useState)(false);
     const [currentScore, setCurrentScore] = (0, react_1.useState)(null);
     const [currentDepth, setCurrentDepth] = (0, react_1.useState)(0);
+    const [currentLines, setCurrentLines] = (0, react_1.useState)(null);
+    const throttledLines = (0, useThrottledValue_1.default)({ value: currentLines, throttleMs: 600 });
     const [bestMove, setBestMove] = (0, react_1.useState)(null);
     const [evaluation, setEvaluation] = (0, react_1.useState)(null);
     const [staticEval, setStaticEval] = (0, react_1.useState)(null);
@@ -166,82 +172,6 @@ function useLocalEval(initialOptions) {
             });
         }
     }, [error, stockfishRef]);
-    (0, react_1.useEffect)(() => {
-        if (lastFen.current)
-            getEvaluation(lastFen.current);
-    }, [options]);
-    const getEvaluation = (fen, cachedEval) => __awaiter(this, void 0, void 0, function* () {
-        if (!isReady || !stockfishRef.current) {
-            setError(new Error("Eval engine not yet initialized"));
-            return;
-        }
-        else {
-            lastFen.current = fen;
-            const evaler = stockfishRef.current;
-            if (inProgress) {
-                yield stop();
-            }
-            // try {
-            //   await commands.getStaticEvaluation(evaler, fen);
-            // } catch (e) {
-            //   setStaticEval(null);
-            // }
-            if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
-                setEvaluation(cachedEval);
-                setCurrentDepth(cachedEval.depth);
-                setCurrentScore(cachedEval.score);
-                return;
-            }
-            else if (options.useCloud) {
-                try {
-                    const res = yield axios_1.default.get("https://lichess.org/api/cloud-eval", {
-                        params: {
-                            fen,
-                            multiPv: options.multiPV,
-                        },
-                    });
-                    if (res.status === 200 && res.data) {
-                        const activeColor = fen.split(" ")[1];
-                        const cloudEval = res.data;
-                        const evaluation = convertCloudEval(cloudEval, activeColor);
-                        setEvaluation(evaluation);
-                        setCurrentDepth(evaluation.depth);
-                        setCurrentScore(evaluation.score);
-                        setBestMove(evaluation.bestMove);
-                        return;
-                    }
-                }
-                catch (e) { }
-            }
-            setCurrentDepth(0);
-            //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
-            //before promise resolves with final evalutaion
-            const cb = (partialEval) => {
-                setCurrentDepth(partialEval.depth);
-                setCurrentScore(partialEval.score);
-                if (partialEval.bestMove) {
-                    setBestMove(partialEval.bestMove);
-                }
-            };
-            setInProgress(true);
-            setFinished(false);
-            try {
-                console.log("getting eval");
-                console.log(fen);
-                const result = yield commands.getEvaluation(evaler, Object.assign({ fen: fen }, options), cb);
-                setEvaluation(result);
-                setCurrentDepth(result.depth);
-                setBestMove(result.bestMove);
-                setInProgress(false);
-                setFinished(true);
-                return result;
-            }
-            catch (e) {
-                console.log(e);
-                setInProgress(false);
-            }
-        }
-    });
     const stop = () => __awaiter(this, void 0, void 0, function* () {
         const evaler = stockfishRef.current;
         if (!evaler)
@@ -262,20 +192,108 @@ function useLocalEval(initialOptions) {
             }
         }
     });
+    const getEvaluation = (0, useDebouncedCallback_1.default)((fen, cachedEval) => __awaiter(this, void 0, void 0, function* () {
+        if (!isReady || !stockfishRef.current) {
+            setError(new Error("Eval engine not yet initialized"));
+            return;
+        }
+        else {
+            setCurrentDepth(0);
+            setCurrentLines(null);
+            const evaler = stockfishRef.current;
+            if (inProgress) {
+                return;
+            }
+            //TODO: Static Evaluation
+            if (cachedEval &&
+                cachedEval.depth >= options.depth &&
+                cachedEval.lines.length >= options.multiPV) {
+                setEvaluation(cachedEval);
+                setCurrentDepth(cachedEval.depth);
+                setCurrentScore(cachedEval.score);
+                setCurrentLines(cachedEval.lines);
+                return;
+            }
+            else if (options.useCloud) {
+                try {
+                    const res = yield axios_1.default.get("https://lichess.org/api/cloud-eval", {
+                        params: {
+                            fen,
+                            multiPv: options.multiPV,
+                        },
+                    });
+                    if (res.status === 200 && res.data) {
+                        const activeColor = fen.split(" ")[1];
+                        const cloudEval = res.data;
+                        const evaluation = convertCloudEval(cloudEval, activeColor);
+                        setEvaluation(evaluation);
+                        setCurrentDepth(evaluation.depth);
+                        setCurrentScore(evaluation.score);
+                        setCurrentLines(evaluation.lines);
+                        setBestMove(evaluation.bestMove);
+                        return;
+                    }
+                }
+                catch (e) { }
+            }
+            //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
+            //before promise resolves with final evalutaion
+            const onEvalUpdate = (partialEval) => {
+                setCurrentDepth(partialEval.depth);
+                setCurrentScore(partialEval.score);
+                if (partialEval.bestMove) {
+                    setBestMove(partialEval.bestMove);
+                }
+            };
+            const onLineUpdate = (lines) => {
+                setCurrentLines(lines || null);
+            };
+            setInProgress(true);
+            setFinished(false);
+            try {
+                const result = yield commands.getEvaluation(evaler, Object.assign({ fen: fen }, options), onEvalUpdate, onLineUpdate);
+                setEvaluation(result);
+                setCurrentDepth(result.depth);
+                setBestMove(result.bestMove);
+                setInProgress(false);
+                setFinished(true);
+                return result;
+            }
+            catch (e) {
+                console.log(e);
+                setInProgress(false);
+            }
+        }
+    }), 600, [options, isReady, inProgress, stockfishRef]);
+    const lastOptions = (0, react_1.useRef)(options);
+    (0, react_1.useEffect)(() => {
+        if (disabled)
+            return;
+        if (!isReady)
+            return;
+        if (!lodash_1.default.isEqual(options, lastOptions.current) || lastFen.current !== fen) {
+            if (inProgress) {
+                stop();
+                return;
+            }
+            lastOptions.current = options;
+            lastFen.current = fen;
+            getEvaluation(fen, cachedEval || undefined);
+        }
+    }, [fen, options, getEvaluation, cachedEval, disabled, isReady, inProgress]);
     return {
-        currentOptions: options,
+        options,
         updateOptions,
         isReady,
         evaluation,
-        getEvaluation,
         currentDepth,
         currentScore,
+        currentLines: throttledLines,
         error,
         inProgress,
         finished,
         bestMove,
         wasmSupported,
-        stop,
     };
 }
 exports.default = useLocalEval;

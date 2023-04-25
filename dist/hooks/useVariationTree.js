@@ -18,6 +18,9 @@ function useVariationTree(initialTree) {
     const moveText = (0, react_1.useMemo)(() => {
         return treeArrayToMoveText(tree.treeArray);
     }, [tree]);
+    const moveTextRaw = (0, react_1.useMemo)(() => {
+        return treeArrayToMoveText(tree.treeArray, false);
+    }, [tree]);
     const mainLine = (0, react_1.useMemo)(() => {
         const root = tree.treeArray[0];
         let path = [];
@@ -31,7 +34,7 @@ function useVariationTree(initialTree) {
     const rootNodes = (0, react_1.useMemo)(() => {
         return tree.treeArray;
     }, [tree.treeArray]);
-    function treeArrayToMoveText(treeArray) {
+    function treeArrayToMoveText(treeArray, annotate = true) {
         let movetext = "";
         let stack = [];
         let previousVariationDepth = 0;
@@ -62,9 +65,9 @@ function useVariationTree(initialTree) {
             if (depthChange !== 0 || index !== 0 || isWhite) {
                 movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
             }
-            movetext += `${node.data.PGN} ${node.data.annotations.length
+            movetext += `${node.data.PGN} ${node.data.annotations.length && annotate
                 ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
-                : ""} ${(0, pgnParser_1.encodeCommentFromNodeData)(node.data)}`;
+                : ""} ${annotate ? (0, pgnParser_1.encodeCommentFromNodeData)(node.data) : node.data.comment || ""}`;
             if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
                 movetext += ")";
             if (node.children[0]) {
@@ -176,6 +179,7 @@ function useVariationTree(initialTree) {
         tree,
         loadNewTree,
         moveText,
+        moveTextRaw,
         mainLine,
         rootNodes,
         findNextMove,

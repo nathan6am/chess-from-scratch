@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef, useContext } from "r
 import { SettingsContext } from "@/context/settings";
 import useSound from "use-sound";
 import useVariationTree, { VariationTree } from "./useVariationTree";
-import useLocalEval, { Evaler } from "./useLocalEval";
+import useEvaler, { Evaler } from "./useEvaler";
 import useDebounce from "./useDebounce";
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
@@ -134,8 +134,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   };
 
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    moveText,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -267,12 +276,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
     return fen;
   }, [debouncedGame]);
-  const evaler = useLocalEval({
-    disabled: !evalEnabled,
-    fen: debouncedFen,
-    cacheEval: cacheEvaluation,
-    cachedEval: cachedEvaluation,
-  });
+  //const evaler = useEvaler(debouncedFen, !evalEnabled);
+  const evaler = useEvaler(debouncedFen, !evalEnabled);
   // useEffect(() => {
   //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
   //     return;

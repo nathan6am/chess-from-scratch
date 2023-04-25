@@ -114,7 +114,18 @@ function startup(stockfish) {
 exports.startup = startup;
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args) {
-    const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+    const values = [
+        "depth",
+        "multipv",
+        "score",
+        "seldepth",
+        "time",
+        "nodes",
+        "nps",
+        "time",
+        "pv",
+        "hashfull",
+    ];
     let reading = "";
     let evaluation = {
         depth: 0,
@@ -170,11 +181,18 @@ function parseEvalInfo(args) {
     });
     return evaluation;
 }
-function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, multiPV: 3 }, callback) {
+function getEvaluation(evaler, options = {
+    depth: 10,
+    fen: "",
+    useNNUE: false,
+    multiPV: 3,
+    showLinesAfterDepth: 15,
+}, onEvalUpdate, onLineUpdate) {
     return __awaiter(this, void 0, void 0, function* () {
         const stockfish = evaler;
         let info;
         let timer;
+        let aborted = true;
         let multiPVs = [];
         const evaluation = new Promise((resolve, reject) => {
             const handler = (e) => {
@@ -184,6 +202,7 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
                 const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
                 //Ignore some unnecessary messages
                 if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
+                    aborted = false;
                     const evalInfo = parseEvalInfo(args);
                     evalInfo.score.value = evalInfo.score.value * multiplier;
                     if (evalInfo.score.type !== "lowerbound" && evalInfo.score.type !== "upperbound") {
@@ -193,20 +212,34 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
                         };
                         if (evalInfo.multiPV === 1) {
                             info = evalInfo;
-                            callback({
+                            if (!info)
+                                return;
+                            onEvalUpdate({
                                 score,
                                 depth: evalInfo.depth,
                                 bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
                             });
                         }
                         multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
+                        if (evalInfo.depth >= options.showLinesAfterDepth) {
+                            //console.log(multiPVs);
+                            onLineUpdate(multiPVs.map((variation) => ({
+                                score: variation.score,
+                                moves: variation.moves.map((uci) => parseUciMove(uci)),
+                            })));
+                        }
                     }
                 }
                 if (args[0] === "bestmove") {
+                    if (aborted) {
+                        aborted = false;
+                        return;
+                    }
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
-                    if (info.depth !== options.depth) {
+                    if (!info || (info === null || info === void 0 ? void 0 : info.depth) !== options.depth) {
                         reject("depth not reached");
+                        return;
                     }
                     const finalEval = {
                         lines: multiPVs.map((variation) => (Object.assign(Object.assign({}, variation), { moves: variation.moves.map((uci) => parseUciMove(uci)) }))),
@@ -221,6 +254,7 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
                     resolve(finalEval);
                 }
             };
+            stockfish.postMessage("stop");
             stockfish.addEventListener("message", handler);
             stockfish.postMessage(`setoption name Use NNUE value ${options.useNNUE}`);
             stockfish.postMessage("setoption name UCI_AnalyseMode value true");
@@ -230,7 +264,7 @@ function getEvaluation(evaler, options = { depth: 10, fen: "", useNNUE: false, m
             timer = setTimeout(() => {
                 stockfish.removeEventListener("message", handler);
                 reject(new Error("timeout waiting for response on command `evaluation`"));
-            }, 400000);
+            }, 90000000);
         });
         const final = yield evaluation;
         return final;
@@ -278,14 +312,14 @@ function stop(stockfish, timeout) {
     return __awaiter(this, void 0, void 0, function* () {
         let timer;
         const stop = new Promise((resolve, reject) => {
-            console.log("stopping");
+            //console.log("stopping");
             const handler = (e) => {
                 const args = e.data.split(" ");
                 if (args[0] === "bestmove") {
                     //clear timeout on correct response
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
-                    console.log("stopped");
+                    //console.log("stopped");
                     resolve(true);
                 }
             };

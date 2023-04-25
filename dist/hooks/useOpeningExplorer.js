@@ -73,7 +73,7 @@ const fetcher = (game, database) => __awaiter(void 0, void 0, void 0, function* 
     return response.data;
 });
 function useOpeningExplorer(currentGame) {
-    const [database, setDatabase] = (0, react_1.useState)("lichess");
+    const [database, setDatabase] = (0, react_1.useState)("masters");
     const [mastersFilters, setMastersFilters] = (0, react_1.useState)({});
     const [lichessFilters, setLichessFilters] = (0, react_1.useState)({});
     const [gameId, fetchOTBGame] = (0, react_1.useState)(null);

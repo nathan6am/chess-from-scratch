@@ -203,7 +203,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 onPremove={() => {}}
               />
             </BoardColumn>
-            {evalEnabled && evaler.currentOptions.showEvalBar && (
+            {evalEnabled && evaler.options.showEvalBar && (
               <EvalBar
                 scoreType={evaler.currentScore?.type || "cp"}
                 value={evaler.currentScore?.value || 0}
@@ -231,27 +231,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
 }
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
-}
-
-interface TabProps {
-  children?: JSX.Element | JSX.Element[] | string;
-}
-function StyledTab({ children }: TabProps) {
-  return (
-    <Tab
-      className={({ selected }) =>
-        classNames(
-          "flex-1 border-b border-b-4 py-2 text-md text-white/[0.7] px-4",
-          "focus:outline-none ",
-          selected
-            ? "bg-[#303030] border-sepia"
-            : "bg-[#262626] border-[#262626] text-white/[0.5] hover:bg-[#202020] hover:text-white"
-        )
-      }
-    >
-      {children}
-    </Tab>
-  );
 }
 
 interface ToolBarProps {

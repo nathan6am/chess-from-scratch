@@ -121,7 +121,18 @@ export interface EvalInfo {
 
 //Convert UCI info message into evaluation object
 function parseEvalInfo(args: string[]): EvalInfo {
-  const values = ["depth", "multipv", "score", "seldepth", "time", "nodes", "nps", "time", "pv", "hashfull"];
+  const values = [
+    "depth",
+    "multipv",
+    "score",
+    "seldepth",
+    "time",
+    "nodes",
+    "nps",
+    "time",
+    "pv",
+    "hashfull",
+  ];
   let reading = "";
   let evaluation: EvalInfo = {
     depth: 0,
@@ -210,13 +221,20 @@ export interface FinalEvaluation {
 }
 export async function getEvaluation(
   evaler: Worker,
-  options: EvalOptions = { depth: 10, fen: "", useNNUE: false, multiPV: 3, showLinesAfterDepth: 15 },
+  options: EvalOptions = {
+    depth: 10,
+    fen: "",
+    useNNUE: false,
+    multiPV: 3,
+    showLinesAfterDepth: 15,
+  },
   onEvalUpdate: (partialEval: PartialEval) => void,
   onLineUpdate: (lines: Line[]) => void
 ): Promise<FinalEvaluation> {
   const stockfish = evaler;
   let info: EvalInfo;
   let timer: NodeJS.Timeout;
+  let aborted = true;
   let multiPVs: Variation[] = [];
   const evaluation = new Promise<FinalEvaluation>((resolve, reject) => {
     const handler = (e: MessageEvent) => {
@@ -225,6 +243,7 @@ export async function getEvaluation(
       const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
       //Ignore some unnecessary messages
       if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
+        aborted = false;
         const evalInfo = parseEvalInfo(args);
         evalInfo.score.value = evalInfo.score.value * multiplier;
         if (evalInfo.score.type !== "lowerbound" && evalInfo.score.type !== "upperbound") {
@@ -255,6 +274,10 @@ export async function getEvaluation(
       }
 
       if (args[0] === "bestmove") {
+        if (aborted) {
+          aborted = false;
+          return;
+        }
         clearTimeout(timer);
         stockfish.removeEventListener("message", handler);
         if (!info || info?.depth !== options.depth) {
@@ -277,6 +300,7 @@ export async function getEvaluation(
         resolve(finalEval);
       }
     };
+    stockfish.postMessage("stop");
     stockfish.addEventListener("message", handler);
     stockfish.postMessage(`setoption name Use NNUE value ${options.useNNUE}`);
     stockfish.postMessage("setoption name UCI_AnalyseMode value true");
@@ -301,6 +325,7 @@ export async function getStaticEvaluation(evaler: Worker, fen: string): Promise<
     const handler = (e: MessageEvent) => {
       //console.log(e.data);
     };
+
     stockfish.addEventListener("message", handler);
     stockfish.postMessage(`setoption name Use NNUE value true`);
     stockfish.postMessage("setoption name UCI_AnalyseMode value true");

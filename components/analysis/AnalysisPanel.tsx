@@ -59,10 +59,10 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
           <>
             <div className="shadow-md">
               <EvalInfo
+                moveKey={currentKey || "root"}
                 evaler={evaler}
                 enabled={evalEnabled}
                 setEnabled={setEvalEnabled}
-                moveKey={evalEnabled ? debouncedNode?.key || "root" : "disabled"}
                 currentGame={currentGame}
                 attemptMoves={attemptMoves}
               />
@@ -107,7 +107,11 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Comments
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -149,7 +153,9 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

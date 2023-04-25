@@ -30,7 +30,7 @@ const react_1 = require("react");
 const settings_1 = require("@/context/settings");
 const use_sound_1 = __importDefault(require("use-sound"));
 const useVariationTree_1 = __importDefault(require("./useVariationTree"));
-const useLocalEval_1 = __importDefault(require("./useLocalEval"));
+const useEvaler_1 = __importDefault(require("./useEvaler"));
 const useDebounce_1 = __importDefault(require("./useDebounce"));
 const useOpeningExplorer_1 = __importDefault(require("./useOpeningExplorer"));
 const Chess = __importStar(require("@/lib/chess"));
@@ -49,7 +49,7 @@ function useAnalysisBoard(initialOptions) {
     const { id } = options;
     const [evalEnabled, setEvalEnabled] = (0, react_1.useState)(() => options.evalEnabled);
     const [startPosEval, setStartPosEval] = (0, react_1.useState)();
-    const evaler = (0, useLocalEval_1.default)();
+    const [tagData, setTagData] = (0, react_1.useState)({});
     const initialGame = (0, react_1.useMemo)(() => {
         const game = Chess.createGame({
             startPosition: options.startPosition,
@@ -83,6 +83,8 @@ function useAnalysisBoard(initialOptions) {
                     return Object.assign(Object.assign({}, cur), { startPosition: tagData.fen || defaultOptions.startPosition });
                 });
             }
+            console.log(tagData);
+            setTagData(Object.assign({ event: tagData.event === "?" ? undefined : tagData.event, site: tagData.site === "?" ? undefined : tagData.site, date: tagData.date === "????.??.??" ? undefined : tagData.date, round: tagData.round === "?" ? undefined : tagData.round }, tagData));
             variationTree.loadNewTree(tree);
         }
         catch (e) {
@@ -109,6 +111,10 @@ function useAnalysisBoard(initialOptions) {
             return initialGame;
         return Chess.gameFromNodeData(currentNode.data, options.startPosition, path.map((node) => node.data));
     }, [currentNode, initialGame, options.startPosition, path]);
+    const pgn = (0, react_1.useMemo)(() => {
+        const tagSection = (0, pgnParser_1.tagDataToPGNString)(tagData);
+        return tagSection + "\r\n" + moveText + ((tagData === null || tagData === void 0 ? void 0 : tagData.result) || "*");
+    }, [moveText, tagData]);
     const explorer = (0, useOpeningExplorer_1.default)(currentGame);
     //Move sounds
     const [playMove] = (0, use_sound_1.default)("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
@@ -129,11 +135,20 @@ function useAnalysisBoard(initialOptions) {
                 playMove();
         }
     }, [lastMove, playMove, playCapture, playCastle]);
-    const cacheEvaluation = (0, react_1.useCallback)((nodeId, evaluation) => {
-        variationTree.tree.updateNode(nodeId, {
-            evaluation,
-        });
-    }, [variationTree.tree]);
+    const cacheEvaluation = (0, react_1.useCallback)((evaluation) => {
+        if (currentKey === null)
+            setStartPosEval(evaluation);
+        else
+            variationTree.tree.updateNode(currentKey, {
+                evaluation,
+            });
+    }, [variationTree.tree, currentKey]);
+    const cachedEvaluation = (0, react_1.useMemo)(() => {
+        if (currentNode)
+            return currentNode.data.evaluation || null;
+        else
+            return startPosEval || null;
+    }, [currentNode, startPosEval]);
     const updateComment = (0, react_1.useCallback)((nodeId, comment) => {
         const node = variationTree.tree.getNode(nodeId);
         if (!node)
@@ -177,38 +192,41 @@ function useAnalysisBoard(initialOptions) {
     }, [variationTree.tree]);
     //Debounce data change for evaler/api request
     const debouncedNode = (0, useDebounce_1.default)(currentNode, 300);
-    const currentNodeKey = (0, react_1.useRef)();
-    (0, react_1.useEffect)(() => {
-        if (currentNodeKey.current === ((debouncedNode === null || debouncedNode === void 0 ? void 0 : debouncedNode.key) || null)) {
-            return;
+    const debouncedGame = (0, useDebounce_1.default)(currentGame, 300);
+    const debouncedFen = (0, react_1.useMemo)(() => {
+        const game = debouncedGame;
+        let fen = game.fen;
+        if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
+            const args = fen.split(" ");
+            args[3] = "-";
+            fen = args.join(" ");
         }
-        if (!evalEnabled) {
-            evaler.stop();
-        }
-        if (evaler.isReady && evalEnabled) {
-            currentNodeKey.current = (debouncedNode === null || debouncedNode === void 0 ? void 0 : debouncedNode.key) || null;
-            if (!debouncedNode) {
-                evaler.getEvaluation(initialGame.fen, startPosEval).then((result) => {
-                    if (result) {
-                        setStartPosEval(result);
-                    }
-                });
-            }
-            else {
-                let fen = debouncedNode.data.fen;
-                const game = Chess.gameFromNodeData(debouncedNode.data);
-                if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
-                    const args = fen.split(" ");
-                    args[3] = "-";
-                    fen = args.join(" ");
-                }
-                evaler.getEvaluation(fen, debouncedNode.data.evaluation).then((result) => {
-                    if (result)
-                        cacheEvaluation(debouncedNode.key, result);
-                });
-            }
-        }
-    }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
+        return fen;
+    }, [debouncedGame]);
+    //const evaler = useEvaler(debouncedFen, !evalEnabled);
+    const evaler = (0, useEvaler_1.default)(debouncedFen, !evalEnabled);
+    // useEffect(() => {
+    //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
+    //     return;
+    //   }
+    //   if (!evalEnabled) {
+    //     evaler.stop();
+    //   }
+    //   if (evaler.isReady && evalEnabled) {
+    //     currentNodeKey.current = debouncedNode?.key || null;
+    //     if (!debouncedNode) {
+    //       evaler.getEvaluation(initialGame.fen, startPosEval).then((result) => {
+    //         if (result) {
+    //           setStartPosEval(result);
+    //         }
+    //       });
+    //     } else {
+    //       evaler.getEvaluation(fen, debouncedNode.data.evaluation).then((result) => {
+    //         if (result) cacheEvaluation(debouncedNode.key, result);
+    //       });
+    //     }
+    //   }
+    // }, [evaler.isReady, debouncedNode, evalEnabled, cacheEvaluation, initialGame, startPosEval]);
     const currentLine = (0, react_1.useMemo)(() => {
         return [...path, ...continuation];
     }, [path, continuation]);
@@ -279,11 +297,12 @@ function useAnalysisBoard(initialOptions) {
             return;
         clearMarkup(currentNode.key);
     }, [currentNode, clearMarkup]);
-    const [arrowColor, setArrowColor] = (0, react_1.useState)("O");
+    const [arrowColor, setArrowColor] = (0, react_1.useState)("G");
     return {
         tree: variationTree,
         loadPgn,
         moveText,
+        pgn,
         mainLine,
         rootNodes: variationTree.treeArray,
         currentGame,

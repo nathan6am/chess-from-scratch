@@ -6,6 +6,7 @@ import type { FinalEvaluation, PartialEval, EvalScore, Line } from "@/lib/chess/
 import axios from "axios";
 import _, { last } from "lodash";
 import useDebouncedCallback from "./useDebouncedCallback";
+import useThrottledValue from "./useThrottledValue";
 interface Options {
   multiPV: number;
   useNNUE: boolean;
@@ -73,7 +74,7 @@ function convertCloudEval(cloudEval: CloudEval, activeColor: Color): FinalEvalua
   };
 }
 export interface Evaler {
-  currentOptions: Options;
+  options: Options;
   isReady: boolean;
   evaluation: FinalEvaluation | null;
   currentDepth: number;
@@ -93,7 +94,13 @@ interface Args {
   cachedEval: FinalEvaluation | null;
   disabled?: boolean;
 }
-export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEval, disabled }: Args): Evaler {
+export default function useLocalEval({
+  initialOptions,
+  fen,
+  cachedEval,
+  cacheEval,
+  disabled,
+}: Args): Evaler {
   const [options, setOptions] = useState<Options>({
     ...initialOptions,
     ...defaultOptions,
@@ -103,7 +110,7 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
   const [currentScore, setCurrentScore] = useState<EvalScore | null>(null);
   const [currentDepth, setCurrentDepth] = useState<number>(0);
   const [currentLines, setCurrentLines] = useState<Line[] | null>(null);
-  const debouncedLines = useDebounce(currentLines, 300);
+  const throttledLines = useThrottledValue({ value: currentLines, throttleMs: 600 });
   const [bestMove, setBestMove] = useState<commands.UCIMove | null>(null);
   const [evaluation, setEvaluation] = useState<FinalEvaluation | null>(null);
   const [staticEval, setStaticEval] = useState<any | null>(null);
@@ -121,7 +128,9 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
   const [isReady, setIsReady] = useState(false);
   const cancelled = useRef<boolean>(false);
   useEffect(() => {
-    stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+    stockfishRef.current = new Worker(
+      wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+    );
   }, []);
 
   //Verify engine is ready
@@ -151,7 +160,9 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
   useEffect(() => {
     if (error) {
       stockfishRef.current?.terminate();
-      stockfishRef.current = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+      stockfishRef.current = new Worker(
+        wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+      );
       const stockfish = stockfishRef.current;
       setError(null);
       const initalize = async () => {
@@ -185,17 +196,26 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
     }
   };
   const getEvaluation = useDebouncedCallback(
-    async (fen: string, cachedEval?: FinalEvaluation | undefined): Promise<FinalEvaluation | undefined> => {
+    async (
+      fen: string,
+      cachedEval?: FinalEvaluation | undefined
+    ): Promise<FinalEvaluation | undefined> => {
       if (!isReady || !stockfishRef.current) {
         setError(new Error("Eval engine not yet initialized"));
         return;
       } else {
+        setCurrentDepth(0);
+        setCurrentLines(null);
         const evaler = stockfishRef.current;
         if (inProgress) {
           return;
         }
         //TODO: Static Evaluation
-        if (cachedEval && cachedEval.depth >= options.depth && cachedEval.lines.length >= options.multiPV) {
+        if (
+          cachedEval &&
+          cachedEval.depth >= options.depth &&
+          cachedEval.lines.length >= options.multiPV
+        ) {
           setEvaluation(cachedEval);
           setCurrentDepth(cachedEval.depth);
           setCurrentScore(cachedEval.score);
@@ -223,8 +243,7 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
             }
           } catch (e) {}
         }
-        setCurrentDepth(0);
-        setCurrentLines(null);
+
         //Callback runs with every depth, with the partial evalutaion for that depth passed as an argument
         //before promise resolves with final evalutaion
         const onEvalUpdate = (partialEval: PartialEval) => {
@@ -240,7 +259,12 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
         setInProgress(true);
         setFinished(false);
         try {
-          const result = await commands.getEvaluation(evaler, { fen: fen, ...options }, onEvalUpdate, onLineUpdate);
+          const result = await commands.getEvaluation(
+            evaler,
+            { fen: fen, ...options },
+            onEvalUpdate,
+            onLineUpdate
+          );
           setEvaluation(result);
           setCurrentDepth(result.depth);
           setBestMove(result.bestMove);
@@ -273,13 +297,13 @@ export default function useLocalEval({ initialOptions, fen, cachedEval, cacheEva
   }, [fen, options, getEvaluation, cachedEval, disabled, isReady, inProgress]);
 
   return {
-    currentOptions: options,
+    options,
     updateOptions,
     isReady,
     evaluation,
     currentDepth,
     currentScore,
-    currentLines: debouncedLines,
+    currentLines: throttledLines,
     error,
     inProgress,
     finished,

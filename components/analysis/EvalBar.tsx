@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as Chess from "@/lib/chess";
 interface Props {
   orientation: Chess.Color;
@@ -9,7 +9,7 @@ interface Props {
 import useThrottledValue from "@/hooks/useThrottledValue";
 export default function EvalBar({ orientation, scoreType, value, scale }: Props) {
   //Throttle value for smoother animation/fewer jumps
-  const throttledValue = useThrottledValue({ value, throttleMs: 300 });
+  const throttledValue = useThrottledValue({ value, throttleMs: 500 });
 
   //Calculated scaled percentage for eval bar
   const percentage = useMemo(() => {
@@ -20,6 +20,8 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
     return evaluation < 0 ? 95 : 5;
   }, [scoreType, throttledValue, scale]);
 
+  const throttledPercentage = useThrottledValue({ value: percentage, throttleMs: 600 });
+
   const label = useMemo(() => {
     if (scoreType === "mate") {
       return `M${Math.abs(throttledValue)}`;
@@ -28,6 +30,19 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
       return `${score < 0 ? "" : "+"}${score.toFixed(1)} `;
     }
   }, [throttledValue, scoreType]);
+
+  const barRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!barRef.current) return;
+        barRef.current.style.transform =
+          orientation === "w"
+            ? `translate3d(0px, ${throttledPercentage}%, 0px)`
+            : `translate3d(0px, -${throttledPercentage}%, 0px)`;
+      });
+    });
+  }, [throttledPercentage, orientation, barRef]);
   return (
     <div className="h-inherit w-[50px] rounded-sm overflow-hidden relative mx-4 mr-10">
       <div className="h-inherit absolute top-0 bottom-0 left-0 right-0">
@@ -51,11 +66,13 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
         )}
         <div className="h-full w-full absolute top-0 left-0 bottom-0 right-0 bg-[#2f2f2f] z-2"></div>
         <div
+          ref={barRef}
           className={`h-full w-full bottom-0 left-0 top-0 right-0 absolute z-3 bg-white`}
           style={{
-            transform:
-              orientation === "w" ? `translate3d(0px, ${percentage}%, 0px)` : `translate3d(0px, -${percentage}%, 0px)`,
-            transition: `transform 1s ease-in`,
+            WebkitTransition: `-webkit-transform .6s ease`,
+            transition: `transform 1s ease`,
+            MozTransition: `-moz-transform .6s ease`,
+            transform: `translate3d(0px, 50}%, 0px)`,
           }}
         ></div>
       </div>
