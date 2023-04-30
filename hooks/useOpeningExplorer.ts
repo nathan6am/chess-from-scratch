@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Chess from "@/lib/chess";
-import { TreeNode } from "./useTreeData";
+import { TreeNode } from "@/lib/types";
 import { notEmpty } from "@/util/misc";
 import useDebounce from "./useDebounce";
 
@@ -161,7 +161,10 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     },
   });
 
-  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
+  const fetchGameAsync = async (
+    gameid: string,
+    gameType: "lichess" | "masters"
+  ): Promise<string | undefined> => {
     if (gameType === "lichess") {
       const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
       if (response && response.data) return response.data as string;

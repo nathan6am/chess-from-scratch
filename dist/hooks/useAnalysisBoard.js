@@ -43,7 +43,7 @@ const defaultOptions = {
 const pgnParser_1 = require("@/util/parsers/pgnParser");
 function useAnalysisBoard(initialOptions) {
     const [options, setOptions] = (0, react_1.useState)(() => {
-        return Object.assign(Object.assign({}, defaultOptions), initialOptions);
+        return { ...defaultOptions, ...initialOptions };
     });
     const { settings } = (0, react_1.useContext)(settings_1.SettingsContext);
     const { id } = options;
@@ -63,7 +63,7 @@ function useAnalysisBoard(initialOptions) {
                 const { tree, tagData } = (0, pgnParser_1.parsePgn)(options.pgnSource);
                 if (tagData.fen) {
                     setOptions((cur) => {
-                        return Object.assign(Object.assign({}, cur), { startPosition: tagData.fen || defaultOptions.startPosition });
+                        return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
                     });
                 }
                 return tree;
@@ -80,11 +80,17 @@ function useAnalysisBoard(initialOptions) {
             const { tree, tagData } = (0, pgnParser_1.parsePgn)(pgn);
             if (tagData.fen) {
                 setOptions((cur) => {
-                    return Object.assign(Object.assign({}, cur), { startPosition: tagData.fen || defaultOptions.startPosition });
+                    return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
                 });
             }
             console.log(tagData);
-            setTagData(Object.assign({ event: tagData.event === "?" ? undefined : tagData.event, site: tagData.site === "?" ? undefined : tagData.site, date: tagData.date === "????.??.??" ? undefined : tagData.date, round: tagData.round === "?" ? undefined : tagData.round }, tagData));
+            setTagData({
+                event: tagData.event === "?" ? undefined : tagData.event,
+                site: tagData.site === "?" ? undefined : tagData.site,
+                date: tagData.date === "????.??.??" ? undefined : tagData.date,
+                round: tagData.round === "?" ? undefined : tagData.round,
+                ...tagData,
+            });
             variationTree.loadNewTree(tree);
         }
         catch (e) {
@@ -113,7 +119,7 @@ function useAnalysisBoard(initialOptions) {
     }, [currentNode, initialGame, options.startPosition, path]);
     const pgn = (0, react_1.useMemo)(() => {
         const tagSection = (0, pgnParser_1.tagDataToPGNString)(tagData);
-        return tagSection + "\r\n" + moveText + ((tagData === null || tagData === void 0 ? void 0 : tagData.result) || "*");
+        return tagSection + "\r\n" + moveText + (tagData?.result || "*");
     }, [moveText, tagData]);
     const explorer = (0, useOpeningExplorer_1.default)(currentGame);
     //Move sounds
@@ -193,18 +199,8 @@ function useAnalysisBoard(initialOptions) {
     //Debounce data change for evaler/api request
     const debouncedNode = (0, useDebounce_1.default)(currentNode, 300);
     const debouncedGame = (0, useDebounce_1.default)(currentGame, 300);
-    const debouncedFen = (0, react_1.useMemo)(() => {
-        const game = debouncedGame;
-        let fen = game.fen;
-        if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
-            const args = fen.split(" ");
-            args[3] = "-";
-            fen = args.join(" ");
-        }
-        return fen;
-    }, [debouncedGame]);
     //const evaler = useEvaler(debouncedFen, !evalEnabled);
-    const evaler = (0, useEvaler_1.default)(debouncedFen, !evalEnabled);
+    const evaler = (0, useEvaler_1.default)(currentGame.fen);
     // useEffect(() => {
     //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
     //     return;
@@ -245,7 +241,7 @@ function useAnalysisBoard(initialOptions) {
     }, [currentGame, variationTree]);
     const jumpForward = (0, react_1.useCallback)(() => {
         const node = currentLine[currentLine.length - 1];
-        setCurrentKey((node === null || node === void 0 ? void 0 : node.key) || null);
+        setCurrentKey(node?.key || null);
     }, [currentLine]);
     const jumpBackward = () => {
         setCurrentKey(null);

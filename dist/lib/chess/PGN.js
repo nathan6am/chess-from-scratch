@@ -40,7 +40,6 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
         else {
             //For non pawn moves, find potential ambiguous moves (pieces of the same type with the same end square)
             const ambiguousMoves = potentialMoves.filter((potentialMove) => {
-                var _a, _b;
                 //filter out the original move
                 if (lodash_1.default.isEqual(move, potentialMove))
                     return false;
@@ -48,7 +47,7 @@ function moveToPgn(move, position, potentialMoves // Pass potential moves here t
                 if (move.end !== potentialMove.end)
                     return false;
                 //filter out moves with a different piece type
-                if (((_a = position.get(move.start)) === null || _a === void 0 ? void 0 : _a.type) !== ((_b = position.get(potentialMove.start)) === null || _b === void 0 ? void 0 : _b.type))
+                if (position.get(move.start)?.type !== position.get(potentialMove.start)?.type)
                     return false;
                 return true;
             });

@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -51,19 +42,17 @@ const port = parseInt(process.env.DB_PORT || "5432");
 const password = process.env.DB_PASSWORD || "";
 const host = process.env.DB_HOST || "";
 const database = process.env.DB_NAME || "";
-function initialize() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const datasource = new typeorm_1.DataSource({
-            type: "postgres",
-            username,
-            port,
-            password,
-            database,
-            host,
-            entities: [User_1.default, Game_1.default, Puzzle_1.default, Analysis_1.default, User_1.Notification, User_Game_1.default, User_1.Credential, Collection_1.default, User_1.Profile],
-            synchronize: true,
-        });
-        yield datasource.initialize();
+async function initialize() {
+    const datasource = new typeorm_1.DataSource({
+        type: "postgres",
+        username,
+        port,
+        password,
+        database,
+        host,
+        entities: [User_1.default, Game_1.default, Puzzle_1.default, Analysis_1.default, User_1.Notification, User_Game_1.default, User_1.Credential, Collection_1.default, User_1.Profile],
+        synchronize: true,
     });
+    await datasource.initialize();
 }
 exports.initialize = initialize;

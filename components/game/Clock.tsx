@@ -7,19 +7,13 @@ interface ClockProps {
   size: "sm" | "lg";
   className?: string;
 }
-const zeroPad = (num: number, places: number) =>
-  String(num).padStart(places, "0");
+const zeroPad = (num: number, places: number) => String(num).padStart(places, "0");
 
 const classes = {
   sm: "h-10 text-xl px-8",
   lg: "py-3 rounded text-2xl px-8",
 };
-export default function Clock({
-  color,
-  timeRemaining,
-  size,
-  className,
-}: ClockProps) {
+export default function Clock({ color, timeRemaining, size, className }: ClockProps) {
   return (
     <div
       className={`${classes[size]} w-fit flex justify-center items-center ${

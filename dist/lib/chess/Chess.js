@@ -1,15 +1,4 @@
 "use strict";
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -183,7 +172,6 @@ function preMovesByRule(rule, start, position) {
     return premoves;
 }
 function evaluateRule(rule, position, start, enPassantTarget = null) {
-    var _a, _b;
     const { increment, canCapture, captureOnly, range } = rule;
     const startingCoordinates = squareToCoordinates(start);
     const piece = position.get(start);
@@ -209,11 +197,11 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
         let isPromotion = piece.type === "p" && currentCoordinates[1] === (piece.color === "w" ? 7 : 0);
         if (position.has(currentSquare)) {
             //break if the piece is of the same color or the piece can't capture in the given direction
-            if (((_a = position.get(currentSquare)) === null || _a === void 0 ? void 0 : _a.color) === activeColor)
+            if (position.get(currentSquare)?.color === activeColor)
                 break;
             if (!canCapture)
                 break;
-            if (((_b = position.get(currentSquare)) === null || _b === void 0 ? void 0 : _b.type) === "k") {
+            if (position.get(currentSquare)?.type === "k") {
                 containsCheck = true;
             }
             if (isPromotion) {
@@ -241,7 +229,10 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
+                    capture: toSquare([
+                        currentCoordinates[0],
+                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
+                    ]),
                 });
             }
             else {
@@ -342,10 +333,9 @@ function getPieceCount(position) {
 }
 //Determine if a give move results in a check
 function moveIsCheck(game, move) {
-    var _a;
     const { updatedGameState } = executeMove(game, move);
     const position = new Map(updatedGameState.position);
-    const color = (_a = position.get(move.end)) === null || _a === void 0 ? void 0 : _a.color;
+    const color = position.get(move.end)?.color;
     for (let [square, piece] of position) {
         if (piece.color === color) {
             const rules = getMovementRules(piece, square);
@@ -449,7 +439,7 @@ function getMoves(game) {
                     if (verifyMove(move, position)) {
                         let isCheck = moveIsCheck(game, move);
                         if (isCheck) {
-                            moves.push(Object.assign(Object.assign({}, move), { isCheck }));
+                            moves.push({ ...move, isCheck });
                         }
                         else {
                             moves.push(move);
@@ -471,7 +461,7 @@ function getMoves(game) {
     castles.forEach((move) => {
         let isCheck = moveIsCheck(game, move);
         if (isCheck) {
-            moves.push(Object.assign(Object.assign({}, move), { isCheck }));
+            moves.push({ ...move, isCheck });
         }
         else {
             moves.push(move);
@@ -479,7 +469,7 @@ function getMoves(game) {
     });
     return moves.map((move, idx, moves) => {
         const PGN = (0, PGN_1.moveToPgn)(move, game.position, moves);
-        return Object.assign(Object.assign({}, move), { PGN: PGN });
+        return { ...move, PGN: PGN };
     });
 }
 exports.getMoves = getMoves;
@@ -487,14 +477,16 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w"
+        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
+        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) && !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -514,7 +506,7 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return !position.has(square) && !opponentControlledSquares.includes(square);
+            return (!position.has(square) && !opponentControlledSquares.includes(square));
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -566,7 +558,7 @@ function executeMove(game, move) {
         c8: "c8",
         a8: "c8",
     };
-    var castleRights = Object.assign({}, game.castleRights[game.activeColor]);
+    var castleRights = { ...game.castleRights[game.activeColor] };
     if (move.isCastle) {
         let [start, end] = castleMap[move.end];
         let rook = position.get(start);
@@ -589,7 +581,7 @@ function executeMove(game, move) {
     else if (move.promotion) {
         if (move.capture)
             position.delete(move.capture);
-        position.set(move.end, Object.assign(Object.assign({}, piece), { type: move.promotion }));
+        position.set(move.end, { ...piece, type: move.promotion });
         position.delete(move.start);
     }
     else {
@@ -622,7 +614,10 @@ function executeMove(game, move) {
         enPassantTarget,
         halfMoveCount,
         fullMoveCount,
-        castleRights: Object.assign(Object.assign({}, game.castleRights), { [game.activeColor]: castleRights }),
+        castleRights: {
+            ...game.castleRights,
+            [game.activeColor]: castleRights,
+        },
     };
     if (move.capture === "a8" || move.start === "a8")
         updatedGame.castleRights.b.queenSide = false;
@@ -660,7 +655,7 @@ function testMove(game, move) {
         c8: ["a8", "d8"],
         a8: ["a8", "d8"],
     };
-    var castleRights = Object.assign({}, game.castleRights[game.activeColor]);
+    var castleRights = { ...game.castleRights[game.activeColor] };
     if (move.isCastle) {
         let [start, end] = castleMap[move.end];
         let rook = position.get(start);
@@ -680,7 +675,7 @@ function testMove(game, move) {
     else if (move.promotion) {
         if (move.capture)
             position.delete(move.capture);
-        position.set(move.end, Object.assign(Object.assign({}, piece), { type: move.promotion }));
+        position.set(move.end, { ...piece, type: move.promotion });
         position.delete(move.start);
     }
     else {
@@ -712,7 +707,10 @@ function testMove(game, move) {
         enPassantTarget,
         halfMoveCount,
         fullMoveCount,
-        castleRights: Object.assign(Object.assign({}, game.castleRights), { [activeColor]: castleRights }),
+        castleRights: {
+            ...game.castleRights,
+            [activeColor]: castleRights,
+        },
     };
     if (move.capture === "a8")
         updatedGame.castleRights.b.queenSide = false;
@@ -758,7 +756,10 @@ const defaultConfig = {
     timeControls: null,
 };
 function createGame(options) {
-    const config = Object.assign(Object.assign({}, defaultConfig), options);
+    const config = {
+        ...defaultConfig,
+        ...options,
+    };
     const game = new Game(config);
     return game;
 }
@@ -818,7 +819,7 @@ function move(gameInitial, move, elapsedTimeSeconds) {
         }
     }
     //TODO: Check for insufficient Material
-    const { position: updatedPosition } = updatedGameState, rest = __rest(updatedGameState, ["position"]);
+    const { position: updatedPosition, ...rest } = updatedGameState;
     const pieces = Array.from(updatedPosition.entries()).map(([square, piece]) => {
         return piece;
     });
@@ -862,9 +863,17 @@ function move(gameInitial, move, elapsedTimeSeconds) {
         updatedMoveHistory.push([halfMove, null]);
     }
     //return the updated game
-    const updatedGame = Object.assign(Object.assign(Object.assign({}, game), rest), { board: injectTargets(updatedBoard, updatedLegalMoves), moveHistory: updatedMoveHistory, legalMoves: updatedLegalMoves, lastMove: move, capturedPieces,
+    const updatedGame = {
+        ...game,
+        ...rest,
+        board: injectTargets(updatedBoard, updatedLegalMoves),
+        moveHistory: updatedMoveHistory,
+        legalMoves: updatedLegalMoves,
+        lastMove: move,
+        capturedPieces,
         outcome,
-        fen });
+        fen,
+    };
     return updatedGame;
 }
 exports.move = move;
@@ -872,7 +881,7 @@ function injectTargets(board, legalMoves) {
     const withTargets = board.map((entry) => {
         const [square, piece] = entry;
         const targets = legalMoves.filter((move) => move.start === square).map((move) => move.end);
-        return [square, Object.assign(Object.assign({}, piece), { targets })];
+        return [square, { ...piece, targets }];
     });
     return withTargets;
 }
@@ -915,8 +924,8 @@ function gameFromNodeData(data, startPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPP
     //convert the line into move history
     if (moves) {
         const halfMoves = moves.map((node) => {
-            const { uci, evaluation, halfMoveCount, comment, annotations } = node, rest = __rest(node, ["uci", "evaluation", "halfMoveCount", "comment", "annotations"]);
-            return Object.assign({}, rest);
+            const { uci, evaluation, halfMoveCount, comment, annotations, ...rest } = node;
+            return { ...rest };
         });
         const history = [];
         while (halfMoves.length > 0)
@@ -930,13 +939,24 @@ function gameFromNodeData(data, startPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPP
             }
         });
     }
-    return Object.assign(Object.assign({}, game), { board,
-        moveHistory, lastMove: data.move, config: Object.assign(Object.assign({}, game.config), { startPosition }) });
+    return {
+        ...game,
+        board,
+        moveHistory,
+        lastMove: data.move,
+        config: { ...game.config, startPosition },
+    };
 }
 exports.gameFromNodeData = gameFromNodeData;
 //Generate a new tree node from a halfmove
 function halfMoveToNode(halfMoveCount, halfMove) {
-    return Object.assign({ halfMoveCount, uci: MoveToUci(halfMove.move), comment: null, annotations: [] }, halfMove);
+    return {
+        halfMoveCount,
+        uci: MoveToUci(halfMove.move),
+        comment: null,
+        annotations: [],
+        ...halfMove,
+    };
 }
 exports.halfMoveToNode = halfMoveToNode;
 function MoveToUci(move) {
@@ -948,7 +968,7 @@ function nodeDataFromMove(game, moveToExecute, halfMoveCount) {
     const lastMove = updatedGame.moveHistory[updatedGame.moveHistory.length - 1];
     const lastHalfMove = lastMove[1] || lastMove[0];
     const partialNode = halfMoveToNode(halfMoveCount, lastHalfMove);
-    return Object.assign(Object.assign({}, partialNode), { halfMoveCount, outcome: updatedGame.outcome });
+    return { ...partialNode, halfMoveCount, outcome: updatedGame.outcome };
 }
 exports.nodeDataFromMove = nodeDataFromMove;
 function moveCountToNotation(halfMoveCount) {

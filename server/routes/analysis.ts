@@ -4,9 +4,9 @@ import { customRandom, urlAlphabet, random } from "nanoid";
 import User, { SessionUser } from "../../lib/db/entities/User";
 import Analysis from "../../lib/db/entities/Analysis";
 import Collection from "../../lib/db/entities/Collection";
-import { SavedAnalysis } from "../../hooks/useSavedAnalysis";
+import { SavedAnalysis, PGNTagData } from "../../lib/types";
 import verifyUser, { VerifiedRequest } from "../middleware/verifyUser";
-import { PGNTagData } from "../../util/parsers/pgnParser";
+
 const nanoid = customRandom(urlAlphabet, 10, random);
 
 const router = express.Router();

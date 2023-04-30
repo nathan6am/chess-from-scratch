@@ -23,12 +23,18 @@ function currentISO() {
 exports.currentISO = currentISO;
 function switchClock(clock, moveRecievedISO, moveColor, lagCompMs) {
     if (!clock.lastMoveTimeISO) {
-        return Object.assign(Object.assign({}, clock), { lastMoveTimeISO: luxon_1.DateTime.now().toISO() });
+        return {
+            ...clock,
+            lastMoveTimeISO: luxon_1.DateTime.now().toISO(),
+        };
     }
     const initialRemaining = clock.timeRemainingMs[moveColor];
     const elapsed = timeElapsedMs(clock.lastMoveTimeISO, moveRecievedISO);
     const timeRemaining = initialRemaining - elapsed + clock.incrementMs + (lagCompMs || 100);
     clock.timeRemainingMs[moveColor] = timeRemaining;
-    return Object.assign(Object.assign({}, clock), { lastMoveTimeISO: luxon_1.DateTime.now().toISO() });
+    return {
+        ...clock,
+        lastMoveTimeISO: luxon_1.DateTime.now().toISO(),
+    };
 }
 exports.switchClock = switchClock;

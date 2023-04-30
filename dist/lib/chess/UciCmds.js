@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stop = exports.parseUciMove = exports.getStaticEvaluation = exports.getEvaluation = exports.startup = exports.ready = exports.setSkillLevel = exports.limitStrength = exports.initialize = void 0;
 function initialize(stockfish) {
@@ -24,92 +15,88 @@ function setSkillLevel(value, stockfish) {
     stockfish.postMessage(`setoption name Skill Level value ${value}`);
 }
 exports.setSkillLevel = setSkillLevel;
-function ready(stockfish) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let timer;
-        const isReady = new Promise((resolve, reject) => {
+async function ready(stockfish) {
+    let timer;
+    const isReady = new Promise((resolve, reject) => {
+        const handler = (e) => {
+            if (e.data === "readyok") {
+                clearTimeout(timer);
+                stockfish.removeEventListener("message", handler);
+                resolve(true);
+            }
+        };
+        stockfish.addEventListener("message", handler);
+        stockfish.postMessage("isready");
+        stockfish.postMessage("uci");
+        timer = setTimeout(() => {
+            stockfish.removeEventListener("message", handler);
+            reject(new Error("timeout waiting for response on command `uci`"));
+        }, 200000);
+    });
+    const ready = await isReady;
+    return ready;
+}
+exports.ready = ready;
+async function startup(stockfish) {
+    const isReady = await ready(stockfish);
+    let timer;
+    if (isReady) {
+        const getOptions = new Promise((resolve, reject) => {
+            let options = [];
             const handler = (e) => {
-                if (e.data === "readyok") {
+                const args = e.data.split(" ");
+                if (args[0] === "option") {
+                    let reading = "";
+                    let name = "";
+                    let type = "";
+                    let defaultValue = "";
+                    args.forEach((arg) => {
+                        if (arg === "name" || arg === "type" || arg === "default") {
+                            reading = arg;
+                        }
+                        else {
+                            switch (reading) {
+                                case "name":
+                                    if (name.length >= 1)
+                                        name = name + " " + arg;
+                                    else
+                                        name = arg;
+                                    break;
+                                case "type":
+                                    type = arg;
+                                    break;
+                                case "default":
+                                    if (defaultValue.length >= 1)
+                                        defaultValue = defaultValue + " " + arg;
+                                    else
+                                        defaultValue = arg;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    });
+                    options.push({ name, type, defaultValue });
+                }
+                else if (args[0] === "uciok") {
                     clearTimeout(timer);
                     stockfish.removeEventListener("message", handler);
-                    resolve(true);
+                    resolve(options);
                 }
             };
             stockfish.addEventListener("message", handler);
-            stockfish.postMessage("isready");
             stockfish.postMessage("uci");
             timer = setTimeout(() => {
                 stockfish.removeEventListener("message", handler);
                 reject(new Error("timeout waiting for response on command `uci`"));
             }, 200000);
         });
-        const ready = yield isReady;
-        return ready;
-    });
-}
-exports.ready = ready;
-function startup(stockfish) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const isReady = yield ready(stockfish);
-        let timer;
-        if (isReady) {
-            const getOptions = new Promise((resolve, reject) => {
-                let options = [];
-                const handler = (e) => {
-                    const args = e.data.split(" ");
-                    if (args[0] === "option") {
-                        let reading = "";
-                        let name = "";
-                        let type = "";
-                        let defaultValue = "";
-                        args.forEach((arg) => {
-                            if (arg === "name" || arg === "type" || arg === "default") {
-                                reading = arg;
-                            }
-                            else {
-                                switch (reading) {
-                                    case "name":
-                                        if (name.length >= 1)
-                                            name = name + " " + arg;
-                                        else
-                                            name = arg;
-                                        break;
-                                    case "type":
-                                        type = arg;
-                                        break;
-                                    case "default":
-                                        if (defaultValue.length >= 1)
-                                            defaultValue = defaultValue + " " + arg;
-                                        else
-                                            defaultValue = arg;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        });
-                        options.push({ name, type, defaultValue });
-                    }
-                    else if (args[0] === "uciok") {
-                        clearTimeout(timer);
-                        stockfish.removeEventListener("message", handler);
-                        resolve(options);
-                    }
-                };
-                stockfish.addEventListener("message", handler);
-                stockfish.postMessage("uci");
-                timer = setTimeout(() => {
-                    stockfish.removeEventListener("message", handler);
-                    reject(new Error("timeout waiting for response on command `uci`"));
-                }, 200000);
-            });
-            const options = yield getOptions;
-            return {
-                ready: true,
-                options,
-            };
-        }
-    });
+        const options = await getOptions;
+        return {
+            ready: true,
+            options,
+        };
+    }
 }
 exports.startup = startup;
 //Convert UCI info message into evaluation object
@@ -181,118 +168,117 @@ function parseEvalInfo(args) {
     });
     return evaluation;
 }
-function getEvaluation(evaler, options = {
+async function getEvaluation(evaler, options = {
     depth: 10,
     fen: "",
     useNNUE: false,
     multiPV: 3,
     showLinesAfterDepth: 15,
 }, onEvalUpdate, onLineUpdate) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const stockfish = evaler;
-        let info;
-        let timer;
-        let aborted = true;
-        let multiPVs = [];
-        const evaluation = new Promise((resolve, reject) => {
-            const handler = (e) => {
-                if (!e.data)
-                    return;
-                const args = e.data.split(" ");
-                const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
-                //Ignore some unnecessary messages
-                if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
-                    aborted = false;
-                    const evalInfo = parseEvalInfo(args);
-                    evalInfo.score.value = evalInfo.score.value * multiplier;
-                    if (evalInfo.score.type !== "lowerbound" && evalInfo.score.type !== "upperbound") {
-                        const score = {
-                            type: evalInfo.score.type,
-                            value: evalInfo.score.value,
-                        };
-                        if (evalInfo.multiPV === 1) {
-                            info = evalInfo;
-                            if (!info)
-                                return;
-                            onEvalUpdate({
-                                score,
-                                depth: evalInfo.depth,
-                                bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
-                            });
-                        }
-                        multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
-                        if (evalInfo.depth >= options.showLinesAfterDepth) {
-                            //console.log(multiPVs);
-                            onLineUpdate(multiPVs.map((variation) => ({
-                                score: variation.score,
-                                moves: variation.moves.map((uci) => parseUciMove(uci)),
-                            })));
-                        }
-                    }
-                }
-                if (args[0] === "bestmove") {
-                    if (aborted) {
-                        aborted = false;
-                        return;
-                    }
-                    clearTimeout(timer);
-                    stockfish.removeEventListener("message", handler);
-                    if (!info || (info === null || info === void 0 ? void 0 : info.depth) !== options.depth) {
-                        reject("depth not reached");
-                        return;
-                    }
-                    const finalEval = {
-                        lines: multiPVs.map((variation) => (Object.assign(Object.assign({}, variation), { moves: variation.moves.map((uci) => parseUciMove(uci)) }))),
-                        score: {
-                            type: info.score.type,
-                            value: info.score.value,
-                        },
-                        bestMove: parseUciMove(args[1]),
-                        depth: info.depth,
-                        time: info.time,
+    const stockfish = evaler;
+    let info;
+    let timer;
+    let aborted = true;
+    let multiPVs = [];
+    const evaluation = new Promise((resolve, reject) => {
+        const handler = (e) => {
+            if (!e.data)
+                return;
+            const args = e.data.split(" ");
+            const multiplier = options.fen.split(" ")[1] === "w" ? 1 : -1;
+            //Ignore some unnecessary messages
+            if (args[0] === "info" && !(args.includes("string") || args.includes("currmove"))) {
+                aborted = false;
+                const evalInfo = parseEvalInfo(args);
+                evalInfo.score.value = evalInfo.score.value * multiplier;
+                if (evalInfo.score.type !== "lowerbound" && evalInfo.score.type !== "upperbound") {
+                    const score = {
+                        type: evalInfo.score.type,
+                        value: evalInfo.score.value,
                     };
-                    resolve(finalEval);
+                    if (evalInfo.multiPV === 1) {
+                        info = evalInfo;
+                        if (!info)
+                            return;
+                        onEvalUpdate({
+                            score,
+                            depth: evalInfo.depth,
+                            bestMove: evalInfo.pv[0] ? parseUciMove(evalInfo.pv[0]) : undefined,
+                        });
+                    }
+                    multiPVs[evalInfo.multiPV - 1] = { score, moves: evalInfo.pv };
+                    if (evalInfo.depth >= options.showLinesAfterDepth) {
+                        //console.log(multiPVs);
+                        onLineUpdate(multiPVs.map((variation) => ({
+                            score: variation.score,
+                            moves: variation.moves.map((uci) => parseUciMove(uci)),
+                        })));
+                    }
                 }
-            };
-            stockfish.postMessage("stop");
-            stockfish.addEventListener("message", handler);
-            stockfish.postMessage(`setoption name Use NNUE value ${options.useNNUE}`);
-            stockfish.postMessage("setoption name UCI_AnalyseMode value true");
-            stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
-            stockfish.postMessage("position fen " + options.fen);
-            stockfish.postMessage("go depth " + options.depth);
-            timer = setTimeout(() => {
+            }
+            if (args[0] === "bestmove") {
+                if (aborted) {
+                    aborted = false;
+                    return;
+                }
+                clearTimeout(timer);
                 stockfish.removeEventListener("message", handler);
-                reject(new Error("timeout waiting for response on command `evaluation`"));
-            }, 90000000);
-        });
-        const final = yield evaluation;
-        return final;
+                if (!info || info?.depth !== options.depth) {
+                    reject("depth not reached");
+                    return;
+                }
+                const finalEval = {
+                    lines: multiPVs.map((variation) => ({
+                        ...variation,
+                        moves: variation.moves.map((uci) => parseUciMove(uci)),
+                    })),
+                    score: {
+                        type: info.score.type,
+                        value: info.score.value,
+                    },
+                    bestMove: parseUciMove(args[1]),
+                    depth: info.depth,
+                    time: info.time,
+                };
+                resolve(finalEval);
+            }
+        };
+        stockfish.postMessage("stop");
+        stockfish.addEventListener("message", handler);
+        stockfish.postMessage(`setoption name Use NNUE value ${options.useNNUE}`);
+        stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+        stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
+        stockfish.postMessage("position fen " + options.fen);
+        stockfish.postMessage("go depth " + options.depth);
+        timer = setTimeout(() => {
+            stockfish.removeEventListener("message", handler);
+            reject(new Error("timeout waiting for response on command `evaluation`"));
+        }, 90000000);
     });
+    const final = await evaluation;
+    return final;
 }
 exports.getEvaluation = getEvaluation;
-function getStaticEvaluation(evaler, fen) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const stockfish = evaler;
-        const evaluation = new Promise((resolve, reject) => {
-            let timer;
-            const handler = (e) => {
-                //console.log(e.data);
-            };
-            stockfish.addEventListener("message", handler);
-            stockfish.postMessage(`setoption name Use NNUE value true`);
-            stockfish.postMessage("setoption name UCI_AnalyseMode value true");
-            stockfish.postMessage("debug on");
-            stockfish.postMessage("position fen " + fen);
-            stockfish.postMessage("eval");
-            timer = setTimeout(() => {
-                stockfish.removeEventListener("message", handler);
-                resolve(true);
-            }, 10000);
-        });
-        const staticEval = yield evaluation;
-        return staticEval;
+async function getStaticEvaluation(evaler, fen) {
+    const stockfish = evaler;
+    const evaluation = new Promise((resolve, reject) => {
+        let timer;
+        const handler = (e) => {
+            //console.log(e.data);
+        };
+        stockfish.addEventListener("message", handler);
+        stockfish.postMessage(`setoption name Use NNUE value true`);
+        stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+        stockfish.postMessage("debug on");
+        stockfish.postMessage("position fen " + fen);
+        stockfish.postMessage("eval");
+        timer = setTimeout(() => {
+            stockfish.removeEventListener("message", handler);
+            resolve(true);
+        }, 10000);
     });
+    const staticEval = await evaluation;
+    return staticEval;
 }
 exports.getStaticEvaluation = getStaticEvaluation;
 function parseUciMove(uci) {
@@ -308,31 +294,29 @@ function parseUciMove(uci) {
     return move;
 }
 exports.parseUciMove = parseUciMove;
-function stop(stockfish, timeout) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let timer;
-        const stop = new Promise((resolve, reject) => {
-            //console.log("stopping");
-            const handler = (e) => {
-                const args = e.data.split(" ");
-                if (args[0] === "bestmove") {
-                    //clear timeout on correct response
-                    clearTimeout(timer);
-                    stockfish.removeEventListener("message", handler);
-                    //console.log("stopped");
-                    resolve(true);
-                }
-            };
-            stockfish.addEventListener("message", handler);
-            stockfish.postMessage("stop");
-            timer = setTimeout(() => {
+async function stop(stockfish, timeout) {
+    let timer;
+    const stop = new Promise((resolve, reject) => {
+        //console.log("stopping");
+        const handler = (e) => {
+            const args = e.data.split(" ");
+            if (args[0] === "bestmove") {
+                //clear timeout on correct response
+                clearTimeout(timer);
                 stockfish.removeEventListener("message", handler);
-                //assume stopped
+                //console.log("stopped");
                 resolve(true);
-            }, timeout || 500);
-        });
-        const stopped = yield stop;
-        return stopped;
+            }
+        };
+        stockfish.addEventListener("message", handler);
+        stockfish.postMessage("stop");
+        timer = setTimeout(() => {
+            stockfish.removeEventListener("message", handler);
+            //assume stopped
+            resolve(true);
+        }, timeout || 500);
     });
+    const stopped = await stop;
+    return stopped;
 }
 exports.stop = stop;

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useArrowState = void 0;
 const react_1 = require("react");
-function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }) {
+function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare, }) {
     const [currentArrowStart, setCurrentArrowStart] = (0, react_1.useState)(null);
     const start = (square) => {
         setCurrentArrowStart(square);

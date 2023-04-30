@@ -7,7 +7,13 @@ interface PromotionProps {
   onSelect: (type: Chess.PieceType) => void;
   cancel?: () => void;
 }
-export default function PromotionMenu({ promotionMove, orientation, activeColor, onSelect, cancel }: PromotionProps) {
+export default function PromotionMenu({
+  promotionMove,
+  orientation,
+  activeColor,
+  onSelect,
+  cancel,
+}: PromotionProps) {
   if (!promotionMove) return <></>;
   const [file] = Chess.squareToCoordinates(promotionMove.end);
   const col = orientation === "w" ? 1 + file : 8 - file;

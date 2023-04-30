@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -47,35 +38,31 @@ const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
-passport_1.default.use(new passportLocal.Strategy(function (username, password, done) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const user = yield User_1.default.login({ username, password });
-        console.log(user);
-        if (user) {
-            return done(null, user);
-        }
-        else {
-            return done(null, false, { message: "Invalid username or password" });
-        }
-    });
+passport_1.default.use(new passportLocal.Strategy(async function (username, password, done) {
+    const user = await User_1.default.login({ username, password });
+    console.log(user);
+    if (user) {
+        return done(null, user);
+    }
+    else {
+        return done(null, false, { message: "Invalid username or password" });
+    }
 }));
 passport_1.default.use(new passportFacebook.Strategy({
     clientID: facebookClientID,
     clientSecret: facebookClientSecret,
     callbackURL: facebookCallbackURL,
-}, function (accessToken, refreshToken, profile, done) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const user = User_1.default.loginWithFacebook({
-            name: profile.displayName,
-            facebookId: profile.id,
-        });
-        if (user) {
-            return done(null, user);
-        }
-        else {
-            return done(new Error("Unable to create User"));
-        }
+}, async function (accessToken, refreshToken, profile, done) {
+    const user = User_1.default.loginWithFacebook({
+        name: profile.displayName,
+        facebookId: profile.id,
     });
+    if (user) {
+        return done(null, user);
+    }
+    else {
+        return done(new Error("Unable to create User"));
+    }
 }));
 passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, done) => {
     const uid = (0, uuid_1.v4)();
@@ -128,70 +115,64 @@ router.post("/login", passport_1.default.authenticate("local", { failureRedirect
         res.status(401).send();
     }
 });
-router.post("/signup", function (req, res, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const accountdetails = req.body;
-        if (!accountdetails) {
-            res.status(400).send();
-            return;
-        }
-        const { email, password, username } = accountdetails;
-        if (!email ||
-            typeof email !== "string" ||
-            !username ||
-            typeof username !== "string" ||
-            !password ||
-            typeof password !== "string") {
-            res.status(400).send();
-            return;
-        }
-        const result = yield User_1.default.createAccountWithCredentials(accountdetails);
-        if (result.created) {
-            req.logIn(result.created, function (err) {
-                if (err) {
-                    return next(err);
-                }
-                else {
-                    return res.status(201).json({ user: result.created });
-                }
-            });
-        }
-        else {
-            res.status(200).json(result);
-        }
-    });
+router.post("/signup", async function (req, res, next) {
+    const accountdetails = req.body;
+    if (!accountdetails) {
+        res.status(400).send();
+        return;
+    }
+    const { email, password, username } = accountdetails;
+    if (!email ||
+        typeof email !== "string" ||
+        !username ||
+        typeof username !== "string" ||
+        !password ||
+        typeof password !== "string") {
+        res.status(400).send();
+        return;
+    }
+    const result = await User_1.default.createAccountWithCredentials(accountdetails);
+    if (result.created) {
+        req.logIn(result.created, function (err) {
+            if (err) {
+                return next(err);
+            }
+            else {
+                return res.status(201).json({ user: result.created });
+            }
+        });
+    }
+    else {
+        res.status(200).json(result);
+    }
 });
-router.get("/checkusername", function (req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        console.log(req.query);
-        const username = req.query.username;
-        if (!username || typeof username !== "string") {
-            res.status(400).end();
-            return;
-        }
-        const exists = yield User_1.default.usernameExists(username);
-        res.status(200).json({ valid: !exists });
-    });
+router.get("/checkusername", async function (req, res) {
+    console.log(req.query);
+    const username = req.query.username;
+    if (!username || typeof username !== "string") {
+        res.status(400).end();
+        return;
+    }
+    const exists = await User_1.default.usernameExists(username);
+    res.status(200).json({ valid: !exists });
 });
-router.post("/change-password", function (req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const sessionUser = req.user;
-        if (!sessionUser || sessionUser.type === "guest") {
-            res.status(401).end();
-            return;
-        }
-        const { currentPassword, newPassword } = req.body;
-        if (!currentPassword || !newPassword) {
-            res.status(400).end();
-            return;
-        }
-        const updated = yield User_1.default.updateCredentials(sessionUser.id, currentPassword, newPassword);
-        if (updated)
-            return res.status(200).json({ updated: true });
-        else {
-            res.status(401).end();
-        }
-    });
+router.post("/change-password", async function (req, res) {
+    const sessionUser = req.user;
+    if (!sessionUser || sessionUser.type === "guest") {
+        res.status(401).end();
+        return;
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        res.status(400).end();
+        return;
+    }
+    const updated = await User_1.default.updateCredentials(sessionUser.id, currentPassword, newPassword);
+    if (updated)
+        return res.status(200).json({ updated: true });
+    else {
+        res.status(401).end();
+    }
 });
 router.get("/logout", function (req, res, next) {
     console.log("logging out");

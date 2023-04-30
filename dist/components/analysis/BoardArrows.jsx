@@ -44,7 +44,7 @@ const cornerShapeArrow1 = {
 const tailShapeArrow1 = {
     svgElem: <path d=""/>,
 };
-function BoardArrows({ children, arrows, pendingArrow, squareIdPrefix, squareSize }) {
+function BoardArrows({ children, arrows, pendingArrow, squareIdPrefix, squareSize, }) {
     const arrowSize = (0, react_1.useMemo)(() => {
         if (squareSize < 55)
             return "sm";
@@ -56,7 +56,9 @@ function BoardArrows({ children, arrows, pendingArrow, squareIdPrefix, squareSiz
       <>
         {arrows.map((arrow) => (<RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={arrow} key={`${arrow.start}${arrow.end}`}/>))}
       </>
-      <>{pendingArrow && <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow}/>}</>
+      <>
+        {pendingArrow && (<RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow}/>)}
+      </>
       <>{children}</>
     </react_xarrows_1.Xwrapper>);
 }

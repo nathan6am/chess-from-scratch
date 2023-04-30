@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import _ from "lodash";
-import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
+import {
+  DraggableCore,
+  DraggableData,
+  DraggableEvent,
+  DraggableEventHandler,
+} from "react-draggable";
 import * as Chess from "@/lib/chess";
 import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
@@ -87,7 +92,9 @@ export default function Piece({
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (nodeRef.current) {
-            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
+            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
+              coordinates[1] * 100
+            }%)`;
           }
           setPosition({
             x: coordinates[0] * 100,
@@ -104,7 +111,9 @@ export default function Piece({
       };
       if (position.x !== positionNew.x || position.y !== positionNew.y) {
         if (nodeRef.current) {
-          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
+          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
+            coordinates[1] * 100
+          }%)`;
         }
         setPosition(positionNew);
       }
@@ -127,7 +136,9 @@ export default function Piece({
       const x = data.x > 0 ? (data.x > max ? max : data.x) : 0;
       const y = data.y > 0 ? (data.y > max ? max : data.y) : 0;
       if (nodeRef.current)
-        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${y - squareSize / 2}px)`;
+        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${
+          y - squareSize / 2
+        }px)`;
     }, 16),
     [boardSize, squareSize]
   );
@@ -177,7 +188,10 @@ export default function Piece({
           }
         }}
         style={{
-          transition: dragging || disableTransition || transitionRef.current === false ? "" : `all ${animationSpeed}s`,
+          transition:
+            dragging || disableTransition || transitionRef.current === false
+              ? ""
+              : `all ${animationSpeed}s`,
           cursor: draggable ? (dragging ? "grabbing" : "grab") : "pointer",
           display: hidden ? "none" : "flex",
           justifyContent: "center",

@@ -1,10 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-export type TreeNode<T> = {
-  key: string;
-  data: T;
-  children: TreeNode<T>[];
-  parentKey: string | null;
-};
+import { TreeNode } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 export type TreeHook<T> = {

@@ -1,25 +1,26 @@
-import { Arrow } from "@/components/analysis/BoardArrows";
 import { useState, useMemo, useCallback, useEffect, MouseEventHandler } from "react";
-import { Square } from "@/lib/chess";
-
-export interface MarkedSquare {
-  square: Square;
-  color: ArrowColor;
-}
+import { ArrowColor, MarkedSquare, Arrow } from "@/lib/types";
+import * as Chess from "@/lib/chess";
 
 interface Args {
-  currentSquare: Square | null;
+  currentSquare: Chess.Square | null;
   lockArrows?: boolean;
   color: ArrowColor;
   onArrow: (arrow: Arrow) => void;
   onMarkSquare: (square: MarkedSquare) => void;
   disabled?: boolean;
 }
-export type ArrowColor = "R" | "G" | "O" | "B" | "Y";
 
-export default function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }: Args) {
-  const [currentArrowStart, setCurrentArrowStart] = useState<Square | null>(null);
-  const start = (square: Square | null) => {
+export default function useBoardMarkup({
+  currentSquare,
+  lockArrows,
+  color,
+  disabled,
+  onArrow,
+  onMarkSquare,
+}: Args) {
+  const [currentArrowStart, setCurrentArrowStart] = useState<Chess.Square | null>(null);
+  const start = (square: Chess.Square | null) => {
     setCurrentArrowStart(square);
   };
 
@@ -94,7 +95,9 @@ export function useArrowState() {
   const onArrow = (newArrow: Arrow) => {
     setArrows((current) => {
       if (current.some((arrow) => arrow.start === newArrow.start && arrow.end === newArrow.end)) {
-        return current.filter((arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end));
+        return current.filter(
+          (arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end)
+        );
       } else {
         return [...current, newArrow];
       }

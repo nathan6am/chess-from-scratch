@@ -8,15 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -26,37 +17,46 @@ const typeorm_1 = require("typeorm");
 const User_Game_1 = __importDefault(require("./User_Game"));
 const User_1 = __importDefault(require("./User"));
 let Game = Game_1 = class Game extends typeorm_1.BaseEntity {
-    static saveGame(players, outcome, data, timeControl, id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const game = new Game_1();
-            Object.assign(game, { id, outcome, data, timeControl });
-            game.players = [];
-            yield game.save();
-            Object.entries(players).forEach(([color, player]) => __awaiter(this, void 0, void 0, function* () {
-                var _a, _b;
-                if (player.type === "guest") {
-                    game.guestPlayer = { username: player.username || "", color: color };
+    id;
+    timeControl;
+    outcome;
+    pgn;
+    data;
+    players;
+    guestPlayer;
+    isCorrespondence;
+    static async saveGame(players, outcome, data, timeControl, id) {
+        const game = new Game_1();
+        Object.assign(game, { id, outcome, data, timeControl });
+        game.players = [];
+        await game.save();
+        Object.entries(players).forEach(async ([color, player]) => {
+            if (player.type === "guest") {
+                game.guestPlayer = { username: player.username || "", color: color };
+            }
+            else {
+                const user = await User_1.default.findOneBy({ id: player.id });
+                if (user) {
+                    const userGame = new User_Game_1.default();
+                    userGame.user = user;
+                    userGame.game = game;
+                    userGame.color = color;
+                    userGame.result =
+                        userGame.game.outcome?.result === "d"
+                            ? "draw"
+                            : userGame.game.outcome?.result === color
+                                ? "win"
+                                : "loss";
+                    if (user.rating)
+                        userGame.rating = user.rating;
+                    console.log(userGame);
+                    await userGame.save();
+                    game.players.push(userGame);
                 }
-                else {
-                    const user = yield User_1.default.findOneBy({ id: player.id });
-                    if (user) {
-                        const userGame = new User_Game_1.default();
-                        userGame.user = user;
-                        userGame.game = game;
-                        userGame.color = color;
-                        userGame.result =
-                            ((_a = userGame.game.outcome) === null || _a === void 0 ? void 0 : _a.result) === "d" ? "draw" : ((_b = userGame.game.outcome) === null || _b === void 0 ? void 0 : _b.result) === color ? "win" : "loss";
-                        if (user.rating)
-                            userGame.rating = user.rating;
-                        console.log(userGame);
-                        yield userGame.save();
-                        game.players.push(userGame);
-                    }
-                }
-            }));
-            const final = yield game.save();
-            return final;
+            }
         });
+        const final = await game.save();
+        return final;
     }
 };
 __decorate([

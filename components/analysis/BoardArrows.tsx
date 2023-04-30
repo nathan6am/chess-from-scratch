@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
 import { Square } from "@/lib/chess";
-import { ArrowColor } from "@/hooks/useBoardMarkup";
+import { ArrowColor, Arrow } from "@/lib/types";
 export const ColorEnum: Record<ArrowColor, string> = {
   R: "#b91c1c",
   G: "#15803d",
@@ -9,11 +9,7 @@ export const ColorEnum: Record<ArrowColor, string> = {
   B: "#0369a1",
   Y: "#eab308",
 };
-export interface Arrow {
-  start: Square;
-  end: Square;
-  color: ArrowColor;
-}
+
 interface Props {
   children?: JSX.Element | JSX.Element[];
   arrows: Arrow[];
@@ -35,7 +31,13 @@ const cornerShapeArrow1 = {
 const tailShapeArrow1 = {
   svgElem: <path d="" />,
 };
-export default function BoardArrows({ children, arrows, pendingArrow, squareIdPrefix, squareSize }: Props) {
+export default function BoardArrows({
+  children,
+  arrows,
+  pendingArrow,
+  squareIdPrefix,
+  squareSize,
+}: Props) {
   const arrowSize = useMemo(() => {
     if (squareSize < 55) return "sm";
     if (squareSize < 70) return "md";
@@ -45,10 +47,19 @@ export default function BoardArrows({ children, arrows, pendingArrow, squareIdPr
     <Xwrapper>
       <>
         {arrows.map((arrow) => (
-          <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={arrow} key={`${arrow.start}${arrow.end}`} />
+          <RenderArrow
+            size={arrowSize}
+            idPrefix={squareIdPrefix}
+            arrow={arrow}
+            key={`${arrow.start}${arrow.end}`}
+          />
         ))}
       </>
-      <>{pendingArrow && <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow} />}</>
+      <>
+        {pendingArrow && (
+          <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow} />
+        )}
+      </>
       <>{children}</>
     </Xwrapper>
   );

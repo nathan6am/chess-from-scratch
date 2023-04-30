@@ -8,15 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -26,31 +17,29 @@ const typeorm_1 = require("typeorm");
 const Analysis_1 = __importDefault(require("./Analysis"));
 const User_1 = __importDefault(require("./User"));
 let Collection = Collection_1 = class Collection extends typeorm_1.BaseEntity {
-    static getByIds(ids) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const collections = yield this.findBy({
-                id: (0, typeorm_1.In)(ids),
-            });
-            return collections;
+    id;
+    title;
+    analyses;
+    user;
+    static async getByIds(ids) {
+        const collections = await this.findBy({
+            id: (0, typeorm_1.In)(ids),
         });
+        return collections;
     }
-    static userCollections(userid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const collections = yield this.find({
-                where: {
-                    user: { id: userid },
-                },
-            });
-            return collections;
+    static async userCollections(userid) {
+        const collections = await this.find({
+            where: {
+                user: { id: userid },
+            },
         });
+        return collections;
     }
-    static createNew(title, user) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const collection = new Collection_1();
-            Object.assign(collection, { title, user });
-            yield collection.save();
-            return collection;
-        });
+    static async createNew(title, user) {
+        const collection = new Collection_1();
+        Object.assign(collection, { title, user });
+        await collection.save();
+        return collection;
     }
 };
 __decorate([

@@ -20,7 +20,6 @@ import {
 import _ from "lodash";
 import { trimMoveCounts, fenToGameState, gameStateToFen } from "./FenParser";
 import { moveToPgn } from "./PGN";
-import { TreeNode } from "@/hooks/useTreeData";
 import { notEmpty } from "@/util/misc";
 
 /*---------------------------------------------------------
@@ -184,7 +183,10 @@ function preMovesByRule(rule: MovementRule, start: Square, position: Position) {
   const promotions = ["r", "q", "n", "b"];
   while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
     //increment by the rule values and make sure the resulting coordinates are still on the board
-    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [number, number];
+    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [
+      number,
+      number
+    ];
     i++;
     if (!currentCoordinates.every((coord) => coord >= 0 && coord <= 7)) break;
 
@@ -239,7 +241,10 @@ function evaluateRule(
   //loop as long as current coordinates are still on the board or the range is reached
   while (currentCoordinates.every((coord) => coord >= 0 && coord <= 7) && (!range || i < range)) {
     //increment by the rule values and make sure the resulting coordinates are still on the board
-    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [number, number];
+    currentCoordinates = currentCoordinates.map((coord, idx) => coord + increment[idx]) as [
+      number,
+      number
+    ];
     i++;
     if (!currentCoordinates.every((coord) => coord >= 0 && coord <= 7)) break;
 
@@ -277,7 +282,10 @@ function evaluateRule(
         potentialMoves.push({
           start: start,
           end: toSquare(currentCoordinates),
-          capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
+          capture: toSquare([
+            currentCoordinates[0],
+            currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
+          ]),
         });
       } else {
         controlledSquares.push(toSquare(currentCoordinates));
@@ -535,7 +543,9 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
   const { activeColor, position, castleRights } = game;
   let moves: Array<Move> = [];
   let squares =
-    activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    activeColor === "w"
+      ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
+      : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
 
   const { kingSide, queenSide } = castleRights[activeColor];
   if (!kingSide && !queenSide) {
@@ -545,7 +555,9 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
   if (
     kingSide &&
     squares.k.every((square) => {
-      return !position.has(square as Square) && !opponentControlledSquares.includes(square as Square);
+      return (
+        !position.has(square as Square) && !opponentControlledSquares.includes(square as Square)
+      );
     })
   ) {
     moves.push({
@@ -568,7 +580,9 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
   if (
     queenSide &&
     squares.q.every((square) => {
-      return !position.has(square as Square) && !opponentControlledSquares.includes(square as Square);
+      return (
+        !position.has(square as Square) && !opponentControlledSquares.includes(square as Square)
+      );
     })
   ) {
     moves.push({
@@ -671,8 +685,10 @@ export function executeMove(
     //Remove corresponding castle rights on rook or king move
     if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
       const coords = squareToCoordinates(move.start);
-      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.queenSide = false;
-      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.kingSide = false;
+      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.queenSide = false;
+      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.kingSide = false;
     }
     if (piece.type === "k") {
       castleRights.kingSide = false;
@@ -701,7 +717,10 @@ export function executeMove(
   };
 }
 
-export function testMove(game: GameState, move: Move): { updatedGameState: GameState; capturedPiece: Piece | null } {
+export function testMove(
+  game: GameState,
+  move: Move
+): { updatedGameState: GameState; capturedPiece: Piece | null } {
   const position = new Map(game.position);
   const piece = position.get(move.start);
   if (!piece) throw new Error("Invalid move");
@@ -762,8 +781,10 @@ export function testMove(game: GameState, move: Move): { updatedGameState: GameS
     //Remove corresponding castle rights on rook or king move
     if (piece.type === "r" && (castleRights.kingSide || castleRights.queenSide)) {
       const coords = squareToCoordinates(move.start);
-      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.queenSide = false;
-      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7)) castleRights.kingSide = false;
+      if (coords[1] === 7 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.queenSide = false;
+      if (coords[1] === 0 && coords[0] === (activeColor === "w" ? 0 : 7))
+        castleRights.kingSide = false;
     }
     if (piece.type === "k") {
       castleRights.kingSide = false;
@@ -818,8 +839,10 @@ export interface Game extends Omit<GameState, "position"> {
 export class Game implements Game {
   constructor(gameConfig: GameConfig) {
     const initialGameState = fenToGameState(gameConfig.startPosition);
-    if (!initialGameState) throw new Error("Config is invalid: Invalid FEN passed to start position");
-    const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } = initialGameState;
+    if (!initialGameState)
+      throw new Error("Config is invalid: Invalid FEN passed to start position");
+    const { castleRights, position, activeColor, halfMoveCount, fullMoveCount, enPassantTarget } =
+      initialGameState;
     const legalMoves = getMoves(initialGameState);
     const board = positionToBoard(position);
     Object.assign(this, {
@@ -981,7 +1004,8 @@ function injectTargets(board: Board, legalMoves: Array<Move>): Board {
 }
 
 export function isSufficientMaterial(pieces: Piece[]): boolean {
-  if (pieces.some((piece) => piece.type === "p" || piece.type === "q" || piece.type === "r")) return true;
+  if (pieces.some((piece) => piece.type === "p" || piece.type === "q" || piece.type === "r"))
+    return true;
   let n = 0;
   let b = 0;
   pieces.forEach((piece) => {
@@ -1057,7 +1081,10 @@ export function gameFromNodeData(
 }
 
 //Generate a new tree node from a halfmove
-export function halfMoveToNode(halfMoveCount: number, halfMove: HalfMove): Omit<NodeData, "outcome"> {
+export function halfMoveToNode(
+  halfMoveCount: number,
+  halfMove: HalfMove
+): Omit<NodeData, "outcome"> {
   return {
     halfMoveCount,
     uci: MoveToUci(halfMove.move),

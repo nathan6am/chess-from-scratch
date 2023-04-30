@@ -8,15 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -31,240 +22,235 @@ const User_Game_1 = __importDefault(require("./User_Game"));
 const Collection_1 = __importDefault(require("./Collection"));
 const Analysis_1 = __importDefault(require("./Analysis"));
 let User = User_1 = class User extends typeorm_1.BaseEntity {
-    static usernameExists(username) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const exists = yield this.findOne({
-                where: {
-                    username: (0, typeorm_1.ILike)(`${(0, misc_1.escapeSpecialChars)(username)}`),
-                },
-            });
-            if (exists)
-                return true;
-            return false;
+    id;
+    name;
+    username;
+    rating;
+    notifications;
+    games;
+    collections;
+    savedAnalyses;
+    type;
+    profile;
+    credentials;
+    static async usernameExists(username) {
+        const exists = await this.findOne({
+            where: {
+                username: (0, typeorm_1.ILike)(`${(0, misc_1.escapeSpecialChars)(username)}`),
+            },
         });
+        if (exists)
+            return true;
+        return false;
     }
-    static login(credentials) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!credentials.email && !credentials.username)
-                return null;
-            if (credentials.email) {
-                const user = yield this.findOne({
-                    where: {
-                        credentials: {
-                            email: credentials.email,
-                        },
-                    },
-                    relations: {
-                        credentials: true,
-                    },
-                });
-                if (!user || !user.credentials)
-                    return null;
-                const verified = yield bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
-                if (!verified)
-                    return null;
-                return {
-                    username: user.username,
-                    id: user.id,
-                    type: user.type,
-                };
-            }
-            if (credentials.username) {
-                const user = yield this.findOne({
-                    where: {
-                        username: (0, typeorm_1.ILike)(`${(0, misc_1.escapeSpecialChars)(credentials.username)}`),
-                    },
-                    relations: {
-                        credentials: true,
-                    },
-                });
-                console.log(credentials.username);
-                console.log(user);
-                if (!user || !user.credentials)
-                    return null;
-                const verified = yield bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
-                if (!verified)
-                    return null;
-                return {
-                    username: user.username,
-                    id: user.id,
-                    type: user.type,
-                };
-            }
+    static async login(credentials) {
+        if (!credentials.email && !credentials.username)
             return null;
-        });
-    }
-    static getSessionUser(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({ where: { id } });
-            if (!user)
-                return undefined;
-            return {
-                id: user.id,
-                username: user.username,
-                type: user.type,
-            };
-        });
-    }
-    static loginWithFacebook(profile) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({
+        if (credentials.email) {
+            const user = await this.findOne({
+                where: {
+                    credentials: {
+                        email: credentials.email,
+                    },
+                },
                 relations: {
                     credentials: true,
                 },
+            });
+            if (!user || !user.credentials)
+                return null;
+            const verified = await bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
+            if (!verified)
+                return null;
+            return {
+                username: user.username,
+                id: user.id,
+                type: user.type,
+            };
+        }
+        if (credentials.username) {
+            const user = await this.findOne({
                 where: {
-                    credentials: {
-                        facebookId: profile.facebookId,
-                    },
+                    username: (0, typeorm_1.ILike)(`${(0, misc_1.escapeSpecialChars)(credentials.username)}`),
+                },
+                relations: {
+                    credentials: true,
                 },
             });
-            if (user) {
-                const { id, username, type } = user;
-                return { id, username, type };
-            }
-            const newUser = new User_1();
-            const credentials = new Credential();
-            credentials.facebookId = profile.facebookId;
-            Object.assign(newUser, {
-                name: profile.name,
-            });
-            newUser.credentials = credentials;
-            yield newUser.save();
+            console.log(credentials.username);
+            console.log(user);
+            if (!user || !user.credentials)
+                return null;
+            const verified = await bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
+            if (!verified)
+                return null;
             return {
-                id: newUser.id,
-                username: null,
-                type: "incomplete",
+                username: user.username,
+                id: user.id,
+                type: user.type,
+            };
+        }
+        return null;
+    }
+    static async getSessionUser(id) {
+        const user = await this.findOne({ where: { id } });
+        if (!user)
+            return undefined;
+        return {
+            id: user.id,
+            username: user.username,
+            type: user.type,
+        };
+    }
+    static async loginWithFacebook(profile) {
+        const user = await this.findOne({
+            relations: {
+                credentials: true,
+            },
+            where: {
+                credentials: {
+                    facebookId: profile.facebookId,
+                },
+            },
+        });
+        if (user) {
+            const { id, username, type } = user;
+            return { id, username, type };
+        }
+        const newUser = new User_1();
+        const credentials = new Credential();
+        credentials.facebookId = profile.facebookId;
+        Object.assign(newUser, {
+            name: profile.name,
+        });
+        newUser.credentials = credentials;
+        await newUser.save();
+        return {
+            id: newUser.id,
+            username: null,
+            type: "incomplete",
+        };
+    }
+    static async createAccountWithCredentials(account) {
+        const { email, username, password } = account;
+        const exists = await this.createQueryBuilder("user")
+            .leftJoinAndSelect("user.credentials", "credentials")
+            .where("credentials.email = :email", { email: account.email })
+            .orWhere("LOWER(user.username) = LOWER(:username)", {
+            username: account.username,
+        })
+            .getExists();
+        if (exists) {
+            return {
+                created: null,
+                fieldErrors: [{ field: "email", message: "Email address is already in use" }],
+            };
+        }
+        const user = new User_1();
+        const credentials = new Credential();
+        const hash = bcrypt_1.default.hashSync(password, 10);
+        credentials.hashedPassword = hash;
+        credentials.email = email;
+        user.credentials = credentials;
+        Object.assign(user, { username });
+        await user.save();
+        if (!user) {
+            return {
+                created: null,
+                fieldErrors: [{ field: "none", message: "Unable to create account" }],
+            };
+        }
+        const created = { id: user.id, username: user.username, type: user.type };
+        return { created: created };
+    }
+    static async updateCredentials(userid, currentPassword, newPassword) {
+        const user = await this.findOne({
+            where: { id: userid },
+            relations: { credentials: true },
+        });
+        if (user && bcrypt_1.default.compareSync(currentPassword, user.credentials.hashedPassword)) {
+            user.credentials.hashedPassword = bcrypt_1.default.hashSync(newPassword, 10);
+            await user.save();
+            return true;
+        }
+        return false;
+    }
+    static async getCollections(id) {
+        const user = await this.findOne({
+            where: { id: id },
+            relations: {
+                collections: {
+                    analyses: {
+                        collections: true,
+                    },
+                },
+            },
+        });
+        return user?.collections || [];
+    }
+    static async getProfile(id) {
+        const user = await this.findOne({
+            where: {
+                id,
+            },
+            relations: {
+                profile: true,
+                games: {
+                    game: {
+                        players: {
+                            user: true,
+                        },
+                    },
+                },
+            },
+        });
+        return user;
+    }
+    static async findById(id) {
+        const user = await this.findOneBy({ id });
+        return user;
+    }
+    static async createProfile(id, profileData) {
+        const user = await this.findOneBy({ id });
+        if (!user)
+            throw new Error("User does not exist");
+        if (user.type === "user")
+            throw new Error("user already has profile");
+        const profile = new Profile();
+        Object.assign(profile, profileData);
+        user.profile = profile;
+        user.type = "user";
+        await user.save();
+    }
+    static async getGames(id) {
+        const user = await this.findOne({
+            where: { id: id },
+            relations: {
+                games: {
+                    game: {
+                        players: {
+                            user: true,
+                        },
+                    },
+                },
+            },
+        });
+        const usergames = user?.games || [];
+        const result = usergames.map((usergame) => {
+            const filteredPlayers = usergame.game.players.map((player) => ({
+                username: player.user.username,
+                rating: player.rating,
+                color: player.color,
+            }));
+            return {
+                ...usergame,
+                game: {
+                    ...usergame.game,
+                    players: filteredPlayers,
+                },
             };
         });
-    }
-    static createAccountWithCredentials(account) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { email, username, password } = account;
-            const exists = yield this.createQueryBuilder("user")
-                .leftJoinAndSelect("user.credentials", "credentials")
-                .where("credentials.email = :email", { email: account.email })
-                .orWhere("LOWER(user.username) = LOWER(:username)", {
-                username: account.username,
-            })
-                .getExists();
-            if (exists) {
-                return {
-                    created: null,
-                    fieldErrors: [{ field: "email", message: "Email address is already in use" }],
-                };
-            }
-            const user = new User_1();
-            const credentials = new Credential();
-            const hash = bcrypt_1.default.hashSync(password, 10);
-            credentials.hashedPassword = hash;
-            credentials.email = email;
-            user.credentials = credentials;
-            Object.assign(user, { username });
-            yield user.save();
-            if (!user) {
-                return {
-                    created: null,
-                    fieldErrors: [{ field: "none", message: "Unable to create account" }],
-                };
-            }
-            const created = { id: user.id, username: user.username, type: user.type };
-            return { created: created };
-        });
-    }
-    static updateCredentials(userid, currentPassword, newPassword) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({
-                where: { id: userid },
-                relations: { credentials: true },
-            });
-            if (user && bcrypt_1.default.compareSync(currentPassword, user.credentials.hashedPassword)) {
-                user.credentials.hashedPassword = bcrypt_1.default.hashSync(newPassword, 10);
-                yield user.save();
-                return true;
-            }
-            return false;
-        });
-    }
-    static getCollections(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({
-                where: { id: id },
-                relations: {
-                    collections: {
-                        analyses: {
-                            collections: true,
-                        },
-                    },
-                },
-            });
-            return (user === null || user === void 0 ? void 0 : user.collections) || [];
-        });
-    }
-    static getProfile(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({
-                where: {
-                    id,
-                },
-                relations: {
-                    profile: true,
-                    games: {
-                        game: {
-                            players: {
-                                user: true,
-                            },
-                        },
-                    },
-                },
-            });
-            return user;
-        });
-    }
-    static findById(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOneBy({ id });
-            return user;
-        });
-    }
-    static createProfile(id, profileData) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOneBy({ id });
-            if (!user)
-                throw new Error("User does not exist");
-            if (user.type === "user")
-                throw new Error("user already has profile");
-            const profile = new Profile();
-            Object.assign(profile, profileData);
-            user.profile = profile;
-            user.type = "user";
-            yield user.save();
-        });
-    }
-    static getGames(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const user = yield this.findOne({
-                where: { id: id },
-                relations: {
-                    games: {
-                        game: {
-                            players: {
-                                user: true,
-                            },
-                        },
-                    },
-                },
-            });
-            const usergames = (user === null || user === void 0 ? void 0 : user.games) || [];
-            const result = usergames.map((usergame) => {
-                const filteredPlayers = usergame.game.players.map((player) => ({
-                    username: player.user.username,
-                    rating: player.rating,
-                    color: player.color,
-                }));
-                return Object.assign(Object.assign({}, usergame), { game: Object.assign(Object.assign({}, usergame.game), { players: filteredPlayers }) });
-            });
-            return result;
-        });
+        return result;
     }
 };
 __decorate([
@@ -331,6 +317,13 @@ var NotificationType;
     NotificationType["CORRESPONDENCE_RESULT"] = "correspondence-result";
 })(NotificationType = exports.NotificationType || (exports.NotificationType = {}));
 let Notification = class Notification {
+    id;
+    created_at;
+    acknowledged;
+    type;
+    data;
+    message;
+    user;
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
@@ -365,6 +358,9 @@ Notification = __decorate([
 ], Notification);
 exports.Notification = Notification;
 let CompletedPuzzle = class CompletedPuzzle {
+    user_id;
+    puzzle_id;
+    user;
 };
 __decorate([
     (0, typeorm_1.PrimaryColumn)(),
@@ -384,6 +380,11 @@ CompletedPuzzle = __decorate([
 ], CompletedPuzzle);
 exports.CompletedPuzzle = CompletedPuzzle;
 let Credential = class Credential {
+    id;
+    hashedPassword;
+    facebookId;
+    googleId;
+    email;
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
@@ -410,6 +411,10 @@ Credential = __decorate([
 ], Credential);
 exports.Credential = Credential;
 let Profile = class Profile {
+    id;
+    bio;
+    country;
+    settings;
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),

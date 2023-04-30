@@ -4,7 +4,7 @@ import useSound from "use-sound";
 import useVariationTree from "./useVariationTree";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import { TreeNode } from "./useTreeData";
+import { PGNTagData, TreeNode } from "@/lib/types";
 import { ApiResponse } from "./useOpeningExplorer";
 
 type Node = TreeNode<Chess.NodeData>;
@@ -33,7 +33,7 @@ export interface ReplayHook {
   currentLine: Node[];
   path: Node[];
 }
-import { PGNTagData, parsePgn } from "@/util/parsers/pgnParser";
+import { parsePgn } from "@/util/parsers/pgnParser";
 
 export default function useGameViewer({ pgn }: { pgn: string }): ReplayHook {
   const { settings } = useContext(SettingsContext);
@@ -60,8 +60,17 @@ export default function useGameViewer({ pgn }: { pgn: string }): ReplayHook {
   useEffect(() => {
     variationTree.loadNewTree(tree);
   }, [tree]);
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    moveText,
+    mainLine,
+    setCurrentKey,
+  } = variationTree;
 
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNode === null) return initialGame;

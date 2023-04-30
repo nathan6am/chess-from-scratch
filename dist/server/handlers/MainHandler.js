@@ -1,19 +1,10 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const nanoid_1 = require("nanoid");
 const redisClientWrapper_1 = require("../util/redisClientWrapper");
 function default_1(io, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
-    socket.on("authenticate", (ack) => __awaiter(this, void 0, void 0, function* () {
+    socket.on("authenticate", async (ack) => {
         if (!socket.data.userid) {
             ack(false);
             return;
@@ -28,8 +19,8 @@ function default_1(io, socket, redisClient) {
         //for example to disable game if active on another conection
         socket.join(socket.data.userid);
         ack(true);
-    }));
-    socket.on("lobby:create", (options, ack) => __awaiter(this, void 0, void 0, function* () {
+    });
+    socket.on("lobby:create", async (options, ack) => {
         const userid = socket.data.userid;
         if (!userid) {
             console.log("unauthenticated");
@@ -42,14 +33,19 @@ function default_1(io, socket, redisClient) {
             reservedConnections: [userid],
             currentGame: null,
             connections: [],
-            options: Object.assign({ rated: false, gameConfig: options.gameConfig || {
+            options: {
+                rated: false,
+                gameConfig: options.gameConfig || {
                     startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                     timeControls: [{ timeSeconds: 300, incrementSeconds: 5 }],
-                }, color: "random" }, options),
+                },
+                color: "random",
+                ...options,
+            },
             chat: [],
         };
         try {
-            const created = yield cache.newLobby(lobby);
+            const created = await cache.newLobby(lobby);
             ack({ status: true, data: created, error: null });
             return;
         }
@@ -63,6 +59,6 @@ function default_1(io, socket, redisClient) {
                 return;
             }
         }
-    }));
+    });
 }
 exports.default = default_1;

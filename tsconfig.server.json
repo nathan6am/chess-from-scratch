@@ -5,5 +5,16 @@
     "outDir": "dist",
     "noEmit": false
   },
-  "include": ["server"]
+  "include": ["server"],
+  "exclude": [
+    "node_modules",
+    "./hooks/useEvaler.ts",
+    "lib",
+    "pages",
+    "public",
+    "styles",
+    "util",
+    "context",
+    "components"
+  ]
 }

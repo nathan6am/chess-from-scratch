@@ -10,7 +10,11 @@ export default function PlayerCard({ connection }: Props) {
       <div className="absolute top-0 bottom-0 right-0 h-full aspect-square bg-white/[0.1] border-l border-white flex justify-center items-center">
         {score.toFixed(1)}
       </div>
-      <div className={`rounded-full w-3 h-3 ${connectionStatus ? "bg-green-500" : "bg-white/[0.1]"} mt-1 mr-2`}></div>
+      <div
+        className={`rounded-full w-3 h-3 ${
+          connectionStatus ? "bg-green-500" : "bg-white/[0.1]"
+        } mt-1 mr-2`}
+      ></div>
       {`${player.username} (${player.rating || "?"})`}
     </div>
   );

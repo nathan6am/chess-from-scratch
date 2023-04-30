@@ -31,10 +31,7 @@ const Chess = __importStar(require("../../lib/chess"));
 const uuid_1 = require("uuid");
 const misc_1 = require("../misc");
 const luxon_1 = require("luxon");
-//import fs from "fs";
 const lodash_1 = __importDefault(require("lodash"));
-//const sampleData = fs.readFileSync("./sample.pgn", "utf-8");
-const sampleArrows = "[%csl Rd4,Gd5] this is the rest of the comment[%cal Rc8f5,Ra8d8,Re8c8]";
 const getEntries = (obj) => Object.entries(obj);
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
@@ -42,9 +39,10 @@ const quoteDelimited = /"[^"]+"/g;
 const commandDelimited = /\[%[^\[\]]+\]/g;
 const commandTypeExpr = /\B\%\w+/;
 function extractCommands(comment) {
-    var _a;
     const knownTypes = ["%csl", "%cal", "%clk"];
-    const commandsRaw = (_a = comment.match(commandDelimited)) === null || _a === void 0 ? void 0 : _a.map((str) => str.replace(bracketsExpr, "$1"));
+    const commandsRaw = comment
+        .match(commandDelimited)
+        ?.map((str) => str.replace(bracketsExpr, "$1"));
     const remainingComment = comment.replace(commandDelimited, "").trim();
     let commands = [];
     if (commandsRaw && commandsRaw.length) {
@@ -122,7 +120,9 @@ function encodeCommentFromNodeData(data) {
             .join(",")}] `;
     }
     if (data.arrows && data.arrows.length) {
-        commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
+        commentString += `[%cal ${data.arrows
+            .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
+            .join(",")}] `;
     }
     if (data.comment) {
         commentString += data.comment;
@@ -367,7 +367,7 @@ function parseMoveText(movetext, startPosition) {
             console.log(currentGame.legalMoves);
             throw new Error(`Invalid move: ${pgn}`);
         }
-        const parentKey = (currentParent === null || currentParent === void 0 ? void 0 : currentParent.key) || null;
+        const parentKey = currentParent?.key || null;
         const path = parentKey ? getPath(parentKey) : [];
         //Generate node data from game/move
         const data = Chess.nodeDataFromMove(currentGame, move, path.length + 1);
@@ -463,7 +463,8 @@ function parseMoveText(movetext, startPosition) {
         else if (char === "$") {
             reading = "annotation";
         }
-        else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
+        else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
+            isDigit(char)) {
             reading = "move-count";
             moveCount = char;
             if (currentData.pgn)
@@ -542,8 +543,7 @@ exports.encodeGameToPgn = encodeGameToPgn;
 function moveHistoryToMoveText(moveHistory) {
     let moveText = "";
     moveHistory.forEach((fullmove, idx) => {
-        var _a;
-        moveText += `${idx + 1}. ${fullmove[0].PGN} ${((_a = fullmove[1]) === null || _a === void 0 ? void 0 : _a.PGN) || ""}`;
+        moveText += `${idx + 1}. ${fullmove[0].PGN} ${fullmove[1]?.PGN || ""}`;
     });
 }
 exports.moveHistoryToMoveText = moveHistoryToMoveText;

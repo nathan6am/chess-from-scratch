@@ -33,32 +33,6 @@ const parseScore = (score: Chess.EvalScore): string => {
   }
 };
 
-function uciMovesToPgn(line: Chess.Line, game: Chess.Game): string[] {
-  const result: string[] = [];
-  try {
-    let currentGame = _.cloneDeep(game);
-    line.moves.forEach((uciMove) => {
-      const move = currentGame.legalMoves.find(
-        (move) =>
-          move.start === uciMove.start &&
-          move.end === uciMove.end &&
-          move.promotion === uciMove.promotion
-      );
-      if (!move) {
-        return result;
-      } else {
-        result.push(move.PGN);
-        const nextGame = Chess.move(currentGame, move);
-        currentGame = nextGame;
-      }
-    });
-    return result;
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
-}
-
 export default function EvalInfo({
   evaler,
   enabled,
@@ -109,18 +83,6 @@ export default function EvalInfo({
     else return "+0.0";
   }, [evaler.currentScore]);
 
-  const bestMove = useMemo(() => {
-    const uciMove = evaler.currentMove;
-    if (!uciMove) return null;
-    const move = currentGame.legalMoves.find(
-      (move) =>
-        move.start === uciMove.start &&
-        move.end === uciMove.end &&
-        move.promotion === uciMove.promotion
-    );
-    return move?.PGN || null;
-  }, [evaler.currentMove]);
-
   const progress = (evaler.currentDepth / evaler.options.depth) * 100;
   const [showLines, setShowLines] = useState(true);
   return (
@@ -133,9 +95,9 @@ export default function EvalInfo({
                 <h2 className="text-2xl font-semibold text-left">{score}</h2>
                 <p className="text-xs opacity-70">
                   {`Current depth: ${evaler.currentDepth}/${evaler.options.depth}`}
-                  {evaler.evaluation?.isCloudEval && !evaler.isEvaluating ? (
+                  {/* {evaler.evaluation?.isCloudEval && !evaler.isEvaluating ? (
                     <MdCloud className="opacity-60 inline text-lg ml-1 mb-1" />
-                  ) : null}
+                  ) : null} */}
                 </p>
               </div>
               <Toggle
@@ -200,7 +162,7 @@ export default function EvalInfo({
           {showLines && (
             <div className="w-full py-3 px-4 bg-white/[0.05] space-y-2">
               {/* <p>Best move: {`${bestMove || ""}`}</p> */}
-              <>
+              {/* <>
                 {evaler.isEvaluating &&
                   (evaler.currentDepth < evaler.options.showLinesAfterDepth ||
                     !evaler.currentLines) &&
@@ -221,7 +183,7 @@ export default function EvalInfo({
                       </div>
                     );
                   })}
-              </>
+              </> */}
               {/* {evaler.currentDepth >= evaler.options.showLinesAfterDepth &&
                 evaler.currentLines &&
                 evaler.currentLines.length > 0 &&
@@ -375,7 +337,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
           evaler.updateOptions({ showLinesAfterDepth: val });
         }}
       />
-      <Toggle
+      {/* <Toggle
         className="mt-3"
         label="Show Eval Bar"
         labelClasses="text-sm opacity-75"
@@ -385,7 +347,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
             showEvalBar: enabled,
           });
         }}
-      />
+      /> */}
     </div>
   );
 }

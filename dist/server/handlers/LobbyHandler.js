@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -46,16 +37,16 @@ function LobbyHandler(io, nsp, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     //UTILITY FUNCTIONS
     //Retrieve a socket instance by its id
-    const socketInstanceById = (socketId) => __awaiter(this, void 0, void 0, function* () {
-        const sockets = yield nsp.in(socketId).fetchSockets();
+    const socketInstanceById = async (socketId) => {
+        const sockets = await nsp.in(socketId).fetchSockets();
         for (const socket of sockets) {
             if (socket.id === socketId)
                 return socket;
         }
-    });
+    };
     //Retrieve the socket instance for the next player to move in a lobby
-    const getNextPlayerSocket = (lobbyid) => __awaiter(this, void 0, void 0, function* () {
-        const currentLobby = yield cache.getLobbyById(lobbyid);
+    const getNextPlayerSocket = async (lobbyid) => {
+        const currentLobby = await cache.getLobbyById(lobbyid);
         if (!currentLobby)
             return;
         if (!currentLobby.currentGame)
@@ -65,95 +56,97 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         if (!nextPlayerConnection)
             return;
         const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
-        const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
+        const nextPlayerSocket = await socketInstanceById(nextPlayerSocketId);
         return nextPlayerSocket;
-    });
+    };
     //Start a game in a given lobby
-    function startGame(lobbyid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const lobby = yield cache.getLobbyById(lobbyid);
-            if (!lobby)
-                throw new Error("Lobby does not exist");
-            const game = yield cache.newGame(lobbyid);
-            if (!game)
-                throw new Error("Unable to start game");
-            const playerW = game.players.w;
-            const playerWhiteConnection = lobby.connections.find((player) => player.id === playerW.id);
-            if (!playerWhiteConnection)
-                throw new Error("Conection mismatch");
-            const playerWhiteSocketId = playerWhiteConnection.lastClientSocketId;
-            const whiteSocket = yield socketInstanceById(playerWhiteSocketId);
-            //Abort the game if the player is not connected
-            if (!whiteSocket) {
-                return;
-            }
-            requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
-            nsp.to(lobbyid).emit("game:new", game);
-        });
+    async function startGame(lobbyid) {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby)
+            throw new Error("Lobby does not exist");
+        const game = await cache.newGame(lobbyid);
+        if (!game)
+            throw new Error("Unable to start game");
+        const playerW = game.players.w;
+        const playerWhiteConnection = lobby.connections.find((player) => player.id === playerW.id);
+        if (!playerWhiteConnection)
+            throw new Error("Conection mismatch");
+        const playerWhiteSocketId = playerWhiteConnection.lastClientSocketId;
+        const whiteSocket = await socketInstanceById(playerWhiteSocketId);
+        //Abort the game if the player is not connected
+        if (!whiteSocket) {
+            return;
+        }
+        requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
+        nsp.to(lobbyid).emit("game:new", game);
     }
     //Handle game result
-    function handleGameResult(lobbyid, game) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const lobby = yield cache.getLobbyById(lobbyid);
-            if (!lobby || !lobby.currentGame)
-                return;
-            const updated = yield cache.updateGame(lobbyid, game);
-            const connectionWhite = lobby.connections.find((connection) => connection.id === game.players.w.id);
-            const connectionBlack = lobby.connections.find((connection) => connection.id === game.players.b.id);
-            if (!connectionBlack || !connectionWhite)
-                throw new Error("connections mismatched");
-            const connections = { w: connectionWhite, b: connectionBlack };
-            const outcome = updated.data.outcome;
-            if (!outcome)
-                return;
-            //update game scores
-            if (outcome.result === "d") {
-                lobby.connections = lobby.connections.map((connection) => {
-                    return Object.assign(Object.assign({}, connection), { score: connection.score + 0.5 });
-                });
-            }
-            else {
-                lobby.connections = lobby.connections.map((connection) => {
-                    if (outcome.result === "w" && connection.id === connectionWhite.id) {
-                        return Object.assign(Object.assign({}, connection), { score: connection.score + 1 });
-                    }
-                    else if (outcome.result === "b" && connection.id === connectionBlack.id) {
-                        return Object.assign(Object.assign({}, connection), { score: connection.score + 1 });
-                    }
-                    else
-                        return connection;
-                });
-            }
-            yield cache.updateLobby(lobbyid, { connections: lobby.connections });
-            const data = updated.data;
-            const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
-            const players = {
-                w: connections.w.player,
-                b: connections.b.player,
-            };
-            nsp.to(lobbyid).emit("game:outcome", updated);
-            nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
-            //Save the game to db if any user is not a guest
-            if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
-                console.log(game.id);
-                const saved = yield Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
-                console.log(saved);
-            }
-        });
+    async function handleGameResult(lobbyid, game) {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby || !lobby.currentGame)
+            return;
+        const updated = await cache.updateGame(lobbyid, game);
+        const connectionWhite = lobby.connections.find((connection) => connection.id === game.players.w.id);
+        const connectionBlack = lobby.connections.find((connection) => connection.id === game.players.b.id);
+        if (!connectionBlack || !connectionWhite)
+            throw new Error("connections mismatched");
+        const connections = { w: connectionWhite, b: connectionBlack };
+        const outcome = updated.data.outcome;
+        if (!outcome)
+            return;
+        //update game scores
+        if (outcome.result === "d") {
+            lobby.connections = lobby.connections.map((connection) => {
+                return { ...connection, score: connection.score + 0.5 };
+            });
+        }
+        else {
+            lobby.connections = lobby.connections.map((connection) => {
+                if (outcome.result === "w" && connection.id === connectionWhite.id) {
+                    return {
+                        ...connection,
+                        score: connection.score + 1,
+                    };
+                }
+                else if (outcome.result === "b" && connection.id === connectionBlack.id) {
+                    return {
+                        ...connection,
+                        score: connection.score + 1,
+                    };
+                }
+                else
+                    return connection;
+            });
+        }
+        await cache.updateLobby(lobbyid, { connections: lobby.connections });
+        const data = updated.data;
+        const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+        const players = {
+            w: connections.w.player,
+            b: connections.b.player,
+        };
+        nsp.to(lobbyid).emit("game:outcome", updated);
+        nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
+        //Save the game to db if any user is not a guest
+        if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
+            console.log(game.id);
+            const saved = await Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
+            console.log(saved);
+        }
     }
     socket.on("disconnect", () => {
         //Find the active game if applicable and set a timeout for reconnection
         //or, abort the game if it has not yet started
         console.log(`Client ${socket.data.userid} has disconnected`);
     });
-    socket.on("lobby:connect", (lobbyid, ack) => __awaiter(this, void 0, void 0, function* () {
+    socket.on("lobby:connect", async (lobbyid, ack) => {
         try {
             //Verify the user is authenticated and the lobby exists in the cache
             const sessionUser = socket.data.sessionUser;
             if (!sessionUser)
                 throw new Error("Unauthenticated");
             const { id, username, type } = sessionUser;
-            const lobby = yield cache.getLobbyById(lobbyid);
+            const lobby = await cache.getLobbyById(lobbyid);
             if (!lobby)
                 throw new Error("Lobby does not exist");
             //Verify the user has permission to join the lobby or a free slot is available
@@ -162,14 +155,17 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 let connection;
                 if (type !== "guest") {
                     //Get the user's current rating if the user is not a guest
-                    const user = yield User_1.default.findById(id);
+                    const user = await User_1.default.findById(id);
                     console.log(id);
                     if (!user)
                         throw new Error("Unauthenticated");
                     //console.log(user);
                     connection = {
                         id,
-                        player: Object.assign(Object.assign({}, sessionUser), { rating: user.rating }),
+                        player: {
+                            ...sessionUser,
+                            rating: user.rating,
+                        },
                         score: 0,
                         lastClientSocketId: socket.id,
                         connectionStatus: true,
@@ -193,7 +189,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                         .map((conn) => conn.lastClientSocketId)
                         .filter((socketId) => socketId !== clientToRemove);
                     clients.push(socket.id);
-                    const inLobby = yield nsp.in(lobbyid).fetchSockets();
+                    const inLobby = await nsp.in(lobbyid).fetchSockets();
                     inLobby.forEach((socket) => {
                         if (!clients.includes(socket.id)) {
                             socket.leave(lobbyid);
@@ -203,7 +199,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     nsp.to(id).except(socket.id).emit("newclient");
                 }
                 //Update the cached lobby and add the socket to the room
-                const updated = yield cache.connectToLobby(lobbyid, connection);
+                const updated = await cache.connectToLobby(lobbyid, connection);
                 socket.join(lobbyid);
                 if (updated.currentGame) {
                     if (updated.currentGame.data.outcome) {
@@ -253,9 +249,9 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 ack({ status: false, error: new Error("Unable to connect to lobby") });
             }
         }
-    }));
-    const requestMoveWithTimeout = (socket, timeoutMs, game, lobbyid) => __awaiter(this, void 0, void 0, function* () {
-        const lobby = yield cache.getLobbyById(lobbyid);
+    });
+    const requestMoveWithTimeout = async (socket, timeoutMs, game, lobbyid) => {
+        const lobby = await cache.getLobbyById(lobbyid);
         if (!lobby)
             throw new Error("lobby does not exist");
         if (!lobby.currentGame || lobby.currentGame.id !== game.id)
@@ -266,16 +262,15 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[lobby.currentGame.data.activeColor]);
         }
         //Timeout event to end the game if the user hasn't played a move in the allotted time
-        socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, (err, response) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
+        socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, async (err, response) => {
             if (err) {
-                const lobby = yield cache.getLobbyById(lobbyid);
+                const lobby = await cache.getLobbyById(lobbyid);
                 if (!lobby)
                     return;
                 if (!lobby.currentGame)
                     return;
                 //return if the game has an outcome or a new game has started
-                if (((_a = lobby.currentGame) === null || _a === void 0 ? void 0 : _a.id) !== game.id || lobby.currentGame.data.outcome)
+                if (lobby.currentGame?.id !== game.id || lobby.currentGame.data.outcome)
                     return;
                 //return if moves have been played since the initial request
                 if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
@@ -300,19 +295,19 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     };
                 }
                 lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
-                yield cache.updateGame(lobbyid, lobby.currentGame);
-                yield handleGameResult(lobbyid, lobby.currentGame);
+                await cache.updateGame(lobbyid, lobby.currentGame);
+                await handleGameResult(lobbyid, lobby.currentGame);
             }
             else {
                 //Attempt to execute the move upon response from the client
                 try {
-                    const updated = yield executeMove(response, lobbyid);
+                    const updated = await executeMove(response, lobbyid);
                     nsp.to(lobbyid).emit("game:move", updated);
                     if (updated.data.outcome) {
-                        yield handleGameResult(lobbyid, updated);
+                        await handleGameResult(lobbyid, updated);
                         return;
                     }
-                    const currentLobby = yield cache.getLobbyById(lobbyid);
+                    const currentLobby = await cache.getLobbyById(lobbyid);
                     //Retrieve the socket instance for the next player
                     if (!currentLobby)
                         return;
@@ -323,7 +318,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     if (!nextPlayerConnection)
                         return;
                     const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
-                    const nextPlayerSocket = yield socketInstanceById(nextPlayerSocketId);
+                    const nextPlayerSocket = await socketInstanceById(nextPlayerSocketId);
                     //TODO: set abandonment timeout
                     if (!nextPlayerSocket)
                         return;
@@ -332,13 +327,13 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
                 }
                 catch (e) {
-                    const lobby = yield cache.getLobbyById(lobbyid);
+                    const lobby = await cache.getLobbyById(lobbyid);
                     if (!lobby)
                         return;
                     if (!lobby.currentGame)
                         return;
                     //return if the game has an outcome or a new game has started
-                    if (((_b = lobby.currentGame) === null || _b === void 0 ? void 0 : _b.id) !== game.id || lobby.currentGame.data.outcome)
+                    if (lobby.currentGame?.id !== game.id || lobby.currentGame.data.outcome)
                         return;
                     //return if moves have been played since the initial request
                     if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
@@ -348,43 +343,48 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     requestMoveWithTimeout(socket, timeRemainingMs, game, lobbyid);
                 }
             }
-        }));
-    });
-    //Execute a move and updated the cached game state
-    function executeMove(move, lobbyid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const moveRecievedISO = (0, clockFunctions_1.currentISO)();
-            //Verify the lobby anf game still exist
-            const lobby = yield cache.getLobbyById(lobbyid);
-            if (!lobby)
-                throw new Error("Lobby does not exist");
-            const game = lobby.currentGame;
-            if (game === null)
-                throw new Error("no active game");
-            if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
-                throw new Error("Player is not in lobby");
-            //Execute the move
-            const updatedGameData = Chess.move(game.data, move);
-            //Update the clocks if both players have played a move
-            if (updatedGameData.fullMoveCount >= 2) {
-                //Update the clock state and apply increment
-                const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
-                return yield cache.updateGame(lobbyid, Object.assign(Object.assign({}, game), { data: updatedGameData, clock: updatedClock }));
-            }
-            else {
-                return yield cache.updateGame(lobbyid, Object.assign(Object.assign({}, game), { data: updatedGameData }));
-            }
         });
+    };
+    //Execute a move and updated the cached game state
+    async function executeMove(move, lobbyid) {
+        const moveRecievedISO = (0, clockFunctions_1.currentISO)();
+        //Verify the lobby anf game still exist
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby)
+            throw new Error("Lobby does not exist");
+        const game = lobby.currentGame;
+        if (game === null)
+            throw new Error("no active game");
+        if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
+            throw new Error("Player is not in lobby");
+        //Execute the move
+        const updatedGameData = Chess.move(game.data, move);
+        //Update the clocks if both players have played a move
+        if (updatedGameData.fullMoveCount >= 2) {
+            //Update the clock state and apply increment
+            const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
+            return await cache.updateGame(lobbyid, {
+                ...game,
+                data: updatedGameData,
+                clock: updatedClock,
+            });
+        }
+        else {
+            return await cache.updateGame(lobbyid, {
+                ...game,
+                data: updatedGameData,
+            });
+        }
     }
-    socket.on("game:move", ({ move, lobbyid }, ack) => __awaiter(this, void 0, void 0, function* () {
-        const updated = yield executeMove(move, lobbyid);
+    socket.on("game:move", async ({ move, lobbyid }, ack) => {
+        const updated = await executeMove(move, lobbyid);
         //Return the updated game data to the client and emit to the opponent
         ack({ status: true, data: updated, error: null });
         socket.to(lobbyid).emit("game:move", updated);
-        const currentLobby = yield cache.getLobbyById(lobbyid);
+        const currentLobby = await cache.getLobbyById(lobbyid);
         if (!currentLobby || !currentLobby.currentGame)
             return;
-        const nextPlayerSocket = yield getNextPlayerSocket(lobbyid);
+        const nextPlayerSocket = await getNextPlayerSocket(lobbyid);
         //TODO: timeout abandonment handler
         if (!nextPlayerSocket)
             return;
@@ -392,10 +392,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         const timeRemainingMs = (0, clockFunctions_1.currentTimeRemaining)(currentLobby.currentGame.clock.lastMoveTimeISO || luxon_1.DateTime.now().toISO(), currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]);
         //Request move from next player
         requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
-    }));
-    socket.on("game:resign", (lobbyid) => __awaiter(this, void 0, void 0, function* () {
+    });
+    socket.on("game:resign", async (lobbyid) => {
         const user = socket.data.sessionUser;
-        const lobby = yield cache.getLobbyById(lobbyid);
+        const lobby = await cache.getLobbyById(lobbyid);
         if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
             return;
         if (!lobby.connections.some((player) => player.id === user.id))
@@ -403,8 +403,8 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
         const game = lobby.currentGame;
         game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
-        const updated = yield cache.updateGame(lobbyid, game);
-        yield handleGameResult(lobbyid, game);
-    }));
+        const updated = await cache.updateGame(lobbyid, game);
+        await handleGameResult(lobbyid, game);
+    });
 }
 exports.default = LobbyHandler;

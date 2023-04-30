@@ -16,7 +16,7 @@ interface Props {
   save: (data: AnalysisData) => void;
   moveText: string;
 }
-import { AnalysisData } from "@/hooks/useAnalysisBoard";
+import { AnalysisData } from "@/lib/types";
 import useCollections from "@/hooks/useCollections";
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
 export default function SaveAnalysis({ isOpen, closeModal, save, moveText }: Props) {

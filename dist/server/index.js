@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -63,14 +54,14 @@ console.log(`Environment: ${process.env.NODE_ENV}`);
 const dev = process.env.NODE_ENV !== "production";
 const nextApp = (0, next_1.default)({ dev, hostname, port });
 const nextHandler = nextApp.getRequestHandler();
-nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
+nextApp.prepare().then(async () => {
     const app = (0, express_1.default)();
     const server = http.createServer(app);
-    yield sessionClient.connect();
+    await sessionClient.connect();
     console.log("Connected to session client");
-    yield redisClient.connect();
+    await redisClient.connect();
     console.log("Connected to redis client");
-    yield db.initialize();
+    await db.initialize();
     console.log("Connected to database");
     const sessionMiddleware = (0, express_session_1.default)({
         secret: process.env.SESSION_SECRET || "keyboard cat",
@@ -119,8 +110,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     io.use(wrap(passport_1.default.initialize()));
     io.use(wrap(passport_1.default.session()));
     io.use((socket, next) => {
-        var _a, _b;
-        const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+        const passportUser = socket.request.session?.passport?.user;
         if (passportUser) {
             const user = JSON.parse(passportUser);
             console.log(passportUser);
@@ -136,8 +126,7 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     lobbyNsp.use(wrap(passport_1.default.initialize()));
     lobbyNsp.use(wrap(passport_1.default.session()));
     lobbyNsp.use((socket, next) => {
-        var _a, _b;
-        const passportUser = (_b = (_a = socket.request.session) === null || _a === void 0 ? void 0 : _a.passport) === null || _b === void 0 ? void 0 : _b.user;
+        const passportUser = socket.request.session?.passport?.user;
         console.log(`passportUser: ${passportUser}`);
         if (passportUser) {
             const user = JSON.parse(passportUser);
@@ -162,4 +151,4 @@ nextApp.prepare().then(() => __awaiter(void 0, void 0, void 0, function* () {
     server.listen(port, () => {
         console.log(`> Ready on http://localhost:${port}`);
     });
-}));
+});

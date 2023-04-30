@@ -1,5 +1,4 @@
-import { MarkedSquare } from "@/hooks/useBoardMarkup";
-import { Arrow } from "../../components/analysis/BoardArrows";
+import { MarkedSquare, Arrow } from "../types";
 import { FinalEvaluation } from "./UciCmds";
 export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type File = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";

@@ -1,15 +1,11 @@
 import React, { useState, useMemo, useCallback } from "react";
-import Analysis from "@/lib/db/entities/Analysis";
-import Collection from "@/lib/db/entities/Collection";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { AnalysisData } from "./useAnalysisBoard";
-import { PGNTagData } from "@/util/parsers/pgnParser";
+import Analysis from "@/lib/db/entities/Analysis";
+import Collection from "@/lib/db/entities/Collection";
+import { SavedAnalysis, PGNTagData, AnalysisData } from "@/lib/types";
 import { useRouter } from "next/router";
-export interface SavedAnalysis {
-  analysis: Analysis;
-  readonly?: boolean;
-}
 
 const fetcher = async (id: string | null) => {
   if (!id) return null;
@@ -73,7 +69,10 @@ export default function useSavedAnalysis() {
   });
   const { mutate: fork } = useMutation({
     mutationFn: async (data: { title: string; collectionIds: string[] }) => {
-      const response = await axios.post<{ success: boolean; analysis: Analysis }>(`/api/analysis/${id}/fork`, data);
+      const response = await axios.post<{ success: boolean; analysis: Analysis }>(
+        `/api/analysis/${id}/fork`,
+        data
+      );
       if (response && response.data) return response.data.analysis;
       else throw new Error("Fork failed");
     },

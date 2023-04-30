@@ -203,7 +203,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 onPremove={() => {}}
               />
             </BoardColumn>
-            {evalEnabled && evaler.options.showEvalBar && (
+            {evalEnabled && (
               <EvalBar
                 scoreType={evaler.currentScore?.type || "cp"}
                 value={evaler.currentScore?.value || 0}

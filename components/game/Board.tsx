@@ -20,8 +20,9 @@ import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
 import BoardArrows from "../analysis/BoardArrows";
-import useBoardMarkup, { ArrowColor, MarkedSquare, useArrowState } from "@/hooks/useBoardMarkup";
-import { Arrow } from "../analysis/BoardArrows";
+import useBoardMarkup from "@/hooks/useBoardMarkup";
+import { Arrow, ArrowColor, MarkedSquare } from "@/lib/types";
+import { useArrowState } from "@/hooks/useBoardMarkup";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
 interface Props {
   editMode?: boolean;
@@ -164,7 +165,17 @@ const Board = React.forwardRef<BoardHandle, Props>(
         }
         setSelectedPiece(null);
       }
-    }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
+    }, [
+      currentSquare,
+      selectedPiece,
+      autoQueen,
+      legalMoves,
+      activeColor,
+      moveable,
+      onMove,
+      preMoveable,
+      onPremove,
+    ]);
 
     /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -183,7 +194,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
           }
           if (piece.color !== activeColor) return;
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+          const move = legalMoves.find(
+            (move) => move.start === square && move.end === targetSquare
+          );
           //Return if no legal move is found
           if (!move) return;
           //Call onMove if the move is not a promotion
@@ -238,7 +251,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
           pendingArrow={currentArrow}
         >
           <div
-            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
+            className={`${styles.board} relative mx-0 ${
+              showCoordinates === "outside" ? "m-2" : ""
+            } board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
@@ -256,7 +271,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                    move.start === promotionMove.start &&
+                    move.end === promotionMove.end &&
+                    move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -282,7 +299,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     id={`${squareIdPrefix || ""}${square}`}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                    isTarget={
+                      (selectedPiece && selectedPiece[1].targets?.includes(square)) || false
+                    }
                     isSelected={(selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
@@ -319,7 +338,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 square={square}
                 movementType={movementType}
                 disabled={
-                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                  (moveable !== "both" && piece.color !== moveable) ||
+                  (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}

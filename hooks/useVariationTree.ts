@@ -1,4 +1,5 @@
-import useTreeData, { TreeHook, TreeNode } from "./useTreeData";
+import useTreeData, { TreeHook } from "./useTreeData";
+import { TreeNode } from "@/lib/types";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
@@ -93,7 +94,8 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
           ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
           : ""
       } ${annotate ? encodeCommentFromNodeData(node.data) : node.data.comment || ""}`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
+      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0)
+        movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
@@ -134,7 +136,10 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
       if (!node) return;
       const index = tree.getSiblingIndex(key);
       if (index === 0) {
-        const variationStart = tree.findFirstAncestor(key, (node) => tree.getSiblingIndex(node.key) !== 0);
+        const variationStart = tree.findFirstAncestor(
+          key,
+          (node) => tree.getSiblingIndex(node.key) !== 0
+        );
         if (!variationStart) return;
         tree.setSiblingIndex(variationStart.key, tree.getSiblingIndex(variationStart.key) - 1);
       } else {

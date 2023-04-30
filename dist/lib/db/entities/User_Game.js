@@ -16,6 +16,12 @@ const typeorm_1 = require("typeorm");
 const User_1 = __importDefault(require("./User"));
 const Game_1 = __importDefault(require("./Game"));
 let User_Game = class User_Game extends typeorm_1.BaseEntity {
+    id;
+    user;
+    game;
+    color;
+    result;
+    rating;
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),

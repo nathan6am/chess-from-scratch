@@ -7,18 +7,9 @@ import useDebounce from "./useDebounce";
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import { TreeNode } from "./useTreeData";
-import { ArrowColor } from "./useBoardMarkup";
-
+import { PGNTagData, AnalysisData, ArrowColor, MarkedSquare, Arrow, TreeNode } from "@/lib/types";
 type Node = TreeNode<Chess.NodeData>;
-export interface AnalysisData {
-  title: string;
-  description?: string;
-  collectionIds: string[];
-  tagData: PGNTagData;
-  pgn: string;
-  visibility: "private" | "unlisted" | "public";
-}
+
 export interface AnalysisHook {
   tree: VariationTree;
   loadPgn: (pgn: string) => void;
@@ -73,9 +64,7 @@ const defaultOptions = {
   readonly: false,
 };
 
-import { PGNTagData, parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
-import { Arrow } from "@/components/analysis/BoardArrows";
-import { MarkedSquare } from "./useBoardMarkup";
+import { parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
 
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
   const [options, setOptions] = useState(() => {
@@ -266,18 +255,9 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
 
   const debouncedNode = useDebounce(currentNode, 300);
   const debouncedGame = useDebounce(currentGame, 300);
-  const debouncedFen = useMemo(() => {
-    const game = debouncedGame;
-    let fen = game.fen;
-    if (!game.legalMoves.some((move) => move.capture && move.end === game.enPassantTarget)) {
-      const args = fen.split(" ");
-      args[3] = "-";
-      fen = args.join(" ");
-    }
-    return fen;
-  }, [debouncedGame]);
+
   //const evaler = useEvaler(debouncedFen, !evalEnabled);
-  const evaler = useEvaler(debouncedFen, !evalEnabled);
+  const evaler = useEvaler(currentGame.fen);
   // useEffect(() => {
   //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
   //     return;
@@ -352,10 +332,12 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     (arrow: Arrow) => {
       if (!currentNode) return;
       const currentArrows = currentNode.data.arrows || [];
-      if (currentArrows.some((cur) => cur.start === arrow.start && cur.end === arrow.end)) {
+      if (currentArrows.some((cur: Arrow) => cur.start === arrow.start && cur.end === arrow.end)) {
         updateArrows(
           currentNode.key,
-          currentArrows.filter((cur) => !(cur.start === arrow.start && cur.end === arrow.end))
+          currentArrows.filter(
+            (cur: Arrow) => !(cur.start === arrow.start && cur.end === arrow.end)
+          )
         );
       } else {
         updateArrows(currentNode.key, [...currentArrows, arrow]);
@@ -368,10 +350,10 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     (markedSquare: MarkedSquare) => {
       if (!currentNode) return;
       const currentMarkedSquares = currentNode.data.markedSquares || [];
-      if (currentMarkedSquares.some((cur) => cur.square === markedSquare.square)) {
+      if (currentMarkedSquares.some((cur: MarkedSquare) => cur.square === markedSquare.square)) {
         updateMarkedSquares(
           currentNode.key,
-          currentMarkedSquares.filter((cur) => cur.square !== markedSquare.square)
+          currentMarkedSquares.filter((cur: MarkedSquare) => cur.square !== markedSquare.square)
         );
       } else {
         updateMarkedSquares(currentNode.key, [...currentMarkedSquares, markedSquare]);

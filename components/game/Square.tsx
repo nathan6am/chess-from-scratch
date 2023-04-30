@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import * as Chess from "@/lib/chess";
 import classnames from "classnames";
 import { ColorEnum } from "../analysis/BoardArrows";
-import { ArrowColor } from "@/hooks/useBoardMarkup";
+import { ArrowColor } from "@/lib/types";
 import { BiSquareRounded } from "react-icons/bi";
 interface SquareProps {
   annotation?: number | string;
@@ -52,11 +52,15 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -90,12 +94,20 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
+          } ${textSize}`}
+        >
           {rank}
         </span>
       )}
       {showFile && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
+          } ${textSize}`}
+        >
           {file}
         </span>
       )}
@@ -115,7 +127,13 @@ export default function Square({
           /> */}
           <BiSquareRounded
             color={`${ColorEnum[markedColor]}`}
-            style={{ opacity: "70%", zIndex: 16, height: "100%", width: "100%", transform: "scale(1.2)" }}
+            style={{
+              opacity: "70%",
+              zIndex: 16,
+              height: "100%",
+              width: "100%",
+              transform: "scale(1.2)",
+            }}
           />
         </div>
       )}

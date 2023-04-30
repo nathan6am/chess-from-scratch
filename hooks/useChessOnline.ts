@@ -2,7 +2,12 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
 
 //Types
-import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game, Connection } from "../server/types/lobby";
+import {
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  Game,
+  Connection,
+} from "../server/types/lobby";
 import { Lobby, Player } from "server/types/lobby";
 
 //Util
@@ -219,20 +224,24 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
 
     //Define event handlers
     const onConnect = () => {
-      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
-        if (res && res.status && res.data) {
-          const lobby = res.data;
-          setLobby(res.data);
-          if (lobby.currentGame) {
-            updateGame(lobby.currentGame);
+      socket.emit(
+        "lobby:connect",
+        lobbyId,
+        (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+          if (res && res.status && res.data) {
+            const lobby = res.data;
+            setLobby(res.data);
+            if (lobby.currentGame) {
+              updateGame(lobby.currentGame);
+            }
+          } else if (res && !res.status) {
+            setSocketConnected(false);
+            console.log(res);
+            console.error(res.error?.message);
+          } else {
           }
-        } else if (res && !res.status) {
-          setSocketConnected(false);
-          console.log(res);
-          console.error(res.error?.message);
-        } else {
         }
-      });
+      );
       setSocketConnected(true);
     };
     const onLobbyDidUpdate = (updates: Partial<Lobby>) => {

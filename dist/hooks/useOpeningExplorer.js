@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -58,11 +49,11 @@ const reduceMoves = (history) => history
     .filter(misc_1.notEmpty)
     .map((halfMove) => Chess.MoveToUci(halfMove.move))
     .join(",");
-const fetcher = (game, database) => __awaiter(void 0, void 0, void 0, function* () {
+const fetcher = async (game, database) => {
     const fen = game.config.startPosition;
     const play = reduceMoves(game.moveHistory);
     const endpoint = Endpoints[database];
-    const response = yield axios_1.default.get(endpoint, {
+    const response = await axios_1.default.get(endpoint, {
         params: {
             fen,
             play,
@@ -71,7 +62,7 @@ const fetcher = (game, database) => __awaiter(void 0, void 0, void 0, function* 
     if (!response.data)
         throw new Error("No response data");
     return response.data;
-});
+};
 function useOpeningExplorer(currentGame) {
     const [database, setDatabase] = (0, react_1.useState)("masters");
     const [mastersFilters, setMastersFilters] = (0, react_1.useState)({});
@@ -96,11 +87,11 @@ function useOpeningExplorer(currentGame) {
     });
     const { data: otbGame, error: otbGameError, isLoading: otbGameLoading, } = (0, react_query_1.useQuery)({
         queryKey: ["otbgame", gameId],
-        queryFn: () => __awaiter(this, void 0, void 0, function* () {
+        queryFn: async () => {
             if (!gameId)
                 return null;
             if (database === "lichess") {
-                const response = yield axios_1.default.get(`https://lichess.org/game/export/${gameId}`, {});
+                const response = await axios_1.default.get(`https://lichess.org/game/export/${gameId}`, {});
                 console.log(response);
                 if (response && response.data) {
                     const pgn = response.data;
@@ -112,7 +103,7 @@ function useOpeningExplorer(currentGame) {
                 }
             }
             else if (database === "masters") {
-                const response = yield axios_1.default.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
+                const response = await axios_1.default.get(`https://explorer.lichess.ovh/masters/pgn/${gameId}`);
                 if (response && response.data) {
                     const pgn = response.data;
                     return {
@@ -123,21 +114,21 @@ function useOpeningExplorer(currentGame) {
                 }
             }
             throw new Error();
-        }),
+        },
     });
-    const fetchGameAsync = (gameid, gameType) => __awaiter(this, void 0, void 0, function* () {
+    const fetchGameAsync = async (gameid, gameType) => {
         if (gameType === "lichess") {
-            const response = yield axios_1.default.get(`https://lichess.org/game/export/${gameid}`, {});
+            const response = await axios_1.default.get(`https://lichess.org/game/export/${gameid}`, {});
             if (response && response.data)
                 return response.data;
         }
         else if (gameType === "masters") {
-            const response = yield axios_1.default.get(`https://explorer.lichess.ovh/masters/pgn/${gameid}`);
+            const response = await axios_1.default.get(`https://explorer.lichess.ovh/masters/pgn/${gameid}`);
             if (response && response.data)
                 return response.data;
         }
         return undefined;
-    });
+    };
     return {
         database,
         setDatabase,

@@ -8,42 +8,42 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var Puzzle_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 const typeorm_1 = require("typeorm");
 let Puzzle = Puzzle_1 = class Puzzle extends typeorm_1.BaseEntity {
-    static getPuzzles(options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const defaultOptions = {
-                minRating: 0,
-                maxRating: 4000,
-                sampleSize: 25,
-                excludeIds: null,
-                themes: null,
-            };
-            const searchOptions = Object.assign(Object.assign({}, defaultOptions), options);
-            const { minRating, maxRating, sampleSize, excludeIds, themes } = searchOptions;
-            let query = Puzzle_1.createQueryBuilder()
-                .select()
-                .where("rating BETWEEN :minRating AND :maxRating", { minRating, maxRating });
-            if (themes) {
-                query = query.andWhere("themes && :selectedThemes", { selectedThemes: themes });
-            }
-            if (excludeIds) {
-                query = query.andWhere("id NOT IN (:...excludeIds)", { excludeIds });
-            }
-            query = query.orderBy("RANDOM()").limit(sampleSize);
-            return yield query.getMany();
-        });
+    id;
+    fen;
+    moves;
+    rating;
+    ratingDeviation;
+    popularity;
+    nbPlays;
+    themes;
+    gameUrl;
+    openingFamily;
+    openingVariation;
+    static async getPuzzles(options) {
+        const defaultOptions = {
+            minRating: 0,
+            maxRating: 4000,
+            sampleSize: 25,
+            excludeIds: null,
+            themes: null,
+        };
+        const searchOptions = { ...defaultOptions, ...options };
+        const { minRating, maxRating, sampleSize, excludeIds, themes } = searchOptions;
+        let query = Puzzle_1.createQueryBuilder()
+            .select()
+            .where("rating BETWEEN :minRating AND :maxRating", { minRating, maxRating });
+        if (themes) {
+            query = query.andWhere("themes && :selectedThemes", { selectedThemes: themes });
+        }
+        if (excludeIds) {
+            query = query.andWhere("id NOT IN (:...excludeIds)", { excludeIds });
+        }
+        query = query.orderBy("RANDOM()").limit(sampleSize);
+        return await query.getMany();
     }
 };
 __decorate([

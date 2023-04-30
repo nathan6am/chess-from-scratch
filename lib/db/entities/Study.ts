@@ -16,7 +16,7 @@ import {
 import type { Relation } from "typeorm";
 import User from "./User";
 import Collection from "./Collection";
-import type { PGNTagData } from "@/util/parsers/pgnParser";
+import type { PGNTagData } from "@/lib/types";
 
 @Entity()
 export default class Analysis extends BaseEntity {
