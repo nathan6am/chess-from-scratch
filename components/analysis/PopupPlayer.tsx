@@ -82,11 +82,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                   >
                     <IoMdOpen />
                   </Link>
-                  <button
-                    onClick={closePlayer}
-                    data-tooltip-id="my-tooltip"
-                    data-tooltip-content="Close Player"
-                  >
+                  <button onClick={closePlayer} data-tooltip-id="my-tooltip" data-tooltip-content="Close Player">
                     <IoMdClose className=" text-white/[0.8] hover:text-white text-2xl " />
                   </button>
                 </div>
@@ -103,9 +99,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
                     {tagData?.white || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${
-                      tagData?.eloWhite || "?"
-                    })`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloWhite || "?"})`}</span>
                   </p>
                 </div>
                 <ResizableBox
@@ -124,10 +118,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                       className="w-[20px] h-[20px] react-resizable-handle-se absolute bottom-0 right-0 z-[300]"
                       ref={ref}
                     >
-                      <div
-                        className="pointer-none h-full"
-                        style={{ overflow: "hidden", resize: "both" }}
-                      ></div>
+                      <div className="pointer-none h-full" style={{ overflow: "hidden", resize: "both" }}></div>
                     </div>
                   )}
                 >
@@ -158,9 +149,7 @@ export default function PopupPlayer({ pgn, closePlayer, shown, loading, link }: 
                   <p className="flex flex-row items-center">
                     <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
                     {tagData?.black || "?"}
-                    <span className="inline opacity-60 ml-1">{`(${
-                      tagData?.eloBlack || "?"
-                    })`}</span>
+                    <span className="inline opacity-60 ml-1">{`(${tagData?.eloBlack || "?"})`}</span>
                   </p>
                 </div>
               </div>
@@ -227,12 +216,10 @@ function RenderMove({ pgn, active, onClick, halfMoveCount }: MoveProps) {
   return (
     <div ref={ref} className="flex flex-row text-xs">
       {isWhite && (
-        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>
-          {Chess.moveCountToNotation(halfMoveCount)}
-        </span>
+        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>{Chess.moveCountToNotation(halfMoveCount)}</span>
       )}
       <span
-        className={`cursor-pointer  mx-[2px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white/[0.7] ${
+        className={`cursor-pointer whitespace-nowrap mx-[2px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white/[0.7] ${
           isWhite ? "" : "mr-[6px]"
         } ${active ? "bg-blue-400/[0.2] " : ""}`}
         onClick={onClick}

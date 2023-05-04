@@ -1,19 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import * as commands from "@/lib/chess/UciCmds";
-//import { UCIMove } from "@/lib/chess/UciCmds";
-import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import {
-  EvalOptions,
-  EvalScore,
-  UCIMove,
-  parseInfoMessage,
-  parseUciMove,
-} from "@/lib/stockfish/utils";
-import axios from "axios";
+import { EvalOptions, EvalScore } from "@/lib/stockfish/utils";
 import useDebounce from "./useDebounce";
+import useDebouncedCallback from "./useDebouncedCallback";
 import { MessageResponse } from "@/lib/stockfish/evalWorker";
+import useThrottle from "./useThrottle";
 export interface Evaler {
   currentScore: EvalScore;
   currentDepth: number;
@@ -21,18 +12,25 @@ export interface Evaler {
   isEvaluating: boolean;
   options: EvalOptions;
   updateOptions: (options: Partial<EvalOptions>) => void;
+  isCloud: boolean;
+  fenEvaluating: string;
 }
-function useEvaler(fen: string): Evaler {
+function useEvaler(fen: string, disabled?: boolean): Evaler {
   const debouncedFen = useDebounce(fen, 500);
-  const [evalScore, setEvalScore] = useState<EvalScore>({ value: 0, type: "cp" });
+  const [evalScore, setEvalScore] = useState<EvalScore>(() => ({ value: 0, type: "cp" }));
+  const currentScore = useThrottle(evalScore, 400);
   const [currentDepth, setCurrentDepth] = useState<number>(0);
+  const [isCloud, setIsCloud] = useState<boolean>(false);
+  const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [lines, setLines] = useState<string[][]>([]);
+  const [fenEvaluating, setFenEvaluating] = useState<string>("");
+  const [lastEvalFen, setLastEvalFen] = useState<string>("");
   const [options, setOptions] = useState<EvalOptions>({
-    useCloudEval: false,
-    depth: 20,
-    useNNUE: false,
+    useCloudEval: true,
+    depth: 18,
+    useNNUE: true,
     multiPV: 1,
-    showLinesAfterDepth: 0,
+    showLinesAfterDepth: 10,
   });
   const workerRef = useRef<Worker | null>(null);
   useEffect(() => {
@@ -44,8 +42,10 @@ function useEvaler(fen: string): Evaler {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       const message = e.data as MessageResponse;
+      //if (message.fen !== fen) return;
       if (message.type === "updateScore") {
         if (!message.score || !message.depth) return;
+        if (message.depth < 6) return;
         setEvalScore(message.score);
         setCurrentDepth(message.depth);
       }
@@ -57,20 +57,55 @@ function useEvaler(fen: string): Evaler {
           return newLines;
         });
       }
+      if (message.type === "finalEval") {
+        if (!message.eval) return;
+        setIsEvaluating(false);
+        setEvalScore(message.eval.score);
+        setCurrentDepth(message.eval.depth);
+        setIsCloud(message.eval.isCloudEval || false);
+        setLastEvalFen(message.eval.fen);
+      }
     };
     workerRef.current?.addEventListener("message", handler);
     return () => {
       workerRef.current?.removeEventListener("message", handler);
     };
   }, [workerRef]);
+
   useEffect(() => {
+    if (disabled) {
+      console.log("disabling");
+      workerRef.current?.postMessage({ type: "disable" });
+    } else {
+      workerRef.current?.postMessage({ type: "enable" });
+    }
+  }, [disabled, workerRef]);
+
+  useEffect(() => {
+    if (disabled) return;
+    if (debouncedFen === fenEvaluating) return;
+    setIsEvaluating(true);
+    setCurrentDepth(0);
+    setLines([]);
+    setIsCloud(false);
+    setFenEvaluating(debouncedFen);
     workerRef.current?.postMessage({ type: "evaluateFen", fen: debouncedFen });
-  }, [debouncedFen]);
+  }, [debouncedFen, disabled, workerRef, fenEvaluating]);
+
+  const prevOptions = useRef<EvalOptions>(options);
+  useEffect(() => {
+    if (disabled) return;
+    if (_.isEqual(prevOptions.current, options)) return;
+    prevOptions.current = options;
+    workerRef.current?.postMessage({ type: "setOptions", options });
+  }, [options, disabled, workerRef, prevOptions]);
   return {
-    currentScore: evalScore,
+    currentScore,
     currentDepth,
     lines,
-    isEvaluating: false,
+    isEvaluating,
+    fenEvaluating,
+    isCloud,
     options,
     updateOptions: (options: Partial<EvalOptions>) => {
       setOptions((prev) => ({ ...prev, ...options }));

@@ -107,6 +107,7 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
         </div>
       </div>
       <TopGames
+        isLoading={isLoading}
         games={data?.topGames || []}
         sourceGame={sourceGame}
         attemptMove={attemptMove}
@@ -188,22 +189,27 @@ interface TopGameProps {
   sourceGame: Chess.Game;
   attemptMove: (san: string) => void;
   loadGame: (gameid: string) => void;
+  isLoading?: boolean;
 }
-function TopGames({ games, sourceGame, attemptMove, loadGame }: TopGameProps) {
+function TopGames({ games, sourceGame, attemptMove, loadGame, isLoading }: TopGameProps) {
   return (
     <div className="w-full grow overflow-hidden flex flex-col min-height-[250px]">
       <div className="w-full bg-white/[0.1] py-1 px-3">Top Games</div>
       <div className="w-full grow relative">
         <ScrollContainer>
-          {games.map((game) => (
-            <RenderGame
-              key={game.id}
-              game={game}
-              sourceGame={sourceGame}
-              attemptMove={attemptMove}
-              loadGame={loadGame}
-            />
-          ))}
+          {isLoading ? (
+            <></>
+          ) : (
+            games.map((game) => (
+              <RenderGame
+                key={game.id}
+                game={game}
+                sourceGame={sourceGame}
+                attemptMove={attemptMove}
+                loadGame={loadGame}
+              />
+            ))
+          )}
         </ScrollContainer>
       </div>
     </div>

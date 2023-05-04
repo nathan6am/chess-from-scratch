@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo } from "react";
 import * as Chess from "@/lib/chess";
+import useThrottle from "@/hooks/useThrottle";
 interface Props {
   orientation: Chess.Color;
   scoreType: "cp" | "mate";
   value: number;
   scale: number;
 }
-import useThrottledValue from "@/hooks/useThrottledValue";
+
 export default function EvalBar({ orientation, scoreType, value, scale }: Props) {
   //Throttle value for smoother animation/fewer jumps
-  const throttledValue = useThrottledValue({ value, throttleMs: 500 });
+  const throttledValue = useThrottle(value, 600);
+  useEffect(() => {
+    console.log("throttledValue", throttledValue);
+  }, [throttledValue]);
 
   //Calculated scaled percentage for eval bar
   const percentage = useMemo(() => {
@@ -20,7 +24,7 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
     return evaluation < 0 ? 95 : 5;
   }, [scoreType, throttledValue, scale]);
 
-  const throttledPercentage = useThrottledValue({ value: percentage, throttleMs: 600 });
+  const throttledPercentage = useThrottle(percentage, 600);
 
   const label = useMemo(() => {
     if (scoreType === "mate") {

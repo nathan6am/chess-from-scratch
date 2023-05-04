@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Chess from "@/lib/chess";
 import { TreeNode } from "@/lib/types";
@@ -78,15 +78,10 @@ const reduceMoves = (history: Chess.MoveHistory): string =>
     .map((halfMove) => Chess.MoveToUci(halfMove.move))
     .join(",");
 
-const fetcher = async (game: Chess.Game, database: "lichess" | "masters") => {
-  const fen = game.config.startPosition;
-  const play = reduceMoves(game.moveHistory);
+const fetcher = async (params: { fen: string; play: string }, database: "lichess" | "masters") => {
   const endpoint = Endpoints[database];
   const response = await axios.get(endpoint, {
-    params: {
-      fen,
-      play,
-    },
+    params,
   });
   if (!response.data) throw new Error("No response data");
   return response.data as ApiResponse;
@@ -111,20 +106,23 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
   const [lichessFilters, setLichessFilters] = useState<{}>({});
   const [gameId, fetchOTBGame] = useState<string | null>(null);
   //Debounce game state for api calls
-  const debouncedGame = useDebounce(currentGame, 700);
+  const fen = useMemo(() => currentGame.config.startPosition, [currentGame.config.startPosition]);
+  const play = useMemo(() => reduceMoves(currentGame.moveHistory), [currentGame.moveHistory]);
+  const currentFen = useMemo(() => currentGame.fen, [currentGame.fen]);
+  const queryParams = useMemo(() => ({ fen, play, currentFen }), [fen, play, currentFen]);
+  const params = useDebounce(queryParams, 500);
   //Ref to set loading state when currentGame changes before debounced game upates
   const debounceSyncRef = useRef<boolean>(false);
-  const prevGameRef = useRef<Chess.Game>(currentGame);
   useEffect(() => {
-    if (_.isEqual(currentGame.fen, debouncedGame.fen)) debounceSyncRef.current = true;
+    if (params.currentFen === currentGame.fen) debounceSyncRef.current = true;
     else {
       debounceSyncRef.current = false;
     }
-  }, [currentGame, debouncedGame, debounceSyncRef]);
+  }, [currentGame, params, debounceSyncRef]);
   const { data, error, isLoading } = useQuery({
-    queryKey: ["explorer", debouncedGame, database],
-    queryFn: () => fetcher(debouncedGame, database),
-    keepPreviousData: true,
+    queryKey: ["explorer", params, database],
+    queryFn: () => fetcher(params, database),
+    keepPreviousData: false,
   });
 
   const {
@@ -161,10 +159,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     },
   });
 
-  const fetchGameAsync = async (
-    gameid: string,
-    gameType: "lichess" | "masters"
-  ): Promise<string | undefined> => {
+  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
     if (gameType === "lichess") {
       const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
       if (response && response.data) return response.data as string;
@@ -183,7 +178,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     data,
     error,
     isLoading: debounceSyncRef.current ? isLoading : true,
-    sourceGame: debouncedGame,
+    sourceGame: currentGame,
     fetchGameAsync,
   };
 }

@@ -79,6 +79,7 @@
     "react-spinners": "^0.13.8",
     "react-stately": "^3.20.0",
     "react-tooltip": "^5.10.0",
+    "react-use": "^17.4.0",
     "react-xarrows": "^2.0.2",
     "redis": "^4.5.1",
     "redis-om": "^0.3.6",

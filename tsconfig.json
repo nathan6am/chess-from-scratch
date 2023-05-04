@@ -33,7 +33,7 @@
   },
   "ts-node": {
     "compilerOptions": {
-      "module": "esnext"
+      "module": "CommonJS"
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],

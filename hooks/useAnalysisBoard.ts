@@ -7,6 +7,7 @@ import useDebounce from "./useDebounce";
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
+
 import { PGNTagData, AnalysisData, ArrowColor, MarkedSquare, Arrow, TreeNode } from "@/lib/types";
 type Node = TreeNode<Chess.NodeData>;
 
@@ -123,17 +124,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
   };
 
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    moveText,
-    mainLine,
-    setCurrentKey,
-  } = variationTree;
+  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
+    variationTree;
 
   useEffect(() => {
     const arrowKeyHandler = (e: KeyboardEvent) => {
@@ -257,7 +249,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const debouncedGame = useDebounce(currentGame, 300);
 
   //const evaler = useEvaler(debouncedFen, !evalEnabled);
-  const evaler = useEvaler(currentGame.fen);
+  const evaler = useEvaler(currentGame.fen, !evalEnabled);
   // useEffect(() => {
   //   if (currentNodeKey.current === (debouncedNode?.key || null)) {
   //     return;
@@ -335,9 +327,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       if (currentArrows.some((cur: Arrow) => cur.start === arrow.start && cur.end === arrow.end)) {
         updateArrows(
           currentNode.key,
-          currentArrows.filter(
-            (cur: Arrow) => !(cur.start === arrow.start && cur.end === arrow.end)
-          )
+          currentArrows.filter((cur: Arrow) => !(cur.start === arrow.start && cur.end === arrow.end))
         );
       } else {
         updateArrows(currentNode.key, [...currentArrows, arrow]);

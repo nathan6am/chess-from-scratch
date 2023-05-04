@@ -1,5 +1,6 @@
 import * as Chess from "../chess";
 import axios from "axios";
+import _, { debounce } from "lodash";
 import {
   EvalScore,
   UCIMove,
@@ -13,7 +14,7 @@ import {
 } from "./utils";
 
 interface Message {
-  type: "evaluateFen" | "staticEval" | "abort" | "setOptions";
+  type: "evaluateFen" | "staticEval" | "abort" | "setOptions" | "disable" | "enable";
   fen?: string;
   options?: EvalOptions;
 }
@@ -96,11 +97,8 @@ function convertCloudEval(cloudEval: CloudEval, activeColor: Chess.Color, fen: s
   };
 }
 const wasmSupported =
-  typeof WebAssembly === "object" &&
-  WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-const stockfish = new Worker(
-  wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
-);
+  typeof WebAssembly === "object" && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+const stockfish = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
 
 let aborted = false;
 let ready = false;
@@ -112,17 +110,25 @@ let currentMove: string | null = null;
 let currentLines: Variation[] = [];
 let game = null;
 
-const options = {
+let options: EvalOptions = {
   useNNUE: true,
   useCloudEval: true,
-  threads: 1,
-  multiPv: 3,
+  //threads: 2,
+  multiPV: 3,
   depth: 18,
-  showLinesAfterDepth: 12,
+  showLinesAfterDepth: 10,
 };
 //Startup
 stockfish.postMessage("uci");
 stockfish.postMessage("isready");
+function shouldReevaluate(newOptions: EvalOptions): boolean {
+  if (newOptions.useCloudEval !== options.useCloudEval) return true;
+  if (newOptions.useNNUE !== options.useNNUE) return true;
+  if (newOptions.multiPV > options.multiPV) return true;
+  if (newOptions.depth > options.depth) return true;
+  //if (newOptions.threads > options.threads) return true;
+  return false;
+}
 
 const onStockfishMessage = (e: MessageEvent) => {
   const message = e.data;
@@ -132,13 +138,16 @@ const onStockfishMessage = (e: MessageEvent) => {
   }
   if (!currentFen) return;
   if (params[0] === "info" && !(params.includes("string") || params.includes("currmove"))) {
-    aborted = false;
-
+    if (aborted) {
+      aborted = false;
+      return;
+    }
     const info = parseInfoMessage(params);
     if (!info) return;
     if (info.score.type === "lowerbound" || info.score.type === "upperbound") return;
     const scoreMultiplier = currentFen && currentFen.includes("w") ? 1 : -1;
-    if (info.score.type === "cp") info.score.value *= scoreMultiplier;
+    if (info.score.type === "mate") console.log(info.score);
+    info.score.value *= scoreMultiplier;
     if (info.multiPV === 1) {
       currentScore = info.score as EvalScore;
       currentDepth = info.depth;
@@ -168,6 +177,7 @@ const onStockfishMessage = (e: MessageEvent) => {
       aborted = false;
       return;
     }
+    if (currentDepth < options.depth) return;
     const evaluation: Evaluation = {
       fen: currentFen,
       lines: currentLines,
@@ -183,51 +193,79 @@ const onStockfishMessage = (e: MessageEvent) => {
 //Register event listener
 stockfish.addEventListener("message", onStockfishMessage);
 
+const runEval = debounce(async (fen: string) => {
+  console.log("running eval");
+  abort();
+  currentFen = fen;
+  const cached = getCachedEval(fen);
+  if (cached) {
+    self.postMessage({ type: "finalEval", eval: cached });
+    return;
+  } else if (options.useCloudEval) {
+    const cloudEval = await fetchCloudEval(fen);
+    if (cloudEval) {
+      self.postMessage({ type: "finalEval", eval: cloudEval });
+      return;
+    }
+  }
+  evaluating = true;
+  //stockfish.postMessage("setoption name Threads value " + options.threads);
+  stockfish.postMessage("setoption name MultiPV value " + options.multiPV);
+  stockfish.postMessage("setoption name UCI_AnalyseMode value true");
+  stockfish.postMessage("position fen " + fen);
+  if (options.depth === -1) stockfish.postMessage("go infinite");
+  else stockfish.postMessage("go depth " + options.depth);
+}, 500);
 self.onmessage = async (e: MessageEvent) => {
   const message: Message = e.data;
   if (message.type === "evaluateFen") {
     const fen = message.fen;
     if (!fen) return;
     if (fen === currentFen) return;
+    runEval(fen);
+  }
+  if (message.type === "disable") {
+    console.log("disabling confirmed");
     abort();
-    currentFen = fen;
-    const cached = getCachedEval(fen);
-    if (cached) {
-      self.postMessage({ type: "finalEval", eval: cached });
-      return;
-    } else if (options.useCloudEval) {
-      const cloudEval = await fetchCloudEval(fen);
-      if (cloudEval) {
-        self.postMessage({ type: "finalEval", eval: cloudEval });
-        return;
-      }
+  }
+  if (message.type === "enable") {
+    if (currentFen) runEval(currentFen);
+  }
+  if (message.type === "setOptions") {
+    const newOptions = message.options;
+    console.log("new options", newOptions);
+    if (!newOptions) return;
+    if (shouldReevaluate(newOptions)) {
+      options = { ...options, ...newOptions };
+      if (currentFen) runEval(currentFen);
+    } else {
+      options = { ...options, ...newOptions };
     }
-    evaluating = true;
-    stockfish.postMessage("setoption name Threads value " + options.threads);
-    stockfish.postMessage("setoption name MultiPV value " + options.multiPv);
-    stockfish.postMessage("setoption name UCI_AnalyseMode value true");
-    stockfish.postMessage("position fen " + fen);
-    if (options.depth === -1) stockfish.postMessage("go infinite");
-    else stockfish.postMessage("go depth " + options.depth);
   }
 };
 
 function abort() {
+  aborted = true;
+  stockfish.postMessage("stop");
+  console.log("aborting");
   currentMove = null;
   currentLines = [];
   currentScore = { type: "cp", value: 0 };
   currentDepth = 0;
-  aborted = true;
-  stockfish.postMessage("stop");
 }
 
 function getCachedEval(fen: string): Evaluation | null {
   const normalizedFen = normalizeFen(fen);
   const cached = cache.get(normalizedFen);
   if (cached) {
-    if (cached.isCloudEval && !options.useCloudEval) return null;
-    if (cached.depth < options.depth) return null;
-    if (cached.lines.length < options.multiPv) return null;
+    if (
+      (cached.isCloudEval && !options.useCloudEval) ||
+      cached.depth < options.depth ||
+      cached.lines.length < options.multiPV
+    ) {
+      cache.delete(normalizedFen);
+      return null;
+    }
     return cached;
   }
   return null;
@@ -239,7 +277,7 @@ async function fetchCloudEval(fen: string): Promise<Evaluation | null> {
     const res = await axios.get("https://lichess.org/api/cloud-eval", {
       params: {
         fen: formatted,
-        multiPv: options.multiPv,
+        multiPv: options.multiPV,
       },
     });
 
@@ -254,16 +292,3 @@ async function fetchCloudEval(fen: string): Promise<Evaluation | null> {
     return null;
   }
 }
-
-// function shouldReevaluate(fen: string, newOptions: Options): boolean {
-//   if (currentFen !== fen) {
-//     currentFen = fen;
-//     return true;
-//   }
-//   if (newOptions.useCloudEval !== options.useCloudEval) return true;
-//   if (newOptions.useNNUE !== options.useNNUE) return true;
-//   if (newOptions.multiPv > options.multiPv) return true;
-//   if (newOptions.depth > options.depth) return true;
-//   if (newOptions.threads > options.threads) return true;
-//   return false;
-// }

@@ -33,14 +33,7 @@ const parseScore = (score: Chess.EvalScore): string => {
   }
 };
 
-export default function EvalInfo({
-  evaler,
-  enabled,
-  setEnabled,
-  moveKey,
-  currentGame,
-  attemptMoves,
-}: Props) {
+export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, currentGame, attemptMoves }: Props) {
   let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   let [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   let { styles, attributes } = usePopper(referenceElement, popperElement, {
@@ -79,8 +72,7 @@ export default function EvalInfo({
   //   return [];
   // }, [enabled, evaler.inProgress, evaler.evaluation, evaler.currentLines]);
   const score = useMemo(() => {
-    if (evaler.currentScore) return parseScore(evaler.currentScore);
-    else return "+0.0";
+    return parseScore(evaler.currentScore);
   }, [evaler.currentScore]);
 
   const progress = (evaler.currentDepth / evaler.options.depth) * 100;
@@ -93,11 +85,11 @@ export default function EvalInfo({
             <div className="flex flex-row p-2 pl-4 justify-between items-center grow">
               <div className={`flex flex-col ${enabled ? "" : "opacity-20"}`}>
                 <h2 className="text-2xl font-semibold text-left">{score}</h2>
-                <p className="text-xs opacity-70">
+                <p className="text-xs opacity-70 h-3">
                   {`Current depth: ${evaler.currentDepth}/${evaler.options.depth}`}
-                  {/* {evaler.evaluation?.isCloudEval && !evaler.isEvaluating ? (
+                  {evaler.isCloud && !evaler.isEvaluating ? (
                     <MdCloud className="opacity-60 inline text-lg ml-1 mb-1" />
-                  ) : null} */}
+                  ) : null}
                 </p>
               </div>
               <Toggle
@@ -118,20 +110,12 @@ export default function EvalInfo({
             </Popover.Button>
           </div>
 
-          <Popover.Panel
-            ref={setPopperElement}
-            className="z-50"
-            style={styles.popper}
-            {...attributes.popper}
-          >
+          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
       </div>
-      <ProgressBar
-        progress={enabled ? progress : 0}
-        key={`${moveKey}${evaler.isEvaluating ? "a" : "b"}`}
-      />
+      <ProgressBar progress={enabled ? progress : 0} key={`${evaler.fenEvaluating}${enabled}`} />
       {enabled && (
         <>
           <div
@@ -225,11 +209,7 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p
-        className={`${
-          expanded ? "" : "truncate"
-        } bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}
-      >
+      <p className={`${expanded ? "" : "truncate"} bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
@@ -250,11 +230,7 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore
-          className={` transition-transform duration-400 text-xl ${
-            expanded ? "" : "rotate-[-90deg]"
-          }`}
-        />
+        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
       </button>
     </div>
   );
@@ -271,9 +247,7 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
-          {Chess.moveCountToNotation(moveCount)}
-        </span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"
