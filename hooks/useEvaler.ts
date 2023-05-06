@@ -3,12 +3,12 @@ import _ from "lodash";
 import { EvalOptions, EvalScore } from "@/lib/stockfish/utils";
 import useDebounce from "./useDebounce";
 import useDebouncedCallback from "./useDebouncedCallback";
-import { MessageResponse } from "@/lib/stockfish/evalWorker";
+import { MessageResponse, Variation } from "@/lib/stockfish/evalWorker";
 import useThrottle from "./useThrottle";
 export interface Evaler {
   currentScore: EvalScore;
   currentDepth: number;
-  lines: string[][];
+  lines: Array<{ score: EvalScore; moves: string[] }>;
   isEvaluating: boolean;
   options: EvalOptions;
   updateOptions: (options: Partial<EvalOptions>) => void;
@@ -22,9 +22,9 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   const [currentDepth, setCurrentDepth] = useState<number>(0);
   const [isCloud, setIsCloud] = useState<boolean>(false);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
-  const [lines, setLines] = useState<string[][]>([]);
+  const [lines, setLines] = useState<Variation[]>([]);
   const [fenEvaluating, setFenEvaluating] = useState<string>("");
-  const [lastEvalFen, setLastEvalFen] = useState<string>("");
+
   const [options, setOptions] = useState<EvalOptions>({
     useCloudEval: true,
     depth: 18,
@@ -39,6 +39,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
       workerRef.current?.terminate();
     };
   }, []);
+
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       const message = e.data as MessageResponse;
@@ -51,9 +52,10 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
       }
       if (message.type === "updateLine") {
         if (!message.line || message.index === undefined) return;
+        const index = message.index || 0;
         setLines((prev) => {
           const newLines = [...prev];
-          newLines[message.index || 0] = message.line?.moves || [];
+          newLines[index] = (message.line || []) as Variation;
           return newLines;
         });
       }
@@ -63,7 +65,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
         setEvalScore(message.eval.score);
         setCurrentDepth(message.eval.depth);
         setIsCloud(message.eval.isCloudEval || false);
-        setLastEvalFen(message.eval.fen);
+        setLines(message.eval.lines || []);
       }
     };
     workerRef.current?.addEventListener("message", handler);
@@ -102,7 +104,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   return {
     currentScore,
     currentDepth,
-    lines,
+    lines: lines.slice(0, options.multiPV),
     isEvaluating,
     fenEvaluating,
     isCloud,

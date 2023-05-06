@@ -33,7 +33,14 @@ const parseScore = (score: Chess.EvalScore): string => {
   }
 };
 
-export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, currentGame, attemptMoves }: Props) {
+export default function EvalInfo({
+  evaler,
+  enabled,
+  setEnabled,
+  moveKey,
+  currentGame,
+  attemptMoves,
+}: Props) {
   let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   let [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   let { styles, attributes } = usePopper(referenceElement, popperElement, {
@@ -77,6 +84,12 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
 
   const progress = (evaler.currentDepth / evaler.options.depth) * 100;
   const [showLines, setShowLines] = useState(true);
+  const moveCount = useMemo(() => {
+    const args = evaler.fenEvaluating.split(" ");
+    const fullMoveCount = parseInt(args[args.length - 1]);
+    const activeColor = args[1];
+    return fullMoveCount * 2 - (activeColor === "w" ? 1 : 0);
+  }, [evaler.fenEvaluating]);
   return (
     <div className="w-full">
       <div className="w-full  bg-white/[0.1]">
@@ -110,7 +123,12 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
             </Popover.Button>
           </div>
 
-          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
+          <Popover.Panel
+            ref={setPopperElement}
+            className="z-50"
+            style={styles.popper}
+            {...attributes.popper}
+          >
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
@@ -150,37 +168,27 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
                 {evaler.isEvaluating &&
                   (evaler.currentDepth < evaler.options.showLinesAfterDepth ||
                     !evaler.currentLines) &&
-                  Array.from(Array(evaler.options.multiPV).keys()).map((_, idx) => {
-                    return (
-                      <div key={idx} className="flex flex-row items-center h-6 w-full ">
-                        <div className="w-[50px] shrink-0 rounded-sm bg-white/[0.1] opacity-60 py-1">
-                          <div className="h-[1em] relative w-full">
-                            <div className="absolute top-0 left-0 right-0 bottom-0 w-full flex justify-center items-center">
-                              <ClipLoader size={14} color="white" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
-                          <div className="h-[1em]"></div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                 
               </> */}
-              {/* {evaler.currentDepth >= evaler.options.showLinesAfterDepth &&
-                evaler.currentLines &&
-                evaler.currentLines.length > 0 &&
-                parsedLines.map((line, idx) => {
+              {evaler.currentDepth >= evaler.options.showLinesAfterDepth &&
+                evaler.lines &&
+                evaler.lines.length > 0 &&
+                evaler.lines.map((line, idx) => {
                   return (
                     <RenderLine
                       key={idx}
                       line={line}
+                      moveCount={moveCount}
                       attemptMoves={attemptMoves}
                       currentGame={currentGame}
                     />
                   );
-                })} */}
+                })}
+              {
+                <>
+                  <Placeholders count={evaler.options.multiPV - evaler.lines.length} />
+                </>
+              }
             </div>
           )}
         </>
@@ -196,12 +204,12 @@ interface LineProps {
       type: "cp" | "mate";
       value: number;
     };
-    moveCount: number;
   };
+  moveCount: number;
   attemptMoves: (moves: string[]) => void;
   currentGame: Chess.Game;
 }
-function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
+function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className={`flex flex-row items-start w-full ${expanded ? "h-fit" : "h-6"}`}>
@@ -209,13 +217,17 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p className={`${expanded ? "" : "truncate"} bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
+      <p
+        className={`${
+          expanded ? "" : "truncate"
+        } bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}
+      >
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
             pgn={move}
             idx={idx}
-            moveCount={line.moveCount + idx}
+            moveCount={moveCount + idx}
             onClick={() => {
               attemptMoves(line.moves.slice(0, idx + 1));
             }}
@@ -230,7 +242,11 @@ function RenderLine({ line, attemptMoves, currentGame }: LineProps) {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
+        <MdExpandMore
+          className={` transition-transform duration-400 text-xl ${
+            expanded ? "" : "rotate-[-90deg]"
+          }`}
+        />
       </button>
     </div>
   );
@@ -247,7 +263,9 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
+          {Chess.moveCountToNotation(moveCount)}
+        </span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"
@@ -323,5 +341,29 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
         }}
       /> */}
     </div>
+  );
+}
+
+function Placeholders({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from(Array(count).keys()).map((_, idx) => {
+        return (
+          <div key={idx} className="flex flex-row items-center h-6 w-full ">
+            <div className="w-[50px] shrink-0 rounded-sm bg-white/[0.1] opacity-60 py-1">
+              <div className="h-[1em] relative w-full">
+                <div className="absolute top-0 left-0 right-0 bottom-0 w-full flex justify-center items-center">
+                  <ClipLoader size={14} color="white" />
+                </div>
+              </div>
+            </div>
+
+            <div className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
+              <div className="h-[1em]"></div>
+            </div>
+          </div>
+        );
+      })}
+    </>
   );
 }

@@ -48,7 +48,7 @@ interface CloudEval {
   pvs: Array<{ cp?: number; mate?: number; moves: string }>;
 }
 
-interface Variation {
+export interface Variation {
   score: EvalScore;
   moves: string[];
 }
@@ -97,8 +97,11 @@ function convertCloudEval(cloudEval: CloudEval, activeColor: Chess.Color, fen: s
   };
 }
 const wasmSupported =
-  typeof WebAssembly === "object" && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-const stockfish = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+  typeof WebAssembly === "object" &&
+  WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+const stockfish = new Worker(
+  wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
+);
 
 let aborted = false;
 let ready = false;
@@ -186,6 +189,7 @@ const onStockfishMessage = (e: MessageEvent) => {
       move: currentMove || "",
       score: currentScore,
     };
+    cache.set(normalizeFen(currentFen), evaluation);
     self.postMessage({ type: "finalEval", eval: evaluation });
   }
 };
@@ -199,12 +203,23 @@ const runEval = debounce(async (fen: string) => {
   currentFen = fen;
   const cached = getCachedEval(fen);
   if (cached) {
+    if (!cached.isCloudEval && options.useCloudEval) {
+      console.log("here");
+      const cloudEval = await fetchCloudEval(fen);
+      if (cloudEval) {
+        cache.set(normalizeFen(fen), cloudEval);
+        self.postMessage({ type: "finalEval", eval: cloudEval });
+        return;
+      }
+    }
     self.postMessage({ type: "finalEval", eval: cached });
     return;
   } else if (options.useCloudEval) {
     const cloudEval = await fetchCloudEval(fen);
     if (cloudEval) {
+      cache.set(normalizeFen(fen), cloudEval);
       self.postMessage({ type: "finalEval", eval: cloudEval });
+
       return;
     }
   }
