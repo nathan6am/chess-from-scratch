@@ -2,8 +2,8 @@ import { SettingsContext } from "@/context/settings";
 import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import PuzzlePanel from "./PuzzlePanel";
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
-
+import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, ScrollContainer } from "../layout/GameLayout";
+import PuzzleFilters from "./PuzzleFilters";
 import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
 import BoardControls from "../game/BoardControls";
@@ -53,15 +53,20 @@ export default function PuzzleSolver() {
             />
           </BoardColumn>
         </div>
-        <PanelColumn>
-          <div className="h-full w-full bg-[#303030]">
-            <p>{puzzle.solveState}</p>
-            <div className="flex flex-col">
-              <button onClick={puzzle.retry}>Retry</button>
-              <button onClick={next}>Next Puzzle</button>
-              <button onClick={puzzle.showSolution}>View the Solution</button>
-            </div>
+        <PanelColumnLg>
+          <div className="h-full w-full bg-[#303030] grow relative">
+            <ScrollContainer>
+              <PuzzleFilters />
+            </ScrollContainer>
           </div>
+          <PuzzleControls
+            prompt={puzzle.prompt}
+            solveState={puzzle.solveState}
+            retry={puzzle.retry}
+            next={next}
+            showSolution={puzzle.showSolution}
+            getHint={() => {}}
+          />
           <div className="w-full">
             {puzzle.puzzle ? (
               <PuzzlePrompt
@@ -76,7 +81,7 @@ export default function PuzzleSolver() {
           </div>
           <div className="w-full flex flex-row"></div>
           <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
-        </PanelColumn>
+        </PanelColumnLg>
       </BoardRow>
     </>
   );
@@ -91,12 +96,10 @@ interface PromptProps {
 
 function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
   return (
-    <div className="flex flex-row items-center bg-[#242424] p-3 justify-center py-6">
+    <div className="flex flex-row items-center bg-[#242424] p-3 justify-center py-6 min-h-[72px]">
       {prompt === "start" && (
         <>
-          <div
-            className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}
-          ></div>{" "}
+          <div className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
@@ -112,6 +115,12 @@ function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
           <p>{`That's not it`}</p>
         </>
       )}
+      {prompt === "solved" && (
+        <>
+          <BsCheckLg className="text-green-500 mr-2" />
+          <p>{`Puzzle Solved`}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -125,10 +134,57 @@ interface PuzzleControlsProps {
   prompt?: string;
   solveState: string;
 }
-function PuzzleControls({ prompt, solveState }: PuzzleControlsProps) {
+function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint }: PuzzleControlsProps) {
   const buttonsToShow = useMemo(() => {
-    if (solveState === "solved") return ["analysis", "next"];
+    if (prompt === "solved") return ["analysis", "next"];
     if (prompt === "failed") return ["retry", "showSolution"];
     if (prompt === "start" || prompt === "continue") return ["getHint", "showSolution"];
+    return [];
   }, [solveState, prompt]);
+  return (
+    <div className="flex flex-row items-center bg-[#181818] justify-around divide-x">
+      {buttonsToShow.includes("getHint") && (
+        <button className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+          <MdRestartAlt className="text-red-500 mr-2" />
+          <p>Get a Hint</p>
+        </button>
+      )}
+      {buttonsToShow.includes("showSolution") && (
+        <button
+          onClick={showSolution}
+          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+        >
+          <MdRestartAlt className="text-red-500 mr-2" />
+          <p>View the Solution</p>
+        </button>
+      )}
+      {buttonsToShow.includes("analysis") && (
+        <button
+          onClick={retry}
+          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+        >
+          <MdRestartAlt className="text-red-500 mr-2" />
+          <p>Analyze</p>
+        </button>
+      )}
+      {buttonsToShow.includes("retry") && (
+        <button
+          onClick={retry}
+          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+        >
+          <MdRestartAlt className="text-red-500 mr-2" />
+          <p>Retry</p>
+        </button>
+      )}
+      {buttonsToShow.includes("next") && (
+        <button
+          onClick={next}
+          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+        >
+          <MdRestartAlt className="text-red-500 mr-2" />
+          <p>Next Puzzle</p>
+        </button>
+      )}
+    </div>
+  );
 }
