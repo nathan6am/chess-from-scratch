@@ -170,10 +170,9 @@ export default function EvalInfo({
                     !evaler.currentLines) &&
                  
               </> */}
-              {evaler.currentDepth >= evaler.options.showLinesAfterDepth &&
-                evaler.lines &&
-                evaler.lines.length > 0 &&
+              {evaler.lines.length > 0 &&
                 evaler.lines.map((line, idx) => {
+                  if (!line?.score) console.log(evaler.lines);
                   return (
                     <RenderLine
                       key={idx}
@@ -184,11 +183,10 @@ export default function EvalInfo({
                     />
                   );
                 })}
-              {
-                <>
-                  <Placeholders count={evaler.options.multiPV - evaler.lines.length} />
-                </>
-              }
+
+              <>
+                <Placeholders count={evaler.options.multiPV - evaler.lines.length} />
+              </>
             </div>
           )}
         </>

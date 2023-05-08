@@ -5,6 +5,7 @@ import useDebounce from "./useDebounce";
 import useDebouncedCallback from "./useDebouncedCallback";
 import { MessageResponse, Variation } from "@/lib/stockfish/evalWorker";
 import useThrottle from "./useThrottle";
+import { notEmpty } from "@/util/misc";
 export interface Evaler {
   currentScore: EvalScore;
   currentDepth: number;
@@ -22,9 +23,11 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   const [currentDepth, setCurrentDepth] = useState<number>(0);
   const [isCloud, setIsCloud] = useState<boolean>(false);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
-  const [lines, setLines] = useState<Variation[]>([]);
+  const [currentLines, setCurrentLines] = useState<Variation[]>([]);
   const [fenEvaluating, setFenEvaluating] = useState<string>("");
-
+  const lines = useMemo(() => {
+    return currentLines.filter(notEmpty);
+  }, [currentLines]);
   const [options, setOptions] = useState<EvalOptions>({
     useCloudEval: true,
     depth: 18,
@@ -53,9 +56,11 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
       if (message.type === "updateLine") {
         if (!message.line || message.index === undefined) return;
         const index = message.index || 0;
-        setLines((prev) => {
+        setCurrentLines((prev) => {
           const newLines = [...prev];
-          newLines[index] = (message.line || []) as Variation;
+          if (message.line) {
+            newLines[index] = message.line;
+          }
           return newLines;
         });
       }
@@ -65,7 +70,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
         setEvalScore(message.eval.score);
         setCurrentDepth(message.eval.depth);
         setIsCloud(message.eval.isCloudEval || false);
-        setLines(message.eval.lines || []);
+        setCurrentLines(message.eval.lines || []);
       }
     };
     workerRef.current?.addEventListener("message", handler);
@@ -88,7 +93,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
     if (debouncedFen === fenEvaluating) return;
     setIsEvaluating(true);
     setCurrentDepth(0);
-    setLines([]);
+    setCurrentLines([]);
     setIsCloud(false);
     setFenEvaluating(debouncedFen);
     workerRef.current?.postMessage({ type: "evaluateFen", fen: debouncedFen });

@@ -94,6 +94,10 @@ function RenderArrow({ arrow, idPrefix, size = "lg" }: ArrowProps) {
   if (arrow.end) {
     return (
       <Xarrow
+        SVGcanvasStyle={{ pointerEvents: "none" }}
+        arrowTailProps={{ className: "pointer-none" }}
+        arrowBodyProps={{ className: "pointer-none" }}
+        arrowHeadProps={{ className: "pointer-none" }}
         SVGcanvasProps={{ className: "opacity-60 pointer-none" }}
         start={(idPrefix || "") + arrow.start}
         end={(idPrefix || "") + arrow.end}
