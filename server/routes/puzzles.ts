@@ -1,7 +1,7 @@
 import Puzzle from "../../lib/db/entities/Puzzle";
 import express, { Request } from "express";
-import { TbHeartMinus } from "react-icons/tb";
-
+import User from "../../lib/db/entities/User";
+import verifyUser from "../middleware/verifyUser";
 const router = express.Router({ mergeParams: true });
 
 interface PuzzleQuery {
@@ -27,4 +27,38 @@ router.get("/", async (req: Request<any, any, any, Partial<PuzzleQuery>>, res) =
     res.status(500).end();
   }
 });
+router.get("/puzzle/:id", async (req, res) => {
+  const { id } = req.params;
+  const puzzle = await Puzzle.findOne({ where: { id } });
+  if (puzzle) {
+    res.status(200).json({ puzzle });
+  } else {
+    res.status(404).end();
+  }
+});
+
+type Result = "solved" | "solved-w-hint" | "failed";
+
+function stringIsResult(s: string): s is Result {
+  return ["solved", "solved-w-hint", "failed"].includes(s);
+}
+
+router.post("/solve/:id", verifyUser, async (req, res) => {
+  const userid = req.user?.id;
+  const { id } = req.params;
+  const { result, rated } = req.query;
+  if (typeof result !== "string" || !stringIsResult(result)) return res.status(400).end("Invalid result");
+  if (typeof rated !== "string" || !["true", "false"].includes(rated)) return res.status(400).end("Invalid rated");
+  try {
+    const solvedPuzzle = await User.solvePuzzle(userid, id, result, rated === "true");
+    if (solvedPuzzle) {
+      res.status(200).json({ solvedPuzzle });
+    } else {
+      res.status(404).end();
+    }
+  } catch (e) {
+    res.status(500).end();
+  }
+});
+
 export default router;

@@ -8,6 +8,8 @@ import { currentISO, currentTimeRemaining, switchClock } from "../util/clockFunc
 import { DateTime } from "luxon";
 import { notEmpty } from "../../util/misc";
 import User from "../../lib/db/entities/User";
+import { updateRatings } from "../util/glicko";
+import { encodeGameToPgn } from "../../util/parsers/pgnParser";
 
 export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
@@ -87,9 +89,51 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
         } else return connection;
       });
     }
+    let ratingDeltas = { w: 0, b: 0 };
+    //update user ratings if applicable
+    if (lobby.connections.every((connection) => connection.player.type !== "guest") && lobby.options.rated) {
+      const playerw = await User.findOneBy({ id: connectionWhite.player.id });
+      const playerb = await User.findOneBy({ id: connectionBlack.player.id });
+      if (!playerw || !playerb) throw new Error("User not found");
+      const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
+      const ratingw = playerw.ratings[ratingCategory];
+      const ratingb = playerb.ratings[ratingCategory];
+      const result = outcome.result === "w" ? 1 : outcome.result === "b" ? 0 : 0.5;
+      const [newRatingW, newRatingB] = updateRatings(ratingw, ratingb, result);
+      await User.updateRatings(ratingCategory, [
+        { id: playerw.id, newRating: newRatingW },
+        { id: playerb.id, newRating: newRatingB },
+      ]);
+      ratingDeltas = {
+        w: newRatingW.rating - ratingw.rating,
+        b: newRatingB.rating - ratingb.rating,
+      };
+      //Update the connection objects with the new ratings
+      lobby.connections = lobby.connections.map((connection) => {
+        if (connection.id === connectionWhite.id) {
+          return {
+            ...connection,
+            player: {
+              ...connection.player,
+              rating: newRatingW.rating,
+            },
+          };
+        } else if (connection.id === connectionBlack.id) {
+          return {
+            ...connection,
+            player: {
+              ...connection.player,
+              rating: newRatingB.rating,
+            },
+          };
+        }
+        return connection;
+      });
+    }
+
     await cache.updateLobby(lobbyid, { connections: lobby.connections });
     const data = updated.data;
-    const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+    const timeControl = updated.data.config.timeControl || null;
     const players = {
       w: connections.w.player,
       b: connections.b.player,
@@ -98,9 +142,10 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
     //Save the game to db if any user is not a guest
     if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
-      console.log(game.id);
-      const saved = await GameEntity.saveGame(players, outcome, data, timeControl, game.id);
-      console.log(saved);
+      //console.log(game.id);
+      const pgn = encodeGameToPgn(updated);
+      const saved = await GameEntity.saveGame(players, outcome, data, timeControl, pgn, game.id);
+      //console.log(saved);
     }
   }
 
@@ -128,14 +173,17 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
         if (type !== "guest") {
           //Get the user's current rating if the user is not a guest
           const user = await User.findById(id);
-          console.log(id);
+          //console.log(id);
           if (!user) throw new Error("Unauthenticated");
+          const timeControl = lobby.options.gameConfig.timeControl;
+          const ratingCategory = Chess.inferRatingCategeory(timeControl || null);
+
           //console.log(user);
           connection = {
             id,
             player: {
               ...sessionUser,
-              rating: user.rating,
+              rating: user.ratings[ratingCategory].rating,
             },
             score: 0,
             lastClientSocketId: socket.id,
@@ -324,12 +372,13 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     if (!lobby.reservedConnections.some((id) => id === socket.data.userid)) throw new Error("Player is not in lobby");
 
     //Execute the move
-    const updatedGameData = Chess.move(game.data, move);
+    const updatedClock = switchClock(game.clock, moveRecievedISO, game.data.activeColor);
+    const updatedGameData = Chess.move(game.data, move, updatedClock.timeRemainingMs[game.data.activeColor]);
 
     //Update the clocks if both players have played a move
     if (updatedGameData.fullMoveCount >= 2) {
       //Update the clock state and apply increment
-      const updatedClock = switchClock(game.clock, moveRecievedISO, game.data.activeColor);
+
       return await cache.updateGame(lobbyid, {
         ...game,
         data: updatedGameData,

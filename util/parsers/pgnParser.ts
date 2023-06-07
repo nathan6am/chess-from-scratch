@@ -26,9 +26,7 @@ interface pgnCommand {
 
 function extractCommands(comment: string) {
   const knownTypes: Array<"%csl" | "%cal" | "%clk"> = ["%csl", "%cal", "%clk"];
-  const commandsRaw = comment
-    .match(commandDelimited)
-    ?.map((str) => str.replace(bracketsExpr, "$1"));
+  const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
   const remainingComment = comment.replace(commandDelimited, "").trim();
   let commands: pgnCommand[] = [];
   if (commandsRaw && commandsRaw.length) {
@@ -103,9 +101,7 @@ export function encodeCommentFromNodeData(data: Chess.NodeData): string {
       .join(",")}] `;
   }
   if (data.arrows && data.arrows.length) {
-    commentString += `[%cal ${data.arrows
-      .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
-      .join(",")}] `;
+    commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
   }
   if (data.comment) {
     commentString += data.comment;
@@ -207,10 +203,7 @@ export function tagDataToPGNString(data: PGNTagData): string {
   return tagsString;
 }
 //console.log(pgnToJson(sampleData));
-function buildTreeArray<T>(
-  map: Map<string, TreeNode<T>>,
-  parentKey: string | null = null
-): TreeNode<T>[] {
+function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -387,8 +380,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       throw new Error("Invalid pgn");
     } else if (reading === "annotation") {
       if (char === " ") {
-        if (!annotation.length)
-          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (!annotation.length) throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
         if (currentData.annotations) {
           currentData.annotations.push(parseInt(annotation));
         } else {
@@ -430,10 +422,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       }
     } else if (char === "$") {
       reading = "annotation";
-    } else if (
-      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
-      isDigit(char)
-    ) {
+    } else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
       reading = "move-count";
       moveCount = char;
       if (currentData.pgn) postCurrentData();
@@ -487,19 +476,29 @@ export function encodeGameToPgn(game: Game): string {
     eloWhite: `${w.rating}` || undefined,
     eloBlack: `${b.rating}` || undefined,
     event: "NextChess Online Game",
+    site: "NextChess.dev",
     result: encodeOutcome(game.data.outcome),
+    date: new Date().toISOString().slice(0, 10),
   };
   const tagSection = tagDataToPGNString(tagData);
-  const movetext =
-    moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
   return tagSection + "\r\n" + movetext;
 }
 
 export function moveHistoryToMoveText(moveHistory: Chess.MoveHistory) {
   let moveText = "";
   moveHistory.forEach((fullmove, idx) => {
-    moveText += `${idx + 1}. ${fullmove[0].PGN} ${fullmove[1]?.PGN || ""}`;
+    moveText += `${idx + 1}. ${fullmove[0].PGN} `;
+    if (fullmove[0].timeRemaining !== undefined)
+      moveText += `{ [%clk ${Duration.fromMillis(fullmove[0].timeRemaining).toISOTime()}] } `;
+    if (fullmove[1]) {
+      if (fullmove[0].timeRemaining !== undefined) moveText += `${idx + 1}... `;
+      moveText += `${fullmove[1].PGN} `;
+      if (fullmove[1].timeRemaining !== undefined)
+        moveText += `{ [%clk ${Duration.fromMillis(fullmove[1].timeRemaining).toISOTime()}] } `;
+    }
   });
+  return moveText;
 }
 
 function encodeOutcome(outcome: Chess.Outcome) {

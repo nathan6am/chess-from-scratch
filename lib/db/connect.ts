@@ -6,6 +6,7 @@ import Puzzle from "./entities/Puzzle";
 import User_Game from "./entities/User_Game";
 import Analysis from "./entities/Analysis";
 import Collection from "./entities/Collection";
+import Solved_Puzzle from "./entities/Solved_Puzzle";
 import { loadEnvConfig } from "@next/env";
 loadEnvConfig("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";
@@ -22,8 +23,9 @@ export async function initialize() {
     password,
     database,
     host,
-    entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential, Collection, Profile],
+    entities: [User, Game, Puzzle, Analysis, Notification, User_Game, Credential, Collection, Profile, Solved_Puzzle],
     synchronize: true,
+    poolSize: 10,
   });
   await datasource.initialize();
 }

@@ -1,7 +1,7 @@
 import { default as PuzzleEntity } from "@/lib/db/entities/Puzzle";
 import * as Chess from "@/lib/chess";
 import { gameFromNodeData, nodeDataFromMove, parseUciMove } from "@/lib/chess";
-import _ from "lodash";
+import _, { set } from "lodash";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useRef, useCallback, useEffect, useContext } from "react";
 import axios from "axios";
@@ -9,6 +9,7 @@ import { treeFromLine } from "@/util/parsers/pgnParser";
 import useVariationTree from "./useVariationTree";
 import useSound from "use-sound";
 import { SettingsContext } from "@/context/settings";
+import { main } from "@popperjs/core";
 
 export interface Puzzle {
   id: string;
@@ -29,10 +30,7 @@ function parsePuzzleEntity(puzzle: PuzzleEntity): Puzzle {
   let halfMoveCount = game.fullMoveCount * 2 + (game.activeColor === "b" ? 1 : 0);
   moves.forEach((uciMove) => {
     const move = currentGame.legalMoves.find(
-      (move) =>
-        move.start === uciMove.start &&
-        move.end === uciMove.end &&
-        move.promotion === uciMove.promotion
+      (move) => move.start === uciMove.start && move.end === uciMove.end && move.promotion === uciMove.promotion
     );
     if (!move) throw new Error("invalid solution");
     solution.push(nodeDataFromMove(currentGame, move, halfMoveCount));
@@ -74,9 +72,11 @@ export default function usePuzzleQueue(initialOptions?: Partial<PuzzleQueueOptio
     ...defaultOptions,
     ...initialOptions,
   });
+  let [rated, setRated] = useState(true);
   const [history, setHistory] = useState<SolvedPuzzle[]>([]);
   const [queue, setQueue] = useState<Puzzle[]>([]);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
+
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["puzzleQueue", options],
     queryFn: async () => {
@@ -112,10 +112,7 @@ export default function usePuzzleQueue(initialOptions?: Partial<PuzzleQueueOptio
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     } else {
-      setHistory((cur) => [
-        ...cur,
-        { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false },
-      ]);
+      setHistory((cur) => [...cur, { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false }]);
       let nextPuzzle = queue[0];
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
@@ -147,8 +144,7 @@ function usePuzzle(puzzle: Puzzle | null) {
   const tree = useVariationTree();
   //Reset on puzzle change
 
-  const { currentNode, path, continuation, currentKey, mainLine, setCurrentKey, stepBackward } =
-    tree;
+  const { currentNode, path, continuation, currentKey, mainLine, setCurrentKey, stepBackward } = tree;
   const currentGame = useMemo(() => {
     if (!puzzle) return Chess.createGame({});
     if (currentNode)
@@ -162,6 +158,7 @@ function usePuzzle(puzzle: Puzzle | null) {
 
   const [orientation, setOrientation] = useState<Chess.Color>(puzzle?.playerColor || "w");
   const [solveState, setSolveState] = useState<"pending" | "solved" | "failed">("pending");
+  const [hint, setHint] = useState<Chess.Square | null>(null);
   const [hintUsed, setHintUsed] = useState(false);
   const isMainline = useMemo(
     () => currentKey === null || mainLine.some((node) => node.key === currentKey),
@@ -172,7 +169,17 @@ function usePuzzle(puzzle: Puzzle | null) {
     const lastIdx = mainLine.findIndex((node) => !touchedKeys.includes(node.key));
     return mainLine.slice(0, lastIdx);
   }, [mainLine]);
-
+  const getHint = useCallback(() => {
+    if (!puzzle) return;
+    if (currentKey !== visibleNodes[visibleNodes.length - 1]?.key) {
+      setCurrentKey(visibleNodes[visibleNodes.length - 1]?.key || null);
+    }
+    const nextNode = mainLine.find((node) => !touchedKeys.includes(node.key));
+    if (!nextNode) return;
+    setHintUsed(true);
+    const hintSquare = nextNode.data.move.start;
+    setHint(hintSquare);
+  }, [puzzle, currentKey, visibleNodes, touchedKeys, mainLine]);
   const moveable = useMemo(() => {
     if (continuation.length === 0) return false;
     if (currentGame.activeColor !== puzzle?.playerColor) return false;
@@ -200,8 +207,7 @@ function usePuzzle(puzzle: Puzzle | null) {
   }, [mainLine, currentKey, puzzle]);
 
   const prompt = useMemo(() => {
-    if (mainLine.length && mainLine.every((node) => touchedKeys.includes(node.key)))
-      return "solved";
+    if (mainLine.length && mainLine.every((node) => touchedKeys.includes(node.key))) return "solved";
     if (currentNode && !isMainline) return "failed";
     if (visibleNodes.length <= 1) return "start";
     if (continuation.length > 0) return "continue";
@@ -246,11 +252,10 @@ function usePuzzle(puzzle: Puzzle | null) {
     if (currentGame.activeColor !== puzzle.playerColor) {
       if (visibleNodes.length && currentKey !== visibleNodes[visibleNodes.length - 1].key) return;
       opponentMoveQueued.current = true;
-      console.log("here");
+
       setTimeout(() => {
         opponentMoveQueued.current = false;
         const nextMove = tree.stepForward();
-        console.log(nextMove);
         if (nextMove) setTouchedKeys((cur) => [...cur, nextMove.key]);
       }, 500);
     }
@@ -289,6 +294,7 @@ function usePuzzle(puzzle: Puzzle | null) {
   return {
     puzzle,
     orientation,
+    getHint,
     flipBoard: () => setOrientation((cur) => (cur === "w" ? "b" : "w")),
     currentGame,
     solveState,

@@ -11,6 +11,7 @@ export interface Game {
   data: Chess.Game; //Raw game data of the game
   clock: Clock; //Clock time remaining for each color
   players: Record<Chess.Color, Player>; //Player ids of each color
+  ratingCategory: Chess.RatingCategory; //Rating category of the game
 }
 
 export interface Clock {

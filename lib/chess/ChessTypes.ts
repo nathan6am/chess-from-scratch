@@ -30,11 +30,12 @@ export type Position = Map<Square, Piece>;
 
 export interface HalfMove {
   move: Move;
+  timeRemaining?: number;
   PGN: string;
   fen: string;
   board: Board;
-  elapsedTimeSeconds?: number;
 }
+
 export type Outcome =
   | {
       result: Color | "d";
@@ -102,7 +103,7 @@ export interface NodeData extends HalfMove {
   evaluation?: FinalEvaluation;
   halfMoveCount: number;
   outcome: Outcome;
-  timeRemaining?: number;
+
   markedSquares?: MarkedSquare[];
   arrows?: Arrow[];
 }

@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import _ from "lodash";
-import {
-  DraggableCore,
-  DraggableData,
-  DraggableEvent,
-  DraggableEventHandler,
-} from "react-draggable";
+import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
 import * as Chess from "@/lib/chess";
 import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
+import { on } from "events";
 const throttle = (f: any) => {
   let token: any = null,
     lastArgs: any = null;
@@ -32,15 +28,20 @@ interface PieceProps {
   piece: Chess.Piece;
   selectedPiece: [Chess.Square, Chess.Piece] | null;
   setSelectedPiece: (piece: [Chess.Square, Chess.Piece] | null) => void;
-  onDrop: () => void;
+  onDrop: (coordinates?: { x: number; y: number }) => void;
   disabled: boolean;
   movementType: "click" | "drag" | "both";
   squareSize: number;
   orientation: Chess.Color;
   square: Chess.Square;
   animationSpeed: number;
+  constrainToBoard?: boolean;
 }
 
+export interface PieceHandle extends HTMLDivElement {
+  // Add any additional methods that you want to expose
+  startDrag: () => void;
+}
 export default function Piece({
   piece,
   selectedPiece,
@@ -55,6 +56,7 @@ export default function Piece({
   boardRef,
   hidden,
   disableTransition,
+  constrainToBoard = true,
 }: PieceProps) {
   const transitionRef = useRef<boolean>(false);
   const selectedRef = useRef<boolean>(false);
@@ -92,9 +94,7 @@ export default function Piece({
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (nodeRef.current) {
-            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
-              coordinates[1] * 100
-            }%)`;
+            nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
           }
           setPosition({
             x: coordinates[0] * 100,
@@ -111,9 +111,7 @@ export default function Piece({
       };
       if (position.x !== positionNew.x || position.y !== positionNew.y) {
         if (nodeRef.current) {
-          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${
-            coordinates[1] * 100
-          }%)`;
+          nodeRef.current.style.transform = `translate(${coordinates[0] * 100}%, ${coordinates[1] * 100}%)`;
         }
         setPosition(positionNew);
       }
@@ -133,12 +131,10 @@ export default function Piece({
   const onDrag = useCallback(
     _.throttle<DraggableEventHandler>((e: DraggableEvent, data: DraggableData) => {
       const max = boardSize;
-      const x = data.x > 0 ? (data.x > max ? max : data.x) : 0;
-      const y = data.y > 0 ? (data.y > max ? max : data.y) : 0;
+      const x = constrainToBoard ? (data.x > 0 ? (data.x > max ? max : data.x) : 0) : data.x;
+      const y = constrainToBoard ? (data.y > 0 ? (data.y > max ? max : data.y) : 0) : data.y;
       if (nodeRef.current)
-        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${
-          y - squareSize / 2
-        }px)`;
+        nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${y - squareSize / 2}px)`;
     }, 16),
     [boardSize, squareSize]
   );
@@ -174,8 +170,17 @@ export default function Piece({
             setSelectedPiece([square, piece]);
           }
         }}
-        onPointerUp={() => {
-          onDrop();
+        onPointerUp={(e) => {
+          if (boardRef.current) {
+            const pointerOffsetCoords = {
+              x: e.clientX - boardRef.current.getBoundingClientRect().left,
+              y: e.clientY - boardRef.current.getBoundingClientRect().top,
+            };
+            console.log(pointerOffsetCoords);
+            onDrop(pointerOffsetCoords);
+          } else {
+            onDrop();
+          }
           if (movementType === "drag") {
             setSelectedPiece(null);
           } else {
@@ -188,10 +193,7 @@ export default function Piece({
           }
         }}
         style={{
-          transition:
-            dragging || disableTransition || transitionRef.current === false
-              ? ""
-              : `all ${animationSpeed}s`,
+          transition: dragging || disableTransition || transitionRef.current === false ? "" : `all ${animationSpeed}s`,
           cursor: draggable ? (dragging ? "grabbing" : "grab") : "pointer",
           display: hidden ? "none" : "flex",
           justifyContent: "center",

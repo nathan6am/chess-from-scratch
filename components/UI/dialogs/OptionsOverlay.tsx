@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
-import { OptionsContent } from "../Menus/content";
+import { PreferencesTabs } from "../Menus/content/Options";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
@@ -37,8 +37,8 @@ export default function OptionsOverlay({ isOpen, closeModal }: Props) {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full h-[80vh] max-w-[1200px] mx-10  px-4 sm:px-8 transform overflow-show rounded-2xl bg-[#181818] py-10 text-left align-middle shadow-lg transition-all">
-                  <Dialog.Title>App Settings</Dialog.Title>
-                  <OptionsContent />
+                  <Dialog.Title>Preferences</Dialog.Title>
+                  <PreferencesTabs />
                 </Dialog.Panel>
               </Transition.Child>
             </div>

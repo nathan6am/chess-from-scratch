@@ -13,4 +13,19 @@ const nanoid = customRandom(urlAlphabet, 10, random);
 
 const router = express.Router();
 
+router.get("/:id", async (req: Request<{ id: string }>, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).json({ error: "No ID provided" });
+  const game = await Game.findOneBy({ id });
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  return res.status(200).json(game);
+});
+router.get("/pgn/:id", async (req: Request<{ id: string }>, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).json({ error: "No ID provided" });
+  const game = await Game.findOneBy({ id });
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  return res.status(200).json(game.pgn);
+});
+
 export default router;

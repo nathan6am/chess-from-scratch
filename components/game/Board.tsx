@@ -16,6 +16,7 @@ import { AnimSpeedEnum } from "@/context/settings";
 import { useResizeDetector } from "react-resize-detector";
 import _ from "lodash";
 import Piece from "./Piece";
+import EditModePiece, { PieceHandle } from "./EditModePiece";
 import useBoardTheme from "@/hooks/useBoardTheme";
 import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
@@ -59,11 +60,16 @@ interface Props {
   markupColor?: ArrowColor;
   overrideArrows?: boolean;
   disableArrows?: boolean;
+  spawnPiece?: Chess.Piece | null;
+  editModeEnabled?: boolean;
+  onSpawnPiece?: (piece: Chess.Piece, square: Chess.Square) => void;
+  onRemovePiece?: (square: Chess.Square) => void;
 }
 
 export interface BoardHandle extends HTMLDivElement {
   // Add any additional methods that you want to expose
-  clearArrows: () => void;
+
+  spawnDraggablePiece: (piece: Chess.Piece, e: React.MouseEvent<HTMLElement>) => void;
 }
 const Board = React.forwardRef<BoardHandle, Props>(
   (
@@ -99,10 +105,12 @@ const Board = React.forwardRef<BoardHandle, Props>(
       overrideArrows,
       disableArrows,
       keyPrefix = "",
+      spawnPiece,
     }: Props,
     ref
   ) => {
     const boardRef = useRef<HTMLDivElement>(null);
+    const editPieceRef = useRef<PieceHandle>(null);
 
     //Load board/pieces css
     useBoardTheme(theme, overrideTheme);
@@ -230,6 +238,16 @@ const Board = React.forwardRef<BoardHandle, Props>(
       lastMoveRef.current = lastMove;
       localArrows.clear();
     }, [lastMove, localArrows, lastMoveRef]);
+    const [draggablePiece, setDraggablePiece] = useState<Chess.Piece | null>(null);
+    const exposedMethods = {
+      spawnDraggablePiece: (piece: Chess.Piece, e: React.MouseEvent<HTMLElement>) => {
+        setDraggablePiece(piece);
+        editPieceRef.current?.startDrag(e);
+      },
+
+      ...boardRef.current,
+    } as BoardHandle;
+    useImperativeHandle(ref, () => exposedMethods, [exposedMethods]);
     return (
       <>
         <BoardArrows
@@ -325,8 +343,23 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 orientation={orientation}
                 onDrop={onDrop}
                 squareSize={squareSize}
+                constrainToBoard={false}
               />
             ))}
+
+            <EditModePiece
+              ref={editPieceRef}
+              hidden={hidePieces}
+              boardRef={boardRef}
+              animationSpeed={AnimSpeedEnum[animationSpeed]}
+              key={`${keyPrefix}${`edit`}${orientation}`}
+              piece={draggablePiece || { color: "w", type: "p", key: "edit" }}
+              movementType={movementType}
+              orientation={orientation}
+              onDrop={onDrop}
+              squareSize={squareSize}
+              constrainToBoard={false}
+            />
           </div>
         </BoardArrows>
       </>

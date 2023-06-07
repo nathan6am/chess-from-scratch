@@ -8,7 +8,11 @@ import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
 import BoardControls from "../game/BoardControls";
 import { BsFillCheckSquareFill, BsFillXSquareFill, BsCheckLg } from "react-icons/bs";
+import { BiAnalyse, BiShow } from "react-icons/bi";
+import { FaLightbulb } from "react-icons/fa";
 import { MdRestartAlt } from "react-icons/md";
+import { IoCaretForwardSharp } from "react-icons/io5";
+import { ClipLoader } from "react-spinners";
 export default function PuzzleSolver() {
   const { puzzle, history, next } = usePuzzleQueue();
   const { settings } = useContext(SettingsContext);
@@ -68,16 +72,13 @@ export default function PuzzleSolver() {
             getHint={() => {}}
           />
           <div className="w-full">
-            {puzzle.puzzle ? (
-              <PuzzlePrompt
-                playerColor={puzzle.puzzle.playerColor}
-                prompt={puzzle.prompt}
-                retry={puzzle.retry}
-                next={next}
-              />
-            ) : (
-              <h2>Loading puzzles</h2>
-            )}
+            <PuzzlePrompt
+              playerColor={puzzle.puzzle?.playerColor || "w"}
+              prompt={puzzle.prompt}
+              retry={puzzle.retry}
+              next={next}
+              loading={!puzzle.puzzle}
+            />
           </div>
           <div className="w-full flex flex-row"></div>
           <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
@@ -91,13 +92,20 @@ interface PromptProps {
   retry: () => void;
   next: () => void;
   prompt?: string;
+  loading?: boolean;
   playerColor: "w" | "b";
 }
 
-function PuzzlePrompt({ prompt, playerColor }: PromptProps) {
+function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
   return (
     <div className="flex flex-row items-center bg-[#242424] p-3 justify-center py-6 min-h-[72px]">
-      {prompt === "start" && (
+      {loading && (
+        <>
+          <ClipLoader color="#ffffff" loading={loading} size={20} />
+          <p className="ml-2">Loading puzzles...</p>
+        </>
+      )}
+      {!loading && prompt === "start" && (
         <>
           <div className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
@@ -144,45 +152,45 @@ function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint
   return (
     <div className="flex flex-row items-center bg-[#181818] justify-around divide-x">
       {buttonsToShow.includes("getHint") && (
-        <button className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
-          <MdRestartAlt className="text-red-500 mr-2" />
+        <button className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
           <p>Get a Hint</p>
+          <FaLightbulb className="ml-2" />
         </button>
       )}
       {buttonsToShow.includes("showSolution") && (
         <button
           onClick={showSolution}
-          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+          className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
-          <MdRestartAlt className="text-red-500 mr-2" />
           <p>View the Solution</p>
+          <BiShow className="ml-2" />
         </button>
       )}
       {buttonsToShow.includes("analysis") && (
         <button
           onClick={retry}
-          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+          className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
-          <MdRestartAlt className="text-red-500 mr-2" />
           <p>Analyze</p>
+          <BiAnalyse className="ml-2" />
         </button>
       )}
       {buttonsToShow.includes("retry") && (
         <button
           onClick={retry}
-          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+          className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
-          <MdRestartAlt className="text-red-500 mr-2" />
           <p>Retry</p>
+          <MdRestartAlt className="ml-2" />
         </button>
       )}
       {buttonsToShow.includes("next") && (
         <button
           onClick={next}
-          className="flex flex-row items-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+          className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
-          <MdRestartAlt className="text-red-500 mr-2" />
           <p>Next Puzzle</p>
+          <IoCaretForwardSharp className="ml-2" />
         </button>
       )}
     </div>

@@ -33,14 +33,7 @@ const parseScore = (score: Chess.EvalScore): string => {
   }
 };
 
-export default function EvalInfo({
-  evaler,
-  enabled,
-  setEnabled,
-  moveKey,
-  currentGame,
-  attemptMoves,
-}: Props) {
+export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, currentGame, attemptMoves }: Props) {
   let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   let [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   let { styles, attributes } = usePopper(referenceElement, popperElement, {
@@ -54,30 +47,7 @@ export default function EvalInfo({
       },
     ],
   });
-  // const parsedLines = useMemo(() => {
-  //   if (!enabled) {
-  //     return [];
-  //   }
-  //   if (evaler.currentDepth < evaler.options.showLinesAfterDepth) {
-  //     return [];
-  //   }
-  //   if (!evaler.inProgress && evaler.evaluation) {
-  //     const lines = evaler.evaluation.lines.map((line) => ({
-  //       ...line,
-  //       moves: uciMovesToPgn(line, currentGame),
-  //       moveCount: currentGame.moveHistory.flat().filter(notEmpty).length + 1,
-  //     }));
-  //     return lines;
-  //   }
-  //   if (evaler.currentLines) {
-  //     return evaler.currentLines.map((line) => ({
-  //       ...line,
-  //       moves: uciMovesToPgn(line, currentGame),
-  //       moveCount: currentGame.moveHistory.flat().filter(notEmpty).length + 1,
-  //     }));
-  //   }
-  //   return [];
-  // }, [enabled, evaler.inProgress, evaler.evaluation, evaler.currentLines]);
+
   const score = useMemo(() => {
     return parseScore(evaler.currentScore);
   }, [evaler.currentScore]);
@@ -123,12 +93,7 @@ export default function EvalInfo({
             </Popover.Button>
           </div>
 
-          <Popover.Panel
-            ref={setPopperElement}
-            className="z-50"
-            style={styles.popper}
-            {...attributes.popper}
-          >
+          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
@@ -185,7 +150,7 @@ export default function EvalInfo({
                 })}
 
               <>
-                <Placeholders count={evaler.options.multiPV - evaler.lines.length} />
+                <Placeholders count={evaler.options.multiPV - evaler.lines.length} loading={evaler.isEvaluating} />
               </>
             </div>
           )}
@@ -215,11 +180,7 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p
-        className={`${
-          expanded ? "" : "truncate"
-        } bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}
-      >
+      <p className={`${expanded ? "" : "truncate"} bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
@@ -240,11 +201,7 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore
-          className={` transition-transform duration-400 text-xl ${
-            expanded ? "" : "rotate-[-90deg]"
-          }`}
-        />
+        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
       </button>
     </div>
   );
@@ -261,9 +218,7 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
-          {Chess.moveCountToNotation(moveCount)}
-        </span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"
@@ -342,7 +297,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
   );
 }
 
-function Placeholders({ count }: { count: number }) {
+function Placeholders({ count, loading }: { count: number; loading?: boolean }) {
   return (
     <>
       {Array.from(Array(count).keys()).map((_, idx) => {
@@ -351,11 +306,10 @@ function Placeholders({ count }: { count: number }) {
             <div className="w-[50px] shrink-0 rounded-sm bg-white/[0.1] opacity-60 py-1">
               <div className="h-[1em] relative w-full">
                 <div className="absolute top-0 left-0 right-0 bottom-0 w-full flex justify-center items-center">
-                  <ClipLoader size={14} color="white" />
+                  {loading && <ClipLoader size={14} color="white" />}
                 </div>
               </div>
             </div>
-
             <div className="h-full w-full rounded-sm bg-white/[0.02] ml-4">
               <div className="h-[1em]"></div>
             </div>

@@ -33,7 +33,44 @@ router.post("/complete-profile", async (req, res) => {
     User.createProfile(user.id, { country, bio });
     if (name) user.name = name;
     if (username) user.username = username;
-    user.rating = parseInt(rating);
+    user.ratings = {
+      bullet: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+      blitz: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+      rapid: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+      classical: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+      puzzle: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+      correspondence: {
+        rating: parseInt(rating),
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+      },
+    };
     const updated: User = await user.save();
     res.status(200).json({ updated: true, profile: updated });
   } catch (e) {

@@ -5,6 +5,7 @@ import * as Chess from "../../lib/chess";
 import { coinflip } from "../../util/misc";
 import { v4 as uuidv4 } from "uuid";
 import { socket } from "@/context/socket";
+import { time } from "console";
 const indexed = <T extends {}>(obj: T): T & { [key: string]: never } => obj;
 
 export interface Redis {
@@ -119,17 +120,16 @@ export class Redis implements Redis {
       players[creatorColor] = playerA;
       players[creatorColor === "w" ? "b" : "w"] = playerB;
     }
-    const timeControls = lobby.options.gameConfig.timeControls;
-    if (!(timeControls && timeControls.length))
-      throw new Error("Correspondence games are not cached using redis store");
-    const control = timeControls[0];
+    const timeControl = lobby.options.gameConfig.timeControl;
+    if (!timeControl) throw new Error("Correspondence games are not cached using redis store");
+    const control = timeControl;
     const timeRemainingMs = {
       w: control.timeSeconds * 1000,
       b: control.timeSeconds * 1000,
     };
     const gameData = Chess.createGame(lobby.options.gameConfig);
-
     const game: Game = {
+      ratingCategory: Chess.inferRatingCategeory(control),
       id: uuidv4(),
       data: gameData,
       players,

@@ -1,6 +1,6 @@
 import React from "react";
 import ClipLoader from "react-spinners/ClipLoader";
-
+import classNames from "classnames";
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error: string | null;
   status: "success" | "warning" | "error" | null;
@@ -9,12 +9,17 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   disabled?: boolean;
   optional?: boolean;
   verifying?: boolean;
+  className?: string;
+  containerClassName?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ id, label, error, status, verifying, disabled, optional, ...props }: InputProps, ref) => {
+  (
+    { id, label, error, status, verifying, disabled, optional, className, containerClassName, ...props }: InputProps,
+    ref
+  ) => {
     return (
-      <div className="w-full mb-3">
+      <div className={classNames("w-full mb-3", containerClassName)}>
         {label && (
           <span className="flex flex-row items-center mb-1">
             <label className="block text-white/[0.6] text-md font-semibold " htmlFor={id}>
@@ -26,7 +31,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           <input
             ref={ref}
-            className={`${
+            className={`${className} ${
               status === "error" ? "border-red-400 focus:border-red-400" : "border-white/[0.3]"
             } shadow appearance-none border-2 focus:border-white/[0.8] border-box rounded-md w-full py-2 px-3 text-md  ${
               disabled ? "text-white/[0.5] bg-white/[0.1]" : "text-sepia bg-black/[0.3]"

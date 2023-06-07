@@ -33,7 +33,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {
       id: typeof id === "string" ? id : null,
       game: typeof game === "string" ? game : null,
-      sourceType: sourceType === "masters" || sourceType === "lichess" ? sourceType : null,
+      sourceType:
+        sourceType === "masters" || sourceType === "lichess" || sourceType === "nextchess" ? sourceType : null,
     },
   };
 };

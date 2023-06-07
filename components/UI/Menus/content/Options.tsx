@@ -17,14 +17,47 @@ export default function Options() {
   );
 }
 
+export function PreferencesTabs() {
+  return (
+    <div className="flex flex-row w-full h-full">
+      <Tab.Group vertical>
+        <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
+          <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
+            Preferences
+          </div>
+          <MenuTab>Display</MenuTab>
+          <MenuTab>Theme</MenuTab>
+          <MenuTab>Game Behavior</MenuTab>
+          <MenuTab>Sound</MenuTab>
+        </Tab.List>
+        <div className="my-10 mr-10 h-inherit w-full relative rounded-l-lg overflow-hidden">
+          <ScrollContainer auto>
+            <Tab.Panels className="px-10 py-4 bg-white/[0.05] rounded-l-lg shadow-lg w-full h-fit ">
+              <Tab.Panel as={Fragment}>
+                <DisplayPanel />
+              </Tab.Panel>
+              <Tab.Panel as={Fragment}>
+                <ThemePanel />
+              </Tab.Panel>
+              <Tab.Panel>
+                <GameBehaviorPanel />
+              </Tab.Panel>
+              <Tab.Panel>
+                <SoundPanel />
+              </Tab.Panel>
+            </Tab.Panels>
+          </ScrollContainer>
+        </div>
+      </Tab.Group>
+    </div>
+  );
+}
 function MyTabs() {
   const [visibility, setVisibility] = useState<string>("private");
   return (
     <Tab.Group vertical>
       <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
-        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
-          Options
-        </div>
+        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">Options</div>
         <MenuTab>Profile</MenuTab>
         <MenuTab>Display</MenuTab>
         <MenuTab>Theme</MenuTab>

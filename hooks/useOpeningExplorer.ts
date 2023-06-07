@@ -79,9 +79,13 @@ const reduceMoves = (history: Chess.MoveHistory): string =>
     .join(",");
 
 const fetcher = async (params: { fen: string; play: string }, database: "lichess" | "masters") => {
+  let queryParams: any = { ...params };
+  if (database === "lichess") {
+    queryParams.speeds = "blitz,rapid,classical";
+  }
   const endpoint = Endpoints[database];
   const response = await axios.get(endpoint, {
-    params,
+    params: queryParams,
   });
   if (!response.data) throw new Error("No response data");
   return response.data as ApiResponse;

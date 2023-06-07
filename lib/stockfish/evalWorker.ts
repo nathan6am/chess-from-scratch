@@ -97,11 +97,8 @@ function convertCloudEval(cloudEval: CloudEval, activeColor: Chess.Color, fen: s
   };
 }
 const wasmSupported =
-  typeof WebAssembly === "object" &&
-  WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-const stockfish = new Worker(
-  wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js"
-);
+  typeof WebAssembly === "object" && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+const stockfish = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
 
 let aborted = false;
 let ready = false;
@@ -124,6 +121,8 @@ let options: EvalOptions = {
 //Startup
 stockfish.postMessage("uci");
 stockfish.postMessage("isready");
+stockfish.postMessage("setoption name Threads value 2");
+stockfish.postMessage("setoption name Hash value 256");
 function shouldReevaluate(newOptions: EvalOptions): boolean {
   if (newOptions.useCloudEval !== options.useCloudEval) return true;
   if (newOptions.useNNUE !== options.useNNUE) return true;
@@ -140,13 +139,16 @@ const onStockfishMessage = (e: MessageEvent) => {
     ready = true;
   }
   if (!currentFen) return;
+  const info = parseInfoMessage(params);
+  if (!info) return;
   if (params[0] === "info" && !(params.includes("string") || params.includes("currmove"))) {
     if (aborted) {
-      aborted = false;
+      // Unset the abort flag if the depth is 1, igonre messages from previous eval
+      if (info.depth === 1) {
+        aborted = false;
+      }
       return;
     }
-    const info = parseInfoMessage(params);
-    if (!info) return;
     if (info.score.type === "lowerbound" || info.score.type === "upperbound") return;
     const scoreMultiplier = currentFen && currentFen.includes("w") ? 1 : -1;
     if (info.score.type === "mate") console.log(info.score);

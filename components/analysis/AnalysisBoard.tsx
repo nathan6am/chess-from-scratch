@@ -1,33 +1,43 @@
-import React, { useState, useRef, Fragment, useContext, useMemo, useCallback, useEffect } from "react";
-import * as Chess from "@/lib/chess";
+import React, { useState, useRef, Fragment, useContext, useMemo, useEffect } from "react";
 
+// Components
 import Board from "../game/Board";
 import EvalBar from "./EvalBar";
-import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import BoardControls from "../game/BoardControls";
 import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
+import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import PopupPlayer from "./PopupPlayer";
-import Explorer from "./Explorer";
-import { Tab, Menu, Transition } from "@headlessui/react";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
-import { MdSettings } from "react-icons/md";
+import { Menu, Transition } from "@headlessui/react";
 import { BoardHandle } from "../game/Board";
-import { SettingsContext } from "@/context/settings";
+import useBoardEditor from "@/hooks/useBoardEditor";
+//Icons
+import { IoMdStopwatch } from "react-icons/io";
+// Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard from "@/hooks/useAnalysisBoard";
-import { tagDataToPGNString } from "@/util/parsers/pgnParser";
 import { useRouter } from "next/router";
+import SetupPanel from "./BoardSetupPanel";
+// Context
+import { SettingsContext } from "@/context/settings";
+
+// Utils
+import { tagDataToPGNString } from "@/util/parsers/pgnParser";
+import * as Chess from "@/lib/chess";
+import classNames from "classnames";
+import { Duration } from "luxon";
+import axios from "axios";
 
 interface Props {
   initialId?: string | null;
   sourceGameId?: string | null;
-  sourceGameType?: "masters" | "lichess" | null;
+  sourceGameType?: "masters" | "lichess" | "nextchess" | null;
   fromFen?: string;
 }
+
 export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
   const analysis = useAnalysisBoard();
-  const boardRef = useRef<BoardHandle>(null);
   const {
     currentGame,
     onMove,
@@ -39,15 +49,24 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     explorer,
     currentNode,
     markupControls,
+    pgn,
+    tagData,
   } = analysis;
+  const boardRef = useRef<BoardHandle>(null);
+  const { settings } = useContext(SettingsContext);
   const router = useRouter();
+  const editor = useBoardEditor(currentGame.fen);
+  // Handle id changes/initial load
   const id = router.query.id as string | undefined;
-
   const currentIdRef = useRef<string | null | undefined>(id);
   const initialLoad = useRef(initialId || sourceGameId ? false : true);
-  const saveManager = useSavedAnalysis();
+  const saveManager = useSavedAnalysis({ pgn, tags: tagData });
+
+  // Display state
   const [orientation, setOrientation] = useState<Chess.Color>("w");
-  const { settings } = useContext(SettingsContext);
+  const flipBoard = () => {
+    setOrientation((cur) => (cur === "w" ? "b" : "w"));
+  };
   const [saveModalShown, setSaveModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
@@ -55,6 +74,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
 
+  // Fetch source game on initial load
   useEffect(() => {
     if (id) return;
     if (!sourceGameId) return;
@@ -63,20 +83,29 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
       initialLoad.current = true;
       return;
     }
-    console.log(sourceGameId, sourceGameType);
-    analysis.explorer
-      .fetchGameAsync(sourceGameId, sourceGameType)
-      .then((game) => {
+    if (sourceGameType === "nextchess") {
+      console.log("fetching nextchess game");
+      axios.get(`/api/game/pgn/${sourceGameId}`).then((res) => {
         initialLoad.current = true;
-        if (!game) return;
-        analysis.loadPgn(game);
-      })
-      .catch((e) => {
-        initialLoad.current = true;
-        console.error(e);
+        if (!res.data) return;
+        analysis.loadPgn(res.data);
       });
+    } else {
+      analysis.explorer
+        .fetchGameAsync(sourceGameId, sourceGameType)
+        .then((game) => {
+          initialLoad.current = true;
+          if (!game) return;
+          analysis.loadPgn(game);
+        })
+        .catch((e) => {
+          initialLoad.current = true;
+          console.error(e);
+        });
+    }
   }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
 
+  // Load saved analysis on initial load and id change
   useEffect(() => {
     if (!id) return;
     if (!saveManager.data?.analysis) return;
@@ -94,9 +123,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     }
     currentIdRef.current = id;
   }, [id, currentIdRef, saveManager.data, analysis.loadPgn, initialLoad]);
-  const flipBoard = () => {
-    setOrientation((cur) => (cur === "w" ? "b" : "w"));
-  };
   const saveCurrent = () => {
     const analysis = saveManager.data?.analysis;
     if (!analysis) return;
@@ -154,16 +180,71 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
             setSaveModalShown(true);
           }}
         />
-
+        <span>Synced: {`${saveManager.synced}`}</span>
         <BoardRow>
           <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
-            <BoardColumn className={`${evalEnabled ? "items-center" : "items-center"} relative`}>
-              {/* <p className="absolute top-[-2em] p-1 px-4 bg-white/[0.1]">
-                Carlsen, M. <span className="inline opacity-50">(2882)</span>
-              </p>
-              <p className="absolute bottom-[-2em] p-1 px-4 bg-white/[0.1]">
-                Caruana, F. <span className="inline opacity-50">(2818)</span>
-              </p> */}
+            <BoardColumn className="items-center relative">
+              <>
+                <div className="absolute top-[-2em] bottom-[-2em] flex flex-row w-inherit">
+                  <div className="flex flex-col justify-between items-center shrink">
+                    <>
+                      {analysis.tagData.black && (
+                        <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
+                          {analysis.tagData.black}{" "}
+                          <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
+                        </p>
+                      )}
+                    </>
+                    <>
+                      {analysis.tagData.white && (
+                        <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
+                          {analysis.tagData.white}{" "}
+                          <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
+                        </p>
+                      )}
+                    </>
+                  </div>
+                  <div className="flex flex-col justify-between items-center shrink">
+                    <>
+                      {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
+                    </>
+                    <>
+                      {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
+                    </>
+                  </div>
+                </div>
+              </>
+              {/* <>
+                {analysis.tagData.white && (
+                  <div
+                    className={classNames("absolute flex flex-row justify-between items-baseline w-full", {
+                      "top-[-2em]": orientation === "b",
+                      "bottom-[-2em]": orientation === "w",
+                    })}
+                  >
+                    <p className={classNames(" p-1 px-4 bg-white/[0.1]")}>
+                      {analysis.tagData.white}{" "}
+                      <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
+                    </p>
+                    <>
+                      {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
+                    </>
+                  </div>
+                )}
+              </> */}
+              {/* <>
+                {analysis.tagData.white && (
+                  <p
+                    className={classNames("absolute p-1 px-4 bg-white/[0.1]", {
+                      "top-[-2em]": orientation === "w",
+                      "bottom-[-2em]": orientation === "b",
+                    })}
+                  >
+                    {analysis.tagData.black}{" "}
+                    <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
+                  </p>
+                )}
+              </> */}
               <Board
                 overrideArrows={currentNode?.data ? true : false}
                 onArrow={markupControls.onArrow}
@@ -205,22 +286,22 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           </div>
 
           <PanelColumnLg className="bg-[#1f1f1f]">
-            <AnalysisPanel
-              analysis={analysis}
-              boardRef={boardRef}
-              showPlayer={() => {
-                setPopupPlayerShown(true);
-              }}
-            />
-            <BoardControls controls={boardControls} flipBoard={flipBoard} />
+            <>
+              <SetupPanel boardHandle={boardRef} />
+              <AnalysisPanel
+                analysis={analysis}
+                boardRef={boardRef}
+                showPlayer={() => {
+                  setPopupPlayerShown(true);
+                }}
+              />
+              <BoardControls controls={boardControls} flipBoard={flipBoard} />
+            </>
           </PanelColumnLg>
         </BoardRow>
       </div>
     </>
   );
-}
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }
 
 interface ToolBarProps {
@@ -419,5 +500,21 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
         </button>
       )}
     </Menu.Item>
+  );
+}
+
+function DisplayClock({ time, color }: { time: number; color: Chess.Color }) {
+  const duration = Duration.fromMillis(time);
+
+  return (
+    <div
+      className={classNames("p-1 px-4 flex flex-row items-center justify-center", {
+        "bg-[#919191] text-black/[0.7]": color === "w",
+        "bg-black text-white": color === "b",
+      })}
+    >
+      <IoMdStopwatch className="mr-2" />
+      {duration.toFormat("hh:mm:ss")}
+    </div>
   );
 }

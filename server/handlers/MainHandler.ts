@@ -24,6 +24,7 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
   });
 
   socket.on("lobby:create", async (options, ack) => {
+    console.log(socket.data);
     const userid = socket.data.userid;
     if (!userid) {
       console.log("unauthenticated");
@@ -40,7 +41,7 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
         rated: false,
         gameConfig: options.gameConfig || {
           startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-          timeControls: [{ timeSeconds: 300, incrementSeconds: 5 }],
+          timeControl: { timeSeconds: 300, incrementSeconds: 5 },
         },
         color: "random",
         ...options,

@@ -114,31 +114,25 @@ function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
           status={errors.title ? "error" : null}
           type="text"
           placeholder="Title"
-          {...register("title")}
+          {...register("title", { required: "Title is required" })}
         />
+        <label className="text-white/[0.6] text-md font-semibold ">Description</label>
         <textarea
           spellCheck={true}
           placeholder="Add a description..."
-          className={`w-full rounded-md border border-white/[0.2] bg-[#161616] resize-none px-2 py-1`}
+          className={`w-full rounded-md mt-1 mb-3 border border-white/[0.2] bg-[#161616] resize-none px-2 py-1 focus:outine-none`}
           id="description"
           rows={3}
           {...register("description")}
         />
         <CollectionSelect />
         <RadioGroup value={visibility} onChange={setVisibility}>
-          <RadioGroup.Label>Visibility</RadioGroup.Label>
+          <RadioGroup.Label className="text-white/[0.6] text-md font-semibold ">Visibility</RadioGroup.Label>
           <RadioButton value="private" label="Private" />
           <RadioButton value="unlisted" label="Unlisted" />
           <RadioButton value="public" label="Public" />
         </RadioGroup>
         <button>Save</button>
-        <button
-          onClick={() => {
-            collections.createNew(collTitle);
-          }}
-        >
-          Create Collections
-        </button>
       </form>
     </div>
   );

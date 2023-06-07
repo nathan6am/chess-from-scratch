@@ -36,10 +36,11 @@ export default class Game extends BaseEntity {
     outcome: Outcome,
     data: GameData,
     timeControl: TimeControl | null,
+    pgn: string,
     id: string
   ) {
     const game = new Game();
-    Object.assign(game, { id, outcome, data, timeControl });
+    Object.assign(game, { id, outcome, data, timeControl, pgn });
     game.players = [];
     await game.save();
     Object.entries(players).forEach(async ([color, player]) => {
@@ -53,11 +54,7 @@ export default class Game extends BaseEntity {
           userGame.game = game;
           userGame.color = color as Color;
           userGame.result =
-            userGame.game.outcome?.result === "d"
-              ? "draw"
-              : userGame.game.outcome?.result === color
-              ? "win"
-              : "loss";
+            userGame.game.outcome?.result === "d" ? "draw" : userGame.game.outcome?.result === color ? "win" : "loss";
           if (user.rating) userGame.rating = user.rating;
           console.log(userGame);
           await userGame.save();

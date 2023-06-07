@@ -61,14 +61,16 @@ passport.serializeUser((user, done) => {
   done(null, JSON.stringify(user));
 });
 
-passport.deserializeUser((_req: any, id: string, done: any) => {
+passport.deserializeUser((req: any, id: string, done: any) => {
   const sessionUser: SessionUser = JSON.parse(id);
   if (sessionUser.type === "guest" || sessionUser.type === "user") {
     done(null, sessionUser);
   } else {
     User.findOneBy({ id: sessionUser.id }).then((user) => {
-      if (!user) done("account does not exist", null);
-      else done(null, { id: user.id, username: user.username, type: user.type });
+      if (!user) {
+        req.logout();
+        done("account does not exist", null);
+      } else done(null, { id: user.id, username: user.username, type: user.type });
     });
   }
 });

@@ -16,14 +16,58 @@ import bcrypt from "bcrypt";
 import { defaultSettings } from "../../../context/settings";
 import type { Relation } from "typeorm";
 
-import type { Outcome, Game as GameData, Color } from "@/lib/chess";
+import type { Outcome, Game as GameData, Color, Rating, RatingCategory } from "@/lib/chess";
 import type { AppSettings } from "@/context/settings";
 import { escapeSpecialChars } from "../../../util/misc";
 import User_Game from "./User_Game";
 import Game from "./Game";
 import Puzzle from "./Puzzle";
+import Solved_Puzzle from "./Solved_Puzzle";
 import Collection from "./Collection";
 import Analysis from "./Analysis";
+import { updateRatings } from "../../../server/util/glicko";
+
+export type Ratings = Record<RatingCategory, Rating>;
+
+const defaultRatings: Record<RatingCategory, Rating> = {
+  bullet: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+  blitz: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+  rapid: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+  classical: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+  puzzle: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+  correspondence: {
+    rating: 1500,
+    ratingDeviation: 350,
+    volatility: 0.06,
+    gameCount: 0,
+  },
+};
+
 export type SessionUser = {
   id: string;
   username: string | null;
@@ -44,11 +88,17 @@ export default class User extends BaseEntity {
   @Column({ default: 800 })
   rating: number;
 
+  @Column("jsonb", { default: defaultRatings })
+  ratings: Ratings;
+
   @OneToMany(() => Notification, (notifcation) => notifcation.user)
   notifications: Relation<Notification[]>;
 
   @OneToMany(() => User_Game, (userGame) => userGame.user, { cascade: true })
   games: Relation<User_Game[]>;
+
+  @OneToMany(() => Solved_Puzzle, (solvedPuzzle) => solvedPuzzle.user, { cascade: true })
+  solvedPuzzles: Relation<Solved_Puzzle[]>;
 
   @OneToMany(() => Collection, (collection) => collection.user)
   collections: Relation<Collection[]>;
@@ -251,6 +301,14 @@ export default class User extends BaseEntity {
     return user;
   }
 
+  static async updateRatings(category: RatingCategory, updates: Array<{ id: string; newRating: Rating }>) {
+    updates.forEach(async (update) => {
+      const user = await this.findOneBy({ id: update.id });
+      if (!user) return;
+      user.ratings[category] = update.newRating;
+      await user.save();
+    });
+  }
   static async createProfile(id: string, profileData: Partial<Omit<Profile, "id">>) {
     const user = await this.findOneBy({ id });
     if (!user) throw new Error("User does not exist");
@@ -290,6 +348,41 @@ export default class User extends BaseEntity {
       };
     });
     return result;
+  }
+
+  static async solvePuzzle(
+    puzzleid: string,
+    userid: string,
+    result: "solved" | "solved-w-hint" | "failed",
+    rated: boolean = true
+  ) {
+    const solvedPuzzle = new Solved_Puzzle();
+    const puzzle = await Puzzle.findOneBy({ id: puzzleid });
+    if (!puzzle) throw new Error("Puzzle does not exist");
+    solvedPuzzle.puzzle = puzzle;
+    const user = await User.findOneBy({ id: userid });
+    if (!user) throw new Error("User does not exist");
+    solvedPuzzle.user = user;
+    solvedPuzzle.result = result;
+    solvedPuzzle.date = new Date();
+    await solvedPuzzle.save();
+    if (rated) {
+      const puzzleRating = {
+        rating: puzzle.rating,
+        ratingDeviation: 50,
+        volatility: 0.06,
+        gameCount: 1,
+      };
+      const userRating = user.ratings.puzzle;
+      const [newRating] = updateRatings(
+        userRating,
+        puzzleRating,
+        result === "solved" ? 1 : result === "solved-w-hint" ? 0.5 : 0
+      );
+      user.ratings.puzzle = newRating;
+      await user.save();
+    }
+    return solvedPuzzle;
   }
 }
 

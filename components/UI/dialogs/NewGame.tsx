@@ -50,10 +50,7 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
                     <label>Time Control</label>
                     <TimeControlSelect setTimeControl={setTimeControl} />
                     <div className="flex flex-row justify-end mt-6">
-                      <button
-                        onClick={closeModal}
-                        className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36"
-                      >
+                      <button onClick={closeModal} className="py-2 px-4 rounded-md bg-red-500 hover:bg-red-600 w-36">
                         Cancel
                       </button>
                       <button
@@ -61,7 +58,7 @@ export default function NewGame({ onCreateLobby, isOpen, closeModal }: Props) {
                           onCreateLobby({
                             rated: rated,
                             color: color || "random",
-                            gameConfig: { timeControls: timeControl ? [timeControl] : [] },
+                            gameConfig: { timeControl: timeControl },
                           });
                         }}
                         className="py-2 px-4 rounded-md bg-green-500 hover:bg-green-600 ml-4 w-36"
