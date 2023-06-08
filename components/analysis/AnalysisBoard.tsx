@@ -28,6 +28,8 @@ import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import { Duration } from "luxon";
 import axios from "axios";
+import Toggle from "../UI/Toggle";
+import NewAnalysisPanel from "./NewAnalysisPanel";
 
 interface Props {
   initialId?: string | null;
@@ -55,6 +57,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const boardRef = useRef<BoardHandle>(null);
   const { settings } = useContext(SettingsContext);
   const router = useRouter();
+  const [editMode, setEditMode] = useState(false);
   const editor = useBoardEditor(currentGame.fen);
   // Handle id changes/initial load
   const id = router.query.id as string | undefined;
@@ -260,11 +263,11 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 ref={boardRef}
                 orientation={orientation}
                 legalMoves={currentGame.legalMoves}
-                showHighlights={settings.display.showHighlights}
-                showTargets={settings.display.showValidMoves}
-                pieces={currentGame.board}
+                showHighlights={editMode ? false : settings.display.showHighlights}
+                showTargets={editMode ? false : settings.display.showValidMoves}
+                pieces={editMode ? editor.board : currentGame.board}
                 animationSpeed={settings.display.animationSpeed}
-                lastMove={currentGame.lastMove}
+                lastMove={editMode ? null : currentGame.lastMove}
                 activeColor={currentGame.activeColor}
                 moveable={"both"}
                 preMoveable={false}
@@ -272,6 +275,11 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 onMove={onMove}
                 markupColor={markupControls.arrowColor}
                 onPremove={() => {}}
+                disableArrows={editMode}
+                editMode={editMode}
+                onMovePiece={editor.onMovePiece}
+                onAddPiece={editor.onAddPiece}
+                onRemovePiece={editor.onRemovePiece}
               />
             </BoardColumn>
             {evalEnabled && (
@@ -287,15 +295,29 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
 
           <PanelColumnLg className="bg-[#1f1f1f]">
             <>
-              <SetupPanel boardHandle={boardRef} />
-              <AnalysisPanel
-                analysis={analysis}
-                boardRef={boardRef}
-                showPlayer={() => {
-                  setPopupPlayerShown(true);
-                }}
-              />
-              <BoardControls controls={boardControls} flipBoard={flipBoard} />
+              {editMode ? (
+                <>
+                  <SetupPanel boardHandle={boardRef} />
+                  <p>{editor.fen}</p>
+                </>
+              ) : (
+                <>
+                  {analysis.isNew ? (
+                    <NewAnalysisPanel />
+                  ) : (
+                    <>
+                      <AnalysisPanel
+                        analysis={analysis}
+                        boardRef={boardRef}
+                        showPlayer={() => {
+                          setPopupPlayerShown(true);
+                        }}
+                      />
+                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                    </>
+                  )}
+                </>
+              )}
             </>
           </PanelColumnLg>
         </BoardRow>

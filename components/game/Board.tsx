@@ -60,10 +60,10 @@ interface Props {
   markupColor?: ArrowColor;
   overrideArrows?: boolean;
   disableArrows?: boolean;
-  spawnPiece?: Chess.Piece | null;
   editModeEnabled?: boolean;
-  onSpawnPiece?: (piece: Chess.Piece, square: Chess.Square) => void;
+  onAddPiece?: (square: Chess.Square, piece: Chess.Piece) => void;
   onRemovePiece?: (square: Chess.Square) => void;
+  onMovePiece?: (start: Chess.Square, end: Chess.Square) => void;
 }
 
 export interface BoardHandle extends HTMLDivElement {
@@ -105,7 +105,10 @@ const Board = React.forwardRef<BoardHandle, Props>(
       overrideArrows,
       disableArrows,
       keyPrefix = "",
-      spawnPiece,
+      onAddPiece,
+      onRemovePiece,
+      onMovePiece,
+      editMode,
     }: Props,
     ref
   ) => {
@@ -135,12 +138,25 @@ const Board = React.forwardRef<BoardHandle, Props>(
   if the drop square is a valid move, it calls the passed `onMove` prop, passing it the 
   selected piece and the target square */
     const onDrop = useCallback(() => {
+      if (editMode && selectedPiece && !currentSquare && onRemovePiece) {
+        onRemovePiece(selectedPiece[0]);
+        setSelectedPiece(null);
+        return;
+      }
       if (!currentSquare || !selectedPiece) {
         //console.log("here");
         return;
       } else {
         const [square, piece] = selectedPiece;
-
+        //If in edit mode, move the piece to the new square
+        if (editMode) {
+          console.log("here");
+          if (onMovePiece) {
+            onMovePiece(square, currentSquare);
+          }
+          setSelectedPiece(null);
+          return;
+        }
         //Just in case, guard against non moveable pieces
         if (piece.color !== moveable && moveable !== "both") return;
 
@@ -173,7 +189,18 @@ const Board = React.forwardRef<BoardHandle, Props>(
         }
         setSelectedPiece(null);
       }
-    }, [currentSquare, selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]);
+    }, [
+      currentSquare,
+      selectedPiece,
+      autoQueen,
+      legalMoves,
+      activeColor,
+      moveable,
+      onMove,
+      preMoveable,
+      onPremove,
+      editMode,
+    ]);
 
     /* Callback to execute when a valid target is clicked for the selected piece
   it accepts the target square as an argument and then calls the passed `onMove` prop, passing it the 
@@ -302,7 +329,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     key={square}
                     piece={piece ? piece[1] : null}
                     isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
-                    isSelected={(selectedPiece && selectedPiece[0] === square) || false}
+                    isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {
@@ -338,7 +365,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 square={square}
                 movementType={movementType}
                 disabled={
-                  (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                  !editMode &&
+                  ((moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor))
                 }
                 orientation={orientation}
                 onDrop={onDrop}
@@ -347,19 +375,25 @@ const Board = React.forwardRef<BoardHandle, Props>(
               />
             ))}
 
-            <EditModePiece
-              ref={editPieceRef}
-              hidden={hidePieces}
-              boardRef={boardRef}
-              animationSpeed={AnimSpeedEnum[animationSpeed]}
-              key={`${keyPrefix}${`edit`}${orientation}`}
-              piece={draggablePiece || { color: "w", type: "p", key: "edit" }}
-              movementType={movementType}
-              orientation={orientation}
-              onDrop={onDrop}
-              squareSize={squareSize}
-              constrainToBoard={false}
-            />
+            {editMode && (
+              <EditModePiece
+                ref={editPieceRef}
+                hidden={hidePieces}
+                boardRef={boardRef}
+                animationSpeed={AnimSpeedEnum[animationSpeed]}
+                key={`${keyPrefix}${`edit`}${orientation}`}
+                piece={draggablePiece || { color: "w", type: "p", key: "edit" }}
+                movementType={movementType}
+                orientation={orientation}
+                onDrop={() => {
+                  if (editMode && currentSquare && draggablePiece) {
+                    if (onAddPiece) onAddPiece(currentSquare, draggablePiece);
+                  }
+                }}
+                squareSize={squareSize}
+                constrainToBoard={false}
+              />
+            )}
           </div>
         </BoardArrows>
       </>

@@ -6,12 +6,17 @@ import { ScrollContainer } from "../layout/GameLayout";
 import VarationTree from "./VarationTree";
 import { MdModeComment, MdExpandMore } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
+import { AiFillTag } from "react-icons/ai";
 import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
 import { BsShareFill } from "react-icons/bs";
 import Comments from "./Comments";
 import Annotations from "./Annotations";
 import Share from "./Share";
 import Explorer from "./Explorer";
+import { PGNTagData } from "@/lib/types";
+import Input from "../UI/Input";
+import { useForm } from "react-hook-form";
+import { In } from "typeorm";
 interface Props {
   analysis: AnalysisHook;
   boardRef: React.RefObject<HTMLDivElement>;
@@ -95,7 +100,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
             </StyledTab>
             <StyledTab expand={() => setExpanded(true)}>
               <p>
-                <BsShareFill className="inline mr-1 mb-1 text-sm" /> Share
+                <AiFillTag className="inline mr-1 mb-1 " /> Tags
               </p>
             </StyledTab>
           </Tab.List>
@@ -118,7 +123,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
               />
             </Tab.Panel>
             <Tab.Panel>
-              <Share boardRef={boardRef} pgn={pgn} fen={currentGame.fen} />
+              <TagForm tags={analysis.tagData} setTags={analysis.setTagData} />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
@@ -169,5 +174,69 @@ function TopTab({ children }: TabProps) {
     >
       {children}
     </Tab>
+  );
+}
+interface TagFormProps {
+  tags: PGNTagData;
+  setTags: React.Dispatch<React.SetStateAction<PGNTagData>>;
+}
+function TagForm({ tags, setTags }: TagFormProps) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<PGNTagData>({ defaultValues: tags, mode: "onBlur" });
+
+  const submitHandler = (data: PGNTagData) => {
+    setTags(data);
+  };
+  return (
+    <div className="py-4 px-6 bg-[#202020]">
+      <div className="flex flex-row items-end">
+        <Input
+          containerClassName="mb-0"
+          label="White"
+          {...register("white")}
+          error={errors.white?.message || null}
+          id="white"
+          placeholder="White Player"
+          status={null}
+        />
+        <Input
+          label="Elo"
+          containerClassName="w-20 ml-4 mb-0"
+          {...register("eloWhite")}
+          error={errors.eloWhite?.message || null}
+          id="whiteElo"
+          placeholder="Rating"
+          status={null}
+        />
+      </div>
+
+      <div className="flex flex-row items-end">
+        <Input
+          containerClassName="mb-0"
+          label="Black"
+          {...register("black")}
+          error={errors.white?.message || null}
+          id="black"
+          placeholder="Black Player"
+          status={null}
+        />
+        <Input
+          label="Elo"
+          containerClassName="w-20 ml-4 mb-0"
+          {...register("eloBlack")}
+          error={errors.eloWhite?.message || null}
+          id="eloBlack"
+          placeholder="Rating"
+          status={null}
+        />
+      </div>
+      <Input label="Event" {...register("event")} error={errors.event?.message || null} id="event" status={null} />
+    </div>
   );
 }

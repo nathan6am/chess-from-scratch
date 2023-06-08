@@ -1,4 +1,5 @@
 import * as Chess from "@/lib/chess";
+import s from "connect-redis";
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 
 export default function useBoardEditor(
@@ -12,9 +13,8 @@ export default function useBoardEditor(
 
   const [position, setPosition] = useState<Chess.Position>(new Map());
   const [enPassantTarget, setEnPassantTarget] = useState<Chess.Square | null>(null);
-  const board = useMemo(() => {
-    return Chess.positionToBoard(position);
-  }, [position]);
+  const board = Chess.positionToBoard(position);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const gameState: Chess.GameState = useMemo(() => {
@@ -32,7 +32,8 @@ export default function useBoardEditor(
     return Chess.gameStateToFen(gameState);
   }, [gameState]);
   const onAddPiece = (square: Chess.Square, piece: Chess.Piece) => {
-    setPosition((prev) => new Map(prev).set(square, piece));
+    setPosition((prev) => new Map(prev).set(square, { ...piece, key: square }));
+    setEnPassantTarget(null);
   };
 
   const onRemovePiece = (square: Chess.Square) => {
@@ -58,11 +59,34 @@ export default function useBoardEditor(
     setFromFen(startPosition);
   }, [startPosition]);
 
+  const isDoublePush = (start: Chess.Square, end: Chess.Square, piece: Chess.Piece): false | Chess.Square => {
+    if (piece.type !== "p") return false;
+    const [startX, startY] = Chess.squareToCoordinates(start);
+    const [endX, endY] = Chess.squareToCoordinates(end);
+    if (startX !== endX) return false;
+    if (Math.abs(endY - startY) !== 2) return false;
+    if (piece.color === "w" && startY !== 1) return false;
+    if (piece.color === "b" && startY !== 6) return false;
+    return Chess.toSquare([endX, (endY + startY) / 2]);
+  };
+
   const onMovePiece = (start: Chess.Square, end: Chess.Square) => {
     const piece = position.get(start);
     if (!piece) return;
-    position.delete(start);
-    position.set(end, piece);
+    const doublePush = isDoublePush(start, end, piece);
+    if (doublePush) {
+      setEnPassantTarget(doublePush);
+    } else {
+      setEnPassantTarget(null);
+    }
+    setPosition((prev) => {
+      const map = new Map(prev);
+      const piece = map.get(start);
+      if (!piece) return prev;
+      map.delete(start);
+      map.set(end, { ...piece, key: end });
+      return map;
+    });
   };
 
   return {

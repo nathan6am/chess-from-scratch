@@ -53,6 +53,17 @@ const EditModePiece = React.forwardRef<PieceHandle, PieceProps>(
       transitionRef.current = true;
     }, [transitionRef]);
 
+    //Add mouseup listener to document to ensure drag ends
+    useEffect(() => {
+      const onMouseUp = (e: MouseEvent) => {
+        setDragging(false);
+      };
+      document.addEventListener("mouseup", onMouseUp);
+      return () => {
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+    }, []);
+
     const boardSize = useMemo(() => squareSize * 8, [squareSize]);
     const onStart = useCallback<DraggableEventHandler>((e, data) => {}, [squareSize]);
     const onDrag = useCallback(

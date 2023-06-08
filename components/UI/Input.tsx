@@ -3,7 +3,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import classNames from "classnames";
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error: string | null;
-  status: "success" | "warning" | "error" | null;
+  status?: "success" | "warning" | "error" | null;
   label?: string;
   id: string;
   disabled?: boolean;
@@ -15,7 +15,18 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
-    { id, label, error, status, verifying, disabled, optional, className, containerClassName, ...props }: InputProps,
+    {
+      id,
+      label,
+      error,
+      status = null,
+      verifying,
+      disabled,
+      optional,
+      className,
+      containerClassName,
+      ...props
+    }: InputProps,
     ref
   ) => {
     return (

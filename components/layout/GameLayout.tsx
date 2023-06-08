@@ -34,8 +34,8 @@ export function PanelColumn({ children }: LayoutComponentProps) {
 
 export function PanelColumnLg({ children }: LayoutComponentProps) {
   return (
-    <div className="h-full hidden lg:block max-h-[1200px]">
-      <div className="h-full w-[460px] xl:w-[500px] flex flex-col justify-center mx-4 py-6">
+    <div className="h-full hidden lg:block max-h-[1400px]">
+      <div className="h-full w-[30rem] xl:w-[36rem] flex flex-col justify-center mx-4 py-6">
         <div className="h-full  w-full  flex flex-col">{children}</div>
       </div>
     </div>

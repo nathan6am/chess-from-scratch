@@ -6,16 +6,18 @@ import useEvaler, { Evaler } from "./useEvaler";
 import useDebounce from "./useDebounce";
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
-import _ from "lodash";
+import _, { set } from "lodash";
 
 import { PGNTagData, AnalysisData, ArrowColor, MarkedSquare, Arrow, TreeNode } from "@/lib/types";
 type Node = TreeNode<Chess.NodeData>;
 
 export interface AnalysisHook {
+  isNew: boolean;
   tree: VariationTree;
   loadPgn: (pgn: string) => void;
   pgn: string;
   tagData: PGNTagData;
+  setTagData: React.Dispatch<React.SetStateAction<PGNTagData>>;
   currentKey: string | null;
   currentNode: Node | null;
   moveText: string;
@@ -69,6 +71,7 @@ const defaultOptions = {
 import { parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
 
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
+  const [isNew, setIsNew] = useState(() => !initialOptions?.id);
   const [options, setOptions] = useState(() => {
     return { ...defaultOptions, ...initialOptions };
   });
@@ -76,6 +79,10 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const [evalEnabled, setEvalEnabled] = useState(() => options.evalEnabled);
   const [tagData, setTagData] = useState<PGNTagData>({});
 
+  useEffect(() => {
+    if (options.startPosition !== defaultOptions.startPosition) setIsNew(false);
+    if (options.pgnSource) setIsNew(false);
+  }, [isNew, options]);
   // Game to return if no current node
   const initialGame = useMemo<Chess.Game>(() => {
     const game = Chess.createGame({
@@ -127,6 +134,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
         ...tagData,
       });
       variationTree.loadNewTree(tree);
+      setIsNew(false);
     } catch (e) {
       console.error(e);
     }
@@ -184,6 +192,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     }
     return result;
   }, [currentNode, currentGame, path, initialGame, continuation]);
+
   // PGN string from current variation tree
   const pgn = useMemo(() => {
     const tagSection = tagDataToPGNString(tagData);
@@ -269,6 +278,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
 
   const onMove = useCallback(
     (move: Chess.Move) => {
+      if (isNew) setIsNew(false);
       const existingMoveKey = variationTree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
         const next = variationTree.setCurrentKey(existingMoveKey);
@@ -293,12 +303,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   };
 
   const [moveQueue, setMoveQueue] = useState<string[]>([]);
-  const prevGame = useRef(initialGame);
+  const prevGame = useRef<Chess.Game>();
 
   useEffect(() => {
-    if (_.isEqual(prevGame, currentGame)) return; //"don't execute if a the game hasn't updated"
-    prevGame.current === currentGame;
+    if (_.isEqual(prevGame.current, currentGame)) {
+      console.log("Game hasn't updated");
+      return;
+    } //"don't execute if a the game hasn't updated"
+
     if (!moveQueue.length) return;
+    console.log("Executing move queue");
+    prevGame.current = currentGame;
     const move = currentGame.legalMoves.find((move) => move.PGN === moveQueue[0]);
     if (move) {
       setTimeout(() => {
@@ -306,9 +321,12 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
         setMoveQueue((cur) => cur.slice(1));
       }, 200);
     } else {
+      setMoveQueue([]);
       console.error("Invalid move in move queue");
+      console.error(moveQueue[0]);
+      console.log(currentGame.legalMoves);
     }
-  }, [moveQueue, currentGame, onMove, prevGame]);
+  }, [moveQueue, currentGame, onMove, prevGame, moveQueue.length]);
   const onArrow = useCallback(
     (arrow: Arrow) => {
       if (!currentNode) return;
@@ -348,11 +366,13 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const [arrowColor, setArrowColor] = useState<ArrowColor>("G");
 
   return {
+    isNew,
     tree: variationTree,
     loadPgn,
     moveText,
     pgn,
     tagData,
+    setTagData,
     mainLine,
     timeRemaining,
     rootNodes: variationTree.treeArray,
