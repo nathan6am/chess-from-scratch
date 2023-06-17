@@ -181,6 +181,7 @@ const tagsDict: Record<keyof PGNTagData, string> = {
   fen: "FEN",
   setUp: "SetUp",
   timeControl: "TimeControl",
+  termination: "Termination",
 };
 
 export function tagDataToPGNString(data: PGNTagData): string {
@@ -480,6 +481,10 @@ export function encodeGameToPgn(game: Game): string {
     result: encodeOutcome(game.data.outcome),
     date: new Date().toISOString().slice(0, 10),
   };
+  const termination = encodeTermination(game.data.outcome);
+  if (game.data.outcome && termination) {
+    tagData.termination = termination;
+  }
   const tagSection = tagDataToPGNString(tagData);
   const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
   return tagSection + "\r\n" + movetext;
@@ -514,3 +519,21 @@ function encodeOutcome(outcome: Chess.Outcome) {
       return "*";
   }
 }
+
+const encodeTermination = (outcome: Chess.Outcome) => {
+  let termination = "";
+  if (!outcome) return null;
+  const { result, by } = outcome;
+  if (result === "w") termination += "White wins";
+  else if (result === "b") termination += "Black wins";
+  else if (result === "d") termination += "Draw";
+  if (by === "checkmate") termination += " by checkmate";
+  else if (by === "resignation") termination += " by resignation";
+  else if (by === "timeout") termination += " on time";
+  else if (by === "stalemate") termination += " by stalemate";
+  else if (by === "insufficient") termination += " by insufficient material";
+  else if (by === "repetition") termination += " by repetition";
+  else if (by === "agreement") termination += " by agreement";
+  else if (by === "50-move-rule") termination += " by 50 move rule";
+  else if (by === "abandonment") termination += " by abandonment";
+};

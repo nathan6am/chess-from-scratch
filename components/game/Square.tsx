@@ -5,6 +5,7 @@ import classnames from "classnames";
 import { ColorEnum } from "../analysis/BoardArrows";
 import { ArrowColor } from "@/lib/types";
 import { BiSquareRounded } from "react-icons/bi";
+import { on } from "events";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -26,6 +27,7 @@ interface SquareProps {
   clearSelection: () => void;
   orientation: Chess.Color;
   showCoordinates: "hidden" | "inside" | "outside";
+  onClick?: () => void;
 }
 
 export default function Square({
@@ -49,18 +51,15 @@ export default function Square({
   clearSelection,
   orientation,
   annotation,
+  onClick,
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () =>
-      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
-      showCoordinates !== "hidden",
+    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -86,6 +85,7 @@ export default function Square({
     <div
       id={id}
       onClick={() => {
+        if (onClick) onClick();
         if (isTarget) onSelectTarget();
         else clearSelection();
       }}
@@ -94,20 +94,12 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
           {rank}
         </span>
       )}
       {showFile && (
-        <span
-          className={`${
-            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
-          } ${textSize}`}
-        >
+        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
           {file}
         </span>
       )}

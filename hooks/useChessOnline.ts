@@ -2,12 +2,7 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
 
 //Types
-import {
-  LobbyClientToServerEvents,
-  LobbyServerToClientEvents,
-  Game,
-  Connection,
-} from "../server/types/lobby";
+import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game, Connection } from "../server/types/lobby";
 import { Lobby, Player } from "server/types/lobby";
 
 //Util
@@ -64,6 +59,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
   const [premoveQueue, setPremoveQueue] = useState<Chess.Move[]>([]);
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const { user } = useContext(UserContext);
+  const [lastRatingDelta, setLastRatingDelta] = useState<number>(0);
   const lobbyConnected = lobby !== null;
   const gameActive = useMemo(() => {
     return game !== null;
@@ -224,24 +220,20 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
 
     //Define event handlers
     const onConnect = () => {
-      socket.emit(
-        "lobby:connect",
-        lobbyId,
-        (res: { status: boolean; data?: Lobby; error: Error | null }) => {
-          if (res && res.status && res.data) {
-            const lobby = res.data;
-            setLobby(res.data);
-            if (lobby.currentGame) {
-              updateGame(lobby.currentGame);
-            }
-          } else if (res && !res.status) {
-            setSocketConnected(false);
-            console.log(res);
-            console.error(res.error?.message);
-          } else {
+      socket.emit("lobby:connect", lobbyId, (res: { status: boolean; data?: Lobby; error: Error | null }) => {
+        if (res && res.status && res.data) {
+          const lobby = res.data;
+          setLobby(res.data);
+          if (lobby.currentGame) {
+            updateGame(lobby.currentGame);
           }
+        } else if (res && !res.status) {
+          setSocketConnected(false);
+          console.log(res);
+          console.error(res.error?.message);
+        } else {
         }
-      );
+      });
       setSocketConnected(true);
     };
     const onLobbyDidUpdate = (updates: Partial<Lobby>) => {
@@ -267,7 +259,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       callbackRef.current = ack;
       updateGame(game);
     };
-    const onOutcome = (game: Game) => {
+    const onOutcome = (game: Game, ratingDeltas?: Record<Chess.Color, number>) => {
       updateGame(game);
     };
     //Register event listeners
@@ -326,6 +318,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
               });
             } else {
               setConnectionError(true);
+              //Request the current game state from the server
             }
           });
         } else {

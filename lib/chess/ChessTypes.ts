@@ -45,7 +45,7 @@ export type Outcome =
         | "timeout"
         | "timeout-w-insufficient"
         | "insufficient"
-        | "repitition"
+        | "repetition"
         | "checkmate"
         | "stalemate"
         | "abandonment"

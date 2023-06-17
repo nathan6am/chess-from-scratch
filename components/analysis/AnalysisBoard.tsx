@@ -16,7 +16,7 @@ import useBoardEditor from "@/hooks/useBoardEditor";
 import { IoMdStopwatch } from "react-icons/io";
 // Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
-import useAnalysisBoard from "@/hooks/useAnalysisBoard";
+import useAnalysisBoard, { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import { useRouter } from "next/router";
 import SetupPanel from "./BoardSetupPanel";
 // Context
@@ -37,6 +37,14 @@ interface Props {
   sourceGameType?: "masters" | "lichess" | "nextchess" | null;
   fromFen?: string;
 }
+
+interface Context {
+  analysis: AnalysisHook;
+  boardRef: React.RefObject<BoardHandle>;
+  boardEditor: ReturnType<typeof useBoardEditor>;
+}
+
+const AnalysisContext = React.createContext<Context>(null!);
 
 export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
   const analysis = useAnalysisBoard();
@@ -147,7 +155,13 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   };
 
   return (
-    <>
+    <AnalysisContext.Provider
+      value={{
+        analysis,
+        boardRef,
+        boardEditor: editor,
+      }}
+    >
       <OptionsOverlay
         isOpen={optionsOverlayShown}
         closeModal={() => {
@@ -208,12 +222,12 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                     </>
                   </div>
                   <div className="flex flex-col justify-between items-center shrink">
-                    <>
+                    <span>
                       {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
-                    </>
-                    <>
+                    </span>
+                    <span>
                       {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
-                    </>
+                    </span>
                   </div>
                 </div>
               </>
@@ -280,6 +294,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 onMovePiece={editor.onMovePiece}
                 onAddPiece={editor.onAddPiece}
                 onRemovePiece={editor.onRemovePiece}
+                pieceCursor={editor.pieceCursor}
               />
             </BoardColumn>
             {evalEnabled && (
@@ -295,34 +310,34 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
 
           <PanelColumnLg className="bg-[#1f1f1f]">
             <>
-              {editMode ? (
-                <>
-                  <SetupPanel boardHandle={boardRef} />
-                  <p>{editor.fen}</p>
-                </>
-              ) : (
-                <>
-                  {analysis.isNew ? (
-                    <NewAnalysisPanel />
-                  ) : (
-                    <>
-                      <AnalysisPanel
-                        analysis={analysis}
-                        boardRef={boardRef}
-                        showPlayer={() => {
-                          setPopupPlayerShown(true);
-                        }}
-                      />
-                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                    </>
-                  )}
-                </>
-              )}
+              <>
+                {analysis.isNew ? (
+                  <NewAnalysisPanel
+                    analysis={analysis}
+                    boardEditor={editor}
+                    boardRef={boardRef}
+                    editMode={editMode}
+                    setEditMode={setEditMode}
+                    flipBoard={flipBoard}
+                  />
+                ) : (
+                  <>
+                    <AnalysisPanel
+                      analysis={analysis}
+                      boardRef={boardRef}
+                      showPlayer={() => {
+                        setPopupPlayerShown(true);
+                      }}
+                    />
+                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                  </>
+                )}
+              </>
             </>
           </PanelColumnLg>
         </BoardRow>
       </div>
-    </>
+    </AnalysisContext.Provider>
   );
 }
 

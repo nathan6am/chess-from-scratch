@@ -83,7 +83,7 @@ export interface LobbyServerToClientEvents<isServer extends boolean = false, isS
   "lobby:chat": (chat: ChatMessage[]) => void;
   "lobby:update": (updates: Partial<Lobby>) => void;
   "game:move": (game: Game) => void;
-  "game:outcome": (game: Game) => void;
+  "game:outcome": (game: Game, ratingDeltas?: Record<Chess.Color, number>) => void;
   "game:new": (game: Game) => void;
   newclient: () => void;
   "test:requestAck": (arg: string, ack: (...args: WithTimeoutAck<isServer, isSender, [string]>) => void) => void;

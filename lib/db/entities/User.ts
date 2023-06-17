@@ -16,7 +16,7 @@ import bcrypt from "bcrypt";
 import { defaultSettings } from "../../../context/settings";
 import type { Relation } from "typeorm";
 
-import type { Outcome, Game as GameData, Color, Rating, RatingCategory } from "@/lib/chess";
+import type { Outcome, Game as GameData, Color, Rating, RatingCategory } from "../../chess";
 import type { AppSettings } from "@/context/settings";
 import { escapeSpecialChars } from "../../../util/misc";
 import User_Game from "./User_Game";

@@ -68,7 +68,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
             </div>
             <div className="w-full grow relative bg-white/[0.05]">
               <ScrollContainer>
-                <VarationTree analysis={analysis} />
+                <VarationTree analysis={analysis} inlineView />
               </ScrollContainer>
             </div>
           </>

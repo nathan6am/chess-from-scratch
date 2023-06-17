@@ -136,7 +136,7 @@ export default function Piece({
       if (nodeRef.current)
         nodeRef.current.style.transform = `translate(${x - squareSize / 2}px, ${y - squareSize / 2}px)`;
     }, 16),
-    [boardSize, squareSize]
+    [boardSize, squareSize, constrainToBoard]
   );
   const onStop = useCallback<DraggableEventHandler>(
     (e, data) => {

@@ -29,6 +29,7 @@ export interface PGNTagData {
   eco?: string;
   setUp?: "0" | "1";
   fen?: string;
+  termination?: string;
 }
 
 export interface MarkedSquare {

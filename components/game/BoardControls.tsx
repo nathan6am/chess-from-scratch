@@ -46,10 +46,7 @@ export default function BoardControls({ controls, className, flipBoard }: Props)
         <AiOutlineFastForward className="text-2xl mx-auto" />
       </button>
       {flipBoard !== undefined && (
-        <button
-          onClick={flipBoard}
-          className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full"
-        >
+        <button onClick={flipBoard} className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full">
           <FiRepeat className="text-2xl mx-auto" />
         </button>
       )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import * as Chess from "@/lib/chess";
 import useThrottle from "@/hooks/useThrottle";
 interface Props {
@@ -9,6 +9,10 @@ interface Props {
 }
 
 export default function EvalBar({ orientation, scoreType, value, scale }: Props) {
+  const transitionRef = React.useRef<boolean>(false);
+  useEffect(() => {
+    transitionRef.current = true;
+  }, [transitionRef]);
   //Throttle value for smoother animation/fewer jumps
   const throttledValue = useThrottle(value, 600);
   useEffect(() => {
@@ -73,9 +77,9 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
           ref={barRef}
           className={`h-full w-full bottom-0 left-0 top-0 right-0 absolute z-3 bg-white`}
           style={{
-            WebkitTransition: `-webkit-transform .6s ease`,
-            transition: `transform 1s ease`,
-            MozTransition: `-moz-transform .6s ease`,
+            WebkitTransition: transitionRef.current ? `-webkit-transform .6s ease` : "",
+            transition: transitionRef.current ? `transform 1s ease` : "",
+            MozTransition: transitionRef.current ? `-moz-transform .6s ease` : "",
             transform: `translate3d(0px, 50}%, 0px)`,
           }}
         ></div>

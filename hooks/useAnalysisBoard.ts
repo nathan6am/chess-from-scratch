@@ -52,6 +52,7 @@ export interface AnalysisHook {
     arrowColor: ArrowColor;
     setArrowColor: (color: ArrowColor) => void;
   };
+  loadFen: (fen: string) => void;
 }
 
 interface AnalysisOptions {
@@ -71,7 +72,7 @@ const defaultOptions = {
 import { parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
 
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
-  const [isNew, setIsNew] = useState(() => !initialOptions?.id);
+  const [isNew, setIsNew] = useState(() => (!initialOptions?.id && !initialOptions?.pgnSource) as boolean);
   const [options, setOptions] = useState(() => {
     return { ...defaultOptions, ...initialOptions };
   });
@@ -90,7 +91,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       timeControl: null,
     });
     return game;
-  }, []);
+  }, [options.startPosition]);
 
   // Initial tree from pgn
   const initialTree = useMemo(() => {
@@ -109,7 +110,10 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, [options.pgnSource, options.startPosition]);
 
   // Variation tree
-  const variationTree = useVariationTree(initialTree);
+  const variationTree = useVariationTree({
+    initialTree,
+    initialMoveCount: initialGame.fullMoveCount - 1 + (initialGame.activeColor === "w" ? 0 : 1),
+  });
   const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
     variationTree;
   const currentLine = useMemo(() => {
@@ -139,6 +143,26 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       console.error(e);
     }
   };
+
+  const loadFen = useCallback(
+    (fen: string) => {
+      const valid = Chess.validateFen(fen);
+      if (valid !== true) {
+        alert(`${valid}`);
+        return;
+      }
+      if (fen !== options.startPosition) {
+        //clear variation tree
+        variationTree.loadNewTree([]);
+        setTagData((cur) => ({ ...cur, fen }));
+        setOptions((cur) => {
+          return { ...cur, startPosition: fen };
+        });
+      }
+      setIsNew(false);
+    },
+    [variationTree, options.startPosition, tagData]
+  );
 
   // Step forward/backward with arrow keys
   useEffect(() => {
@@ -284,13 +308,13 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
         const next = variationTree.setCurrentKey(existingMoveKey);
         //if (next) evaler.getEvaluation(next.data.fen);
       } else {
-        const halfMoveCount = variationTree.path.length + 1;
+        const halfMoveCount = variationTree.path.length + (initialGame.activeColor === "w" ? 1 : 2);
         const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
         variationTree.addMove(nodeToInsert);
         //evaler.getEvaluation(nodeToInsert.fen);
       }
     },
-    [currentGame, variationTree]
+    [currentGame, variationTree, initialGame]
   );
 
   const jumpForward = useCallback(() => {
@@ -369,6 +393,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     isNew,
     tree: variationTree,
     loadPgn,
+    loadFen,
     moveText,
     pgn,
     tagData,

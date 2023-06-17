@@ -397,6 +397,19 @@ function moveIsCheck(game: GameState, move: Omit<Move, "PGN">): boolean {
   return false;
 }
 
+function containsCheck(position: Position, activeColor: Color): boolean {
+  for (let [square, piece] of position) {
+    if (piece.color === activeColor) {
+      const rules = getMovementRules(piece, square);
+      const check = rules.some((rule) => {
+        const { containsCheck } = evaluateRule(rule, position, square);
+        return containsCheck;
+      });
+      if (check) return true;
+    }
+  }
+  return false;
+}
 //Returns false is a given move leaves the king in check
 
 function verifyMove(move: Move | Omit<Move, "PGN">, position: Position): boolean {
@@ -931,7 +944,7 @@ export function move(gameInitial: Game, move: Move, timeRemaining?: number): Gam
   }
   //Check for repitition
   if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
-    outcome = { result: "d", by: "repitition" };
+    outcome = { result: "d", by: "repetition" };
   }
 
   //Check for 50 move rule
@@ -1096,4 +1109,35 @@ export function inferRatingCategeory(control: TimeControl | null): RatingCategor
   if (control.timeSeconds < 60 * 30) return "rapid";
   if (control.timeSeconds) return "classical";
   return "correspondence";
+}
+
+export function validateFen(fen: string): true | string {
+  try {
+    const gameState = fenToGameState(fen);
+    if (!gameState) return "Invalid FEN String";
+    const { position, activeColor } = gameState;
+    const board = Array.from(position.entries()) as [Square, Piece][];
+    const kings = board.filter(([square, piece]) => piece.type === "k").map(([square, piece]) => piece);
+    if (kings.length !== 2) return "Exactly one king of each color required";
+    //check if more than one king of each color
+    const whiteKings = kings.filter((king) => king.color === "w");
+    const blackKings = kings.filter((king) => king.color === "b");
+    if (whiteKings.length !== 1 || blackKings.length !== 1) return "Exactly one king of each color required";
+    //check if the player that just moved is in check
+    const inCheck = containsCheck(position, activeColor);
+    if (inCheck) return "Last move left player in check";
+    //check for pawn on first or last rank
+    const pawns = board.filter(([square, piece]) => piece.type === "p");
+    if (
+      pawns.some(([square, piece]) => {
+        const rank = squareToCoordinates(square)[1];
+        return rank === 0 || rank === 7;
+      })
+    )
+      return "Pawn on first or last rank";
+
+    return true;
+  } catch (e) {
+    return "Invalid FEN String";
+  }
 }

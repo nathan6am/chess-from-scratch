@@ -1,6 +1,13 @@
 import { BaseEntity, Entity, PrimaryColumn, Column, OneToMany } from "typeorm";
 import type { Relation } from "typeorm";
-import type { Outcome, Game as GameData, Color, TimeControl } from "@/lib/chess";
+import {
+  type Outcome,
+  type Game as GameData,
+  type Color,
+  type TimeControl,
+  type RatingCategory,
+  inferRatingCategeory,
+} from "../../chess";
 import User_Game from "./User_Game";
 import User from "./User";
 import type { Player } from "@/server/types/lobby";
@@ -22,6 +29,9 @@ export default class Game extends BaseEntity {
   @Column("jsonb")
   data: GameData;
 
+  @Column()
+  ratingCategory: RatingCategory;
+
   @OneToMany(() => User_Game, (userGame) => userGame.game, { cascade: true })
   players: Relation<User_Game[]>;
 
@@ -30,6 +40,9 @@ export default class Game extends BaseEntity {
 
   @Column({ default: false })
   isCorrespondence: boolean;
+
+  @Column()
+  date: Date;
 
   static async saveGame(
     players: Record<Color, Player>,
@@ -42,6 +55,8 @@ export default class Game extends BaseEntity {
     const game = new Game();
     Object.assign(game, { id, outcome, data, timeControl, pgn });
     game.players = [];
+    game.ratingCategory = inferRatingCategeory(timeControl);
+    game.date = new Date();
     await game.save();
     Object.entries(players).forEach(async ([color, player]) => {
       if (player.type === "guest") {
@@ -49,14 +64,17 @@ export default class Game extends BaseEntity {
       } else {
         const user = await User.findOneBy({ id: player.id });
         if (user) {
+          const opponent = players[color === "w" ? "b" : "w"];
           const userGame = new User_Game();
           userGame.user = user;
           userGame.game = game;
           userGame.color = color as Color;
+          userGame.ratingCategory = game.ratingCategory;
+          if (opponent.id) userGame.opponentId = opponent.id;
+          if (opponent.rating) userGame.opponentRating = opponent.rating;
           userGame.result =
             userGame.game.outcome?.result === "d" ? "draw" : userGame.game.outcome?.result === color ? "win" : "loss";
-          if (user.rating) userGame.rating = user.rating;
-          console.log(userGame);
+          if (player.rating) userGame.rating = player.rating;
           await userGame.save();
           game.players.push(userGame);
         }

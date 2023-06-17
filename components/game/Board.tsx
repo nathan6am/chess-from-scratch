@@ -25,6 +25,7 @@ import useBoardMarkup from "@/hooks/useBoardMarkup";
 import { Arrow, ArrowColor, MarkedSquare } from "@/lib/types";
 import { useArrowState } from "@/hooks/useBoardMarkup";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
+import { on } from "events";
 interface Props {
   editMode?: boolean;
   squareIdPrefix?: string;
@@ -64,6 +65,7 @@ interface Props {
   onAddPiece?: (square: Chess.Square, piece: Chess.Piece) => void;
   onRemovePiece?: (square: Chess.Square) => void;
   onMovePiece?: (start: Chess.Square, end: Chess.Square) => void;
+  pieceCursor?: Chess.Piece | "remove" | null;
 }
 
 export interface BoardHandle extends HTMLDivElement {
@@ -109,6 +111,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
       onRemovePiece,
       onMovePiece,
       editMode,
+      pieceCursor,
     }: Props,
     ref
   ) => {
@@ -335,6 +338,26 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     onSelectTarget={() => {
                       onSelectTarget(square);
                     }}
+                    onClick={() => {
+                      if (editMode && pieceCursor && onAddPiece && onRemovePiece) {
+                        if (pieceCursor === "remove") {
+                          onRemovePiece(square);
+                          return;
+                        }
+                        if (
+                          pieces.some(([exsquare, expiece]) => {
+                            return (
+                              exsquare === square &&
+                              expiece.type === pieceCursor.type &&
+                              expiece.color === pieceCursor.color
+                            );
+                          })
+                        ) {
+                          onRemovePiece(square);
+                          return;
+                        } else onAddPiece(square, pieceCursor);
+                      }
+                    }}
                     setSelectedPiece={setSelectedPiece}
                     isPremoved={false}
                     showTargets={showTargets}
@@ -365,13 +388,14 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 square={square}
                 movementType={movementType}
                 disabled={
-                  !editMode &&
-                  ((moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor))
+                  editMode
+                    ? pieceCursor !== null
+                    : (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}
                 squareSize={squareSize}
-                constrainToBoard={false}
+                constrainToBoard={editMode === true ? false : true}
               />
             ))}
 

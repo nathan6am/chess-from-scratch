@@ -1,10 +1,32 @@
 import * as Chess from "@/lib/chess";
-import s from "connect-redis";
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+
+export interface BoardEditorHook {
+  board: Chess.Board;
+  fen: string;
+  onAddPiece: (square: Chess.Square, piece: Chess.Piece) => void;
+  onRemovePiece: (square: Chess.Square) => void;
+  onMovePiece: (from: Chess.Square, to: Chess.Square) => void;
+  setFromFen: (fen: string) => void;
+  errorMessage: string | null;
+  setActiveColor: React.Dispatch<React.SetStateAction<Chess.Color>>;
+  setCastleRights: React.Dispatch<React.SetStateAction<Record<Chess.Color, { kingSide: boolean; queenSide: boolean }>>>;
+  setEnPassantTarget: React.Dispatch<React.SetStateAction<Chess.Square | null>>;
+  activeColor: Chess.Color;
+  castleRights: Record<Chess.Color, { kingSide: boolean; queenSide: boolean }>;
+  enPassantTarget: Chess.Square | null;
+  pieceCursor: Chess.Piece | "remove" | null;
+  setPieceCursor: React.Dispatch<React.SetStateAction<Chess.Piece | "remove" | null>>;
+  disabledCastling: Record<Chess.Color, { kingSide: boolean; queenSide: boolean }>;
+  clearBoard: () => void;
+  resetToStartPosition: () => void;
+  isValid: true | string;
+}
 export default function useBoardEditor(
   startPosition: string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-) {
+): BoardEditorHook {
+  const [pieceCursor, setPieceCursor] = useState<Chess.Piece | "remove" | null>(null);
   const [activeColor, setActiveColor] = useState<Chess.Color>("w");
   const [castleRights, setCastleRights] = useState<Record<Chess.Color, { kingSide: boolean; queenSide: boolean }>>({
     w: { kingSide: true, queenSide: true },
@@ -16,17 +38,44 @@ export default function useBoardEditor(
   const board = Chess.positionToBoard(position);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const disabledCastling = useMemo(() => {
+    const whiteKingside = position.get("e1")?.type === "k" && position.get("h1")?.type === "r";
+    const whiteQueenside = position.get("e1")?.type === "k" && position.get("a1")?.type === "r";
+    const blackKingside = position.get("e8")?.type === "k" && position.get("h8")?.type === "r";
+    const blackQueenside = position.get("e8")?.type === "k" && position.get("a8")?.type === "r";
+    return {
+      w: {
+        kingSide: !whiteKingside,
+        queenSide: !whiteQueenside,
+      },
+      b: {
+        kingSide: !blackKingside,
+        queenSide: !blackQueenside,
+      },
+    };
+  }, [position]);
   const gameState: Chess.GameState = useMemo(() => {
     return {
       position,
       activeColor,
       enPassantTarget,
-      castleRights,
-      fullMoveCount: 0,
+      castleRights: {
+        w: {
+          kingSide: disabledCastling.w.kingSide ? false : castleRights.w.kingSide,
+          queenSide: disabledCastling.w.queenSide ? false : castleRights.w.queenSide,
+        },
+        b: {
+          kingSide: disabledCastling.b.kingSide ? false : castleRights.b.kingSide,
+          queenSide: disabledCastling.b.queenSide ? false : castleRights.b.queenSide,
+        },
+      },
+      fullMoveCount: 1,
       halfMoveCount: 0,
     };
   }, [position, activeColor, enPassantTarget, castleRights]);
+  const clearBoard = useCallback(() => {
+    setPosition(new Map());
+  }, []);
 
   const fen = useMemo(() => {
     return Chess.gameStateToFen(gameState);
@@ -59,6 +108,14 @@ export default function useBoardEditor(
     setFromFen(startPosition);
   }, [startPosition]);
 
+  const resetToStartPosition = useCallback(() => {
+    setFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  }, []);
+
+  const isValid = useMemo(() => {
+    return Chess.validateFen(fen);
+  }, [fen]);
+
   const isDoublePush = (start: Chess.Square, end: Chess.Square, piece: Chess.Piece): false | Chess.Square => {
     if (piece.type !== "p") return false;
     const [startX, startY] = Chess.squareToCoordinates(start);
@@ -90,6 +147,7 @@ export default function useBoardEditor(
   };
 
   return {
+    isValid,
     board,
     fen,
     setFromFen,
@@ -98,8 +156,15 @@ export default function useBoardEditor(
     errorMessage,
     setActiveColor,
     setCastleRights,
+    setEnPassantTarget,
+    enPassantTarget,
     activeColor,
     castleRights,
     onMovePiece,
+    pieceCursor,
+    setPieceCursor,
+    disabledCastling,
+    clearBoard,
+    resetToStartPosition,
   };
 }

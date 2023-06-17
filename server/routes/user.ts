@@ -1,6 +1,8 @@
 import express from "express";
 import { customAlphabet } from "nanoid";
 import User, { SessionUser } from "../../lib/db/entities/User";
+import { verify } from "crypto";
+import verifyUser from "../middleware/verifyUser";
 const nanoid = customAlphabet("1234567890", 10);
 
 const router = express.Router();
@@ -94,6 +96,16 @@ router.get("/games", async function (req, res) {
   if (user.type === "guest") return res.status(401);
   const games = await User.getGames(user.id);
   res.status(200).json(games);
+});
+
+router.get("/ratings", verifyUser, async function (req, res) {
+  const user: SessionUser | undefined = req.user;
+  if (!user) return res.status(401);
+  if (user.type === "guest") return res.status(401);
+  const userDoc = await User.findById(user.id);
+  if (!userDoc) return res.status(404);
+  const ratings = userDoc.ratings;
+  res.status(200).json(ratings);
 });
 
 const userRouter = router;
