@@ -56,13 +56,7 @@ export default class Analysis extends BaseEntity {
   tagData: PGNTagData;
 
   @ManyToMany(() => Collection, (collection) => collection.analyses, { cascade: true })
-  @JoinTable({
-    name: "collections_join_table",
-    joinColumn: {
-      name: "collectionIds",
-      referencedColumnName: "id",
-    },
-  })
+  @JoinTable()
   collections: Relation<Collection[]>;
 
   static async verifyAuthor(id: string, userid: string) {
@@ -73,9 +67,8 @@ export default class Analysis extends BaseEntity {
   static async addToCollections(id: string, collections: string[]) {
     const analysis = await this.findOneBy({ id });
     if (!analysis) throw new Error("Analysis does not exits");
-    collections.forEach((collection) => {
-      analysis.collectionIds.push(collection);
-    });
+    const collectionEntities = await Collection.getByIds(collections);
+    analysis.collections = collectionEntities;
     const updated = await analysis.save();
     return updated;
   }

@@ -32,7 +32,7 @@ export default function LoginForm() {
       console.log(res);
       refresh();
       if (res.data) {
-        router.push("/");
+        router.push("/play");
       }
     } catch (e) {
       setStatus("error");
@@ -96,11 +96,7 @@ export default function LoginForm() {
         </form>
 
         <div className="w-[90%] mx-auto border-b border-white/[0.5] my-2" />
-        <ButtonSocial
-          variant="google"
-          href="api/auth/google"
-          className="mt-4"
-        />
+        <ButtonSocial variant="google" href="api/auth/google" className="mt-4" />
 
         <ButtonSocial variant="facebook" href="/auth/facebook" />
 
@@ -108,10 +104,7 @@ export default function LoginForm() {
         <ButtonSocial variant="guest" href="api/auth/guest"></ButtonSocial>
         <p className="text-white/[0.25] text-center px-4 mb-4 text-xs">
           By continuing or signing in, you agree to our{" "}
-          <a className="hover:text-white/[0.5] underline">
-            Terms and Conditions
-          </a>{" "}
-          and{" "}
+          <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
           <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
         </p>
         <span className="flex flex-row justify-between px-2">

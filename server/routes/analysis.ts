@@ -51,9 +51,11 @@ router.post(
       description: description || null,
       tagData,
       visibility,
-      collectionIds,
     });
     const created = await analysis.save();
+    if (collectionIds) {
+      Analysis.addToCollections(analysis.id, collectionIds);
+    }
     if (created) {
       return res.status(200).json(created);
     } else {

@@ -4,6 +4,7 @@ import RadioButton from "../RadioButton";
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
 import Input from "@/components/UI/Input";
 import CollectionSelect from "./CollectionSelect";
+import Collection from "@/lib/db/entities/Collection";
 //Util
 import axios from "axios";
 import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
@@ -76,6 +77,8 @@ type FormValues = {
   collectionIds: string[];
 };
 function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
+  const { collections, isLoading, createNew } = useCollections();
+  const [selected, setSelected] = useState<Collection[]>([]);
   const {
     register,
     handleSubmit,
@@ -85,9 +88,7 @@ function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
     reset,
     formState: { errors },
   } = useForm<FormValues>({ mode: "onTouched", reValidateMode: "onChange" });
-  const [collTitle, setCollTitle] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private" | "unlisted">("public");
-  const collections = useCollections();
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const title = data.title;
     const description = data.description;
@@ -98,7 +99,7 @@ function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
       description,
       tagData,
       visibility,
-      collectionIds: [],
+      collectionIds: selected.map((c) => c.id),
       pgn,
     };
     console.log(saveData);
@@ -125,9 +126,17 @@ function SaveAnalysisForm({ initialData, save, moveText }: FormProps) {
           rows={3}
           {...register("description")}
         />
-        <CollectionSelect />
+        <CollectionSelect
+          selected={selected}
+          setSelected={setSelected}
+          createNew={createNew}
+          collections={collections}
+          isLoading={isLoading}
+        />
         <RadioGroup value={visibility} onChange={setVisibility}>
-          <RadioGroup.Label className="text-white/[0.6] text-md font-semibold ">Visibility</RadioGroup.Label>
+          <RadioGroup.Label className="text-white/[0.6] text-md font-semibold ">
+            Visibility
+          </RadioGroup.Label>
           <RadioButton value="private" label="Private" />
           <RadioButton value="unlisted" label="Unlisted" />
           <RadioButton value="public" label="Public" />

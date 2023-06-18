@@ -1,7 +1,6 @@
 import express from "express";
 import { customAlphabet } from "nanoid";
 import User, { SessionUser } from "../../lib/db/entities/User";
-import { verify } from "crypto";
 import verifyUser from "../middleware/verifyUser";
 const nanoid = customAlphabet("1234567890", 10);
 
