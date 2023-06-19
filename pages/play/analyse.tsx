@@ -28,7 +28,7 @@ export default function Home() {
   }, []);
   const router = useRouter();
   return (
-    <div className="h-screen w-screen justify-center items-center flex bg-[#181818]">
+    <div className="h-screen w-screen justify-center items-center flex bg-elevation-0">
       <Head>
         <title>Next-Chess</title>
         <meta name="description" content="Play chess with next-chess" />

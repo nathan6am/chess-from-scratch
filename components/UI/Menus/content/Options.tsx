@@ -1,8 +1,7 @@
 import React, { Fragment, useState, useContext } from "react";
 import { RadioGroup, Tab } from "@headlessui/react";
-import RadioButton from "../../RadioButton";
 import { SettingsContext } from "@/context/settings";
-import Toggle from "../../Toggle";
+import { Toggle, RadioButton } from "@/components/UIKit";
 import { values } from "lodash";
 import ChangePasswordForm from "../../forms/ChangePasswordForm";
 import VolumeSlider from "./VolumeSlider";
@@ -57,7 +56,9 @@ function MyTabs() {
   return (
     <Tab.Group vertical>
       <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
-        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">Options</div>
+        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
+          Options
+        </div>
         <MenuTab>Profile</MenuTab>
         <MenuTab>Display</MenuTab>
         <MenuTab>Theme</MenuTab>

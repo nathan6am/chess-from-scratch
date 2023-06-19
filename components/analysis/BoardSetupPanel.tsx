@@ -8,9 +8,6 @@ import { BoardEditorHook } from "@/hooks/useBoardEditor";
 interface SetupPanelProps {
   boardHandle: React.RefObject<BoardHandle>;
   boardEditor: BoardEditorHook;
-  //   setFen: (fen: string) => void;
-  //   setPgn: (pgn: string) => void;
-  //   setSelectedPiece: (piece: Chess.Piece) => void;
 }
 
 export default function BoardSetupPanel({ boardHandle, boardEditor }: SetupPanelProps) {
@@ -28,13 +25,20 @@ export default function BoardSetupPanel({ boardHandle, boardEditor }: SetupPanel
   );
 }
 
-function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boardEditor: BoardEditorHook }) {
+function PieceSelect({
+  spawnDraggable,
+  boardEditor,
+}: {
+  spawnDraggable: any;
+  boardEditor: BoardEditorHook;
+}) {
   const types: Chess.PieceType[] = ["p", "n", "b", "r", "q", "k"];
   const colors: Chess.Color[] = ["w", "b"];
   return (
-    <div className="grid grid-cols-6 gap-2">
-      {colors.map((color) => {
-        return types.map((type) => {
+    <div className="grid grid-cols-7 gap-2">
+      <>
+        {types.map((type) => {
+          const color = "w";
           return (
             <PieceButton
               piece={{ color, type, key: `${color}${type}` }}
@@ -43,8 +47,43 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
               setPieceCursor={boardEditor.setPieceCursor}
             />
           );
-        });
-      })}
+        })}
+        <button
+          onClick={() => {
+            boardEditor.setPieceCursor(null);
+          }}
+          className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
+            "bg-white/[0.1] border-sepia": !boardEditor.pieceCursor,
+            "border-transparent": boardEditor.pieceCursor,
+          })}
+        >
+          <div className="aspect-square">HAND</div>
+        </button>
+      </>
+      <>
+        {types.map((type) => {
+          const color = "b";
+          return (
+            <PieceButton
+              piece={{ color, type, key: `${color}${type}` }}
+              spawnDraggable={spawnDraggable}
+              pieceCursor={boardEditor.pieceCursor}
+              setPieceCursor={boardEditor.setPieceCursor}
+            />
+          );
+        })}
+        <button
+          onClick={() => {
+            boardEditor.setPieceCursor((cur) => (cur === "remove" ? null : "remove"));
+          }}
+          className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
+            "bg-white/[0.1] border-sepia": boardEditor.pieceCursor === "remove",
+            "border-transparent": boardEditor.pieceCursor !== "remove",
+          })}
+        >
+          <div className="aspect-square">ERASE</div>
+        </button>
+      </>
     </div>
   );
 }

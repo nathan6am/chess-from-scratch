@@ -6,6 +6,8 @@ interface ClockProps {
   timeRemaining: DurationObjectUnits;
   size: "sm" | "lg";
   className?: string;
+  showLowTime?: boolean;
+  lowTimeThreshold?: number;
 }
 const zeroPad = (num: number, places: number) => String(num).padStart(places, "0");
 

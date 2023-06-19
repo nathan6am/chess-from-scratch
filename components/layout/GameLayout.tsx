@@ -18,7 +18,9 @@ export function BoardColumn({ children, className }: LayoutComponentProps) {
 
 export function BoardRow({ children }: LayoutComponentProps) {
   return (
-    <div className="flex flex-row h-full w-full items-center justify-center lg:py-6 lg:pb-10 lg:pt-4">{children}</div>
+    <div className="flex flex-row h-full w-full items-center justify-center lg:py-6 lg:pb-10 lg:pt-4">
+      {children}
+    </div>
   );
 }
 
@@ -34,8 +36,8 @@ export function PanelColumn({ children }: LayoutComponentProps) {
 
 export function PanelColumnLg({ children }: LayoutComponentProps) {
   return (
-    <div className="h-full hidden lg:block max-h-[1400px]">
-      <div className="h-full w-[30rem] xl:w-[36rem] flex flex-col justify-center mx-4 py-6">
+    <div className="h-full hidden lg:block max-h-[1400px] bg-elevation-1">
+      <div className="h-full w-[30rem] xl:w-[36rem] flex flex-col justify-center ">
         <div className="h-full  w-full  flex flex-col">{children}</div>
       </div>
     </div>

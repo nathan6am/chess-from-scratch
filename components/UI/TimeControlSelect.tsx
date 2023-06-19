@@ -46,7 +46,7 @@ const CATEGORIES: Category[] = [
 
 import { useState } from "react";
 import { Tab, RadioGroup } from "@headlessui/react";
-import NumbericInput from "./NumbericInput";
+import { Label, NumbericInput } from "../UIKit";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -69,8 +69,9 @@ export default function TimeControlSelect({
   const [lastCustom, setLastCustom] = useState(defaultCustom);
   return (
     <div className="w-full max-w-md px-2 py-4 sm:px-0">
+      <Label className="mb-1">Time Control</Label>
       <Tab.Group defaultIndex={defaultTabIndex}>
-        <Tab.List className="flex space-x-1 rounded-xl bg-[#161616] p-1">
+        <Tab.List className="flex rounded-lg overflow-hidden divide-x divide-gold-300 border border-gold-300 bg-elevation-1 ">
           {CATEGORIES.map((category, idx) => (
             <Tab
               onClick={() => {
@@ -83,11 +84,9 @@ export default function TimeControlSelect({
               key={category.id}
               className={({ selected }) =>
                 classNames(
-                  "w-full rounded-lg py-2.5 text-md font-medium leading-5 text-white",
-                  "ring-white ring-opacity-60 ring-offset-2 ring-offset-[#1f1f1f] focus:outline-none focus:ring-2",
-                  selected
-                    ? "bg-[#b99873] shadow"
-                    : "text-white/[0.7] hover:bg-white/[0.12] hover:text-white"
+                  "w-full  py-2 text-md font-medium leading-5 text-white",
+                  " focus:outline-none",
+                  selected ? "bg-gold-300 text-light-100" : "text-gold-200"
                 )
               }
             >

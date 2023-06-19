@@ -8,6 +8,7 @@ import type { NextPageWithLayout } from "@/pages/_app";
 import RootLayout from "@/components/layout/RootLayout";
 import MenuLayout from "@/components/layout/MenuLayout";
 import { PlayContent } from "@/components/UI/Menus/content/";
+import NewGame from "@/components/menu/NewGame";
 const Play: NextPageWithLayout = () => {
   return (
     <>

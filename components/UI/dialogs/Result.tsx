@@ -13,7 +13,7 @@ enum MessageEnum {
   agreement = "by agreement.",
   timeout = "by timeout.",
   "timeout-w-insufficient" = "by timeout with insufficient material",
-  repitition = "by 3-fold repition",
+  repetition = "by 3-fold repition",
   "checkmate" = "by checkmate",
   "50-move-rule" = "by 50 move rule",
   "stalemate" = "by stalemate",

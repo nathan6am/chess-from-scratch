@@ -14,7 +14,7 @@ import LoginForm from "@/components/UI/forms/LoginForm";
 //Icons
 import { FaGithub } from "react-icons/fa";
 import Knight from "../public/assets/knight.svg";
-import SignUpForm from "@/components/UI/forms/SignUpForm";
+import SignUpForm from "@/components/forms/SignUpForm";
 const SignUp: NextPageWithLayout = () => {
   return (
     <div className=" min-h-[85%] max-w-screen lg:max-w-[900px] w-full backdrop-blur-lg bg-gradient-to-r from-[#1f1f1f]/[0.5] to-[#181818]/[0.5] flex flex-col justify-center items-center overflow-hidden sm:rounded-lg shadow-lg ">

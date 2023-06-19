@@ -11,14 +11,14 @@ import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { Menu, Transition } from "@headlessui/react";
 import { BoardHandle } from "../game/Board";
-import useBoardEditor from "@/hooks/useBoardEditor";
+
 //Icons
 import { IoMdStopwatch } from "react-icons/io";
 // Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard, { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import { useRouter } from "next/router";
-import SetupPanel from "./BoardSetupPanel";
+import useBoardEditor from "@/hooks/useBoardEditor";
 // Context
 import { SettingsContext } from "@/context/settings";
 
@@ -44,7 +44,7 @@ interface Context {
   boardEditor: ReturnType<typeof useBoardEditor>;
 }
 
-const AnalysisContext = React.createContext<Context>(null!);
+export const AnalysisContext = React.createContext<Context>(null!);
 
 export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
   const analysis = useAnalysisBoard();
@@ -173,7 +173,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
+          explorer.otbGame
+            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
+            : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -208,7 +210,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.black && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.black}{" "}
-                          <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
+                          <span className="inline opacity-50">{`(${
+                            analysis.tagData.eloBlack || "?"
+                          })`}</span>
                         </p>
                       )}
                     </>
@@ -216,17 +220,23 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.white && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.white}{" "}
-                          <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
+                          <span className="inline opacity-50">{`(${
+                            analysis.tagData.eloWhite || "?"
+                          })`}</span>
                         </p>
                       )}
                     </>
                   </div>
                   <div className="flex flex-col justify-between items-center shrink">
                     <span>
-                      {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
+                      {analysis.timeRemaining.b !== null && (
+                        <DisplayClock time={analysis.timeRemaining.b} color="b" />
+                      )}
                     </span>
                     <span>
-                      {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
+                      {analysis.timeRemaining.w !== null && (
+                        <DisplayClock time={analysis.timeRemaining.w} color="w" />
+                      )}
                     </span>
                   </div>
                 </div>
@@ -323,8 +333,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 ) : (
                   <>
                     <AnalysisPanel
-                      analysis={analysis}
-                      boardRef={boardRef}
                       showPlayer={() => {
                         setPopupPlayerShown(true);
                       }}
@@ -531,7 +539,9 @@ function MenuItem({ children, disabled, onClick }: MenuItemProps) {
           onClick={onClick}
           className={`${
             active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${disabled ? "pointer-none text-white/[0.3]" : ""}`}
+          } group flex flex-row w-full  px-2 py-2 text-sm ${
+            disabled ? "pointer-none text-white/[0.3]" : ""
+          }`}
         >
           {children}
         </button>

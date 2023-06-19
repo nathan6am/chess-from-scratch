@@ -4,14 +4,16 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 
 //UI Components
-import { Input, ButtonSocial } from "@/components/UIKit";
+import ButtonSocial from "@/components/UI/ButtonSocial";
+import Button from "../UIKit/Button";
+import Input from "@/components/UIKit/Input";
 
 //Context
 import { UserContext } from "@/context/user";
 
 //Util
 import axios from "axios";
-import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import _ from "lodash";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -97,7 +99,7 @@ export default function SignUpForm() {
   return (
     <div className="flex flex-col items-center justify-center px-6 lg:px-10 xl:px-10 col-span-5 lg:col-span-2 min-h-[90%]  w-full my-4 mx-auto">
       <div className="flex flex-col max-w-[400px] items-center justify-center ">
-        <h2 className=" text-xl lg:text-2xl text-white mb-6 py-2 border-b-4 border-sepia/[0.7] px-2">
+        <h2 className=" text-xl lg:text-2xl text-light-100 mb-6 py-2 border-b-4 border-gold-200 px-2">
           Create an Account
         </h2>
 
@@ -164,13 +166,7 @@ export default function SignUpForm() {
             })}
           />
 
-          <button
-            type="submit"
-            disabled={false}
-            className={`text-md ${"bg-[#b99873] hover:bg-[#a58058]"}  text-white py-2 px-6 rounded-md w-full my-2`}
-          >
-            Continue
-          </button>
+          <Button type="submit" disabled={false} className="my-4" label="Sign Up"></Button>
         </form>
 
         <p className="my-2 text-white opacity-50">or</p>
@@ -190,7 +186,7 @@ export default function SignUpForm() {
         <span className="flex flex-row justify-between px-2">
           <h3 className="text-white/[0.25] mr-2">Already have an account?</h3>
           <Link href="/login">
-            <p className="text-white/[0.8] font-semibold">SIGN IN</p>
+            <p className="text-light-200 hover:text-gold-100 font-semibold">SIGN IN</p>
           </Link>
         </span>
       </div>

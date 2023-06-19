@@ -1,28 +1,28 @@
-import React, { Dispatch, SetStateAction, useMemo, useState } from "react";
-import * as Chess from "@/lib/chess";
+import React, { Dispatch, SetStateAction, useMemo, useState, useContext } from "react";
+//Contexts
+import { AnalysisContext } from "./AnalysisBoard";
+
+//Components
 import { Evaler } from "@/hooks/useEvaler";
-import Toggle from "../UI/Toggle";
+import { Popover } from "@headlessui/react";
 import ProgressBar from "./ProgressBar";
+import { Toggle, NumbericInput } from "../UIKit";
+
+//Icons
+
 import { BiHide } from "react-icons/bi";
-import _ from "lodash";
 import { VscExpandAll } from "react-icons/vsc";
 import { MdSettings, MdExpandMore, MdCloud } from "react-icons/md";
-import { Popover } from "@headlessui/react";
+
+//Hooks
 import { usePopper } from "react-popper";
-interface Props {
-  enabled: boolean;
-  setEnabled: Dispatch<SetStateAction<boolean>>;
-  evaler: Evaler;
-  currentNodeData?: Chess.NodeData;
-  moveKey: string;
-  currentGame: Chess.Game;
-  attemptMoves: (moves: string[]) => void;
-}
+
+//Util
+import * as Chess from "@/lib/chess";
+import _ from "lodash";
 
 import { replacePieceChars } from "../game/MoveHistory";
 import { ClipLoader } from "react-spinners";
-import NumbericInput from "../UI/NumbericInput";
-import { notEmpty } from "@/util/misc";
 
 const parseScore = (score: Chess.EvalScore): string => {
   if (score.type === "mate") {
@@ -33,7 +33,21 @@ const parseScore = (score: Chess.EvalScore): string => {
   }
 };
 
-export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, currentGame, attemptMoves }: Props) {
+export default function EvalInfo() {
+  const { analysis } = useContext(AnalysisContext);
+  const {
+    evaler,
+    currentGame,
+    setMoveQueue,
+    evalEnabled: enabled,
+    setEvalEnabled: setEnabled,
+  } = analysis;
+
+  //Play out the engine line on the analysis board
+  const attemptMoves = (moves: string[]) => {
+    setMoveQueue(moves);
+  };
+
   let [referenceElement, setReferenceElement] = useState<HTMLDivElement | null>();
   let [popperElement, setPopperElement] = useState<HTMLDivElement | null>();
   let { styles, attributes } = usePopper(referenceElement, popperElement, {
@@ -62,7 +76,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
   }, [evaler.fenEvaluating]);
   return (
     <div className="w-full">
-      <div className="w-full  bg-white/[0.1]">
+      <div className="w-full bg-elevation-3">
         <Popover>
           <div className="flex flex-row">
             <div className="flex flex-row p-2 pl-4 justify-between items-center grow">
@@ -93,7 +107,12 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
             </Popover.Button>
           </div>
 
-          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
+          <Popover.Panel
+            ref={setPopperElement}
+            className="z-50"
+            style={styles.popper}
+            {...attributes.popper}
+          >
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
@@ -102,7 +121,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
       {enabled && (
         <>
           <div
-            className={`w-full bg-[#202020] flex flex-row justify-end border-b border-r border-white/[0.1]  pb-[4px] pt-[4px]  pr-2 text-white/[0.6]`}
+            className={`w-full bg-elevation-1 flex flex-row justify-end border-b border-r border-white/[0.1]  pb-[4px] pt-[4px]  pr-2 text-white/[0.6]`}
           >
             {showLines ? (
               <button
@@ -127,7 +146,7 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
             )}
           </div>
           {showLines && (
-            <div className="w-full py-3 px-4 bg-white/[0.05] space-y-2">
+            <div className="w-full py-3 px-4 bg-elevation-1 space-y-2">
               {/* <p>Best move: {`${bestMove || ""}`}</p> */}
               {/* <>
                 {evaler.isEvaluating &&
@@ -150,7 +169,10 @@ export default function EvalInfo({ evaler, enabled, setEnabled, moveKey, current
                 })}
 
               <>
-                <Placeholders count={evaler.options.multiPV - evaler.lines.length} loading={evaler.isEvaluating} />
+                <Placeholders
+                  count={evaler.options.multiPV - evaler.lines.length}
+                  loading={evaler.isEvaluating}
+                />
               </>
             </div>
           )}
@@ -180,7 +202,11 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p className={`${expanded ? "" : "truncate"} bg-white/[0.02] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
+      <p
+        className={`${
+          expanded ? "" : "truncate"
+        } bg-white/[0.03] px-1 rounded-sm mb-[1px] px-2 text-sm`}
+      >
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
@@ -195,13 +221,17 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
       </p>
       <button
         className={`pt-1 flex flex-col justify-center
-                text-sepia
+                text-gold-200
               `}
         onClick={() => {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
+        <MdExpandMore
+          className={` transition-transform duration-400 text-xl ${
+            expanded ? "" : "rotate-[-90deg]"
+          }`}
+        />
       </button>
     </div>
   );
@@ -218,7 +248,9 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
+          {Chess.moveCountToNotation(moveCount)}
+        </span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"

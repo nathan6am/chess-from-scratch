@@ -12,7 +12,7 @@ import { BoardHandle } from "../game/Board";
 import PgnUpload from "./PgnUpload";
 import { BiReset } from "react-icons/bi";
 import Select from "../UI/Select";
-import Toggle from "../UI/Toggle";
+import { Toggle } from "../UIKit";
 import { FiRepeat } from "react-icons/fi";
 interface Props {
   analysis: AnalysisHook;
@@ -22,7 +22,14 @@ interface Props {
   setEditMode: (value: boolean) => void;
   flipBoard: () => void;
 }
-export default function NewAnalysisPanel({ analysis, boardRef, boardEditor, editMode, setEditMode, flipBoard }: Props) {
+export default function NewAnalysisPanel({
+  analysis,
+  boardRef,
+  boardEditor,
+  editMode,
+  setEditMode,
+  flipBoard,
+}: Props) {
   return (
     <div className="bg-[#242424] w-full h-full">
       {editMode ? (
@@ -86,7 +93,13 @@ interface EditorProps {
   flipBoard: () => void;
   setEditMode: (value: boolean) => void;
 }
-export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flipBoard }: EditorProps) {
+export function BoardEditor({
+  boardEditor,
+  boardRef,
+  analysis,
+  setEditMode,
+  flipBoard,
+}: EditorProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
@@ -142,7 +155,10 @@ export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flip
             value={boardEditor.activeColor}
             onChange={boardEditor.setActiveColor}
           />
-          <button onClick={flipBoard} className="shrink-0  text-white/[0.8] hover:text-white py-3 mt-1 px-4">
+          <button
+            onClick={flipBoard}
+            className="shrink-0  text-white/[0.8] hover:text-white py-3 mt-1 px-4"
+          >
             <FiRepeat className="mr-2 inline" /> Flip Board
           </button>
         </div>
@@ -154,7 +170,10 @@ export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flip
               label="Queen Side (O-O-O)"
               checked={boardEditor.castleRights.w.kingSide}
               onChange={(enabled) => {
-                boardEditor.setCastleRights((prev) => ({ ...prev, w: { ...prev.w, kingSide: enabled } }));
+                boardEditor.setCastleRights((prev) => ({
+                  ...prev,
+                  w: { ...prev.w, kingSide: enabled },
+                }));
               }}
               disabled={boardEditor.disabledCastling.w.queenSide}
             />
@@ -162,7 +181,10 @@ export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flip
               label="King Side (O-O)"
               checked={boardEditor.castleRights.w.queenSide}
               onChange={(enabled) => {
-                boardEditor.setCastleRights((prev) => ({ ...prev, w: { ...prev.w, queenSide: enabled } }));
+                boardEditor.setCastleRights((prev) => ({
+                  ...prev,
+                  w: { ...prev.w, queenSide: enabled },
+                }));
               }}
               disabled={boardEditor.disabledCastling.w.kingSide}
             />
@@ -173,7 +195,10 @@ export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flip
               label="Queen Side (O-O-O)"
               checked={boardEditor.castleRights.b.kingSide}
               onChange={(enabled) => {
-                boardEditor.setCastleRights((prev) => ({ ...prev, b: { ...prev.b, kingSide: enabled } }));
+                boardEditor.setCastleRights((prev) => ({
+                  ...prev,
+                  b: { ...prev.b, kingSide: enabled },
+                }));
               }}
               disabled={boardEditor.disabledCastling.b.queenSide}
             />
@@ -181,7 +206,10 @@ export function BoardEditor({ boardEditor, boardRef, analysis, setEditMode, flip
               label="King Side (O-O)"
               checked={boardEditor.castleRights.b.queenSide}
               onChange={(enabled) => {
-                boardEditor.setCastleRights((prev) => ({ ...prev, b: { ...prev.b, queenSide: enabled } }));
+                boardEditor.setCastleRights((prev) => ({
+                  ...prev,
+                  b: { ...prev.b, queenSide: enabled },
+                }));
               }}
               disabled={boardEditor.disabledCastling.b.kingSide}
             />
@@ -225,8 +253,15 @@ function StyledDiclosure({ children, label, icon: Icon }: StyledDisclosureProps)
               }`}
             />
           </Disclosure.Button>
-          <Transition show={open} enter="transition ease-out duration-500" enterFrom="opacity-0" enterTo="opacity-100">
-            <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white/[0.8]">{children}</Disclosure.Panel>
+          <Transition
+            show={open}
+            enter="transition ease-out duration-500"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+          >
+            <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white/[0.8]">
+              {children}
+            </Disclosure.Panel>
           </Transition>
         </>
       )}

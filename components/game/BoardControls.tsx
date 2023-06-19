@@ -20,33 +20,36 @@ interface Props {
 }
 export default function BoardControls({ controls, className, flipBoard }: Props) {
   return (
-    <div className={`flex flex-row justify-around bg-[#121212] shadow-lg ${className || ""}`}>
+    <div className={`flex flex-row justify-around bg-elevation-1 shadow-lg ${className || ""}`}>
       <button
         onClick={controls.jumpBackward}
-        className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full"
+        className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
       >
         <AiOutlineFastBackward className="text-2xl mx-auto" />
       </button>
       <button
         onClick={controls.stepBackward}
-        className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full"
+        className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
       >
         <AiOutlineStepBackward className="text-xl mx-auto" />
       </button>
       <button
         onClick={controls.stepForward}
-        className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full"
+        className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
       >
         <AiOutlineStepForward className="text-xl mx-auto" />
       </button>
       <button
         onClick={controls.jumpForward}
-        className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full"
+        className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
       >
         <AiOutlineFastForward className="text-2xl mx-auto" />
       </button>
       {flipBoard !== undefined && (
-        <button onClick={flipBoard} className="p-3 text-white/[0.7] hover:text-white hover:bg-sepia/[0.2] grow w-full">
+        <button
+          onClick={flipBoard}
+          className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
+        >
           <FiRepeat className="text-2xl mx-auto" />
         </button>
       )}

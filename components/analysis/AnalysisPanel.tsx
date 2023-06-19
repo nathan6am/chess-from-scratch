@@ -1,4 +1,5 @@
-import React, { useState, Fragment } from "react";
+import React, { useState, Fragment, useContext } from "react";
+import { AnalysisContext } from "./AnalysisBoard";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import { Tab } from "@headlessui/react";
 import EvalInfo from "./EvalInfo";
@@ -14,36 +15,21 @@ import Annotations from "./Annotations";
 import Share from "./Share";
 import Explorer from "./Explorer";
 import { PGNTagData } from "@/lib/types";
-import Input from "../UI/Input";
+import { Input } from "../UIKit";
 import { useForm } from "react-hook-form";
-import { In } from "typeorm";
+
 interface Props {
-  analysis: AnalysisHook;
-  boardRef: React.RefObject<HTMLDivElement>;
   showPlayer: () => void;
 }
-export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props) {
+export default function AnalysisPanel({ showPlayer }: Props) {
+  const { analysis } = useContext(AnalysisContext);
   const [expanded, setExpanded] = useState(true);
-  const {
-    onMove,
-    evalEnabled,
-    setEvalEnabled,
-    evaler,
-    currentGame,
-    currentKey,
-    pgn,
-    currentNode,
-    commentControls,
-    setMoveQueue,
-  } = analysis;
+  const { onMove, currentNode, commentControls, setMoveQueue } = analysis;
 
-  const attemptMoves = (moves: string[]) => {
-    setMoveQueue(moves);
-  };
   return (
     <>
       <Tab.Group>
-        <Tab.List className="flex bg-[#121212] shadow-lg">
+        <Tab.List className="flex bg-elevation-1 shadow-lg">
           <TopTab>
             <p>Analyze</p>
           </TopTab>
@@ -57,18 +43,13 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
         <Tab.Panel as={Fragment}>
           <>
             <div className="shadow-md">
-              <EvalInfo
-                moveKey={currentKey || "root"}
-                evaler={evaler}
-                enabled={evalEnabled}
-                setEnabled={setEvalEnabled}
-                currentGame={currentGame}
-                attemptMoves={attemptMoves}
-              />
+              <EvalInfo />
             </div>
-            <div className="w-full grow relative bg-white/[0.05]">
+            <div className="w-full p-4 bg-elevation-2">Unsaved Analysis </div>
+
+            <div className="w-full grow relative bg-elevation-1">
               <ScrollContainer>
-                <VarationTree analysis={analysis} inlineView />
+                <VarationTree inlineView />
               </ScrollContainer>
             </div>
           </>
@@ -79,7 +60,7 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
       </Tab.Group>
       <div className="w-full border-t border-white/[0.2] ">
         <Tab.Group>
-          <Tab.List className="flex bg-[#121212] pt-1 shadow-lg relative">
+          <Tab.List className="flex bg-elevation-1 pt-1 relative">
             <button
               className={`absolute right-2 top-0 bottom-0 flex flex-col justify-center text-white/[0.8] hover:text-white`}
               onClick={() => {
@@ -106,7 +87,11 @@ export default function AnalysisPanel({ analysis, boardRef, showPlayer }: Props)
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Comments
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -148,7 +133,9 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >
@@ -164,11 +151,11 @@ function TopTab({ children }: TabProps) {
     <Tab
       className={({ selected }) =>
         classNames(
-          "flex-1 border-b border-b-4 py-2 text-md text-white/[0.7] px-4",
+          "flex-1 border-b border-b-4 py-2 text-md  px-4",
           "focus:outline-none ",
           selected
-            ? "bg-[#303030] border-sepia"
-            : "bg-[#262626] border-[#262626] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+            ? "bg-elevation-3 border-gold-300 text-light-100"
+            : "bg-elevation-2 border-elevation-2 text-light-300 hover:bg-elevation-3 hover:border-gold-300 hover:text-light-100"
         )
       }
     >
@@ -194,49 +181,56 @@ function TagForm({ tags, setTags }: TagFormProps) {
     setTags(data);
   };
   return (
-    <div className="py-4 px-6 bg-[#202020]">
+    <div className="py-4 px-6 bg-elevation-2">
       <div className="flex flex-row items-end">
         <Input
-          containerClassName="mb-0"
+          containerClassName="mb-2"
           label="White"
           {...register("white")}
           error={errors.white?.message || null}
           id="white"
           placeholder="White Player"
-          status={null}
+          showErrorMessages={false}
         />
         <Input
           label="Elo"
-          containerClassName="w-20 ml-4 mb-0"
+          containerClassName="w-40 ml-4 mb-2"
           {...register("eloWhite")}
           error={errors.eloWhite?.message || null}
           id="whiteElo"
           placeholder="Rating"
-          status={null}
+          showErrorMessages={false}
         />
       </div>
 
       <div className="flex flex-row items-end">
         <Input
-          containerClassName="mb-0"
+          containerClassName="mb-2"
           label="Black"
           {...register("black")}
           error={errors.white?.message || null}
           id="black"
           placeholder="Black Player"
-          status={null}
+          showErrorMessages={false}
         />
         <Input
           label="Elo"
-          containerClassName="w-20 ml-4 mb-0"
+          containerClassName="w-40 ml-4 mb-2"
           {...register("eloBlack")}
           error={errors.eloWhite?.message || null}
           id="eloBlack"
           placeholder="Rating"
-          status={null}
+          showErrorMessages={false}
         />
       </div>
-      <Input label="Event" {...register("event")} error={errors.event?.message || null} id="event" status={null} />
+      <Input
+        label="Event"
+        {...register("event")}
+        error={errors.event?.message || null}
+        id="event"
+        placeholder="Event"
+        showErrorMessages={false}
+      />
     </div>
   );
 }

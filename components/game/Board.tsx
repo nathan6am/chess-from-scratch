@@ -1,76 +1,73 @@
-import React, {
-  useCallback,
-  useState,
-  useEffect,
-  useContext,
-  useMemo,
-  useRef,
-  useLayoutEffect,
-  useImperativeHandle,
-} from "react";
-import Square from "./Square";
-import { mergeRefs } from "@/util/misc";
+import React, { useCallback, useState, useEffect, useRef, useImperativeHandle } from "react";
 import styles from "@/styles/Board.module.scss";
-import * as Chess from "@/lib/chess";
+
+//Types
+import { Arrow, ArrowColor, MarkedSquare } from "@/lib/types";
 import { AnimSpeedEnum } from "@/context/settings";
-import { useResizeDetector } from "react-resize-detector";
-import _ from "lodash";
+
+//Components
+import Square from "./Square";
 import Piece from "./Piece";
 import EditModePiece, { PieceHandle } from "./EditModePiece";
-import useBoardTheme from "@/hooks/useBoardTheme";
-import usePieceSet from "@/hooks/usePieceSet";
 import PromotionMenu from "./PromotionMenu";
 import BoardArrows from "../analysis/BoardArrows";
-import useBoardMarkup from "@/hooks/useBoardMarkup";
-import { Arrow, ArrowColor, MarkedSquare } from "@/lib/types";
+
+//Hooks;
 import { useArrowState } from "@/hooks/useBoardMarkup";
 import useCurrentSquare from "@/hooks/useCurrentSquare";
-import { on } from "events";
+import useBoardMarkup from "@/hooks/useBoardMarkup";
+import useBoardTheme from "@/hooks/useBoardTheme";
+import usePieceSet from "@/hooks/usePieceSet";
+import { useResizeDetector } from "react-resize-detector";
+
+//Util
+import { mergeRefs } from "@/util/misc";
+import * as Chess from "@/lib/chess";
+import _ from "lodash";
+
 interface Props {
-  editMode?: boolean;
-  squareIdPrefix?: string;
-  keyPrefix?: string;
-  hidePieces?: boolean;
-  overrideTheme?: boolean;
-  disableTransitions?: boolean;
+  editMode?: boolean; //Whether or not to enable edit mode
+  squareIdPrefix?: string; //Prefix to add to the square id
+  keyPrefix?: string; //Prefix to add to the key (rerender on change)
+  hidePieces?: boolean; //Whether or not to hide the pieces
+  overrideTheme?: boolean; //Whether or not to override the theme
+  disableTransitions?: boolean; //Disable piece transitions
   showCoordinates: "hidden" | "inside" | "outside"; //Where or if to display the rank and file indictors
   theme: string; //Board theme
-  orientation: Chess.Color;
-  pieces: Chess.Board;
-  legalMoves: Array<Chess.Move>;
-  lastMove: Chess.Move | undefined | null;
-  activeColor: Chess.Color;
-  moveable: Chess.Color | "both" | "none";
-  preMoveable: boolean;
-  animationSpeed: "slow" | "fast" | "normal" | "disabled";
-  movementType: "click" | "drag" | "both";
-  showTargets: boolean;
-  showHighlights: boolean;
-  autoQueen: boolean;
+  orientation: Chess.Color; //Board orientation
+  pieces: Chess.Board; //Array of pieces to display on the board
+  legalMoves: Array<Chess.Move>; //Array of legal moves in the current position
+  lastMove: Chess.Move | undefined | null; //Last move made
+  activeColor: Chess.Color; //Active color
+  moveable: Chess.Color | "both" | "none"; //Color of pieces that can be moved
+  preMoveable: boolean; //Whether or not to allow premoves
+  animationSpeed: "slow" | "fast" | "normal" | "disabled"; //Speed of piece animations
+  movementType: "click" | "drag" | "both"; //Type of movement to allow
+  showTargets: boolean; //Whether or not to show the targets for the selected piece
+  showHighlights: boolean; //Whether or not to show the highlights for the selected piece, last move, etc.
+  autoQueen: boolean; //Whether or not to auto queen on promotion
   onMove: (move: Chess.Move) => void; //Callback to execute when a move it attempted
-  onPremove: (start: Chess.Square, end: Chess.Square) => void;
-  premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>;
+  onPremove: (start: Chess.Square, end: Chess.Square) => void; //Callback to execute when a premove is queued
+  premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>; //Array of queued premove moves for display
   pieceSet: string; //Piece theme
   lastMoveAnnotation?: number | string; //Annotation to show on the board for the last move
   showAnnotation?: boolean; //Whether or not to show annotations on board
-  arrows?: Arrow[];
-  markedSquares?: MarkedSquare[];
-  onArrow?: (arrow: Arrow) => void;
-  onMarkSquare?: (markedSquare: MarkedSquare) => void;
-  onClear?: () => void;
-  markupColor?: ArrowColor;
-  overrideArrows?: boolean;
-  disableArrows?: boolean;
-  editModeEnabled?: boolean;
-  onAddPiece?: (square: Chess.Square, piece: Chess.Piece) => void;
-  onRemovePiece?: (square: Chess.Square) => void;
-  onMovePiece?: (start: Chess.Square, end: Chess.Square) => void;
-  pieceCursor?: Chess.Piece | "remove" | null;
+  arrows?: Arrow[]; //Array of arrows to display on the board
+  markedSquares?: MarkedSquare[]; //Array of marked squares to display on the board
+  onArrow?: (arrow: Arrow) => void; //Callback to execute when an arrow is drawn
+  onMarkSquare?: (markedSquare: MarkedSquare) => void; //Callback to execute when a square is marked
+  onClear?: () => void; //Callback to execute when the annotations are cleared
+  markupColor?: ArrowColor; //Color of the arrows and marked squares
+  overrideArrows?: boolean; //Whether or not to override the arrows
+  disableArrows?: boolean; //Whether or not to disable arrows
+  onAddPiece?: (square: Chess.Square, piece: Chess.Piece) => void; //Callback to execute when a piece is added in edit mode
+  onRemovePiece?: (square: Chess.Square) => void; //Callback to execute when a piece is removed in edit mode
+  onMovePiece?: (start: Chess.Square, end: Chess.Square) => void; //Callback to execute when a piece is moved in edit mode
+  pieceCursor?: Chess.Piece | "remove" | null; //Piece to draw when a square is clicked in edit mode
 }
 
+//Expose methods to parent components
 export interface BoardHandle extends HTMLDivElement {
-  // Add any additional methods that you want to expose
-
   spawnDraggablePiece: (piece: Chess.Piece, e: React.MouseEvent<HTMLElement>) => void;
 }
 const Board = React.forwardRef<BoardHandle, Props>(
@@ -222,7 +219,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
           }
           if (piece.color !== activeColor) return;
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+          const move = legalMoves.find(
+            (move) => move.start === square && move.end === targetSquare
+          );
           //Return if no legal move is found
           if (!move) return;
           //Call onMove if the move is not a promotion
@@ -287,7 +286,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
           pendingArrow={currentArrow}
         >
           <div
-            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
+            className={`${styles.board} relative mx-0 ${
+              showCoordinates === "outside" ? "m-2" : ""
+            } board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
@@ -305,7 +306,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                    move.start === promotionMove.start &&
+                    move.end === promotionMove.end &&
+                    move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -331,8 +334,12 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     id={`${squareIdPrefix || ""}${square}`}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
-                    isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
+                    isTarget={
+                      (selectedPiece && selectedPiece[1].targets?.includes(square)) || false
+                    }
+                    isSelected={
+                      (!editMode && selectedPiece && selectedPiece[0] === square) || false
+                    }
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {
@@ -390,7 +397,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 disabled={
                   editMode
                     ? pieceCursor !== null
-                    : (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
+                    : (moveable !== "both" && piece.color !== moveable) ||
+                      (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}

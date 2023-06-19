@@ -14,10 +14,16 @@ export default function SideBar({ pages }: Props) {
   }, [pathname, pages]);
   return (
     <div className="w-full relative">
-      <div className="absolute top-0 left-[70%] right-0 bottom-0 bg-gradient-to-r from-transparent to-[#1f1f1f] z-10 md:hidden pointer-none"></div>
+      <div className="absolute top-0 left-[70%] right-0 bottom-0 bg-gradient-to-r from-transparent to-elevation-2 z-10 md:hidden pointer-none"></div>
       <aside className="flex flex-row lg:flex-col h-fit w-full justify-start items-end px-4 lg:px-10 overflow-x-scroll pr-20 md:pr-4 scrollbar-hide relative">
         {pages.map((page) => (
-          <MenuButton activeKey={activeKey} key={page.key} pageKey={page.key} title={page.label} href={page.href} />
+          <MenuButton
+            activeKey={activeKey}
+            key={page.key}
+            pageKey={page.key}
+            title={page.label}
+            href={page.href}
+          />
         ))}
       </aside>
     </div>
@@ -38,7 +44,9 @@ function MenuButton({ activeKey, pageKey, href, title }: ButtonProps) {
       title={title}
       href={href}
       className={`my-4 focus:outline-none text-center text-lg md:text-xl mx-4 min-w-[60px] md:min-w-[100px] lg:min-w-0 lg:pl-2 pb-1 border-y-4 border-t-transparent ${
-        active ? "border-b-sepia text-white" : "text-white/[0.7] border-transparent hover:text-white"
+        active
+          ? "border-b-gold-200 text-light-100"
+          : "text-light-200 border-transparent hover:text-light-100"
       }`}
     >
       {title}

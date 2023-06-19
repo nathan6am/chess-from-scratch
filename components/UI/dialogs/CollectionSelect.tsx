@@ -6,7 +6,7 @@ import { ScrollContainer } from "@/components/layout/GameLayout";
 import { TbSelector } from "react-icons/tb";
 import useCollections from "@/hooks/useCollections";
 import Collection from "@/lib/db/entities/Collection";
-import Input from "../Input";
+import { Input } from "@/components/UIKit";
 import classNames from "classnames";
 
 interface Props {

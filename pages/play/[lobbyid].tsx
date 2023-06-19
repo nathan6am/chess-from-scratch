@@ -8,7 +8,7 @@ interface Props {
 
 const Lobby: NextPage<Props> = ({ lobbyid }) => {
   return (
-    <div className="h-screen w-screen justify-center items-center flex bg-[#181818]">
+    <div className="h-screen w-screen justify-center items-center flex bg-elevation-0">
       <main className="flex justify-center items-center lg:px-8 max-w-[1400px] w-screen h-full">
         <div className="h-full w-full flex justify-center items-center  ">
           <NonSSRWrapper>

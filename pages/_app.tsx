@@ -31,18 +31,15 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   };
   const { user, error, isValidating, mutate } = useUser();
   const router = useRouter();
-  const { mutate: refreshProfile } = useProfile();
   const prevUserRef = useRef(user?.id || null);
   useEffect(() => {
     if (!user && !isValidating) {
       router.push("/login");
       prevUserRef.current = null;
-      refreshProfile();
     } else if (user && user.type === "incomplete") {
       router.push("/complete-profile");
     }
     if (user && user.id !== prevUserRef.current) {
-      refreshProfile();
     }
   }, [user]);
   return (

@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
-import Xarrow, { useXarrow, Xwrapper } from "react-xarrows";
-import { Square } from "@/lib/chess";
+import Xarrow, { Xwrapper } from "react-xarrows";
 import { ArrowColor, Arrow } from "@/lib/types";
+
 export const ColorEnum: Record<ArrowColor, string> = {
-  R: "#b91c1c",
   G: "#15803d",
   O: "#b45309",
+  R: "#b91c1c",
   B: "#0369a1",
   Y: "#eab308",
 };

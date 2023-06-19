@@ -1,8 +1,8 @@
 import { Dialog, Transition, RadioGroup } from "@headlessui/react";
-import RadioButton from "../RadioButton";
+
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
-import Input from "@/components/UI/Input";
+import { Input, RadioButton } from "@/components/UIKit";
 import CollectionSelect from "./CollectionSelect";
 import Collection from "@/lib/db/entities/Collection";
 //Util

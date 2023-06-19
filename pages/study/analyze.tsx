@@ -12,7 +12,7 @@ interface Props {
 }
 const Analyze: NextPage<Props> = ({ id, game, sourceType }: Props) => {
   return (
-    <div className="h-screen w-screen justify-center items-center flex bg-[#181818]">
+    <div className="h-screen w-screen justify-center items-center flex bg-elevation-0">
       <main className="flex justify-center items-center w-full h-full">
         <div className="md:h-full w-full w-full flex justify-center items-center  ">
           <NonSSRWrapper>
@@ -34,7 +34,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       id: typeof id === "string" ? id : null,
       game: typeof game === "string" ? game : null,
       sourceType:
-        sourceType === "masters" || sourceType === "lichess" || sourceType === "nextchess" ? sourceType : null,
+        sourceType === "masters" || sourceType === "lichess" || sourceType === "nextchess"
+          ? sourceType
+          : null,
     },
   };
 };
