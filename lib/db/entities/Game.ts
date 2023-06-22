@@ -32,6 +32,9 @@ export default class Game extends BaseEntity {
   @Column()
   ratingCategory: RatingCategory;
 
+  @Column({ default: false })
+  rated: boolean;
+
   @OneToMany(() => User_Game, (userGame) => userGame.game, { cascade: true })
   players: Relation<User_Game[]>;
 

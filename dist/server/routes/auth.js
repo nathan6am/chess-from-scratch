@@ -40,7 +40,6 @@ const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
 passport_1.default.use(new passportLocal.Strategy(async function (username, password, done) {
     const user = await User_1.default.login({ username, password });
-    console.log(user);
     if (user) {
         return done(null, user);
     }
@@ -76,15 +75,17 @@ passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, do
 passport_1.default.serializeUser((user, done) => {
     done(null, JSON.stringify(user));
 });
-passport_1.default.deserializeUser((_req, id, done) => {
+passport_1.default.deserializeUser((req, id, done) => {
     const sessionUser = JSON.parse(id);
     if (sessionUser.type === "guest" || sessionUser.type === "user") {
         done(null, sessionUser);
     }
     else {
         User_1.default.findOneBy({ id: sessionUser.id }).then((user) => {
-            if (!user)
+            if (!user) {
+                req.logout();
                 done("account does not exist", null);
+            }
             else
                 done(null, { id: user.id, username: user.username, type: user.type });
         });
@@ -107,8 +108,9 @@ router.get("/user", function (req, res, next) {
         res.status(200).json(req.user);
     }
 });
-router.post("/login", passport_1.default.authenticate("local", { failureRedirect: "/login" }), function (req, res) {
+router.post("/login", passport_1.default.authenticate("local", {}), function (req, res) {
     if (req.user) {
+        console.log("logged in");
         res.json({ user: req.user });
     }
     else {

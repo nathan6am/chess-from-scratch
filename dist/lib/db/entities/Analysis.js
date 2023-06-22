@@ -39,9 +39,8 @@ let Analysis = Analysis_1 = class Analysis extends typeorm_1.BaseEntity {
         const analysis = await this.findOneBy({ id });
         if (!analysis)
             throw new Error("Analysis does not exits");
-        collections.forEach((collection) => {
-            analysis.collectionIds.push(collection);
-        });
+        const collectionEntities = await Collection_1.default.getByIds(collections);
+        analysis.collections = collectionEntities;
         const updated = await analysis.save();
         return updated;
     }
@@ -110,13 +109,7 @@ __decorate([
 ], Analysis.prototype, "tagData", void 0);
 __decorate([
     (0, typeorm_1.ManyToMany)(() => Collection_1.default, (collection) => collection.analyses, { cascade: true }),
-    (0, typeorm_1.JoinTable)({
-        name: "collections_join_table",
-        joinColumn: {
-            name: "collectionIds",
-            referencedColumnName: "id",
-        },
-    }),
+    (0, typeorm_1.JoinTable)(),
     __metadata("design:type", Object)
 ], Analysis.prototype, "collections", void 0);
 Analysis = Analysis_1 = __decorate([

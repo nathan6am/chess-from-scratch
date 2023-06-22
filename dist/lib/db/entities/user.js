@@ -19,15 +19,58 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const settings_1 = require("../../../context/settings");
 const misc_1 = require("../../../util/misc");
 const User_Game_1 = __importDefault(require("./User_Game"));
+const Puzzle_1 = __importDefault(require("./Puzzle"));
+const Solved_Puzzle_1 = __importDefault(require("./Solved_Puzzle"));
 const Collection_1 = __importDefault(require("./Collection"));
 const Analysis_1 = __importDefault(require("./Analysis"));
+const glicko_1 = require("../../../server/util/glicko");
+const defaultRatings = {
+    bullet: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+    blitz: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+    rapid: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+    classical: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+    puzzle: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+    correspondence: {
+        rating: 1500,
+        ratingDeviation: 350,
+        volatility: 0.06,
+        gameCount: 0,
+    },
+};
 let User = User_1 = class User extends typeorm_1.BaseEntity {
     id;
     name;
     username;
     rating;
+    ratings;
     notifications;
     games;
+    solvedPuzzles;
     collections;
     savedAnalyses;
     type;
@@ -210,6 +253,15 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         const user = await this.findOneBy({ id });
         return user;
     }
+    static async updateRatings(category, updates) {
+        updates.forEach(async (update) => {
+            const user = await this.findOneBy({ id: update.id });
+            if (!user)
+                return;
+            user.ratings[category] = update.newRating;
+            await user.save();
+        });
+    }
     static async createProfile(id, profileData) {
         const user = await this.findOneBy({ id });
         if (!user)
@@ -252,6 +304,33 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         });
         return result;
     }
+    static async solvePuzzle(puzzleid, userid, result, rated = true) {
+        const solvedPuzzle = new Solved_Puzzle_1.default();
+        const puzzle = await Puzzle_1.default.findOneBy({ id: puzzleid });
+        if (!puzzle)
+            throw new Error("Puzzle does not exist");
+        solvedPuzzle.puzzle = puzzle;
+        const user = await User_1.findOneBy({ id: userid });
+        if (!user)
+            throw new Error("User does not exist");
+        solvedPuzzle.user = user;
+        solvedPuzzle.result = result;
+        solvedPuzzle.date = new Date();
+        await solvedPuzzle.save();
+        if (rated) {
+            const puzzleRating = {
+                rating: puzzle.rating,
+                ratingDeviation: 50,
+                volatility: 0.06,
+                gameCount: 1,
+            };
+            const userRating = user.ratings.puzzle;
+            const [newRating] = (0, glicko_1.updateRatings)(userRating, puzzleRating, result === "solved" ? 1 : result === "solved-w-hint" ? 0.5 : 0);
+            user.ratings.puzzle = newRating;
+            await user.save();
+        }
+        return solvedPuzzle;
+    }
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
@@ -270,6 +349,10 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "rating", void 0);
 __decorate([
+    (0, typeorm_1.Column)("jsonb", { default: defaultRatings }),
+    __metadata("design:type", Object)
+], User.prototype, "ratings", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)(() => Notification, (notifcation) => notifcation.user),
     __metadata("design:type", Object)
 ], User.prototype, "notifications", void 0);
@@ -277,6 +360,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => User_Game_1.default, (userGame) => userGame.user, { cascade: true }),
     __metadata("design:type", Object)
 ], User.prototype, "games", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Solved_Puzzle_1.default, (solvedPuzzle) => solvedPuzzle.user, { cascade: true }),
+    __metadata("design:type", Object)
+], User.prototype, "solvedPuzzles", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => Collection_1.default, (collection) => collection.user),
     __metadata("design:type", Object)

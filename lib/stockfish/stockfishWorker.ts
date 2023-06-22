@@ -1,10 +1,6 @@
-import { time } from "console";
 import * as Chess from "../chess";
-const wasmSupported =
-  typeof WebAssembly === "object" && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-const stockfish = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
 
-interface StockfishOptions {
+export interface StockfishOptions {
   useNNUE: boolean;
   uciLimitStrength: boolean;
   uciElo: number;
@@ -13,9 +9,9 @@ interface StockfishOptions {
   skillLevel: number;
 }
 
-interface EngineGameConfig extends Chess.GameConfig {
+export interface EngineGameConfig extends Chess.GameConfig {
   playerColor: "w" | "b";
-  options: StockfishOptions;
+  stockfishOptions: StockfishOptions;
   depth: number | "auto";
 }
 
@@ -28,35 +24,31 @@ let defaultOptions: StockfishOptions = {
   skillLevel: 20,
 };
 
-const PRESETS: { [key: number]: StockfishOptions } = {
-  1: { ...defaultOptions, uciLimitStrength: true, uciElo: 1000, skillLevel: 0 },
-  2: { ...defaultOptions, uciLimitStrength: true, uciElo: 1200, skillLevel: 5 },
-  3: { ...defaultOptions, uciLimitStrength: true, uciElo: 1400, skillLevel: 10 },
-  4: { ...defaultOptions, uciLimitStrength: true, uciElo: 1600, skillLevel: 12 },
-  5: { ...defaultOptions, uciLimitStrength: true, uciElo: 1800, skillLevel: 15 },
-  6: { ...defaultOptions, uciLimitStrength: true, uciElo: 2000, skillLevel: 18 },
-  7: { ...defaultOptions, uciLimitStrength: true, uciElo: 2200, skillLevel: 19 },
-  8: { ...defaultOptions, uciLimitStrength: true, uciElo: 2400, skillLevel: 20 },
-  9: { ...defaultOptions, uciLimitStrength: true, uciElo: 2700, skillLevel: 20 },
-  10: { ...defaultOptions, uciLimitStrength: false, uciElo: 3200, skillLevel: 20 },
-};
-
 let ready = false;
 let config: EngineGameConfig = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   timeControl: null,
   playerColor: "w",
-  options: defaultOptions,
+  stockfishOptions: defaultOptions,
   depth: "auto",
 };
 
-interface Message {
-  type: "move" | "newGame" | "abort";
+export interface Message {
+  type: "move" | "newGame" | "abort" | "isReady";
   moves?: string[];
   fen?: string;
   config?: EngineGameConfig;
   timeRemaining?: Record<Chess.Color, number>;
 }
+
+export interface Response {
+  type: "move" | "ready";
+  move?: string;
+}
+const wasmSupported =
+  typeof WebAssembly === "object" && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+const stockfish = new Worker(wasmSupported ? "/stockfishNNUE/src/stockfish.js" : "/stockfish/stockfish.js");
+
 const stockfishMessageHandler = (e: MessageEvent<string>) => {
   const message = e.data;
   const params = message.split(" ");
@@ -76,28 +68,37 @@ stockfish.postMessage("isready");
 
 self.onmessage = (event: MessageEvent<Message>) => {
   const message = event.data;
+  console.log(message);
   if (message.type === "newGame") {
     if (!message.config) return;
     config = message.config;
-    stockfish.postMessage(`setoption name Skill Level value ${config.options.skillLevel}`);
-    stockfish.postMessage(`setoption name Threads value ${config.options.threads}`);
-    stockfish.postMessage(`setoption name Hash value ${config.options.hash}`);
-    stockfish.postMessage(`setoption name UCI_Elo value ${config.options.uciElo}`);
-    stockfish.postMessage(`setoption name UCI_LimitStrength value ${config.options.uciLimitStrength}`);
-    stockfish.postMessage(`setoption name Use NNUE value ${config.options.useNNUE}`);
+    console.log(config);
+    stockfish.postMessage(`setoption name Skill Level value ${config.stockfishOptions.skillLevel}`);
+    stockfish.postMessage(`setoption name Threads value ${config.stockfishOptions.threads}`);
+    stockfish.postMessage(`setoption name Hash value ${config.stockfishOptions.hash}`);
+    stockfish.postMessage(`setoption name UCI_Elo value ${config.stockfishOptions.uciElo}`);
+    stockfish.postMessage(`setoption name UCI_LimitStrength value ${config.stockfishOptions.uciLimitStrength}`);
+    stockfish.postMessage(`setoption name Use NNUE value ${config.stockfishOptions.useNNUE}`);
     stockfish.postMessage(`ucinewgame`);
     if (config.startPosition === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
       stockfish.postMessage(`position startpos`);
     } else {
       stockfish.postMessage(`position fen ${config.startPosition}`);
     }
+    const activeColor = config.startPosition.split(" ")[1] as Chess.Color;
+    if (activeColor === config.playerColor) {
+      return;
+    } else [stockfish.postMessage(`go depth ${config.depth}}`)];
   } else if ((message.type = "move")) {
-    if (!message.moves) return;
     if (!message.fen) return;
-    const moves = message.moves.join(" ");
+    const moves = message.moves?.join(" ");
     const activeColor = message.fen.split(" ")[1] as Chess.Color;
-    if (activeColor === config.playerColor) return;
-    stockfish.postMessage(`position startpos moves ${moves}`);
+    stockfish.postMessage(`position fen ${message.fen}`);
+    if (activeColor === config.playerColor) {
+      //stockfish.postMessage(`go ponder`);
+      return;
+    }
+
     if (config.depth === "auto") {
       if (message.timeRemaining) {
         const wtime = message.timeRemaining.w;
@@ -113,5 +114,7 @@ self.onmessage = (event: MessageEvent<Message>) => {
     }
   } else if (message.type === "abort") {
     stockfish.postMessage(`stop`);
+  } else if (message.type === "isReady") {
+    self.postMessage({ type: "ready" });
   }
 };

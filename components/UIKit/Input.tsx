@@ -38,9 +38,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <label className="block text-light-200/[0.6] text-md font-semibold " htmlFor={id}>
               {label}
             </label>
-            {optional && (
-              <p className="text-xs text-white/[0.3] font-medium ml-1 mt-[2px]">(optional)</p>
-            )}
+            {optional && <p className="text-xs text-white/[0.3] font-medium ml-1 mt-[2px]">(optional)</p>}
           </span>
         )}
         <div className="relative">
@@ -53,7 +51,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 "border-danger-400 focus:border-danger-400": status === "error" || error,
                 "border-success-400 focus:border-success-400": status === "success",
                 "bg-elevation-1 focus:bg-elevation-2": !disabled,
-              }
+              },
+              className
             )}
             id={id}
             disabled={disabled}
@@ -67,9 +66,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
         {showErrorMessages && (
           <div className="h-3 mb-2">
-            {error && !verifying && (
-              <p className="text-danger-400 text-xs  text-left ml-1">{error}</p>
-            )}
+            {error && !verifying && <p className="text-danger-400 text-xs  text-left ml-1">{error}</p>}
           </div>
         )}
       </div>

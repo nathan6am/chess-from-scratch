@@ -44,6 +44,7 @@ const user_1 = __importDefault(require("./routes/user"));
 const analysis_1 = __importDefault(require("./routes/analysis"));
 const collections_1 = __importDefault(require("./routes/collections"));
 const puzzles_1 = __importDefault(require("./routes/puzzles"));
+const game_1 = __importDefault(require("./routes/game"));
 const redisClient = (0, redis_1.createClient)();
 const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
 const cors_1 = __importDefault(require("cors"));
@@ -96,6 +97,7 @@ nextApp.prepare().then(async () => {
     app.use("/api/analysis", analysis_1.default);
     app.use("/api/collections", collections_1.default);
     app.use("/api/puzzles", puzzles_1.default);
+    app.use("/api/game", game_1.default);
     //Wrap middleware for socket.io
     const wrap = (middleware) => (socket, next) => middleware(socket.request, {}, next);
     const io = new socketio.Server(server, {

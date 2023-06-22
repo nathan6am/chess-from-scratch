@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { TimeControl } from "@/lib/chess";
+import { Select } from "../UIKit";
 import _ from "lodash";
 interface Category {
   label: string;
@@ -68,10 +69,9 @@ export default function TimeControlSelect({
   const [lastSelected, setLastSelected] = useState(defaultOptionIndices);
   const [lastCustom, setLastCustom] = useState(defaultCustom);
   return (
-    <div className="w-full max-w-md px-2 py-4 sm:px-0">
-      <Label className="mb-1">Time Control</Label>
+    <div className="w-full max-w-md px-2 py-4 sm:px-0 h-[9rem]">
       <Tab.Group defaultIndex={defaultTabIndex}>
-        <Tab.List className="flex rounded-lg overflow-hidden divide-x divide-gold-300 border border-gold-300 bg-elevation-1 ">
+        <Tab.List className="flex rounded-lg overflow-hidden divide-x divide-gold-300 border border-gold-300 bg-elevation-2 ">
           {CATEGORIES.map((category, idx) => (
             <Tab
               onClick={() => {
@@ -96,10 +96,7 @@ export default function TimeControlSelect({
         </Tab.List>
         <Tab.Panels className="mt-2">
           {CATEGORIES.map((category, idx) => (
-            <Tab.Panel
-              key={category.id}
-              className={"w-full mt-4 text-sm p-4 bg-[#161616] rounded-xl"}
-            >
+            <Tab.Panel key={category.id} className={"w-full mt-4 text-sm"}>
               {category.options?.length && (
                 <OptionSelect
                   defaultOptionIndex={lastSelected[idx] || 0}
@@ -156,9 +153,7 @@ function OptionSelect({
           {({ checked }) => (
             <div
               className={`bg-white/[0.1] text-center p-2 rounded-md cursor-pointer ${
-                checked
-                  ? "bg-white/[0.3] ring-2 ring-offset-2 ring-offset-[#161616] ring-opacity-60 ring-green-400 "
-                  : "text-white/[0.7] hover:bg-sepia/[0.3]"
+                checked ? "bg-gold-300 " : "text-light-200 hover:bg-elevation-4"
               }`}
             >
               {option.timeSeconds / 60} + {option.incrementSeconds}

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { IoMdArrowDropup, IoMdArrowDropdown } from "react-icons/io";
+import classNames from "classnames";
 interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   label?: string;
   className?: string;
+  inputClassName?: string;
   min?: number;
   max?: number;
   value: number;
   onChange: (val: number) => void;
 }
-export default function NumbericInput({ value, min, max, onChange, label, className }: Props) {
+export default function NumbericInput({ value, min, max, onChange, label, className, inputClassName }: Props) {
   const increment = () => {
     if (!max || value < max) {
       onChange(value + 1);
@@ -23,7 +25,7 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
     <div className={className}>
       {label && <label className="text-sm mb-2 opacity-50">{label}</label>}
       <div className="relative w-40 overflow-hidden rounded-md overflow-hidden ring-white/[0.2] mt-1">
-        <div className="absolute top-0 bottom-0 right-0 h-full w-8 grid grid-rows-2 bg-[#121212]  border-white/[0.2]">
+        <div className="absolute top-0 bottom-0 right-0 h-full w-8 grid grid-rows-2 bg-elevation-3  border-white/[0.2]">
           <div
             onClick={increment}
             className="flex items-center justify-center cursor-pointer bg-white/[0.03] hover:bg-white/[0.05]"
@@ -57,7 +59,7 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
           value={value}
           pattern="\d*"
           placeholder="0"
-          className="p-2 bg-[#121212] rounded-md focus:outline-none"
+          className={classNames("py-1.5 px-2 shadow bg-elevation-1 rounded-md focus:outline-none", inputClassName)}
         ></input>
       </div>
     </div>

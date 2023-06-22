@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const nanoid_1 = require("nanoid");
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const router = express_1.default.Router();
 router.get("/profile", async function (req, res) {
@@ -41,7 +42,44 @@ router.post("/complete-profile", async (req, res) => {
             user.name = name;
         if (username)
             user.username = username;
-        user.rating = parseInt(rating);
+        user.ratings = {
+            bullet: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+            blitz: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+            rapid: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+            classical: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+            puzzle: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+            correspondence: {
+                rating: parseInt(rating),
+                ratingDeviation: 350,
+                volatility: 0.06,
+                gameCount: 0,
+            },
+        };
         const updated = await user.save();
         res.status(200).json({ updated: true, profile: updated });
     }
@@ -66,6 +104,18 @@ router.get("/games", async function (req, res) {
         return res.status(401);
     const games = await User_1.default.getGames(user.id);
     res.status(200).json(games);
+});
+router.get("/ratings", verifyUser_1.default, async function (req, res) {
+    const user = req.user;
+    if (!user)
+        return res.status(401);
+    if (user.type === "guest")
+        return res.status(401);
+    const userDoc = await User_1.default.findById(user.id);
+    if (!userDoc)
+        return res.status(404);
+    const ratings = userDoc.ratings;
+    res.status(200).json(ratings);
 });
 const userRouter = router;
 exports.default = userRouter;

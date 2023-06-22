@@ -37,7 +37,7 @@ module.exports = {
         gold: {
           100: "#FFD77D",
           200: "#DCB96A",
-          300: "#AA8A3F",
+          300: "#A78D50",
           400: "#7B632B",
         },
         success: {
@@ -56,8 +56,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require("tailwind-scrollbar-hide"),
-    require("tailwind-scrollbar")({ nocompatible: true }),
-  ],
+  plugins: [require("tailwind-scrollbar-hide"), require("tailwind-scrollbar")({ nocompatible: true })],
 };

@@ -157,6 +157,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
 
   socket.on("lobby:connect", async (lobbyid, ack) => {
     try {
+      console.log(`Client ${socket.data.userid} connecting to lobby ${lobbyid}`);
       //Verify the user is authenticated and the lobby exists in the cache
       const sessionUser = socket.data.sessionUser;
       if (!sessionUser) throw new Error("Unauthenticated");

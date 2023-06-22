@@ -25,10 +25,11 @@ function useInterval(callback: (...args: any[]) => void, delay: number | null) {
 interface Options {
   autoStart: boolean;
   resolution: "s" | "ds" | "cs" | "ms";
+  onTimeExpired?: () => void;
 }
 const defaultOptions: Options = {
-  autoStart: true,
-  resolution: "s",
+  autoStart: false,
+  resolution: "cs",
 };
 export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Options>) {
   const [options, setOptions] = useState<Options>(() => ({
@@ -36,7 +37,6 @@ export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Op
     ...initialOptions,
   }));
   const [endTime, setEndTime] = useState<DateTime>(() => DateTime.now().plus(initialRemainingMs));
-
   const [running, setRunning] = useState<boolean>(options.autoStart);
   const [timeRemainingRaw, setTimeRemainingRaw] = useState<number>(initialRemainingMs);
   const delay = useMemo(() => {
@@ -55,6 +55,10 @@ export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Op
     }
   }, [options.resolution, running]);
 
+  const addTime = (ms: number) => {
+    setEndTime((endTime) => endTime.plus(ms));
+  };
+
   useInterval(() => {
     if (running) {
       const remaining = endTime.diffNow().toMillis();
@@ -62,6 +66,11 @@ export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Op
     }
   }, delay);
 
+  useEffect(() => {
+    if (timeRemainingRaw === 0 && options.onTimeExpired) {
+      options.onTimeExpired();
+    }
+  }, [timeRemainingRaw, options.onTimeExpired]);
   const start = () => {
     setEndTime(DateTime.now().plus(timeRemainingRaw));
     setRunning(true);
@@ -87,6 +96,7 @@ export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Op
   return {
     timeRemainingRaw,
     timeRemaining,
+    addTime,
     start,
     pause,
     restart,

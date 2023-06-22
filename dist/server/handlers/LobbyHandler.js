@@ -33,6 +33,8 @@ const clockFunctions_1 = require("../util/clockFunctions");
 const luxon_1 = require("luxon");
 const misc_1 = require("../../util/misc");
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+const glicko_1 = require("../util/glicko");
+const pgnParser_1 = require("../../util/parsers/pgnParser");
 function LobbyHandler(io, nsp, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     //UTILITY FUNCTIONS
@@ -118,9 +120,52 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                     return connection;
             });
         }
+        let ratingDeltas = { w: 0, b: 0 };
+        //update user ratings if applicable
+        if (lobby.connections.every((connection) => connection.player.type !== "guest") && lobby.options.rated) {
+            const playerw = await User_1.default.findOneBy({ id: connectionWhite.player.id });
+            const playerb = await User_1.default.findOneBy({ id: connectionBlack.player.id });
+            if (!playerw || !playerb)
+                throw new Error("User not found");
+            const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
+            const ratingw = playerw.ratings[ratingCategory];
+            const ratingb = playerb.ratings[ratingCategory];
+            const result = outcome.result === "w" ? 1 : outcome.result === "b" ? 0 : 0.5;
+            const [newRatingW, newRatingB] = (0, glicko_1.updateRatings)(ratingw, ratingb, result);
+            await User_1.default.updateRatings(ratingCategory, [
+                { id: playerw.id, newRating: newRatingW },
+                { id: playerb.id, newRating: newRatingB },
+            ]);
+            ratingDeltas = {
+                w: newRatingW.rating - ratingw.rating,
+                b: newRatingB.rating - ratingb.rating,
+            };
+            //Update the connection objects with the new ratings
+            lobby.connections = lobby.connections.map((connection) => {
+                if (connection.id === connectionWhite.id) {
+                    return {
+                        ...connection,
+                        player: {
+                            ...connection.player,
+                            rating: newRatingW.rating,
+                        },
+                    };
+                }
+                else if (connection.id === connectionBlack.id) {
+                    return {
+                        ...connection,
+                        player: {
+                            ...connection.player,
+                            rating: newRatingB.rating,
+                        },
+                    };
+                }
+                return connection;
+            });
+        }
         await cache.updateLobby(lobbyid, { connections: lobby.connections });
         const data = updated.data;
-        const timeControl = updated.data.config.timeControls && updated.data.config.timeControls[0];
+        const timeControl = updated.data.config.timeControl || null;
         const players = {
             w: connections.w.player,
             b: connections.b.player,
@@ -129,9 +174,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
         //Save the game to db if any user is not a guest
         if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
-            console.log(game.id);
-            const saved = await Game_1.default.saveGame(players, outcome, data, timeControl, game.id);
-            console.log(saved);
+            //console.log(game.id);
+            const pgn = (0, pgnParser_1.encodeGameToPgn)(updated);
+            const saved = await Game_1.default.saveGame(players, outcome, data, timeControl, pgn, game.id);
+            //console.log(saved);
         }
     }
     socket.on("disconnect", () => {
@@ -141,6 +187,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
     });
     socket.on("lobby:connect", async (lobbyid, ack) => {
         try {
+            console.log(`Client ${socket.data.userid} connecting to lobby ${lobbyid}`);
             //Verify the user is authenticated and the lobby exists in the cache
             const sessionUser = socket.data.sessionUser;
             if (!sessionUser)
@@ -156,15 +203,17 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 if (type !== "guest") {
                     //Get the user's current rating if the user is not a guest
                     const user = await User_1.default.findById(id);
-                    console.log(id);
+                    //console.log(id);
                     if (!user)
                         throw new Error("Unauthenticated");
+                    const timeControl = lobby.options.gameConfig.timeControl;
+                    const ratingCategory = Chess.inferRatingCategeory(timeControl || null);
                     //console.log(user);
                     connection = {
                         id,
                         player: {
                             ...sessionUser,
-                            rating: user.rating,
+                            rating: user.ratings[ratingCategory].rating,
                         },
                         score: 0,
                         lastClientSocketId: socket.id,
@@ -358,11 +407,11 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
             throw new Error("Player is not in lobby");
         //Execute the move
-        const updatedGameData = Chess.move(game.data, move);
+        const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
+        const updatedGameData = Chess.move(game.data, move, updatedClock.timeRemainingMs[game.data.activeColor]);
         //Update the clocks if both players have played a move
         if (updatedGameData.fullMoveCount >= 2) {
             //Update the clock state and apply increment
-            const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
             return await cache.updateGame(lobbyid, {
                 ...game,
                 data: updatedGameData,

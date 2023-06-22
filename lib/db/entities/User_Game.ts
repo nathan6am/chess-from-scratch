@@ -74,7 +74,9 @@ export default class User_Game extends BaseEntity {
       });
     }
     if (searchOptions.sortBy) {
-      query.orderBy(`game.${searchOptions.sortBy}`, searchOptions.sortDirection || "DESC");
+      query.orderBy(`game.${searchOptions.sortBy || "date"}`, searchOptions.sortDirection || "DESC");
+    } else {
+      query.orderBy("game.date", "DESC");
     }
 
     query.select(["user_game", "game", "players", "user.id", "user.username"]);

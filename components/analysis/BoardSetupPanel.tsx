@@ -25,13 +25,7 @@ export default function BoardSetupPanel({ boardHandle, boardEditor }: SetupPanel
   );
 }
 
-function PieceSelect({
-  spawnDraggable,
-  boardEditor,
-}: {
-  spawnDraggable: any;
-  boardEditor: BoardEditorHook;
-}) {
+function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boardEditor: BoardEditorHook }) {
   const types: Chess.PieceType[] = ["p", "n", "b", "r", "q", "k"];
   const colors: Chess.Color[] = ["w", "b"];
   return (
@@ -41,6 +35,7 @@ function PieceSelect({
           const color = "w";
           return (
             <PieceButton
+              key={`${color}${type}`}
               piece={{ color, type, key: `${color}${type}` }}
               spawnDraggable={spawnDraggable}
               pieceCursor={boardEditor.pieceCursor}
@@ -53,7 +48,7 @@ function PieceSelect({
             boardEditor.setPieceCursor(null);
           }}
           className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
-            "bg-white/[0.1] border-sepia": !boardEditor.pieceCursor,
+            "bg-white/[0.1] border-gold-100": !boardEditor.pieceCursor,
             "border-transparent": boardEditor.pieceCursor,
           })}
         >
@@ -65,6 +60,7 @@ function PieceSelect({
           const color = "b";
           return (
             <PieceButton
+              key={`${color}${type}`}
               piece={{ color, type, key: `${color}${type}` }}
               spawnDraggable={spawnDraggable}
               pieceCursor={boardEditor.pieceCursor}
@@ -77,7 +73,7 @@ function PieceSelect({
             boardEditor.setPieceCursor((cur) => (cur === "remove" ? null : "remove"));
           }}
           className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
-            "bg-white/[0.1] border-sepia": boardEditor.pieceCursor === "remove",
+            "bg-white/[0.1] border-gold-100": boardEditor.pieceCursor === "remove",
             "border-transparent": boardEditor.pieceCursor !== "remove",
           })}
         >
@@ -103,7 +99,7 @@ function PieceButton({ piece, spawnDraggable, pieceCursor, setPieceCursor }: Pie
   return (
     <button
       className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
-        "bg-white/[0.1] border-sepia": selected,
+        "bg-white/[0.1] border-gold-100": selected,
         "border-transparent": !selected,
       })}
       onMouseDown={(e) => spawnDraggable(piece, e)}

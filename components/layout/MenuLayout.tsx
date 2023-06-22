@@ -4,6 +4,7 @@ import SideBar from "./SideBar";
 import TopBar from "./TopBar";
 import useProfile from "@/hooks/useProfile";
 import { useRouter } from "next/router";
+import { ScrollContainer } from "./GameLayout";
 const PAGES = [
   { href: "/play", label: "Play", key: "play" },
   { href: "/puzzles", label: "Puzzles", key: "puzzles" },
@@ -22,7 +23,9 @@ export default function MenuLayout({ children }: Props) {
         <div className="flex flex-col h-fit lg:py-20 rounded-l-md col-span-5 lg:col-span-1 lg:h-full w-full items-end justify-start  bg-elevation-2">
           <SideBar pages={PAGES} />
         </div>
-        <div className="h-full w-full grow lg:col-span-4">{children}</div>
+        <div className="h-full w-full grow lg:col-span-4 relative">
+          <ScrollContainer>{children}</ScrollContainer>
+        </div>
       </div>
     </div>
   );

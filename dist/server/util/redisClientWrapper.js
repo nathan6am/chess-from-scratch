@@ -139,16 +139,17 @@ class Redis {
             players[creatorColor] = playerA;
             players[creatorColor === "w" ? "b" : "w"] = playerB;
         }
-        const timeControls = lobby.options.gameConfig.timeControls;
-        if (!(timeControls && timeControls.length))
+        const timeControl = lobby.options.gameConfig.timeControl;
+        if (!timeControl)
             throw new Error("Correspondence games are not cached using redis store");
-        const control = timeControls[0];
+        const control = timeControl;
         const timeRemainingMs = {
             w: control.timeSeconds * 1000,
             b: control.timeSeconds * 1000,
         };
         const gameData = Chess.createGame(lobby.options.gameConfig);
         const game = {
+            ratingCategory: Chess.inferRatingCategeory(control),
             id: (0, uuid_1.v4)(),
             data: gameData,
             players,

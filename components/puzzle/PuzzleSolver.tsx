@@ -2,16 +2,11 @@ import { SettingsContext } from "@/context/settings";
 import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import PuzzlePanel from "./PuzzlePanel";
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import {
-  BoardColumn,
-  BoardRow,
-  PanelColumn,
-  PanelColumnLg,
-  ScrollContainer,
-} from "../layout/GameLayout";
+import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, ScrollContainer } from "../layout/GameLayout";
 import PuzzleFilters from "./PuzzleFilters";
 import CheckBox from "../UI/CheckBox";
 import Board from "../game/Board";
+import { IoExtensionPuzzle } from "react-icons/io5";
 import BoardControls from "../game/BoardControls";
 import { BsFillCheckSquareFill, BsFillXSquareFill, BsCheckLg } from "react-icons/bs";
 import { BiAnalyse, BiShow } from "react-icons/bi";
@@ -64,7 +59,10 @@ export default function PuzzleSolver() {
           </BoardColumn>
         </div>
         <PanelColumnLg>
-          <div className="h-full w-full bg-[#303030] grow relative">
+          <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
+            <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
+          </h2>
+          <div className="h-full w-full bg-elevation-2 grow relative">
             <ScrollContainer>
               <PuzzleFilters />
             </ScrollContainer>
@@ -113,9 +111,7 @@ function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
       )}
       {!loading && prompt === "start" && (
         <>
-          <div
-            className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}
-          ></div>{" "}
+          <div className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
@@ -150,14 +146,7 @@ interface PuzzleControlsProps {
   prompt?: string;
   solveState: string;
 }
-function PuzzleControls({
-  prompt,
-  solveState,
-  retry,
-  next,
-  showSolution,
-  getHint,
-}: PuzzleControlsProps) {
+function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint }: PuzzleControlsProps) {
   const buttonsToShow = useMemo(() => {
     if (prompt === "solved") return ["analysis", "next"];
     if (prompt === "failed") return ["retry", "showSolution"];

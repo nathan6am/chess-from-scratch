@@ -8,6 +8,9 @@ import VolumeSlider from "./VolumeSlider";
 import { ScrollContainer } from "@/components/layout/GameLayout";
 import BoardSelect from "../../BoardSelect";
 import PieceSetSelect from "../../PieceSetSelect";
+import { BsDisplay, BsVolumeUpFill } from "react-icons/bs";
+import { FaPaintBrush } from "react-icons/fa";
+import { IoGameController } from "react-icons/io5";
 export default function Options() {
   return (
     <div className="flex flex-row w-full h-full">
@@ -20,7 +23,7 @@ export function PreferencesTabs() {
   return (
     <div className="flex flex-row w-full h-full">
       <Tab.Group vertical>
-        <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
+        <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-elevation-2 h-fit shadow-md">
           <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
             Preferences
           </div>
@@ -55,10 +58,8 @@ function MyTabs() {
   const [visibility, setVisibility] = useState<string>("private");
   return (
     <Tab.Group vertical>
-      <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-[#1f1f1f] h-fit shadow-md">
-        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">
-          Options
-        </div>
+      <Tab.List className="flex flex-col w-[30rem] lg:w-[40rem] m-10 rounded-md overflow-hidden bg-elevation-2 h-fit shadow-md">
+        <div className="text-lg font-medium p-3 px-6 text-left border-b border-white/[0.2] bg-white/[0.1]">Options</div>
         <MenuTab>Profile</MenuTab>
         <MenuTab>Display</MenuTab>
         <MenuTab>Theme</MenuTab>
@@ -114,7 +115,7 @@ function MenuTab({ children }: TabProps) {
         <button
           className={`text-lg p-3 px-6 text-left ${
             selected
-              ? "text-white border-r-4 border-sepia bg-gradient-to-b from-sepia/[0.08] to-sepia/[0.1] focus:outline-none"
+              ? "text-white border-r-4 border-gold-200 bg-gradient-to-b from-gold-100/[0.08] to-gold-100/[0.1] focus:outline-none"
               : "text-white/[0.5]"
           }`}
         >
@@ -129,7 +130,9 @@ function GameBehaviorPanel() {
   const { settings, updateSettings } = useContext(SettingsContext);
   return (
     <div className="">
-      <h2 className="text-lg mb-4">Game Behavior Settings</h2>
+      <h2 className="text-lg mb-4 text-gold-100">
+        <IoGameController className="inline mr-1 mb-0.5" /> Game Behavior
+      </h2>
       <RadioGroup
         className="py-2"
         value={settings.gameBehavior.movementType}
@@ -151,7 +154,7 @@ function GameBehaviorPanel() {
         className="my-4"
         labelClasses="ml-2 "
         reverse
-        checked={settings.display.showHighlights}
+        checked={settings.gameBehavior.allowPremoves}
         label="Enable Premoves"
         onChange={(enabled) => {
           updateSettings({
@@ -166,7 +169,7 @@ function GameBehaviorPanel() {
         className="my-4"
         labelClasses="ml-2 "
         reverse
-        checked={settings.display.showHighlights}
+        checked={settings.gameBehavior.autoQueen}
         label="Auto-Promote to Queen"
         onChange={(enabled) => {
           updateSettings({
@@ -185,7 +188,9 @@ function ThemePanel() {
   const { settings, updateSettings } = useContext(SettingsContext);
   return (
     <div className="">
-      <h2 className="text-lg mb-4">Display Settings</h2>
+      <h2 className="text-lg mb-4 text-gold-100">
+        <FaPaintBrush className="inline mr-1 mb-0.5" /> Theme Settings
+      </h2>
       <BoardSelect
         value={settings.display.boardTheme}
         onChange={(value) => {
@@ -216,7 +221,9 @@ function DisplayPanel() {
   const { settings, updateSettings } = useContext(SettingsContext);
   return (
     <div className="">
-      <h2 className="text-lg mb-4">Display Settings</h2>
+      <h2 className="text-lg mb-4 text-gold-100">
+        <BsDisplay className="inline mr-1 mb-0.5" /> Display Settings
+      </h2>
       <RadioGroup
         className="mb-3"
         value={settings.display.animationSpeed}
@@ -307,7 +314,9 @@ function SoundPanel() {
   const { settings, updateSettings } = useContext(SettingsContext);
   return (
     <div>
-      <h2 className="text-lg mb-4">Sound Settings</h2>
+      <h2 className="text-lg mb-4 text-gold-100">
+        <BsVolumeUpFill className="inline mr-1 mb-0.5" /> Sound Settings
+      </h2>
       <p>Volume</p>
       <VolumeSlider
         value={settings.sound.volume}

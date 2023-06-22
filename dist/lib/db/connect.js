@@ -35,6 +35,7 @@ const Puzzle_1 = __importDefault(require("./entities/Puzzle"));
 const User_Game_1 = __importDefault(require("./entities/User_Game"));
 const Analysis_1 = __importDefault(require("./entities/Analysis"));
 const Collection_1 = __importDefault(require("./entities/Collection"));
+const Solved_Puzzle_1 = __importDefault(require("./entities/Solved_Puzzle"));
 const env_1 = require("@next/env");
 (0, env_1.loadEnvConfig)("./", process.env.NODE_ENV !== "production");
 const username = process.env.DB_USERNAME || "";
@@ -50,8 +51,9 @@ async function initialize() {
         password,
         database,
         host,
-        entities: [User_1.default, Game_1.default, Puzzle_1.default, Analysis_1.default, User_1.Notification, User_Game_1.default, User_1.Credential, Collection_1.default, User_1.Profile],
+        entities: [User_1.default, Game_1.default, Puzzle_1.default, Analysis_1.default, User_1.Notification, User_Game_1.default, User_1.Credential, Collection_1.default, User_1.Profile, Solved_Puzzle_1.default],
         synchronize: true,
+        poolSize: 10,
     });
     await datasource.initialize();
 }

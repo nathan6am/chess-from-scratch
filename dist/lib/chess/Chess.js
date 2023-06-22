@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.boardToPosition = exports.positionToBoard = exports.isSufficientMaterial = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
+exports.validateFen = exports.inferRatingCategeory = exports.moveCountToNotation = exports.nodeDataFromMove = exports.MoveToUci = exports.halfMoveToNode = exports.gameFromNodeData = exports.getSquareColor = exports.boardToPosition = exports.positionToBoard = exports.isSufficientMaterial = exports.move = exports.createGame = exports.Game = exports.testMove = exports.executeMove = exports.getMoves = exports.getPremoves = exports.getMaterialCount = exports.toSquare = exports.squareToCoordinates = void 0;
 const ChessTypes_1 = require("./ChessTypes");
 const lodash_1 = __importDefault(require("lodash"));
 const FenParser_1 = require("./FenParser");
@@ -229,10 +229,7 @@ function evaluateRule(rule, position, start, enPassantTarget = null) {
                 potentialMoves.push({
                     start: start,
                     end: toSquare(currentCoordinates),
-                    capture: toSquare([
-                        currentCoordinates[0],
-                        currentCoordinates[1] + (piece.color === "w" ? -1 : 1),
-                    ]),
+                    capture: toSquare([currentCoordinates[0], currentCoordinates[1] + (piece.color === "w" ? -1 : 1)]),
                 });
             }
             else {
@@ -338,6 +335,20 @@ function moveIsCheck(game, move) {
     const color = position.get(move.end)?.color;
     for (let [square, piece] of position) {
         if (piece.color === color) {
+            const rules = getMovementRules(piece, square);
+            const check = rules.some((rule) => {
+                const { containsCheck } = evaluateRule(rule, position, square);
+                return containsCheck;
+            });
+            if (check)
+                return true;
+        }
+    }
+    return false;
+}
+function containsCheck(position, activeColor) {
+    for (let [square, piece] of position) {
+        if (piece.color === activeColor) {
             const rules = getMovementRules(piece, square);
             const check = rules.some((rule) => {
                 const { containsCheck } = evaluateRule(rule, position, square);
@@ -477,16 +488,14 @@ exports.getMoves = getMoves;
 function getCastles(game, opponentControlledSquares) {
     const { activeColor, position, castleRights } = game;
     let moves = [];
-    let squares = activeColor === "w"
-        ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] }
-        : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
+    let squares = activeColor === "w" ? { k: ["f1", "g1"], q: ["b1", "c1", "d1"] } : { k: ["f8", "g8"], q: ["b8", "c8", "d8"] };
     const { kingSide, queenSide } = castleRights[activeColor];
     if (!kingSide && !queenSide) {
         return moves;
     }
     if (kingSide &&
         squares.k.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -506,7 +515,7 @@ function getCastles(game, opponentControlledSquares) {
     }
     if (queenSide &&
         squares.q.every((square) => {
-            return (!position.has(square) && !opponentControlledSquares.includes(square));
+            return !position.has(square) && !opponentControlledSquares.includes(square);
         })) {
         moves.push({
             start: activeColor === "w" ? "e1" : "e8",
@@ -753,7 +762,7 @@ class Game {
 exports.Game = Game;
 const defaultConfig = {
     startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    timeControls: null,
+    timeControl: null,
 };
 function createGame(options) {
     const config = {
@@ -781,7 +790,7 @@ function isThreeFoldRepetition(moveHistory, gameState) {
     return false;
 }
 //execute a move and return the updated game
-function move(gameInitial, move, elapsedTimeSeconds) {
+function move(gameInitial, move, timeRemaining) {
     const game = lodash_1.default.clone(gameInitial);
     var outcome = game.outcome;
     //verify the move is listed as one of the available moves
@@ -833,7 +842,7 @@ function move(gameInitial, move, elapsedTimeSeconds) {
     }
     //Check for repitition
     if (isThreeFoldRepetition(game.moveHistory, updatedGameState)) {
-        outcome = { result: "d", by: "repitition" };
+        outcome = { result: "d", by: "repetition" };
     }
     //Check for 50 move rule
     if (updatedGameState.halfMoveCount >= 100) {
@@ -847,7 +856,7 @@ function move(gameInitial, move, elapsedTimeSeconds) {
         PGN: (0, PGN_1.moveToPgn)(move, position, game.legalMoves),
         fen: (0, FenParser_1.gameStateToFen)(updatedGameState),
         board: injectTargets(updatedBoard, updatedLegalMoves),
-        elapsedTimeSeconds,
+        timeRemaining,
     };
     if (activeColor === "b") {
         const moveIdx = updatedMoveHistory.length - 1;
@@ -919,7 +928,7 @@ exports.getSquareColor = getSquareColor;
 function gameFromNodeData(data, startPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", moves) {
     const board = data.board;
     const fen = data.fen;
-    const game = createGame({ startPosition: fen, timeControls: null });
+    const game = createGame({ startPosition: fen, timeControl: null });
     let moveHistory = [];
     //convert the line into move history
     if (moves) {
@@ -975,3 +984,50 @@ function moveCountToNotation(halfMoveCount) {
     return `${Math.ceil(halfMoveCount / 2)}${halfMoveCount % 2 !== 0 ? ". " : "... "}`;
 }
 exports.moveCountToNotation = moveCountToNotation;
+function inferRatingCategeory(control) {
+    if (!control)
+        return "correspondence";
+    if (control.timeSeconds < 60 * 3)
+        return "bullet";
+    if (control.timeSeconds < 60 * 10)
+        return "blitz";
+    if (control.timeSeconds < 60 * 30)
+        return "rapid";
+    if (control.timeSeconds)
+        return "classical";
+    return "correspondence";
+}
+exports.inferRatingCategeory = inferRatingCategeory;
+function validateFen(fen) {
+    try {
+        const gameState = (0, FenParser_1.fenToGameState)(fen);
+        if (!gameState)
+            return "Invalid FEN String";
+        const { position, activeColor } = gameState;
+        const board = Array.from(position.entries());
+        const kings = board.filter(([square, piece]) => piece.type === "k").map(([square, piece]) => piece);
+        if (kings.length !== 2)
+            return "Exactly one king of each color required";
+        //check if more than one king of each color
+        const whiteKings = kings.filter((king) => king.color === "w");
+        const blackKings = kings.filter((king) => king.color === "b");
+        if (whiteKings.length !== 1 || blackKings.length !== 1)
+            return "Exactly one king of each color required";
+        //check if the player that just moved is in check
+        const inCheck = containsCheck(position, activeColor);
+        if (inCheck)
+            return "Last move left player in check";
+        //check for pawn on first or last rank
+        const pawns = board.filter(([square, piece]) => piece.type === "p");
+        if (pawns.some(([square, piece]) => {
+            const rank = squareToCoordinates(square)[1];
+            return rank === 0 || rank === 7;
+        }))
+            return "Pawn on first or last rank";
+        return true;
+    }
+    catch (e) {
+        return "Invalid FEN String";
+    }
+}
+exports.validateFen = validateFen;

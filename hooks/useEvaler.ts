@@ -3,6 +3,7 @@ import _ from "lodash";
 import { EvalOptions, EvalScore } from "@/lib/stockfish/utils";
 import useDebounce from "./useDebounce";
 import useDebouncedCallback from "./useDebouncedCallback";
+
 import { MessageResponse, Variation } from "@/lib/stockfish/evalWorker";
 import useThrottle from "./useThrottle";
 import { notEmpty } from "@/util/misc";

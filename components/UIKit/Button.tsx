@@ -15,6 +15,7 @@ interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   iconClassName?: string;
   labelClassName?: string;
   iconPosition?: "left" | "right";
+  size?: "sm" | "md" | "lg";
 }
 
 export default function Button({
@@ -32,6 +33,7 @@ export default function Button({
   outline,
   iconClassName,
   iconPosition = "left",
+  size = "md",
   labelClassName,
   ...props
 }: Props) {
@@ -39,24 +41,29 @@ export default function Button({
     <button
       onClick={onClick}
       {...props}
+      disabled={disabled || isLoading}
       className={classNames(
-        "flex items-center flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-400 py-1.5 px-3 font-medium focus:outline-none",
+        "flex items-center flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-200  font-medium focus:outline-none",
         {
           "bg-gold-300 border-2 border-gold-300 hover:bg-gold-400 hover:border-gold-400 text-light-100":
-            variant === "primary",
-          "bg-elevation-4 hover:bg-elevation-3 text-light-200 hover:text-light-100":
-            variant === "neutral",
+            variant === "primary" && !disabled,
+          "bg-elevation-4 hover:bg-elevation-5 text-light-200 hover:text-gold-100": variant === "neutral" && !disabled,
           "w-full": width !== "fit",
           "w-fit": width === "fit",
           "max-w-sm": width === "sm",
           "max-w-md": width === "md",
           "max-w-lg": width === "lg",
+          "py-1.5 px-2 text-sm": size === "sm",
+          "py-1.5 px-3": size === "md",
+          "py-2 px-4 ": size === "lg",
+          "bg-elevation-3 text-light-400": disabled,
         },
         className
       )}
     >
-      <>{Icon && <Icon className={iconClassName} />}</>
+      <>{Icon && iconPosition === "left" && <Icon className={iconClassName} />}</>
       <p className={labelClassName}>{isLoading && loadingIcon ? loadingLabel : label || ""}</p>
+      <>{Icon && iconPosition === "right" && <Icon className={iconClassName} />}</>
       <span className=""></span>
     </button>
   );

@@ -52,7 +52,7 @@ export default function useGameViewer({ pgn }: { pgn: string }): ReplayHook {
   const initialGame = useMemo<Chess.Game>(() => {
     const game = Chess.createGame({
       startPosition,
-      timeControls: null,
+      timeControl: null,
     });
     return game;
   }, [pgn]);
@@ -60,17 +60,8 @@ export default function useGameViewer({ pgn }: { pgn: string }): ReplayHook {
   useEffect(() => {
     variationTree.loadNewTree(tree);
   }, [tree]);
-  const {
-    currentNode,
-    path,
-    continuation,
-    stepBackward,
-    stepForward,
-    currentKey,
-    moveText,
-    mainLine,
-    setCurrentKey,
-  } = variationTree;
+  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
+    variationTree;
 
   const currentGame = useMemo<Chess.Game>(() => {
     if (currentNode === null) return initialGame;

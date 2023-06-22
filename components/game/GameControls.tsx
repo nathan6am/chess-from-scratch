@@ -15,10 +15,7 @@ export default function GameControls({ gameControls, flipBoard, className, size 
       <button className="p-4 text-white/[0.7] hover:text-white  grow w-full" onClick={flipBoard}>
         <FiRepeat className={`mx-auto ${size === "lg" ? "text-xl" : ""}`} />
       </button>
-      <button
-        onClick={gameControls.resign}
-        className="p-4 text-white/[0.7] hover:text-red-500 grow w-full"
-      >
+      <button onClick={gameControls.resign} className="p-4 text-white/[0.7] hover:text-red-500 grow w-full">
         <FiFlag className={`mx-auto ${size === "lg" ? "text-xl" : ""}`} />
       </button>
       <button className="p-4 text-white/[0.7] hover:text-white  grow w-full">

@@ -33,14 +33,14 @@ export default function Toggle({
   };
   return (
     <div
-      className={`flex ${
+      className={`flex max-w-xs ${
         reverse ? "flex-row-reverse justify-end items-center" : "flex-row justify-between"
       }  ${className}`}
     >
       {label && (
         <label
-          className={classNames(labelClasses, {
-            "text-white/[0.7]": disabled,
+          className={classNames(labelClasses, "text-light-200", {
+            "text-light-400": disabled,
           })}
         >
           {label}
@@ -50,9 +50,7 @@ export default function Toggle({
         disabled={disabled}
         checked={controlled ? checked : enabled}
         onChange={changeHandler}
-        className={`${
-          (controlled ? checked : enabled) && !disabled ? "bg-success-500" : "bg-white/[0.1]"
-        }
+        className={`${(controlled ? checked : enabled) && !disabled ? "bg-success-500" : "bg-white/[0.1]"}
         ${reverse ? "mr-3" : ""} relative inline-flex items-center h-[20px] w-[40px] shrink-0 ${
           disabled ? "" : "cursor-pointer"
         } rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2  focus-visible:ring-light-100 focus-visible:ring-opacity-75 `}

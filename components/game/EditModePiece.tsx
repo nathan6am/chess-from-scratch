@@ -162,4 +162,5 @@ const EditModePiece = React.forwardRef<PieceHandle, PieceProps>(
   }
 );
 
+EditModePiece.displayName = "EditModePiece";
 export default EditModePiece;

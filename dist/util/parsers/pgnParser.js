@@ -40,9 +40,7 @@ const commandDelimited = /\[%[^\[\]]+\]/g;
 const commandTypeExpr = /\B\%\w+/;
 function extractCommands(comment) {
     const knownTypes = ["%csl", "%cal", "%clk"];
-    const commandsRaw = comment
-        .match(commandDelimited)
-        ?.map((str) => str.replace(bracketsExpr, "$1"));
+    const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
     const remainingComment = comment.replace(commandDelimited, "").trim();
     let commands = [];
     if (commandsRaw && commandsRaw.length) {
@@ -120,9 +118,7 @@ function encodeCommentFromNodeData(data) {
             .join(",")}] `;
     }
     if (data.arrows && data.arrows.length) {
-        commentString += `[%cal ${data.arrows
-            .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
-            .join(",")}] `;
+        commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
     }
     if (data.comment) {
         commentString += data.comment;
@@ -209,6 +205,7 @@ const tagsDict = {
     fen: "FEN",
     setUp: "SetUp",
     timeControl: "TimeControl",
+    termination: "Termination",
 };
 function tagDataToPGNString(data) {
     let tagsString = "";
@@ -463,8 +460,7 @@ function parseMoveText(movetext, startPosition) {
         else if (char === "$") {
             reading = "annotation";
         }
-        else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
-            isDigit(char)) {
+        else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
             reading = "move-count";
             moveCount = char;
             if (currentData.pgn)
@@ -533,8 +529,14 @@ function encodeGameToPgn(game) {
         eloWhite: `${w.rating}` || undefined,
         eloBlack: `${b.rating}` || undefined,
         event: "NextChess Online Game",
+        site: "NextChess.dev",
         result: encodeOutcome(game.data.outcome),
+        date: new Date().toISOString().slice(0, 10),
     };
+    const termination = encodeTermination(game.data.outcome);
+    if (game.data.outcome && termination) {
+        tagData.termination = termination;
+    }
     const tagSection = tagDataToPGNString(tagData);
     const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
     return tagSection + "\r\n" + movetext;
@@ -543,8 +545,18 @@ exports.encodeGameToPgn = encodeGameToPgn;
 function moveHistoryToMoveText(moveHistory) {
     let moveText = "";
     moveHistory.forEach((fullmove, idx) => {
-        moveText += `${idx + 1}. ${fullmove[0].PGN} ${fullmove[1]?.PGN || ""}`;
+        moveText += `${idx + 1}. ${fullmove[0].PGN} `;
+        if (fullmove[0].timeRemaining !== undefined)
+            moveText += `{ [%clk ${luxon_1.Duration.fromMillis(fullmove[0].timeRemaining).toISOTime()}] } `;
+        if (fullmove[1]) {
+            if (fullmove[0].timeRemaining !== undefined)
+                moveText += `${idx + 1}... `;
+            moveText += `${fullmove[1].PGN} `;
+            if (fullmove[1].timeRemaining !== undefined)
+                moveText += `{ [%clk ${luxon_1.Duration.fromMillis(fullmove[1].timeRemaining).toISOTime()}] } `;
+        }
     });
+    return moveText;
 }
 exports.moveHistoryToMoveText = moveHistoryToMoveText;
 function encodeOutcome(outcome) {
@@ -561,3 +573,33 @@ function encodeOutcome(outcome) {
             return "*";
     }
 }
+const encodeTermination = (outcome) => {
+    let termination = "";
+    if (!outcome)
+        return null;
+    const { result, by } = outcome;
+    if (result === "w")
+        termination += "White wins";
+    else if (result === "b")
+        termination += "Black wins";
+    else if (result === "d")
+        termination += "Draw";
+    if (by === "checkmate")
+        termination += " by checkmate";
+    else if (by === "resignation")
+        termination += " by resignation";
+    else if (by === "timeout")
+        termination += " on time";
+    else if (by === "stalemate")
+        termination += " by stalemate";
+    else if (by === "insufficient")
+        termination += " by insufficient material";
+    else if (by === "repetition")
+        termination += " by repetition";
+    else if (by === "agreement")
+        termination += " by agreement";
+    else if (by === "50-move-rule")
+        termination += " by 50 move rule";
+    else if (by === "abandonment")
+        termination += " by abandonment";
+};

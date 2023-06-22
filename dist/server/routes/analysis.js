@@ -26,9 +26,11 @@ router.post("/", async (req, res) => {
         description: description || null,
         tagData,
         visibility,
-        collectionIds,
     });
     const created = await analysis.save();
+    if (collectionIds) {
+        Analysis_1.default.addToCollections(analysis.id, collectionIds);
+    }
     if (created) {
         return res.status(200).json(created);
     }

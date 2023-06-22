@@ -81,7 +81,7 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-sepia/[0.5] rounded-lg"
+        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gold-100 rounded-lg"
       >
         {loading ? (
           <>Uploading...</>
@@ -92,8 +92,7 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
                 <div className="flex flex-row items-center mb-2">
                   {pgnText && validPgn ? (
                     <>
-                      <BsFileEarmarkCheckFill className="text-2xl text-green-300 inline mr-2" /> PGN
-                      Uploaded.{" "}
+                      <BsFileEarmarkCheckFill className="text-2xl text-green-300 inline mr-2" /> PGN Uploaded.{" "}
                     </>
                   ) : (
                     <>
@@ -111,7 +110,7 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
             ) : (
               <>
                 <label
-                  className="cursor-pointer inline text-lg text-sepia/[0.8] hover:text-sepia flex flex-col items-center group gap-y-2"
+                  className="cursor-pointer inline text-lg text-gold-200 hover:text-gold-100 flex flex-col items-center group gap-y-2"
                   htmlFor="pgnFile"
                 >
                   <AiFillFileAdd className="inline text-white text-3xl opacity-50 group-hover:opacity-80" />
@@ -123,13 +122,7 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
           </>
         )}
       </div>
-      <input
-        type="file"
-        name="pgnFile"
-        id="pgnFile"
-        onChange={handleFileInput}
-        className="hidden"
-      />
+      <input type="file" name="pgnFile" id="pgnFile" onChange={handleFileInput} className="hidden" />
       {pgnText && validPgn && (
         <button
           className="w-full text-center mt-3 p-3 px-4 flex flex-row justify-center rounded-md bg-white/[0.05] text-left text-white/[0.8] hover:text-white hover:bg-white/[0.1] shadow-md"
