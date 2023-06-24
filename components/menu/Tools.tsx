@@ -55,6 +55,16 @@ export default function Tools() {
           iconPosition="left"
           iconClassName="mr-2 mt-0.5 text-xl"
         />
+        <Button
+          disabled
+          className="w-full mt-4"
+          size="lg"
+          icon={MdModelTraining}
+          variant="neutral"
+          label="Tablebase (Coming Soon)"
+          iconPosition="left"
+          iconClassName="mr-2 mt-0.5 text-xl"
+        />
       </div>
     </div>
   );

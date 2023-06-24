@@ -36,6 +36,62 @@ const defaultTreeOptions = {
   initialTree: [],
 };
 
+// Serialize the tree map to a JSON-compatible object
+function serializeTreeMap<T>(treeMap: Map<string, TreeNode<T>>): string {
+  const serializedMap: any = {};
+
+  for (const [key, value] of treeMap.entries()) {
+    serializedMap[key] = {
+      // Serialize other properties of your nodes as needed
+      data: value.data,
+      parentKey: value.parentKey,
+      children: value.children.map((child) => child.key), // Store only the keys of child nodes
+    };
+  }
+
+  return JSON.stringify(serializedMap);
+}
+// Deserialize the JSON object back to a tree map
+function deserializeTreeMap<T>(json: string): Map<string, TreeNode<T>> {
+  const serializedMap = JSON.parse(json);
+  const treeMap = new Map();
+  const pendingConnections = [];
+
+  // Step 1: Deserialization without establishing parent-child relationships
+  for (const [key, _value] of Object.entries(serializedMap)) {
+    const value = _value as {
+      data: T;
+      parentKey: string;
+      children: string[];
+    };
+    const node = {
+      data: value.data,
+      parentKey: value.parentKey,
+      children: [], // Initialize children as an empty array
+    };
+
+    treeMap.set(key, node);
+
+    // Store pending connections for the second step
+    pendingConnections.push({ parentKey: key, children: value.children });
+  }
+
+  // Step 2: Establishing parent-child relationships with preserved order
+  for (const connection of pendingConnections) {
+    const { parentKey, children } = connection;
+    const parentNode = treeMap.get(parentKey);
+
+    for (const childKey of children) {
+      const childNode = treeMap.get(childKey);
+      if (parentNode && childNode) {
+        parentNode.children.push(childNode);
+      }
+    }
+  }
+
+  return treeMap;
+}
+
 export default function useVariationTree<T extends Chess.NodeData = Chess.NodeData>(
   options: Partial<VariationTreeOptions<T>> = defaultTreeOptions
 ): VariationTree<T> {
@@ -44,6 +100,12 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     ...options,
   };
   const tree = useTreeData<T>(initialTree || []);
+
+  const treeMap = tree.map;
+  const takeSnapShot = () => serializeTreeMap(treeMap);
+  const loadSnapShot = (snapShot: string) => {
+    tree.loadTree(deserializeTreeMap(snapShot));
+  };
   //Key of the selectedNode
   const [currentKey, setCurrentKey] = useState<string | null>(null);
   function loadNewTree(newTree: TreeNode<T>[]) {

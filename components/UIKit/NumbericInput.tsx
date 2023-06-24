@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { IoMdArrowDropup, IoMdArrowDropdown } from "react-icons/io";
 import classNames from "classnames";
+import Label from "./Label";
 interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   label?: string;
   className?: string;
@@ -23,7 +24,7 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
   };
   return (
     <div className={className}>
-      {label && <label className="text-sm mb-2 opacity-50">{label}</label>}
+      {label && <Label>{label}</Label>}
       <div className="relative w-40 overflow-hidden rounded-md overflow-hidden ring-white/[0.2] mt-1">
         <div className="absolute top-0 bottom-0 right-0 h-full w-8 grid grid-rows-2 bg-elevation-3  border-white/[0.2]">
           <div

@@ -28,7 +28,7 @@ export default function SavedAnalyses() {
 
 function RenderCollection({ collection }: { collection: Collection }) {
   return (
-    <StyledDiclosure label={collection.title}>
+    <StyledDiclosure label={collection.title} size={collection.analyses.length}>
       {collection.analyses.map((analysis) => {
         return <RenderAnalysis key={analysis.id} analysis={analysis} />;
       })}
@@ -68,8 +68,9 @@ function RenderAnalysis({ analysis }: { analysis: Analysis }) {
 interface StyledDisclosureProps {
   children: JSX.Element | string | Array<JSX.Element | string>;
   label: string;
+  size?: number;
 }
-function StyledDiclosure({ children, label }: StyledDisclosureProps) {
+function StyledDiclosure({ children, label, size = 0 }: StyledDisclosureProps) {
   return (
     <Disclosure>
       {({ open }) => (
@@ -84,14 +85,15 @@ function StyledDiclosure({ children, label }: StyledDisclosureProps) {
               }
             )}
           >
-            <span
-              className={classNames("hover:underline text-light-200 group-hover:text-light-100", {
+            <div
+              className={classNames(" text-light-200 flex flex-row items-center group-hover:text-light-100", {
                 "text-light-100": open,
               })}
             >
               <BsFillCollectionFill className="mr-2 inline text-gold-200" />
               {label}
-            </span>
+              <span className="text-light-400 ml-1 text-sm">{`(${size})`}</span>
+            </div>
             <MdExpandMore
               className={`text-gold-200 transition-transform duration-400 mt-[1px] text-xl ${
                 open ? "" : "rotate-[-90deg]"

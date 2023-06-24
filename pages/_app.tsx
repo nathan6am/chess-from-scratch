@@ -2,6 +2,7 @@ import "../styles/globals.css";
 import "../styles/previews.css";
 import "react-tooltip/dist/react-tooltip.css";
 import "react-contexify/dist/ReactContexify.css";
+import "react-range-slider-input/dist/style.css";
 import { Tooltip } from "react-tooltip";
 import type { AppProps } from "next/app";
 import { SocketContext, socket } from "../context/socket";
@@ -50,10 +51,13 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
             <Tooltip
               id="my-tooltip"
               style={{
-                backgroundColor: "#464646",
-                color: "#fff",
-                opacity: "100%",
+                backgroundColor: "#161616",
+                color: "#dddddd",
+                opacity: "96%",
+                padding: "0.25em 0.5em",
                 zIndex: 300,
+                backdropFilter: "blur(10px)",
+                borderRadius: "0.25em",
                 maxWidth: "30em",
               }}
             ></Tooltip>

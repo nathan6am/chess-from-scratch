@@ -47,6 +47,10 @@ export default function BoardControls({ controls, className, flipBoard }: Props)
       </button>
       {flipBoard !== undefined && (
         <button
+          // data-tooltip-content="Flip Board"
+          // data-tooltip-position="bottom"
+          // data-tooltip-id="my-tooltip"
+          // data-tooltip-delay-show={500}
           onClick={flipBoard}
           className="p-3 text-light-300 hover:text-gold-200 hover:bg-elevation-2 grow w-full"
         >

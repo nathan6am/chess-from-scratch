@@ -1,6 +1,7 @@
 import React, { useState, Fragment, useContext } from "react";
 import { AnalysisContext } from "./AnalysisBoard";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
+import EditDetails from "./EditDetails";
 import { Tab } from "@headlessui/react";
 import EvalInfo from "./EvalInfo";
 import { ScrollContainer } from "../layout/GameLayout";
@@ -15,14 +16,25 @@ import Annotations from "./Annotations";
 import Share from "./Share";
 import Explorer from "./Explorer";
 import { PGNTagData } from "@/lib/types";
-import { Input } from "../UIKit";
+import { Input, Button } from "../UIKit";
+import { HiSave } from "react-icons/hi";
 import { useForm } from "react-hook-form";
+import { PulseLoader } from "react-spinners";
+import { AiFillCheckCircle } from "react-icons/ai";
 
 interface Props {
-  showPlayer: () => void;
+  modalControls: {
+    showPlayer: () => void;
+    showSave: () => void;
+    showExport: () => void;
+    showShare: () => void;
+    showOpenFile: () => void;
+    showLoadGame: () => void;
+    showEditDetails: () => void;
+  };
 }
-export default function AnalysisPanel({ showPlayer }: Props) {
-  const { analysis } = useContext(AnalysisContext);
+export default function AnalysisPanel({ modalControls }: Props) {
+  const { analysis, saveManager } = useContext(AnalysisContext);
   const [expanded, setExpanded] = useState(true);
   const { onMove, currentNode, commentControls, setMoveQueue } = analysis;
 
@@ -37,7 +49,7 @@ export default function AnalysisPanel({ showPlayer }: Props) {
             <p>Explorer</p>
           </TopTab>
           <TopTab>
-            <p>Review</p>
+            <p>Details</p>
           </TopTab>
         </Tab.List>
         <Tab.Panel as={Fragment}>
@@ -45,7 +57,40 @@ export default function AnalysisPanel({ showPlayer }: Props) {
             <div className="shadow-md">
               <EvalInfo />
             </div>
-            <div className="w-full p-4 bg-elevation-2">Unsaved Analysis </div>
+            <div className="w-full px-4 py-2 bg-elevation-2 flex flex-row items-center justify-between">
+              {saveManager.id && saveManager.data ? (
+                <>
+                  <p>{saveManager.data.analysis.title}</p>
+                  <span className="text-sm text-light-300 flex flex-row items-end">
+                    {saveManager.syncStatus === "synced" ? (
+                      <>
+                        <p>Saved</p>
+                        <AiFillCheckCircle className="text-success-400 ml-1 text-md mb-0.5" />
+                      </>
+                    ) : (
+                      <>
+                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                      </>
+                    )}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <p className="text-light-200">{`* Unsaved Analysis`}</p>
+                  <Button
+                    onClick={modalControls.showSave}
+                    className="px-4 py-1"
+                    variant="success"
+                    label="Save"
+                    width="fit"
+                    size="sm"
+                    icon={HiSave}
+                    iconClassName="text-lg ml-1"
+                    iconPosition="right"
+                  />
+                </>
+              )}
+            </div>
 
             <div className="w-full grow relative bg-elevation-1">
               <ScrollContainer>
@@ -55,7 +100,10 @@ export default function AnalysisPanel({ showPlayer }: Props) {
           </>
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={showPlayer} />
+          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
+        </Tab.Panel>
+        <Tab.Panel as={Fragment}>
+          <EditDetails />
         </Tab.Panel>
       </Tab.Group>
       <div className="w-full border-t border-white/[0.2] ">
@@ -81,17 +129,13 @@ export default function AnalysisPanel({ showPlayer }: Props) {
             </StyledTab>
             <StyledTab expand={() => setExpanded(true)}>
               <p>
-                <AiFillTag className="inline mr-1 mb-1 " /> Tags
+                <AiFillTag className="inline mr-1 mb-1 " /> Share
               </p>
             </StyledTab>
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments
-                key={currentNode?.key || "none"}
-                node={currentNode}
-                controls={commentControls}
-              />
+              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -108,7 +152,7 @@ export default function AnalysisPanel({ showPlayer }: Props) {
               />
             </Tab.Panel>
             <Tab.Panel>
-              <TagForm tags={analysis.tagData} setTags={analysis.setTagData} />
+              <Share />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
@@ -133,9 +177,7 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected
-            ? "bg-[#202020]"
-            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

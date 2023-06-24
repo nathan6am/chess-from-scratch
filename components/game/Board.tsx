@@ -150,7 +150,6 @@ const Board = React.forwardRef<BoardHandle, Props>(
         const [square, piece] = selectedPiece;
         //If in edit mode, move the piece to the new square
         if (editMode) {
-          console.log("here");
           if (onMovePiece) {
             onMovePiece(square, currentSquare);
           }
@@ -219,9 +218,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
           }
           if (piece.color !== activeColor) return;
           // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find(
-            (move) => move.start === square && move.end === targetSquare
-          );
+          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
           //Return if no legal move is found
           if (!move) return;
           //Call onMove if the move is not a promotion
@@ -280,15 +277,14 @@ const Board = React.forwardRef<BoardHandle, Props>(
     return (
       <>
         <BoardArrows
+          key={orientation}
           squareSize={squareSize}
           squareIdPrefix={squareIdPrefix}
           arrows={arrows || (overrideArrows ? [] : localArrows.arrows)}
           pendingArrow={currentArrow}
         >
           <div
-            className={`${styles.board} relative mx-0 ${
-              showCoordinates === "outside" ? "m-2" : ""
-            } board-bg`}
+            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
@@ -306,9 +302,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start &&
-                    move.end === promotionMove.end &&
-                    move.promotion === type
+                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -334,12 +328,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     id={`${squareIdPrefix || ""}${square}`}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={
-                      (selectedPiece && selectedPiece[1].targets?.includes(square)) || false
-                    }
-                    isSelected={
-                      (!editMode && selectedPiece && selectedPiece[0] === square) || false
-                    }
+                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                    isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {
@@ -397,8 +387,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 disabled={
                   editMode
                     ? pieceCursor !== null
-                    : (moveable !== "both" && piece.color !== moveable) ||
-                      (!preMoveable && piece.color !== activeColor)
+                    : (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
                 }
                 orientation={orientation}
                 onDrop={onDrop}

@@ -16,14 +16,14 @@ export default function Select({ value, onChange, options, className }: Props<an
     <div className={className}>
       <Listbox value={value} onChange={onChange}>
         <div className="relative">
-          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-elevation-3 hover:bg-elevation-4 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
+          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-elevation-3 hover:bg-elevation-4 py-1.5 border-2 border-transparent pl-3 pr-8 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
             <div className="flex flex-row items-center">
               {Icon && (
-                <span className={`inline mt-1 mr-2 text-lg text-ligh-200 `}>
+                <span className={`inline mt-1 mr-2 text-lg text-light-200 `}>
                   <Icon className={selected?.iconClassName} />
                 </span>
               )}
-              <span className="block truncate text-light-200">{selected?.label}</span>
+              <span className="block truncate text-light-l00">{selected?.label}</span>
             </div>
 
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -57,7 +57,7 @@ interface ButtonProps {
 export function SelectButton({ selected, className, iconClassName }: ButtonProps) {
   const Icon = selected?.icon;
   return (
-    <Listbox.Button className=" mt-2 relative w-full cursor-default rounded-lg bg-elevation-3 hover:bg-elevation-4 py-3 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
+    <Listbox.Button className="mt-1 relative w-full cursor-default rounded-lg bg-elevation-3 hover:bg-elevation-4 py-1.5 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
       <div className="flex flex-row items-center">
         {Icon && (
           <span className={`inline mt-1 mr-2 text-lg text-ligh-200 `}>

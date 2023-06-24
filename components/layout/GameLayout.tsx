@@ -18,9 +18,7 @@ export function BoardColumn({ children, className }: LayoutComponentProps) {
 
 export function BoardRow({ children }: LayoutComponentProps) {
   return (
-    <div className="flex flex-row h-full w-full items-center justify-center lg:py-6 lg:pb-10 lg:pt-4">
-      {children}
-    </div>
+    <div className="flex flex-row h-full w-full items-center justify-center lg:py-6 lg:pb-10 lg:pt-4">{children}</div>
   );
 }
 
@@ -52,7 +50,7 @@ export function ScrollContainer({ children, auto, className }: LayoutComponentPr
     <div
       className={`top-0 bottom-0 left-0 right-0 ${
         auto ? "overflow-y-auto" : "overflow-y-scroll"
-      } absolute scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] ${
+      } absolute scrollbar scrollbar-elevation-3 scrollbar-rounded-sm scrollbar-thin scrollbar-track-elevation-0 scrollbar-w-[8px] ${
         className || ""
       }`}
     >

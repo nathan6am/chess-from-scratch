@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import axios from "axios";
-import { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Chess from "@/lib/chess";
 import { TreeNode } from "@/lib/types";
@@ -25,11 +25,11 @@ const defaultOptions: Options = {
 };
 
 enum Endpoints {
-  "lichess" = "https://explorer.lichess.ovh/lichess?topGames=15",
+  "lichess" = "https://explorer.lichess.ovh/lichess",
   "masters" = "https://explorer.lichess.ovh/masters",
 }
 
-import _ from "lodash";
+import _, { min } from "lodash";
 export interface ApiResponse {
   white: number;
   black: number;
@@ -71,6 +71,31 @@ interface PlayerInfo {
   rating: number;
 }
 
+export type Speed = "ultrabullet" | "bullet" | "blitz" | "rapid" | "classical" | "correspondence";
+interface LichessFilters {
+  speeds: Speed[];
+  ratings: [RatingGroup, RatingGroup];
+  since: string;
+  until: string;
+  moves: number;
+  topGames: number;
+}
+interface MastersFilters {
+  since?: number;
+  until?: number;
+  moves?: number;
+  topGames?: number;
+}
+
+type RatingGroup = 0 | 1000 | 1200 | 1400 | 1600 | 1800 | 2000 | 2200 | 2500;
+const ratingsToRange = (range: [RatingGroup, RatingGroup]) => {
+  const [min, max] = range;
+  const ratings = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
+  const minIndex = ratings.indexOf(min);
+  const maxIndex = ratings.indexOf(max);
+  return ratings.slice(minIndex, maxIndex + 1).join(",");
+};
+
 const reduceMoves = (history: Chess.MoveHistory): string =>
   history
     .flat()
@@ -78,14 +103,11 @@ const reduceMoves = (history: Chess.MoveHistory): string =>
     .map((halfMove) => Chess.MoveToUci(halfMove.move))
     .join(",");
 
-const fetcher = async (params: { fen: string; play: string }, database: "lichess" | "masters") => {
-  let queryParams: any = { ...params };
-  if (database === "lichess") {
-    queryParams.speeds = "blitz,rapid,classical";
-  }
+const fetcher = async (_params: any, database: "lichess" | "masters") => {
+  const { currentFen, ...params } = _params;
   const endpoint = Endpoints[database];
   const response = await axios.get(endpoint, {
-    params: queryParams,
+    params,
   });
   if (!response.data) throw new Error("No response data");
   return response.data as ApiResponse;
@@ -94,6 +116,10 @@ const fetcher = async (params: { fen: string; play: string }, database: "lichess
 export interface ExplorerHook {
   database: "lichess" | "masters";
   setDatabase: (database: "lichess" | "masters") => void;
+  lichessFilters: LichessFilters;
+  setLichessFilters: React.Dispatch<React.SetStateAction<LichessFilters>>;
+  mastersFilters: MastersFilters;
+  setMastersFilters: React.Dispatch<React.SetStateAction<MastersFilters>>;
   sourceGame: Chess.Game;
   data: ApiResponse | undefined;
   error: unknown;
@@ -106,14 +132,32 @@ export interface ExplorerHook {
 
 export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHook {
   const [database, setDatabase] = useState<"lichess" | "masters">("masters");
-  const [mastersFilters, setMastersFilters] = useState<{}>({});
-  const [lichessFilters, setLichessFilters] = useState<{}>({});
+  const [mastersFilters, setMastersFilters] = useState<MastersFilters>({});
+  const [lichessFilters, setLichessFilters] = useState<LichessFilters>({
+    speeds: ["bullet", "blitz", "rapid", "classical"],
+    ratings: [0, 2500],
+    since: "2013-01",
+    until: "2023-01",
+    moves: 12,
+    topGames: 4,
+  });
   const [gameId, fetchOTBGame] = useState<string | null>(null);
   //Debounce game state for api calls
   const fen = useMemo(() => currentGame.config.startPosition, [currentGame.config.startPosition]);
   const play = useMemo(() => reduceMoves(currentGame.moveHistory), [currentGame.moveHistory]);
   const currentFen = useMemo(() => currentGame.fen, [currentGame.fen]);
-  const queryParams = useMemo(() => ({ fen, play, currentFen }), [fen, play, currentFen]);
+  const filters = useMemo(() => {
+    if (database === "lichess") {
+      return {
+        ...lichessFilters,
+        speeds: lichessFilters.speeds?.join(","),
+        ratings: lichessFilters.ratings ? ratingsToRange(lichessFilters.ratings) : undefined,
+      };
+    } else {
+      return mastersFilters;
+    }
+  }, [database, lichessFilters, mastersFilters]);
+  const queryParams = useMemo(() => ({ fen, play, currentFen, ...filters }), [fen, play, currentFen, filters]);
   const params = useDebounce(queryParams, 500);
   //Ref to set loading state when currentGame changes before debounced game upates
   const debounceSyncRef = useRef<boolean>(false);
@@ -176,6 +220,10 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
   return {
     database,
     setDatabase,
+    lichessFilters,
+    setLichessFilters,
+    mastersFilters,
+    setMastersFilters,
     otbGameLoading,
     fetchOTBGame,
     otbGame,

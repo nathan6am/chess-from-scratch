@@ -6,7 +6,7 @@ import Analysis from "@/lib/db/entities/Analysis";
 import Collection from "@/lib/db/entities/Collection";
 import { SavedAnalysis, PGNTagData, AnalysisData } from "@/lib/types";
 import { useRouter } from "next/router";
-import _, { set } from "lodash";
+import _ from "lodash";
 import useDebounce from "./useDebounce";
 const fetcher = async (id: string | null) => {
   if (!id) return null;
@@ -18,11 +18,6 @@ const fetcher = async (id: string | null) => {
   }
 };
 
-interface Options {
-  initialId?: string;
-  moveText: string;
-  tags: PGNTagData;
-}
 //Hook for managing loading/saving analysis from DB
 export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tags: PGNTagData }) {
   const pgn = useDebounce(_pgn, 1000);
@@ -46,7 +41,6 @@ export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tag
     },
   });
   const remotePgn = data?.analysis.pgn;
-  const remoteTags = data?.analysis.tagData;
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const synced = remotePgn === pgn;
   const syncStatus = useMemo(() => {
@@ -72,7 +66,6 @@ export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tag
       else throw new Error();
     },
     onSuccess: (data) => {
-      console.log("save success");
       queryClient.setQueriesData(["analysis", id], { analysis: data, readonly: false });
       queryClient.invalidateQueries(["analysis", id]);
       queryClient.refetchQueries(["analysis", id]);

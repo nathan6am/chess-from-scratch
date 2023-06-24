@@ -34,8 +34,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={classNames("w-full", containerClassName)}>
         {label && (
-          <span className="flex flex-row items-center mb-1">
-            <label className="block text-light-200/[0.6] text-md font-semibold " htmlFor={id}>
+          <span className="flex flex-row items-center mb-0.5">
+            <label className="block text-light-300 text-sm font-semibold " htmlFor={id}>
               {label}
             </label>
             {optional && <p className="text-xs text-white/[0.3] font-medium ml-1 mt-[2px]">(optional)</p>}

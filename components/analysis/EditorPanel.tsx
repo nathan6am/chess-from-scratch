@@ -8,7 +8,7 @@ import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";
 import { FiRepeat } from "react-icons/fi";
 import { Select, Toggle, Input } from "../UIKit";
-
+import { WhiteIcon, BlackIcon } from "../menu/NewGame";
 interface EditorProps {
   boardEditor: BoardEditorHook;
   boardRef: React.RefObject<BoardHandle>;
@@ -70,8 +70,8 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
           <Select
             className="grow"
             options={[
-              { label: "White to Play", value: "w" },
-              { label: "Black to Play", value: "b" },
+              { label: "White to Play", value: "w", icon: WhiteIcon },
+              { label: "Black to Play", value: "b", icon: BlackIcon },
             ]}
             value={boardEditor.activeColor}
             onChange={boardEditor.setActiveColor}

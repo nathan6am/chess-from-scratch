@@ -5,13 +5,13 @@ import Loading from "../UI/Loading";
 import { replacePieceChars } from "../game/MoveHistory";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-
+import RangeSlider from "../UIKit/RangeSlider";
 import { Popover, Listbox, Transition } from "@headlessui/react";
 import { usePopper } from "react-popper";
 import { MdFilterList, MdCheck } from "react-icons/md";
 import { FaDatabase } from "react-icons/fa";
 import { HiOutlineSelector } from "react-icons/hi";
-
+import { Label, MultiSelect, NumbericInput, Input } from "../UIKit";
 interface Props {
   explorer: ExplorerHook;
   onMove: (move: Chess.Move) => void;
@@ -69,7 +69,7 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
           </div>
 
           <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
-            <FiltersMenu />
+            <LichessFilters explorer={explorer} />
           </Popover.Panel>
         </Popover>
         <div className="w-full p-2 px-3 text-sm bg-elevation-2 shadow-md">
@@ -108,7 +108,7 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
               )}
             </>
           </ScrollContainer>
-          <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5]"></div>
+          <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5] pointer-events-none"></div>
         </div>
       </div>
       <TopGames
@@ -220,7 +220,7 @@ function TopGames({ games, sourceGame, attemptMove, loadGame, isLoading }: TopGa
             </p>
           )}
         </ScrollContainer>
-        <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5]"></div>
+        <div className="bottom-0 left-0 right-0 absolute h-6 bg-gradient-to-b from-transparent to-[#121212]/[0.5] pointer-events-none"></div>
       </div>
     </div>
   );
@@ -298,7 +298,15 @@ function RenderGameResult({ winner }: { winner: "black" | "white" | null }) {
 }
 
 function FiltersMenu() {
-  return <div className="w-full p-4 bg-[#363636] rounded-md shadow-lg">Filters</div>;
+  const [speeds, setSpeeds] = useState<string[]>([]);
+  const options = [
+    { value: "bullet", label: "Bullet" },
+    { value: "blitz", label: "Blitz" },
+    { value: "rapid", label: "Rapid" },
+    { value: "classical", label: "Classical" },
+  ];
+
+  return <div className="w-[24rem] p-4 bg-elevation-3 rounded-md shadow-lg"></div>;
 }
 
 function DBSelect({ value, onChange }: { value: string; onChange: (value: "lichess" | "masters") => void }) {
@@ -311,7 +319,12 @@ function DBSelect({ value, onChange }: { value: string; onChange: (value: "liche
       <Listbox value={value} onChange={onChange}>
         <div className="relative">
           <Listbox.Button className="relative w-full cursor-default rounded-lg bg-elevation-1 overflow-hidden text-left focus:outline-none flex flex-row pr-10 shadow items-center">
-            <div className="h-full p-2 flex justify-center items-center bg-elevation-2">
+            <div
+              data-tooltip-id="my-tooltip"
+              data-tooltip-content="Database source"
+              data-tooltip-place="bottom"
+              className="h-full p-2 flex justify-center items-center bg-elevation-2"
+            >
               <FaDatabase className="text-gold-200" />
             </div>
 
@@ -352,6 +365,128 @@ function DBSelect({ value, onChange }: { value: string; onChange: (value: "liche
           </Transition>
         </div>
       </Listbox>
+    </div>
+  );
+}
+
+type RatingIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+const ratingMap = {
+  0: {
+    value: 0,
+    label: "0",
+  },
+  1: {
+    value: 1000,
+    label: "1000",
+  },
+  2: {
+    value: 1200,
+    label: "1200",
+  },
+  3: {
+    value: 1400,
+    label: "1400",
+  },
+  4: {
+    value: 1600,
+    label: "1600",
+  },
+  5: {
+    value: 1800,
+    label: "1800",
+  },
+  6: {
+    value: 2000,
+    label: "2000",
+  },
+  7: {
+    value: 2200,
+    label: "2200",
+  },
+  8: {
+    value: 2500,
+    label: "2500+",
+  },
+};
+
+import type { Speed } from "@/hooks/useOpeningExplorer";
+function LichessFilters({ explorer }: { explorer: ExplorerHook }) {
+  const { lichessFilters, setLichessFilters } = explorer;
+  const { speeds, ratings } = lichessFilters;
+  const speedOptions = [
+    { value: "ultraBullet", label: "UltraBullet" },
+    { value: "bullet", label: "Bullet" },
+    { value: "blitz", label: "Blitz" },
+    { value: "rapid", label: "Rapid" },
+    { value: "classical", label: "Classical" },
+    { value: "correspondence", label: "Correspondence" },
+  ];
+  const setSpeeds = (speeds: Speed[]) => {
+    setLichessFilters({ ...lichessFilters, speeds });
+  };
+  const ratingsValue = useMemo<[RatingIndex, RatingIndex]>(() => {
+    const [min, max] = ratings;
+    const minIndex = Object.values(ratingMap).findIndex((rating) => rating.value === min);
+    const maxIndex = Object.values(ratingMap).findIndex((rating) => rating.value === max);
+    return [minIndex, maxIndex] as [RatingIndex, RatingIndex];
+  }, [ratings]);
+  const [minLabel, maxLabel] = useMemo(() => {
+    const [min, max] = ratingsValue;
+    return [ratingMap[min].label, ratingMap[max].label];
+  }, [ratingsValue]);
+  const setRatings = ([_min, _max]: [number, number]) => {
+    const min = _min as RatingIndex;
+    const max = _max as RatingIndex;
+    const minRating = ratingMap[min].value as (typeof lichessFilters.ratings)[0];
+    const maxRating = ratingMap[max].value as (typeof lichessFilters.ratings)[1];
+    setLichessFilters({ ...lichessFilters, ratings: [minRating, maxRating] });
+  };
+  return (
+    <div className="w-[24rem] p-4 bg-elevation-3 rounded-md shadow-lg">
+      <div className="w-full ">
+        <Label className="mb-1">Time Controls</Label>
+        <MultiSelect
+          buttonClassName="bg-elevation-4 hover:bg-elevation-5"
+          optionsClassName="bg-elevation-4 "
+          options={speedOptions}
+          value={speeds}
+          onChange={setSpeeds}
+          showSelectAll
+        />
+        <Label className="mt-4">Rating</Label>
+      </div>
+      <div className="w-full mt-[-0.5em] pr-2">
+        <RangeSlider
+          min={0}
+          max={8}
+          step={1}
+          value={ratingsValue}
+          onChange={setRatings}
+          minLabel={minLabel}
+          maxLabel={maxLabel}
+          allowOverlap="atMax"
+        />
+      </div>
+      <div className="w-full mt-4  flex flex-row justify-between gap-x-4">
+        <NumbericInput
+          label="Top Games"
+          value={lichessFilters.topGames}
+          onChange={(topGames) => setLichessFilters({ ...lichessFilters, topGames })}
+          min={0}
+          max={4}
+        />
+        <NumbericInput
+          label="Moves"
+          value={lichessFilters.moves}
+          onChange={(moves) => setLichessFilters({ ...lichessFilters, moves })}
+          min={0}
+          max={20}
+        />
+      </div>
+      <div className="w-full mt-4  flex flex-row justify-between gap-x-4">
+        <Input type="date" label="From" />
+        <Input type="date" label="To" />
+      </div>
     </div>
   );
 }

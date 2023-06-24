@@ -3,6 +3,7 @@ import { BoardHandle } from "../game/Board";
 import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import _ from "lodash";
+import { BsFillHandIndexFill, BsFillEraserFill } from "react-icons/bs";
 import { BoardEditorHook } from "@/hooks/useBoardEditor";
 
 interface SetupPanelProps {
@@ -52,7 +53,14 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
             "border-transparent": boardEditor.pieceCursor,
           })}
         >
-          <div className="aspect-square">HAND</div>
+          <div className="aspect-square flex justify-center items-center">
+            <BsFillHandIndexFill
+              className={classNames("text-4xl mt-1.5 mr-1.5", {
+                "text-success-500": !boardEditor.pieceCursor,
+                "text-light-300": boardEditor.pieceCursor,
+              })}
+            />
+          </div>
         </button>
       </>
       <>
@@ -77,7 +85,14 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
             "border-transparent": boardEditor.pieceCursor !== "remove",
           })}
         >
-          <div className="aspect-square">ERASE</div>
+          <div className="aspect-square flex justify-center items-center">
+            <BsFillEraserFill
+              className={classNames("text-4xl mt-1.5 mr-1", {
+                "text-red-400": boardEditor.pieceCursor === "remove",
+                "text-light-300": boardEditor.pieceCursor !== "remove",
+              })}
+            />
+          </div>
         </button>
       </>
     </div>

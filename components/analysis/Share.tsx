@@ -1,12 +1,12 @@
 import React from "react";
 import html2canvas from "html2canvas";
 import { MdContentCopy } from "react-icons/md";
-interface Props {
-  boardRef: React.RefObject<HTMLDivElement>;
-  pgn: string;
-  fen: string;
-}
-export default function Share({ boardRef, pgn, fen }: Props) {
+import { AnalysisContext } from "./AnalysisBoard";
+import { useContext } from "react";
+export default function Share() {
+  const { boardRef, analysis } = useContext(AnalysisContext);
+  const { pgn, currentGame } = analysis;
+  const { fen } = currentGame;
   const handleDownloadImage = async () => {
     const element = boardRef.current;
     if (!element) return;

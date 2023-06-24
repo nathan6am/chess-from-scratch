@@ -11,7 +11,8 @@ import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { Menu, Transition } from "@headlessui/react";
 import { BoardHandle } from "../game/Board";
-
+import ToolBarNew from "../layout/ToolBar";
+import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
 //Icons
 import { IoMdStopwatch } from "react-icons/io";
 // Hooks
@@ -42,12 +43,15 @@ interface Context {
   analysis: AnalysisHook;
   boardRef: React.RefObject<BoardHandle>;
   boardEditor: ReturnType<typeof useBoardEditor>;
+  saveManager: ReturnType<typeof useSavedAnalysis>;
 }
 
 export const AnalysisContext = React.createContext<Context>(null!);
 
 export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
-  const analysis = useAnalysisBoard();
+  const analysis = useAnalysisBoard({
+    isNew: initialId || sourceGameId ? false : true,
+  });
   const {
     currentGame,
     onMove,
@@ -121,7 +125,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     if (!id) return;
     if (!saveManager.data?.analysis) return;
     if (!initialLoad.current) {
-      console.log("initial load");
       analysis.loadPgn(saveManager.data.analysis.pgn);
       initialLoad.current = true;
       currentIdRef.current = id;
@@ -160,6 +163,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         analysis,
         boardRef,
         boardEditor: editor,
+        saveManager,
       }}
     >
       <OptionsOverlay
@@ -173,9 +177,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame
-            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
-            : ""
+          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -190,15 +192,31 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         }}
       />
       <div className="flex flex-col h-full w-full justify-center">
-        <ToolBar
-          showOptions={() => {
-            setOptionsOverlayShown(true);
-          }}
-          saveCurrent={saveCurrent}
-          showSave={() => {
-            setSaveModalShown(true);
-          }}
-        />
+        <ToolBarNew>
+          <MenuWrapper>
+            <MenuButton>File</MenuButton>
+            <MenuItems>
+              <MenuItem onClick={() => setSaveModalShown(true)} disabled={!!saveManager.id}>
+                {saveManager.id && saveManager.data?.analysis ? (
+                  <span className="block truncate">{`Saved as "${saveManager.data?.analysis?.title}"`}</span>
+                ) : (
+                  <>Save</>
+                )}
+              </MenuItem>
+              <MenuItem onClick={() => setPopupPlayerShown(true)}>Load</MenuItem>
+              <MenuItem onClick={() => setOptionsOverlayShown(true)}>Options</MenuItem>
+            </MenuItems>
+          </MenuWrapper>
+          <MenuWrapper>
+            <MenuButton>Position</MenuButton>
+            <MenuItems>
+              <MenuItem onClick={() => setEditMode((cur) => !cur)}>Edit Board</MenuItem>
+              <MenuItem onClick={() => {}}>Play vs. Computer</MenuItem>
+              <MenuItem onClick={() => {}}>Play vs. a Friend</MenuItem>
+              <MenuItem onClick={flipBoard}>Flip Board</MenuItem>
+            </MenuItems>
+          </MenuWrapper>
+        </ToolBarNew>
         <span>Synced: {`${saveManager.synced}`}</span>
         <BoardRow>
           <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
@@ -210,9 +228,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.black && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.black}{" "}
-                          <span className="inline opacity-50">{`(${
-                            analysis.tagData.eloBlack || "?"
-                          })`}</span>
+                          <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
                         </p>
                       )}
                     </>
@@ -220,23 +236,17 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.white && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.white}{" "}
-                          <span className="inline opacity-50">{`(${
-                            analysis.tagData.eloWhite || "?"
-                          })`}</span>
+                          <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
                         </p>
                       )}
                     </>
                   </div>
                   <div className="flex flex-col justify-between items-center shrink">
                     <span>
-                      {analysis.timeRemaining.b !== null && (
-                        <DisplayClock time={analysis.timeRemaining.b} color="b" />
-                      )}
+                      {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
                     </span>
                     <span>
-                      {analysis.timeRemaining.w !== null && (
-                        <DisplayClock time={analysis.timeRemaining.w} color="w" />
-                      )}
+                      {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
                     </span>
                   </div>
                 </div>
@@ -333,8 +343,18 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 ) : (
                   <>
                     <AnalysisPanel
-                      showPlayer={() => {
-                        setPopupPlayerShown(true);
+                      modalControls={{
+                        showPlayer: () => {
+                          setPopupPlayerShown(true);
+                        },
+                        showSave: () => {
+                          setSaveModalShown(true);
+                        },
+                        showLoadGame: () => {},
+                        showEditDetails: () => {},
+                        showOpenFile: () => {},
+                        showShare: () => {},
+                        showExport: () => {},
                       }}
                     />
                     <BoardControls controls={boardControls} flipBoard={flipBoard} />
@@ -346,207 +366,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         </BoardRow>
       </div>
     </AnalysisContext.Provider>
-  );
-}
-
-interface ToolBarProps {
-  showSave: () => void;
-  saveCurrent: () => void;
-  showOptions: () => void;
-}
-function ToolBar({ showSave, saveCurrent, showOptions }: ToolBarProps) {
-  return (
-    <div className="w-full h-8 bg-[#404040] justify-center items-center flex relative">
-      <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-b from-transparent via-white/[0.03] via-white/[0.04] to-white/[0.02]"></div>
-      <div className="container flex flex-row items-center lg:px-4 xl:px-8">
-        <div>
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                File
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={saveCurrent}>Save</MenuItem>
-                <MenuItem onClick={showSave}>Save As</MenuItem>
-                <MenuItem disabled onClick={() => {}}>
-                  Edit Details
-                </MenuItem>
-                <MenuItem onClick={() => {}}>Fork</MenuItem>
-                <MenuItem onClick={() => {}}>Load Game</MenuItem>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        </div>
-        <div>
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                Share/Export
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={() => {}}>Export PGN</MenuItem>
-                <MenuItem onClick={() => {}}>Download Image</MenuItem>
-                <MenuItem disabled onClick={() => {}}>
-                  Get Shareable Link
-                </MenuItem>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        </div>
-        <div>
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                Current Line
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={() => {}}>Delete from Here</MenuItem>
-                <MenuItem onClick={() => {}}>Delete from Start</MenuItem>
-                <MenuItem onClick={() => {}}>Make mainline</MenuItem>
-                <MenuItem onClick={() => {}}>New Analysis from Current Line</MenuItem>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        </div>
-        <div>
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                Position
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={() => {}}>Play vs. Computer</MenuItem>
-                <MenuItem onClick={() => {}}>Play vs. a friend</MenuItem>
-                <MenuItem onClick={() => {}}>Set up Board</MenuItem>
-                <MenuItem onClick={() => {}}>Copy FEN</MenuItem>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        </div>
-        <div>
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-                Settings
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <MenuItem onClick={showOptions}>App Settings</MenuItem>
-                <MenuItem onClick={() => {}}>Explorer Settings</MenuItem>
-                <MenuItem onClick={() => {}}>Layout</MenuItem>
-                <MenuItem onClick={() => {}}>Show Annotations on Board</MenuItem>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Example() {
-  return (
-    <div>
-      <Menu as="div" className="relative inline-block text-left">
-        <div>
-          <Menu.Button className="inline-flex w-full justify-center px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-            File
-          </Menu.Button>
-        </div>
-        <Transition
-          as={Fragment}
-          enter="transition ease-out duration-100"
-          enterFrom="transform opacity-0 scale-95"
-          enterTo="transform opacity-100 scale-100"
-          leave="transition ease-in duration-75"
-          leaveFrom="transform opacity-100 scale-100"
-          leaveTo="transform opacity-0 scale-95"
-        >
-          <Menu.Items className="absolute left-0 z-[100] mt-1 w-56 origin-top-right divide-y divide-gray-100/[0.1] rounded-sm overflow-hidden bg-[#404040] shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-            <MenuItem onClick={() => {}}>Save Analysis</MenuItem>
-            <MenuItem disabled onClick={() => {}}>
-              Edit Details
-            </MenuItem>
-            <MenuItem onClick={() => {}}>Save a Copy</MenuItem>
-            <MenuItem onClick={() => {}}>Add to Collection</MenuItem>
-            <MenuItem onClick={() => {}}>Load Game</MenuItem>
-          </Menu.Items>
-        </Transition>
-      </Menu>
-    </div>
-  );
-}
-
-interface MenuItemProps {
-  children?: string | JSX.Element | Array<string | JSX.Element>;
-  disabled?: boolean;
-  onClick: any;
-}
-function MenuItem({ children, disabled, onClick }: MenuItemProps) {
-  return (
-    <Menu.Item>
-      {({ active }) => (
-        <button
-          onClick={onClick}
-          className={`${
-            active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
-          } group flex flex-row w-full  px-2 py-2 text-sm ${
-            disabled ? "pointer-none text-white/[0.3]" : ""
-          }`}
-        >
-          {children}
-        </button>
-      )}
-    </Menu.Item>
   );
 }
 

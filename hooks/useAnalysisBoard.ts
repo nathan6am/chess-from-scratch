@@ -62,6 +62,7 @@ interface AnalysisOptions {
   evalEnabled: boolean;
   id?: string;
   readonly: boolean;
+  isNew?: boolean;
 }
 const defaultOptions = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -72,7 +73,9 @@ const defaultOptions = {
 import { parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
 
 export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOptions>): AnalysisHook {
-  const [isNew, setIsNew] = useState(() => (!initialOptions?.id && !initialOptions?.pgnSource) as boolean);
+  const [isNew, setIsNew] = useState(
+    () => (!initialOptions?.id && !initialOptions?.pgnSource && initialOptions?.isNew) as boolean
+  );
   const [options, setOptions] = useState(() => {
     return { ...defaultOptions, ...initialOptions };
   });

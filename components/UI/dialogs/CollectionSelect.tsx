@@ -6,7 +6,7 @@ import { ScrollContainer } from "@/components/layout/GameLayout";
 import { TbSelector } from "react-icons/tb";
 import useCollections from "@/hooks/useCollections";
 import Collection from "@/lib/db/entities/Collection";
-import { Input } from "@/components/UIKit";
+import { Input, Label } from "@/components/UIKit";
 import classNames from "classnames";
 
 interface Props {
@@ -16,13 +16,7 @@ interface Props {
   isLoading: boolean;
   createNew: (title: string) => void;
 }
-export default function CollectionSelect({
-  selected,
-  setSelected,
-  collections,
-  isLoading,
-  createNew,
-}: Props) {
+export default function CollectionSelect({ selected, setSelected, collections, isLoading, createNew }: Props) {
   const [title, setTitle] = useState("");
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,29 +29,22 @@ export default function CollectionSelect({
     <div className="w-full">
       <Listbox multiple value={selected} onChange={setSelected}>
         <div className="relative mt-1">
-          <Listbox.Label className="text-white/[0.6] text-md font-semibold ">
-            Collections:
+          <Listbox.Label>
+            <Label>Collections</Label>
           </Listbox.Label>
           <Listbox.Button className="relative w-full cursor-pointer mt-1 mb-3 rounded-lg bg-[#303030] hover:bg-[#363636] py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
             <span className="block truncate opacity-80">
               Add to Collections{" "}
               {selected.length > 0 && (
-                <span className="bg-[#b99873] ml-1 py-[2px] font-bold rounded-full px-3 text-xs">
-                  {selected.length}
-                </span>
+                <span className="bg-gold-300 ml-1 py-[2px] font-bold rounded-full px-3 text-xs">{selected.length}</span>
               )}
             </span>
 
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <TbSelector className="text-xl " />
+              <TbSelector className="text-xl text-gold-200 " />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options className="absolute max-h-80 h-80 w-full flex flex-col rounded-md bg-[#303030] pb-1  shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ">
               <div className="w-full py-2 pt-3 bg-[#404040] rounded-t-md px-2">
                 <div className="w-full bg-[#303030] rounded-md border border-white/[0.2] px-2 mb-1">
@@ -104,12 +91,9 @@ export default function CollectionSelect({
                         if (title) createNew(title);
                         setTitle("");
                       }}
-                      className={classNames(
-                        "py-2 px-4 mt-1 rounded-md text-center text-white/[0.8] hover:text-white",
-                        {
-                          hidden: !expanded,
-                        }
-                      )}
+                      className={classNames("py-2 px-4 mt-1 rounded-md text-center text-white/[0.8] hover:text-white", {
+                        hidden: !expanded,
+                      })}
                     >
                       Create
                     </button>
@@ -130,9 +114,7 @@ export default function CollectionSelect({
                     >
                       {({ selected }) => (
                         <>
-                          <span
-                            className={`block truncate ${selected ? "font-medium" : "font-normal"}`}
-                          >
+                          <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
                             <AiFillFolder className="inline opacity-50 text-lg mr-2 " />
                             {collection.title}
                           </span>
