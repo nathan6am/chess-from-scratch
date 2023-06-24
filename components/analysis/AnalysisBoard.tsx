@@ -11,7 +11,7 @@ import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./AnalysisPanel";
 import { Menu, Transition } from "@headlessui/react";
 import { BoardHandle } from "../game/Board";
-import ToolBarNew from "../layout/ToolBar";
+import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
 //Icons
 import { IoMdStopwatch } from "react-icons/io";
@@ -192,7 +192,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         }}
       />
       <div className="flex flex-col h-full w-full justify-center">
-        <ToolBarNew>
+        <MenuBar>
           <MenuWrapper>
             <MenuButton>File</MenuButton>
             <MenuItems>
@@ -216,7 +216,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               <MenuItem onClick={flipBoard}>Flip Board</MenuItem>
             </MenuItems>
           </MenuWrapper>
-        </ToolBarNew>
+        </MenuBar>
         <span>Synced: {`${saveManager.synced}`}</span>
         <BoardRow>
           <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">

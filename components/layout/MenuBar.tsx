@@ -5,7 +5,7 @@ import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
 interface Props {
   children: JSX.Element | string | Array<JSX.Element | string>;
 }
-function Toolbar({ children }: Props) {
+function MenuBar({ children }: Props) {
   const [showOptions, setShowOptions] = useState(false);
   const closeModal = () => {
     setShowOptions(false);
@@ -39,4 +39,4 @@ function Toolbar({ children }: Props) {
   );
 }
 
-export default Toolbar;
+export default MenuBar;
