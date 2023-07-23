@@ -15,6 +15,7 @@ export interface AnalysisHook {
   isNew: boolean;
   tree: VariationTree;
   loadPgn: (pgn: string) => void;
+  pgnLoaded: boolean;
   pgn: string;
   tagData: PGNTagData;
   setTagData: React.Dispatch<React.SetStateAction<PGNTagData>>;
@@ -82,7 +83,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const { settings } = useContext(SettingsContext);
   const [evalEnabled, setEvalEnabled] = useState(() => options.evalEnabled);
   const [tagData, setTagData] = useState<PGNTagData>({});
-
+  const pgnLoadedRef = useRef(false);
+  const [pgnToLoad, setPgnToLoad] = useState<string | null>(null);
   useEffect(() => {
     if (options.startPosition !== defaultOptions.startPosition) setIsNew(false);
     if (options.pgnSource) setIsNew(false);
@@ -123,8 +125,22 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     return [...path, ...continuation];
   }, [path, continuation]);
 
+  //Reset analysis
+  const reset = (options: { pgn?: string }) => {
+    if (options.pgn) {
+      const { tree, tagData } = parsePgn(options.pgn);
+      loadPgn(options.pgn);
+      setTagData(tagData);
+      setIsNew(false);
+    } else {
+      variationTree.loadNewTree([]);
+      setTagData({});
+      setIsNew(true);
+    }
+  };
   // Load pgn to tree
   const loadPgn = (pgn: string) => {
+    setPgnToLoad(pgn);
     try {
       const { tree, tagData } = parsePgn(pgn);
       if (tagData.fen) {
@@ -157,7 +173,9 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       if (fen !== options.startPosition) {
         //clear variation tree
         variationTree.loadNewTree([]);
-        setTagData((cur) => ({ ...cur, fen }));
+        if (fen !== defaultOptions.startPosition) {
+          setTagData((cur) => ({ ...cur, fen, setUp: "1" }));
+        }
         setOptions((cur) => {
           return { ...cur, startPosition: fen };
         });
@@ -169,7 +187,16 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
 
   // Step forward/backward with arrow keys
   useEffect(() => {
+    // Check if an input or textarea is focused
+    const isInputFocused = () => {
+      const activeEl = document.activeElement;
+      if (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) {
+        return true;
+      }
+      return false;
+    };
     const arrowKeyHandler = (e: KeyboardEvent) => {
+      if (isInputFocused()) return;
       if (e.code === "ArrowRight") {
         stepForward();
       } else if (e.code === "ArrowLeft") {
@@ -225,6 +252,13 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     const tagSection = tagDataToPGNString(tagData);
     return tagSection + "\r\n" + moveText + (tagData?.result || "*");
   }, [moveText, tagData]);
+
+  useEffect(() => {
+    if (pgnToLoad !== null && pgn === pgnToLoad) {
+      pgnLoadedRef.current = true;
+      setPgnToLoad(null);
+    }
+  }, [pgn, pgnToLoad]);
 
   // Opening explorer and evaler
   const explorer = useOpeningExplorer(currentGame);
@@ -396,6 +430,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     isNew,
     tree: variationTree,
     loadPgn,
+    pgnLoaded: pgnLoadedRef.current,
     loadFen,
     moveText,
     pgn,

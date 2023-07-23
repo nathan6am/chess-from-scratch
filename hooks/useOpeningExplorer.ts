@@ -36,6 +36,7 @@ export interface ApiResponse {
   draws: number;
   moves: MoveData[];
   topGames: DBGameData[];
+  recentGames?: DBGameData[];
   opening: {
     eco: string;
     name: string;

@@ -274,6 +274,26 @@ const Board = React.forwardRef<BoardHandle, Props>(
       ...boardRef.current,
     } as BoardHandle;
     useImperativeHandle(ref, () => exposedMethods, [exposedMethods]);
+    useEffect(() => {
+      const contextMenuHandler = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      const mouseUpHandler = (e: MouseEvent) => {
+        if (e.button === 2) {
+          e.preventDefault();
+        }
+      };
+
+      const board = boardRef.current;
+      if (!board) return;
+      board.addEventListener("contextmenu", contextMenuHandler);
+      board.addEventListener("mouseup", mouseUpHandler);
+      return () => {
+        board.removeEventListener("contextmenu", contextMenuHandler);
+        board.removeEventListener("mouseup", mouseUpHandler);
+      };
+    }, []);
     return (
       <>
         <BoardArrows

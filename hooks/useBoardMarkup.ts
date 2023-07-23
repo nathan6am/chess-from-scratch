@@ -11,17 +11,13 @@ interface Args {
   disabled?: boolean;
 }
 
-export default function useBoardMarkup({
-  currentSquare,
-  lockArrows,
-  color,
-  disabled,
-  onArrow,
-  onMarkSquare,
-}: Args) {
+export default function useBoardMarkup({ currentSquare, lockArrows, color, disabled, onArrow, onMarkSquare }: Args) {
   const [currentArrowStart, setCurrentArrowStart] = useState<Chess.Square | null>(null);
+  const [currentArrowColor, setCurrentArrowColor] = useState<ArrowColor | null>(null);
+  const colorOverride = useColorOverride();
   const start = (square: Chess.Square | null) => {
     setCurrentArrowStart(square);
+    setCurrentArrowColor(colorOverride || color);
   };
 
   const currentArrow = useMemo<Arrow | null>(() => {
@@ -29,16 +25,16 @@ export default function useBoardMarkup({
     return {
       start: currentArrowStart,
       end: currentSquare,
-      color: color,
+      color: currentArrowColor || "G",
     };
-  }, [currentArrowStart, currentSquare, color]);
+  }, [currentArrowStart, currentSquare, currentArrowColor]);
 
   const finalize = () => {
     if (currentArrow) {
       onArrow(currentArrow);
       setCurrentArrowStart(null);
     } else if (currentArrowStart && currentArrowStart === currentSquare) {
-      onMarkSquare({ color, square: currentArrowStart });
+      onMarkSquare({ color: currentArrowColor || color, square: currentArrowStart });
       setCurrentArrowStart(null);
     } else {
       setCurrentArrowStart(null);
@@ -95,9 +91,7 @@ export function useArrowState() {
   const onArrow = (newArrow: Arrow) => {
     setArrows((current) => {
       if (current.some((arrow) => arrow.start === newArrow.start && arrow.end === newArrow.end)) {
-        return current.filter(
-          (arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end)
-        );
+        return current.filter((arrow) => !(arrow.start === newArrow.start && arrow.end === newArrow.end));
       } else {
         return [...current, newArrow];
       }
@@ -123,4 +117,52 @@ export function useArrowState() {
     onMarkSquare,
     clear,
   };
+}
+
+export function useColorOverride() {
+  const [modifierKeys, setModifierKeys] = useState({
+    ctrlKey: false,
+    altKey: false,
+    shiftKey: false,
+  });
+  const colorOverride = useMemo(() => {
+    const { ctrlKey, altKey, shiftKey } = modifierKeys;
+    if (!ctrlKey && !altKey && !shiftKey) return null;
+    if (ctrlKey && !altKey && !shiftKey) return "R";
+    if (!ctrlKey && altKey && !shiftKey) return "B";
+    if (ctrlKey && altKey) return "Y";
+    if (ctrlKey && shiftKey) return "G";
+    if (shiftKey) return "O";
+
+    if (!ctrlKey && !altKey && !shiftKey) return null;
+  }, [modifierKeys]);
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.ctrlKey || event.altKey || event.shiftKey) {
+      setModifierKeys({
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+      });
+    }
+  };
+
+  const handleKeyUp = () => {
+    setModifierKeys({
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+    });
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+  return colorOverride;
 }

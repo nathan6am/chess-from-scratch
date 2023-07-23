@@ -27,6 +27,7 @@ let Analysis = Analysis_1 = class Analysis extends typeorm_1.BaseEntity {
     forkedFrom;
     author;
     visibility;
+    lastUpdate;
     tagData;
     collections;
     static async verifyAuthor(id, userid) {
@@ -103,6 +104,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false, default: "unlisted" }),
     __metadata("design:type", String)
 ], Analysis.prototype, "visibility", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", Date)
+], Analysis.prototype, "lastUpdate", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: "jsonb" }),
     __metadata("design:type", Object)

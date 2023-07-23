@@ -7,10 +7,8 @@ import {
   ManyToMany,
   ManyToOne,
   JoinColumn,
+  UpdateDateColumn,
   CreateDateColumn,
-  OneToMany,
-  OneToOne,
-  ILike,
   JoinTable,
 } from "typeorm";
 import type { Relation } from "typeorm";
@@ -52,6 +50,9 @@ export default class Analysis extends BaseEntity {
   @Column({ nullable: false, default: "unlisted" })
   visibility: "private" | "unlisted" | "public";
 
+  @UpdateDateColumn()
+  lastUpdate: Date;
+
   @Column({ type: "jsonb" })
   tagData: PGNTagData;
 
@@ -87,4 +88,36 @@ export default class Analysis extends BaseEntity {
     const updated = await analysis.save();
     return updated;
   }
+
+  static async rename(id: string, title: string) {
+    const analysis = await this.findOneBy({ id });
+    if (!analysis) throw new Error("Analysis does not exits");
+    analysis.title = title;
+    const updated = await analysis.save();
+    return updated;
+  }
+
+  static async searchMine(userid: string, searchParams: SearchParams) {
+    const query = this.createQueryBuilder("analysis").where("analysis.authorId = :userid", { userid });
+    if (searchParams.query) {
+      query.andWhere("analysis.title ILIKE :query", { query: `%${searchParams.query}%` });
+    }
+    if (searchParams.sortBy) {
+      query.orderBy(`analysis.${searchParams.sortBy}`, searchParams.sortDirection || "ASC");
+    }
+    if (searchParams.pageCursor) {
+      query.skip((searchParams.pageSize || 10) * Number(searchParams.pageCursor));
+    }
+    query.take(searchParams.pageSize || 10);
+    const analyses = await query.getMany();
+    return analyses;
+  }
+}
+
+interface SearchParams {
+  query?: string;
+  pageCursor?: string;
+  pageSize?: number;
+  sortBy?: "lastUpdate" | "title";
+  sortDirection?: "ASC" | "DESC";
 }

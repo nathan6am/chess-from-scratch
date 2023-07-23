@@ -103,7 +103,6 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
       collectionIds: selected.map((c) => c.id),
       pgn,
     };
-    console.log(saveData);
     save(saveData);
   };
   return (

@@ -1,5 +1,5 @@
 //Framework
-import React, { useState, Fragment, useMemo, useCallback } from "react";
+import React, { useState, Fragment, useMemo, useCallback, useRef, ChangeEvent, KeyboardEvent, useEffect } from "react";
 
 //Types
 import { ArrowColor, TreeNode } from "@/lib/types";
@@ -15,7 +15,7 @@ import * as Chess from "@/lib/chess";
 //Util
 import { ColorEnum } from "./BoardArrows";
 import classNames from "classnames";
-
+import { useColorOverride } from "@/hooks/useBoardMarkup";
 //Numbered Annotation Glyphs
 export interface NAG {
   code: number;
@@ -63,11 +63,7 @@ export default function Annotations({ node, controls, markupControls }: Props) {
         toggleLocked={markupControls.toggleLocked}
       />
       <div className="flex flex-row items-center">
-        <AnnotationSelect
-          updateAnnotations={updateAnnotations}
-          selected={selectedAnnotations}
-          disabled={!node}
-        />
+        <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
         <a
           data-tooltip-id="my-tooltip"
           data-tooltip-content="Clear all"
@@ -80,7 +76,62 @@ export default function Annotations({ node, controls, markupControls }: Props) {
           <CgRemoveR className="inline ml-1" />
         </a>
       </div>
+      <TimeInput />
     </div>
+  );
+}
+
+function TimeInput() {
+  const [value, setValue] = useState("00:00:01");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const selectionStartRef = useRef<number>(0);
+  const selectionEndRef = useRef<number>(0);
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const input = inputRef.current;
+    if (!input) return;
+    const position = input.selectionStart;
+    console.log(position);
+    if (e.key.match(/[0-9]/)) {
+      if (position === 8) {
+        setValue((value) => {
+          const [hh, mm, ss] = value.split(":");
+          const digits = `${hh}${mm}${ss}`;
+          //Push the new digit to the end of the string and remove the first digit
+          const newDigits = digits.slice(1) + e.key;
+          const newHH = newDigits.slice(0, 2);
+          const newMM = newDigits.slice(2, 4);
+          const newSS = newDigits.slice(4, 6);
+          return `${newHH}:${newMM}:${newSS}`;
+        });
+        selectionStartRef.current = 8;
+      } else if (position !== null) {
+        //replace the digit at the current position
+        setValue((value) => {
+          const [hh, mm, ss] = value.split(":");
+          const digits = `${hh}${mm}${ss}`;
+          const newDigits = digits.slice(0, position) + e.key + digits.slice(position + 1);
+          const newHH = newDigits.slice(0, 2);
+          const newMM = newDigits.slice(2, 4);
+          const newSS = newDigits.slice(4, 6);
+          return `${newHH}:${newMM}:${newSS}`;
+        });
+        if (position < 2 || (position <= 3 && position < 5) || (position <= 6 && position < 8)) {
+          selectionStartRef.current = position + 1;
+        } else {
+          selectionStartRef.current = position + 2;
+        }
+      }
+    }
+  };
+  useEffect(() => {
+    if (!inputRef.current) return;
+    // Synchronize the cursor position after the value is updated
+    inputRef.current.selectionStart = selectionStartRef.current;
+    inputRef.current.selectionEnd = selectionStartRef.current;
+  }, [value, selectionStartRef.current]);
+
+  return (
+    <input type="text" value={value} ref={inputRef} onKeyDown={handleKeyDown} placeholder="--:--:--" maxLength={8} />
   );
 }
 
@@ -103,9 +154,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           updateAnnotations(values);
         } else {
           const filterValues = category.options.map((option) => option.code);
-          updateAnnotations(
-            values.filter((value) => value === valueAdded || !filterValues.includes(value))
-          );
+          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
         }
       }
     },
@@ -119,21 +168,14 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
             Annotate With Glyphs
             <>
               {selected.length > 0 && (
-                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">
-                  {selected.length}
-                </span>
+                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">{selected.length}</span>
               )}
             </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
               <MdEditNote className="h-5 w-5" aria-hidden="true" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
@@ -151,11 +193,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
                       >
                         {({ selected }) => (
                           <>
-                            <span
-                              className={`block truncate ${
-                                selected ? "font-medium" : "font-normal"
-                              }`}
-                            >
+                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
                               <span className="inline text-sepia mr-1">{option.unicode}</span>
                               {option.description}
                             </span>
@@ -185,13 +223,8 @@ interface MarkupControlProps {
   locked: boolean;
   toggleLocked: () => void;
 }
-function MarkupControls({
-  selectedColor,
-  setSelectedColor,
-  clear,
-  locked,
-  toggleLocked,
-}: MarkupControlProps) {
+function MarkupControls({ selectedColor, setSelectedColor, clear, locked, toggleLocked }: MarkupControlProps) {
+  const colorOverride = useColorOverride();
   return (
     <div className="w-full">
       <RadioGroup value={selectedColor} onChange={setSelectedColor}>
@@ -202,8 +235,9 @@ function MarkupControls({
               {({ active, checked }) => (
                 <div
                   className={classNames("h-6 w-6 rounded-sm cursor-pointer mx-2", {
-                    "border-2 border-white/[0.8]": checked,
+                    "border-2 border-light-100": checked,
                     "border-2 border-white/[0.3]": active && !checked,
+                    "border-2 border-white/[0.5]": colorOverride === key,
                   })}
                   style={{ backgroundColor: value }}
                 ></div>

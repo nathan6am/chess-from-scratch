@@ -1,11 +1,13 @@
 import Analysis from "@/lib/db/entities/Analysis";
 import Collection from "@/lib/db/entities/Collection";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 export default function useCollections() {
   const queryClient = useQueryClient();
-  const { data, isLoading, error } = useQuery({
+  const [creating, setCreating] = useState<boolean>(false);
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["collections"],
     queryFn: async () => {
       const response = await axios.get<{ collections: Collection[]; all: Analysis[] }>(
@@ -19,6 +21,7 @@ export default function useCollections() {
 
   const { mutate: createNew } = useMutation({
     mutationFn: async (title: string) => {
+      setCreating(true);
       const response = await axios.post<{ collection: Collection }>("/api/collections/create", {
         title,
       });
@@ -27,6 +30,7 @@ export default function useCollections() {
     },
     onSuccess: (newData) => {
       //Optimistic update
+      setCreating(false);
       if (data) {
         queryClient.setQueriesData(["collections"], {
           ...data,
@@ -39,9 +43,11 @@ export default function useCollections() {
   });
 
   return {
+    refetch,
     allAnalyses: data?.all || [],
     collections: data?.collections || [],
     isLoading,
+    creating,
     error,
     createNew,
   };

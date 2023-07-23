@@ -113,7 +113,6 @@ let game = null;
 let options: EvalOptions = {
   useNNUE: true,
   useCloudEval: true,
-  //threads: 2,
   multiPV: 3,
   depth: 18,
   showLinesAfterDepth: 10,
@@ -121,8 +120,8 @@ let options: EvalOptions = {
 //Startup
 stockfish.postMessage("uci");
 stockfish.postMessage("isready");
-stockfish.postMessage("setoption name Threads value 2");
-stockfish.postMessage("setoption name Hash value 256");
+stockfish.postMessage("setoption name Threads value 1");
+stockfish.postMessage("setoption name Hash value 128");
 function shouldReevaluate(newOptions: EvalOptions): boolean {
   if (newOptions.useCloudEval !== options.useCloudEval) return true;
   if (newOptions.useNNUE !== options.useNNUE) return true;
@@ -200,13 +199,12 @@ const onStockfishMessage = (e: MessageEvent) => {
 stockfish.addEventListener("message", onStockfishMessage);
 
 const runEval = debounce(async (fen: string) => {
-  console.log("running eval");
-  abort();
+  //console.log("running eval");
+
   currentFen = fen;
   const cached = getCachedEval(fen);
   if (cached) {
     if (!cached.isCloudEval && options.useCloudEval) {
-      console.log("here");
       const cloudEval = await fetchCloudEval(fen);
       if (cloudEval) {
         cache.set(normalizeFen(fen), cloudEval);
@@ -239,10 +237,11 @@ self.onmessage = async (e: MessageEvent) => {
     const fen = message.fen;
     if (!fen) return;
     if (fen === currentFen) return;
+    abort();
     runEval(fen);
   }
   if (message.type === "disable") {
-    console.log("disabling confirmed");
+    //console.log("disabling confirmed");
     abort();
   }
   if (message.type === "enable") {
@@ -250,7 +249,7 @@ self.onmessage = async (e: MessageEvent) => {
   }
   if (message.type === "setOptions") {
     const newOptions = message.options;
-    console.log("new options", newOptions);
+    //console.log("new options", newOptions);
     if (!newOptions) return;
     if (shouldReevaluate(newOptions)) {
       options = { ...options, ...newOptions };
@@ -264,7 +263,7 @@ self.onmessage = async (e: MessageEvent) => {
 function abort() {
   aborted = true;
   stockfish.postMessage("stop");
-  console.log("aborting");
+  console.log("stopping");
   currentMove = null;
   currentLines = [];
   currentScore = { type: "cp", value: 0 };

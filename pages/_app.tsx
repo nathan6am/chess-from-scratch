@@ -16,6 +16,17 @@ import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 import { useLocalStorage } from "usehooks-ts";
 import useProfile from "@/hooks/useProfile";
+import { Inter, Open_Sans } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const open_sans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+});
 const queryClient = new QueryClient();
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -61,7 +72,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
                 maxWidth: "30em",
               }}
             ></Tooltip>
-            {getLayout(<Component {...pageProps} />)}
+            <main className={`${open_sans.variable} font-sans`}>{getLayout(<Component {...pageProps} />)}</main>
           </SocketContext.Provider>
         </UserContext.Provider>
       </SettingsContext.Provider>

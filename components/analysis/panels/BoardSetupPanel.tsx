@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { BoardHandle } from "../game/Board";
+import { BoardHandle } from "@/components/game/Board";
 import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import _ from "lodash";

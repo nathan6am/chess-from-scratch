@@ -2,25 +2,8 @@ import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallba
 import _ from "lodash";
 import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
 import * as Chess from "@/lib/chess";
-import Image from "next/image";
 import styles from "@/styles/Board.module.scss";
-import { on } from "events";
-const throttle = (f: any) => {
-  let token: any = null,
-    lastArgs: any = null;
-  const invoke = () => {
-    f(...lastArgs);
-    token = null;
-  };
-  const result = (...args: any[]) => {
-    lastArgs = args;
-    if (!token) {
-      token = requestAnimationFrame(invoke);
-    }
-  };
-  result.cancel = () => token && cancelAnimationFrame(token);
-  return result;
-};
+
 interface PieceProps {
   hidden?: boolean;
   disableTransition?: boolean;

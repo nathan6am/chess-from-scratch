@@ -2,14 +2,15 @@ import { Fragment, useMemo, useState } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { BsFillCheckCircleFill } from "react-icons/bs";
 import { TbSelector } from "react-icons/tb";
-
+import { twMerge } from "tailwind-merge";
 interface Props<T> {
   value: T;
   onChange: (value: T) => void;
   options: { label: string; value: T; icon?: React.FC<any>; iconClassName?: string }[];
   className?: string;
+  optionsClassName?: string;
 }
-export default function Select({ value, onChange, options, className }: Props<any>) {
+export default function Select({ value, onChange, options, className, optionsClassName }: Props<any>) {
   const selected = useMemo(() => options.find((option) => option.value === value), [value, options]);
   const Icon = selected?.icon;
   return (
@@ -31,7 +32,12 @@ export default function Select({ value, onChange, options, className }: Props<an
             </span>
           </Listbox.Button>
           <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <Listbox.Options className="z-[50] absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-elevation-3 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none  scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y">
+            <Listbox.Options
+              className={twMerge(
+                "z-[50] absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-elevation-3 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none  scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y",
+                optionsClassName
+              )}
+            >
               {options.map((option, idx) => (
                 <SelectOption
                   key={option.value}

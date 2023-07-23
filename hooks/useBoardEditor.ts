@@ -22,12 +22,18 @@ export interface BoardEditorHook {
   clearBoard: () => void;
   resetToStartPosition: () => void;
   isValid: true | string;
+  setHalfMoveCount: React.Dispatch<React.SetStateAction<number>>;
+  setFullMoveCount: React.Dispatch<React.SetStateAction<number>>;
+  halfMoveCount: number;
+  fullMoveCount: number;
 }
 export default function useBoardEditor(
   startPosition: string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ): BoardEditorHook {
   const [pieceCursor, setPieceCursor] = useState<Chess.Piece | "remove" | null>(null);
   const [activeColor, setActiveColor] = useState<Chess.Color>("w");
+  const [halfMoveCount, setHalfMoveCount] = useState(0);
+  const [fullMoveCount, setFullMoveCount] = useState(1);
   const [castleRights, setCastleRights] = useState<Record<Chess.Color, { kingSide: boolean; queenSide: boolean }>>({
     w: { kingSide: true, queenSide: true },
     b: { kingSide: true, queenSide: true },
@@ -69,8 +75,8 @@ export default function useBoardEditor(
           queenSide: disabledCastling.b.queenSide ? false : castleRights.b.queenSide,
         },
       },
-      fullMoveCount: 1,
-      halfMoveCount: 0,
+      fullMoveCount,
+      halfMoveCount,
     };
   }, [position, activeColor, enPassantTarget, castleRights]);
   const clearBoard = useCallback(() => {
@@ -166,5 +172,9 @@ export default function useBoardEditor(
     disabledCastling,
     clearBoard,
     resetToStartPosition,
+    halfMoveCount,
+    setHalfMoveCount,
+    fullMoveCount,
+    setFullMoveCount,
   };
 }

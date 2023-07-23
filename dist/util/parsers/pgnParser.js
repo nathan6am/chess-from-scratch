@@ -107,20 +107,20 @@ function parseCommands(commands) {
     });
     return data;
 }
-function encodeCommentFromNodeData(data) {
+function encodeCommentFromNodeData(data, { includeArrows = true, includeTimeRemaining = true, includeComments = true, }) {
     let commentString = "";
-    if (data.timeRemaining) {
+    if (data.timeRemaining && includeTimeRemaining) {
         commentString += `[%clk ${luxon_1.Duration.fromMillis(data.timeRemaining).toISOTime()}] `;
     }
-    if (data.markedSquares && data.markedSquares.length) {
+    if (data.markedSquares && data.markedSquares.length && includeArrows) {
         commentString += `[%csl ${data.markedSquares
             .map((markedSquare) => `${markedSquare.color}${markedSquare.square}`)
             .join(",")}] `;
     }
-    if (data.arrows && data.arrows.length) {
+    if (data.arrows && data.arrows.length && includeArrows) {
         commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
     }
-    if (data.comment) {
+    if (data.comment && includeComments) {
         commentString += data.comment;
     }
     if (commentString.length)

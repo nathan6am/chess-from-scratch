@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { SocketContext } from "@/context/socket";
 import { useRouter } from "next/router";
-
+import GameSearch from "@/components/menu/GameSearch";
 import useProfile from "@/hooks/useProfile";
 import useGameSearch from "@/hooks/useGameSearch";
 import RecentGames from "@/components/menu/RecentGames";
@@ -61,7 +61,6 @@ export default function Play() {
             <NewGameMenu />
           </div>
           <div className="grow w-full flex flex-col items-center justify-center h-full justify-start gap-y-4">
-            <RecentGames />
             <RecentGames />
           </div>
         </div>

@@ -35,13 +35,7 @@ const parseScore = (score: Chess.EvalScore): string => {
 
 export default function EvalInfo() {
   const { analysis } = useContext(AnalysisContext);
-  const {
-    evaler,
-    currentGame,
-    setMoveQueue,
-    evalEnabled: enabled,
-    setEvalEnabled: setEnabled,
-  } = analysis;
+  const { evaler, currentGame, setMoveQueue, evalEnabled: enabled, setEvalEnabled: setEnabled } = analysis;
 
   //Play out the engine line on the analysis board
   const attemptMoves = (moves: string[]) => {
@@ -107,12 +101,7 @@ export default function EvalInfo() {
             </Popover.Button>
           </div>
 
-          <Popover.Panel
-            ref={setPopperElement}
-            className="z-50"
-            style={styles.popper}
-            {...attributes.popper}
-          >
+          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
             <OptionsMenu evaler={evaler} />
           </Popover.Panel>
         </Popover>
@@ -156,7 +145,7 @@ export default function EvalInfo() {
               </> */}
               {evaler.lines.length > 0 &&
                 evaler.lines.map((line, idx) => {
-                  if (!line?.score) console.log(evaler.lines);
+                  // if (!line?.score) console.log(evaler.lines);
                   return (
                     <RenderLine
                       key={idx}
@@ -169,10 +158,7 @@ export default function EvalInfo() {
                 })}
 
               <>
-                <Placeholders
-                  count={evaler.options.multiPV - evaler.lines.length}
-                  loading={evaler.isEvaluating}
-                />
+                <Placeholders count={evaler.options.multiPV - evaler.lines.length} loading={evaler.isEvaluating} />
               </>
             </div>
           )}
@@ -202,11 +188,7 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
         <p className="text-xs text-center ">{parseScore(line.score)}</p>
       </div>
 
-      <p
-        className={`${
-          expanded ? "" : "truncate"
-        } bg-white/[0.03] px-1 rounded-sm mb-[1px] px-2 text-sm`}
-      >
+      <p className={`${expanded ? "" : "truncate"} bg-white/[0.03] px-1 rounded-sm mb-[1px] px-2 text-sm`}>
         {line.moves.map((move, idx) => (
           <RenderMove
             key={idx}
@@ -227,11 +209,7 @@ function RenderLine({ line, attemptMoves, moveCount }: LineProps) {
           setExpanded((x) => !x);
         }}
       >
-        <MdExpandMore
-          className={` transition-transform duration-400 text-xl ${
-            expanded ? "" : "rotate-[-90deg]"
-          }`}
-        />
+        <MdExpandMore className={` transition-transform duration-400 text-xl ${expanded ? "" : "rotate-[-90deg]"}`} />
       </button>
     </div>
   );
@@ -248,9 +226,7 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   return (
     <>
       {(isWhite || idx === 0) && (
-        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">
-          {Chess.moveCountToNotation(moveCount)}
-        </span>
+        <span className="inline ml-[6px] opacity-50 text-sm mr-[-2px]">{Chess.moveCountToNotation(moveCount)}</span>
       )}
       <span
         className="inline-block cursor-pointer py-[2px] rounded-md hover:bg-white/[0.1] px-[1px] mr-[1px]"

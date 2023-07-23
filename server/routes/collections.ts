@@ -17,8 +17,7 @@ router.get("/my-collections", verifyUser, async (req: VerifiedRequest, res) => {
   const user = req.verifiedUser;
   if (!user) return res.status(401);
   const collections = await User.getCollections(user.id);
-  const all = await Analysis.getAllByUser(user.id);
-  if (collections && all) return res.status(200).json({ collections, all });
+  if (collections) return res.status(200).json({ collections });
   else res.status(400).end();
 });
 
@@ -31,8 +30,26 @@ router.post("/create", verifyUser, async (req: VerifiedRequest, res) => {
   if (collection) return res.status(201).json({ collection });
   else res.status(400).end();
 });
-
-router.delete("/delete/:id", verifyUser, async (req: VerifiedRequest, res) => {
+router.put("/:id", verifyUser, async (req: VerifiedRequest, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  const user = req.verifiedUser;
+  if (!user) return res.status(401);
+  if (!title || typeof title !== "string") return res.status(400);
+  const collection = await Collection.findOne({
+    where: {
+      id: id,
+      user: {
+        id: user.id,
+      },
+    },
+  });
+  if (!collection) return res.status(404);
+  collection.title = title;
+  const updated = await collection.save();
+  return res.status(200).json({ updated });
+});
+router.delete("/:id", verifyUser, async (req: VerifiedRequest, res) => {
   const { id } = req.params;
   const user = req.verifiedUser;
   if (!user) return res.status(401);

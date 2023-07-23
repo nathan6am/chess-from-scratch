@@ -22,6 +22,26 @@ router.get(
     res
   ) => {}
 );
+router.get("/my-analyses", verifyUser, async (req: VerifiedRequest, res) => {
+  const user = req.verifiedUser;
+  if (!user) return res.status(401);
+  const page = req.query.page ? parseInt(req.query.page as string) : 1;
+  const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string) : 15;
+  const queryString = req.query.query ? (req.query.query as string) : null;
+  const sortBy = req.query.sortBy ? (req.query.sortBy as string) : "lastUpdated";
+  const sortDirection = req.query.sortDirection ? (req.query.sortDirection as "ASC" | "DESC") : "DESC";
+  const query = Analysis.createQueryBuilder("analysis").where("analysis.authorId = :authorId", { authorId: user.id });
+  if (queryString) {
+    query.andWhere("analysis.title ILIKE :queryString", { queryString: `%${queryString}%` });
+  }
+  query.orderBy(`analysis.${sortBy}`, sortDirection);
+  query.skip((page - 1) * pageSize);
+  query.take(pageSize);
+  const analyses = await query.getMany();
+  if (analyses) return res.status(200).json({ analyses });
+  else res.status(400).end();
+});
+
 router.post(
   "/",
   async (
@@ -67,10 +87,7 @@ router.post(
 router.put(
   "/:id",
   verifyUser,
-  async (
-    req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>,
-    res
-  ) => {
+  async (req: Request<{ id: string }, unknown, Partial<Omit<Analysis, "id" | "forkedFrom">>>, res) => {
     const userid = req.user?.id;
     const { id } = req.params;
     try {
@@ -89,6 +106,75 @@ router.put(
     }
   }
 );
+
+router.put(
+  "/:id/assign-collections",
+  verifyUser,
+  async (req: Request<{ id: string }, unknown, { collectionIds: string[] }>, res) => {
+    const userid = req.user?.id;
+    const { id } = req.params;
+    const { collectionIds } = req.body;
+    try {
+      const canEdit = await Analysis.verifyAuthor(id, userid);
+      if (canEdit) {
+        const updated = await Analysis.addToCollections(id, collectionIds);
+        res.status(200).json(updated);
+        return;
+      } else {
+        res.status(401).end();
+        return;
+      }
+    } catch (e) {
+      res.status(500).end();
+      return;
+    }
+  }
+);
+
+router.put("/:id/rename", verifyUser, async (req: Request<{ id: string }, unknown, { title: string }>, res) => {
+  const userid = req.user?.id;
+  const { id } = req.params;
+  const { title } = req.body;
+  try {
+    const canEdit = await Analysis.verifyAuthor(id, userid);
+    if (canEdit) {
+      const updated = await Analysis.updateById(id, { title });
+      res.status(200).json(updated);
+      return;
+    } else {
+      res.status(401).end();
+      return;
+    }
+  } catch (e) {
+    res.status(500).end();
+    return;
+  }
+});
+
+router.delete("/:id", verifyUser, async (req: Request<{ id: string }>, res) => {
+  const userid = req.user?.id;
+  const { id } = req.params;
+  try {
+    const canEdit = await Analysis.verifyAuthor(id, userid);
+    if (canEdit) {
+      const analysis = await Analysis.findOne({ where: { id } });
+      if (analysis) {
+        await analysis.remove();
+        res.status(200).end();
+        return;
+      } else {
+        res.status(404).end();
+        return;
+      }
+    } else {
+      res.status(401).end();
+      return;
+    }
+  } catch (e) {
+    res.status(500).end();
+    return;
+  }
+});
 
 router.get("/:id", async (req, res) => {
   const userid = req.user?.id;
@@ -118,12 +204,12 @@ router.post("/:id/fork", verifyUser, async (req: VerifiedRequest, res) => {
   try {
     const analysis = await Analysis.findOneBy({ id });
     if (!analysis) return res.status(404).end();
-    if (analysis.visibility === "private" && analysis.authorId !== user.id)
-      return res.status(401).end();
+    if (analysis.visibility === "private" && analysis.authorId !== user.id) return res.status(401).end();
     const forked = new Analysis();
-    const { id: sourceId, authorId, collectionIds, forkedFromId, ...rest } = analysis;
+    const { id: sourceId, authorId, collectionIds, forkedFromId, title, ...rest } = analysis;
     Object.assign(forked, {
       ...rest,
+      title: `Copy of ${title}`,
       authorId: user.id,
       forkedFromId: sourceId,
       collectionIds: collections || [],

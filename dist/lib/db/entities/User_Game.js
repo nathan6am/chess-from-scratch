@@ -26,6 +26,8 @@ let User_Game = class User_Game extends typeorm_1.BaseEntity {
     opponentRating;
     opponentId;
     static async findGamesByUser(userid, searchOptions) {
+        const page = searchOptions.page || 1;
+        const pageSize = searchOptions.pageSize || 12;
         const query = this.createQueryBuilder("user_game")
             .leftJoinAndSelect("user_game.game", "game")
             .leftJoin("game.players", "players")
@@ -58,9 +60,8 @@ let User_Game = class User_Game extends typeorm_1.BaseEntity {
             query.orderBy("game.date", "DESC");
         }
         query.select(["user_game", "game", "players", "user.id", "user.username"]);
-        if (searchOptions.limit) {
-            query.limit(searchOptions.limit);
-        }
+        query.skip((page - 1) * pageSize);
+        query.take(pageSize);
         const games = await query.getMany();
         return games;
     }

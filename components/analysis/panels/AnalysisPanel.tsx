@@ -1,22 +1,22 @@
 import React, { useState, Fragment, useContext } from "react";
-import { AnalysisContext } from "./AnalysisBoard";
+import { AnalysisContext } from "@/components/analysis/AnalysisBoard";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
-import EditDetails from "./EditDetails";
+import EditDetails from "@/components/analysis/EditDetails";
 import { Tab } from "@headlessui/react";
-import EvalInfo from "./EvalInfo";
-import { ScrollContainer } from "../layout/GameLayout";
-import VarationTree from "./VarationTree";
+import EvalInfo from "@/components/analysis/EvalInfo";
+import { ScrollContainer } from "@/components/layout/GameLayout";
+import VarationTree from "@/components/analysis/VarationTree";
 import { MdModeComment, MdExpandMore } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
 import { AiFillTag } from "react-icons/ai";
 import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
 import { BsShareFill } from "react-icons/bs";
-import Comments from "./Comments";
-import Annotations from "./Annotations";
-import Share from "./Share";
-import Explorer from "./Explorer";
+import Comments from "@/components/analysis/Comments";
+import Annotations from "@/components/analysis/Annotations";
+import Share from "@/components/analysis/Share";
+import Explorer from "@/components/analysis/Explorer";
 import { PGNTagData } from "@/lib/types";
-import { Input, Button } from "../UIKit";
+import { Input, Button } from "@/components/UIKit";
 import { HiSave } from "react-icons/hi";
 import { useForm } from "react-hook-form";
 import { PulseLoader } from "react-spinners";
@@ -94,7 +94,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
 
             <div className="w-full grow relative bg-elevation-1">
               <ScrollContainer>
-                <VarationTree inlineView />
+                <VarationTree />
               </ScrollContainer>
             </div>
           </>
@@ -175,7 +175,7 @@ function StyledTab({ children, expand }: StyledTabProps) {
       onClick={expand}
       className={({ selected }) =>
         classNames(
-          "w-32 rounded-t-md py-1 text-md text-white/[0.7] px-4",
+          "w-32 rounded-t-md py-1 text-sm text-white/[0.7] px-4",
           "focus:outline-none ",
           selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )

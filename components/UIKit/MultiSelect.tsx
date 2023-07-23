@@ -3,16 +3,18 @@ import { Listbox, Transition } from "@headlessui/react";
 import { BsFillCheckCircleFill } from "react-icons/bs";
 import { twMerge } from "tailwind-merge";
 import { TbSelector } from "react-icons/tb";
+import classNames from "classnames";
 import { MdCheckBoxOutlineBlank, MdCheckBox, MdIndeterminateCheckBox } from "react-icons/md";
 interface Props<T> {
   value: T[];
   onChange: (value: T[]) => void;
-  options: { label: string; value: T; icon?: React.FC<any>; iconClassName?: string }[];
+  options: { label: string; value: T; icon?: React.FC<any>; iconClassName?: string; disabled?: boolean }[];
   className?: string;
   buttonClassName?: string;
   optionsClassName?: string;
   placeholder?: string;
   showSelectAll?: boolean;
+  showAllowAny?: boolean;
 }
 export default function MultiSelect({
   value,
@@ -23,7 +25,11 @@ export default function MultiSelect({
   showSelectAll,
   buttonClassName,
   optionsClassName,
+  showAllowAny,
 }: Props<any>) {
+  const allowAny = () => {
+    onChange([]);
+  };
   const allSelected = useMemo(() => options.every((option) => value.includes(option.value)), [value, options]);
   const selectAll = () => {
     if (allSelected) {
@@ -44,7 +50,11 @@ export default function MultiSelect({
           >
             <div className="flex flex-row items-center">
               <span className="block truncate text-light-l00">
-                {value.length ? `${value.length} Selected` : <span className="text-light-300">{`None Selected`}</span>}
+                {value.length ? (
+                  `${value.length} Selected`
+                ) : (
+                  <span className="text-light-300 pr-1">{showAllowAny ? <em>Any</em> : "None Selected"}</span>
+                )}
               </span>
             </div>
 
@@ -61,6 +71,7 @@ export default function MultiSelect({
             >
               {showSelectAll && (
                 <button
+                  type="button"
                   onClick={selectAll}
                   className="flex flex-row hover:bg-white/[0.1] w-full text-light-200 hover:text-light-100 items-center justify-start px-2 py-2"
                 >
@@ -76,8 +87,18 @@ export default function MultiSelect({
                   <span>Select All</span>
                 </button>
               )}
+              {showAllowAny && (
+                <button
+                  type="button"
+                  onClick={allowAny}
+                  className="flex flex-row hover:bg-white/[0.1] w-full text-light-200 hover:text-light-100 items-center justify-start px-2 py-2"
+                >
+                  <span className="h-[1em]" />
+                </button>
+              )}
               {options.map((option, idx) => (
                 <SelectOption
+                  disabled={option.disabled}
                   key={option.value}
                   value={option.value}
                   label={option.label}
@@ -124,10 +145,12 @@ interface OptionProps {
   label?: string;
   icon?: React.FC<any>;
   iconClassName?: string;
+  disabled?: boolean;
 }
-export function SelectOption({ label, value, children, icon: Icon, iconClassName }: OptionProps) {
+export function SelectOption({ label, value, children, icon: Icon, iconClassName, disabled }: OptionProps) {
   return (
     <Listbox.Option
+      disabled={disabled}
       key={value}
       className={({ active, selected }) =>
         `relative cursor-default select-none pr-4 ${selected ? "" : ""} ${
@@ -141,19 +164,29 @@ export function SelectOption({ label, value, children, icon: Icon, iconClassName
           <div className="flex flex-row items-center justify-start pl-8 py-2 ">
             {children}
 
-            <span className={`block truncate ${selected ? "text-light-100" : "text-light-200"}`}>{label}</span>
+            <span
+              className={classNames(`block truncate`, {
+                "text-light-300": selected && !disabled,
+                "text-light-200": !selected && !disabled,
+                "text-light-400": disabled,
+              })}
+            >
+              {label}
+            </span>
             {Icon && (
               <span className={`inline mt-1 ml-2 text-lg  ${selected ? "text-ligh-200" : "text-light-300"}`}>
                 <Icon className={iconClassName} />
               </span>
             )}
           </div>
-          <span className={`absolute inset-y-0 left-0 flex items-center pl-3`}>
-            {selected ? (
-              <MdCheckBox className="text-gold-200 text-lg" />
-            ) : (
-              <MdCheckBoxOutlineBlank className="text-light-300 text-lg" />
-            )}
+          <span
+            className={classNames(`absolute inset-y-0 left-0 flex items-center pl-3`, {
+              "text-gold-200": selected && !disabled,
+              "text-light-300": !selected && !disabled,
+              "text-light-400": disabled,
+            })}
+          >
+            {selected ? <MdCheckBox className=" text-lg" /> : <MdCheckBoxOutlineBlank className=" text-lg" />}
           </span>
         </>
       )}

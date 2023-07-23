@@ -10,8 +10,8 @@ import { Input, Label } from "@/components/UIKit";
 import classNames from "classnames";
 
 interface Props {
-  selected: Collection[];
-  setSelected: (collections: Collection[]) => void;
+  selected: string[];
+  setSelected: (collections: string[]) => void;
   collections: Collection[];
   isLoading: boolean;
   createNew: (title: string) => void;
@@ -110,7 +110,7 @@ export default function CollectionSelect({ selected, setSelected, collections, i
                           active ? "bg-white/[0.1] text-white" : "text-white/[0.8]"
                         }`
                       }
-                      value={collection}
+                      value={collection.id}
                     >
                       {({ selected }) => (
                         <>

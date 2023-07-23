@@ -90,20 +90,27 @@ function parseCommands(commands: pgnCommand[]): Partial<Chess.NodeData> {
   return data;
 }
 
-export function encodeCommentFromNodeData(data: Chess.NodeData): string {
+export function encodeCommentFromNodeData(
+  data: Chess.NodeData,
+  {
+    includeArrows = true,
+    includeTimeRemaining = true,
+    includeComments = true,
+  }: { includeArrows?: boolean; includeTimeRemaining?: boolean; includeComments?: boolean }
+): string {
   let commentString = "";
-  if (data.timeRemaining) {
+  if (data.timeRemaining && includeTimeRemaining) {
     commentString += `[%clk ${Duration.fromMillis(data.timeRemaining).toISOTime()}] `;
   }
-  if (data.markedSquares && data.markedSquares.length) {
+  if (data.markedSquares && data.markedSquares.length && includeArrows) {
     commentString += `[%csl ${data.markedSquares
       .map((markedSquare) => `${markedSquare.color}${markedSquare.square}`)
       .join(",")}] `;
   }
-  if (data.arrows && data.arrows.length) {
+  if (data.arrows && data.arrows.length && includeArrows) {
     commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
   }
-  if (data.comment) {
+  if (data.comment && includeComments) {
     commentString += data.comment;
   }
   if (commentString.length) return `{${commentString}} `;

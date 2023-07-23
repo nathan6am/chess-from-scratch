@@ -11,6 +11,7 @@ import { BsFillCollectionFill, BsFillShareFill } from "react-icons/bs";
 import { MdDelete } from "react-icons/md";
 import { useRouter } from "next/router";
 import classNames from "classnames";
+import FileBrowser from "./FileBrowser";
 export default function SavedAnalyses() {
   const { collections } = useCollections();
   return (
@@ -18,10 +19,11 @@ export default function SavedAnalyses() {
       <div className="p-3 w-full px-6 flex flex-row justify-between shadow-lg">
         <h2 className="text-gold-200 font-bold text-xl  text-left ">Saved Analyses</h2>
       </div>
-      <h2>Collections</h2>
+      {/* <h2>Collections</h2>
       {collections.map((collection) => {
         return <RenderCollection key={collection.id} collection={collection} />;
-      })}
+      })} */}
+      <FileBrowser />
     </div>
   );
 }

@@ -50,4 +50,34 @@ export default class Collection extends BaseEntity {
     await collection.save();
     return collection;
   }
+  static async deleteCollection(id: string) {
+    const collection = await this.findOneBy({ id });
+    if (!collection) throw new Error("Collection not found");
+    await collection.remove();
+  }
+  static async addAnalysis(id: string, analysisId: string) {
+    const collection = await this.findOneBy({ id });
+    if (!collection) throw new Error("Collection not found");
+    const analysis = await Analysis.findOneBy({ id: analysisId });
+    if (!analysis) throw new Error("Analysis not found");
+    collection.analyses.push(analysis);
+    await collection.save();
+    return collection;
+  }
+
+  static async removeAnalysis(id: string, analysisId: string) {
+    const collection = await this.findOneBy({ id });
+    if (!collection) throw new Error("Collection not found");
+    collection.analyses = collection.analyses.filter((analysis) => analysis.id !== analysisId);
+    await collection.save();
+    return collection;
+  }
+
+  static async renameCollection(id: string, title: string) {
+    const collection = await this.findOneBy({ id });
+    if (!collection) throw new Error("Collection not found");
+    collection.title = title;
+    await collection.save();
+    return collection;
+  }
 }

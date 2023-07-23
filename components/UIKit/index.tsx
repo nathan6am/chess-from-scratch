@@ -8,3 +8,4 @@ export { default as NumbericInput } from "./NumbericInput";
 export { default as Select } from "./Select";
 export { default as RangeSlider } from "./RangeSlider";
 export { default as MultiSelect } from "./MultiSelect";
+export { default as Modal } from "./Modal";

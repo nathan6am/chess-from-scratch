@@ -79,7 +79,11 @@ type FormValues = {
 };
 function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps) {
   const { collections, isLoading, createNew } = useCollections();
-  const [selected, setSelected] = useState<Collection[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selected = useMemo(() => {
+    return collections.filter((c) => selectedIds.includes(c.id));
+  }, [selectedIds, collections]);
+
   const {
     register,
     handleSubmit,
@@ -128,8 +132,8 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
           {...register("description")}
         /> */}
         <CollectionSelect
-          selected={selected}
-          setSelected={setSelected}
+          selected={selectedIds}
+          setSelected={setSelectedIds}
           createNew={createNew}
           collections={collections}
           isLoading={isLoading}

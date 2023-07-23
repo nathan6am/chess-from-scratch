@@ -10,8 +10,18 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onCha
   max?: number;
   value: number;
   onChange: (val: number) => void;
+  allowClickAndHold?: boolean;
 }
-export default function NumbericInput({ value, min, max, onChange, label, className, inputClassName }: Props) {
+export default function NumbericInput({
+  value,
+  min,
+  max,
+  onChange,
+  label,
+  className,
+  inputClassName,
+  allowClickAndHold = true,
+}: Props) {
   const increment = () => {
     if (!max || value < max) {
       onChange(value + 1);
@@ -22,6 +32,7 @@ export default function NumbericInput({ value, min, max, onChange, label, classN
       onChange(value - 1);
     }
   };
+
   return (
     <div className={className}>
       {label && <Label>{label}</Label>}

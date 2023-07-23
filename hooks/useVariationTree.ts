@@ -3,6 +3,15 @@ import { TreeNode } from "@/lib/types";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
+interface Options {
+  annotate?: boolean;
+  includeComments?: boolean;
+  includeVariations?: boolean;
+  includeNags?: boolean;
+  includeTimeRemaining?: boolean;
+  includeArrows?: boolean;
+  initialMoveCount: number;
+}
 export interface VariationTree<T extends Chess.NodeData = Chess.NodeData> {
   tree: TreeHook<T>;
   loadNewTree: (tree: TreeNode<T>[]) => void;
@@ -23,6 +32,7 @@ export interface VariationTree<T extends Chess.NodeData = Chess.NodeData> {
   stepBackward: () => TreeNode<T> | null;
   stepForward: () => TreeNode<T> | null;
   treeArray: TreeNode<T>[];
+  exportMoveText: (options: Options) => string;
 }
 
 export interface VariationTreeOptions<T> {
@@ -137,16 +147,6 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     return tree.treeArray;
   }, [tree.treeArray]);
 
-  interface Options {
-    annotate?: boolean;
-    includeComments?: boolean;
-    includeVariations?: boolean;
-    includeNags?: boolean;
-    includeTimeRemaining?: boolean;
-    includeArrows?: boolean;
-    initialMoveCount: number;
-  }
-
   function treeArrayToMoveText(treeArray: TreeNode<T>[], options: Partial<Options>): string {
     const defaultOptions: Options = {
       annotate: true,
@@ -157,15 +157,10 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
       includeArrows: true,
       initialMoveCount: 0,
     };
-    const {
-      annotate,
-      includeComments,
-      includeVariations,
-      includeNags,
-      includeTimeRemaining,
-      includeArrows,
-      initialMoveCount,
-    } = { ...defaultOptions, ...options };
+    const { annotate, includeComments, includeNags, includeTimeRemaining, includeArrows, initialMoveCount } = {
+      ...defaultOptions,
+      ...options,
+    };
     let movetext = "";
     let stack: TreeNode<T>[] = [];
     let previousVariationDepth = 0;
@@ -198,10 +193,14 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
         movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
       movetext += `${node.data.PGN} ${
-        node.data.annotations.length && annotate
+        node.data.annotations.length && annotate && includeNags
           ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
           : ""
-      } ${annotate ? encodeCommentFromNodeData(node.data) : node.data.comment || ""}`;
+      } ${
+        annotate
+          ? encodeCommentFromNodeData(node.data, { includeArrows, includeComments, includeTimeRemaining })
+          : node.data.comment || ""
+      }`;
       if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
@@ -321,6 +320,9 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     setCurrentKey(null);
     return null;
   }
+  function exportMoveText(options: Options) {
+    return treeArrayToMoveText(tree.treeArray, options);
+  }
 
   return {
     tree,
@@ -342,5 +344,6 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     stepBackward,
     stepForward,
     treeArray: tree.treeArray,
+    exportMoveText,
   };
 }

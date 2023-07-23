@@ -3,6 +3,10 @@ module.exports = {
   content: ["./pages/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-open-sans)"],
+        mono: ["var(--font-roboto-mono)"],
+      },
       colors: {
         google: {
           400: "#e65b51",

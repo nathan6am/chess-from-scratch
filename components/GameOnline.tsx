@@ -3,10 +3,7 @@ import Board from "@/components/game/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import Result from "@/components/UI/dialogs/Result";
-import useChessOnline, {
-  BoardControls as IBoardControls,
-  GameControls as IGameControls,
-} from "@/hooks/useChessOnline";
+import useChessOnline, { BoardControls as IBoardControls, GameControls as IGameControls } from "@/hooks/useChessOnline";
 import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
 import { SettingsContext } from "@/context/settings";
@@ -58,70 +55,67 @@ export default function GameOnline({ lobbyid }: Props) {
     return <div>Connecting...</div>;
   }
   //TODO: Add connecting component
-  if (!currentGame)
-    return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
+  if (!currentGame) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
   const gameData = currentGame.data;
   return (
-    <div className="flex flex-col h-full w-screen justify-center">
-      <Result
-        outcome={gameData.outcome}
-        isOpen={gameData.outcome ? true : false}
-        close={() => {}}
-      />
+    <div className="flex flex-col h-full w-full justify-center">
+      <Result outcome={gameData.outcome} isOpen={gameData.outcome ? true : false} close={() => {}} />
       <BoardRow>
-        <BoardColumn>
-          <div className="w-full lg:hidden">
-            <MoveTape
-              moveHistory={gameData.moveHistory}
-              jumpToOffset={boardControls.jumpToOffset}
-              currentOffset={livePositionOffset}
-              usePieceIcons={true}
-            />
-          </div>
-          <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
-            <div className="flex flex-row w-full justify-between">
-              {players.b && <PlayerCard connection={players.b} />}
-              <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
+        <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
+          <BoardColumn>
+            <div className="w-full lg:hidden">
+              <MoveTape
+                moveHistory={gameData.moveHistory}
+                jumpToOffset={boardControls.jumpToOffset}
+                currentOffset={livePositionOffset}
+                usePieceIcons={true}
+              />
+            </div>
+            <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
+              <div className="flex flex-row w-full justify-between">
+                {players.b && <PlayerCard connection={players.b} />}
+                <Clock timeRemaining={timeRemaining.b} color="b" size="sm" className="lg:hidden" />
+              </div>
+
+              <Board
+                showCoordinates={settings.display.showCoordinates}
+                movementType={settings.gameBehavior.movementType}
+                theme={settings.display.boardTheme}
+                pieceSet={settings.display.pieceTheme}
+                orientation={orientation}
+                legalMoves={gameData.legalMoves}
+                showHighlights={true}
+                showTargets={true}
+                pieces={currentBoard || gameData.board}
+                animationSpeed={settings.display.animationSpeed}
+                lastMove={lastMove}
+                activeColor={gameData.activeColor}
+                moveable={moveable ? playerColor || "none" : "none"}
+                preMoveable={settings.gameBehavior.allowPremoves}
+                autoQueen={settings.gameBehavior.autoQueen}
+                onMove={gameControls.onMove}
+                onPremove={() => {}}
+              />
+              <div className="flex flex-row w-full justify-between">
+                {players.w && <PlayerCard connection={players.w} />}
+                <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
+              </div>
             </div>
 
-            <Board
-              showCoordinates={settings.display.showCoordinates}
-              movementType={settings.gameBehavior.movementType}
-              theme={settings.display.boardTheme}
-              pieceSet={settings.display.pieceTheme}
-              orientation={orientation}
-              legalMoves={gameData.legalMoves}
-              showHighlights={true}
-              showTargets={true}
-              pieces={currentBoard || gameData.board}
-              animationSpeed={settings.display.animationSpeed}
-              lastMove={lastMove}
-              activeColor={gameData.activeColor}
-              moveable={moveable ? playerColor || "none" : "none"}
-              preMoveable={settings.gameBehavior.allowPremoves}
-              autoQueen={settings.gameBehavior.autoQueen}
-              onMove={gameControls.onMove}
-              onPremove={() => {}}
-            />
-            <div className="flex flex-row w-full justify-between">
-              {players.w && <PlayerCard connection={players.w} />}
-              <Clock timeRemaining={timeRemaining.w} color="w" size="sm" className="lg:hidden" />
+            <div className="min-h-[120px] w-full block lg:hidden">
+              <BoardControls controls={boardControls} />
+              <GameControls
+                size="sm"
+                className="bg-white/[0.1]"
+                gameControls={gameControls}
+                flipBoard={() => {
+                  setOrientation((cur) => (cur === "w" ? "b" : "w"));
+                }}
+              />
             </div>
-          </div>
-
-          <div className="min-h-[120px] w-full block lg:hidden">
-            <BoardControls controls={boardControls} />
-            <GameControls
-              size="sm"
-              className="bg-white/[0.1]"
-              gameControls={gameControls}
-              flipBoard={() => {
-                setOrientation((cur) => (cur === "w" ? "b" : "w"));
-              }}
-            />
-          </div>
-        </BoardColumn>
+          </BoardColumn>
+        </div>
         <PanelColumn>
           <PanelOnline
             timeRemaining={timeRemaining}

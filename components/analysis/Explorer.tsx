@@ -11,6 +11,8 @@ import { usePopper } from "react-popper";
 import { MdFilterList, MdCheck } from "react-icons/md";
 import { FaDatabase } from "react-icons/fa";
 import { HiOutlineSelector } from "react-icons/hi";
+import { IoIosPodium } from "react-icons/io";
+import { RxCounterClockwiseClock } from "react-icons/rx";
 import { Label, MultiSelect, NumbericInput, Input } from "../UIKit";
 interface Props {
   explorer: ExplorerHook;
@@ -39,8 +41,12 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
     },
     [onMove, sourceGame]
   );
-
-  const prevOpening = useRef<{ name: string; eco: string } | null>(null);
+  const startPositionOpening = useMemo(() => {
+    if (sourceGame.config.startPosition === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+      return "Start Position";
+    else return "Custom Position";
+  }, [sourceGame.config.startPosition]);
+  const prevOpening = useRef<{ name: string; eco: string } | null>({ name: startPositionOpening, eco: "" });
   useEffect(() => {
     if (!data) return;
     if (data.opening && !_.isEqual(data.opening, prevOpening)) {
@@ -51,8 +57,8 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
     return data?.opening || prevOpening.current;
   }, [data]);
   return (
-    <div className="h-full w-full flex flex-col">
-      <div className="w-full grow max-height-[500px] flex flex-col">
+    <>
+      <div className="w-full grow max-height-[500px] min-height-[250px] flex flex-col">
         <Popover>
           <div className="flex flex-row bg-elevation-3">
             <div className="flex flex-row p-2 pl-4 justify-between items-center grow">
@@ -112,8 +118,10 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
         </div>
       </div>
       <TopGames
+        database={explorer.database}
         isLoading={isLoading}
-        games={data?.topGames || []}
+        topGames={data?.topGames || []}
+        recentGames={data?.recentGames || []}
         sourceGame={sourceGame}
         attemptMove={attemptMove}
         loadGame={(id: string) => {
@@ -121,7 +129,7 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
           showPlayer();
         }}
       />
-    </div>
+    </>
   );
 }
 
@@ -190,16 +198,46 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
 }
 
 interface TopGameProps {
-  games: DBGameData[];
+  database: "lichess" | "masters";
+  topGames: DBGameData[];
+  recentGames: DBGameData[];
   sourceGame: Chess.Game;
   attemptMove: (san: string) => void;
   loadGame: (gameid: string) => void;
   isLoading?: boolean;
 }
-function TopGames({ games, sourceGame, attemptMove, loadGame, isLoading }: TopGameProps) {
+function TopGames({ topGames, recentGames, sourceGame, attemptMove, loadGame, isLoading, database }: TopGameProps) {
+  const [gameList, setGameList] = useState<"top" | "recent">("recent");
+  useEffect(() => {
+    if (database === "masters") setGameList("top");
+  }, [database]);
+  const games = useMemo(() => (gameList === "top" ? topGames : recentGames), [gameList, topGames, recentGames]);
   return (
     <div className="w-full grow overflow-hidden flex flex-col min-height-[250px]">
-      <div className="w-full text-sm bg-elevation-2 text-gold-100 py-2 px-3 shadow">Top Games</div>
+      <div className="w-full text-sm bg-elevation-2 text-gold-100 py-1 px-3 shadow flex flex-row justify-start">
+        <button
+          onClick={() => setGameList("top")}
+          className={classNames("rounded-md px-2 py-0.5 mr-1 border", {
+            "bg-gold-100/[0.1] border-gold-100 text-gold-100": gameList === "top",
+            "text-light-300 border-transparent hover:text-light-100": gameList !== "top",
+          })}
+        >
+          <IoIosPodium className="mr-0.5 inline" />
+          Top Games
+        </button>
+        <button
+          disabled={database === "masters"}
+          onClick={() => setGameList("recent")}
+          className={classNames("rounded-md px-2 py-0.5 mr-3 border", {
+            "bg-gold-100/[0.1] border-gold-100 text-gold-100": gameList === "recent",
+            "text-light-300 border-transparent hover:text-light-100": gameList !== "recent" && database === "lichess",
+            "text-light-400/[0.5] border-transparent": database === "masters",
+          })}
+        >
+          <RxCounterClockwiseClock className="mr-1 mb-0.5 inline" />
+          Recent Games
+        </button>
+      </div>
       <div className="w-full grow relative">
         <ScrollContainer>
           {isLoading ? (
@@ -410,6 +448,7 @@ const ratingMap = {
 };
 
 import type { Speed } from "@/hooks/useOpeningExplorer";
+import classNames from "classnames";
 function LichessFilters({ explorer }: { explorer: ExplorerHook }) {
   const { lichessFilters, setLichessFilters } = explorer;
   const { speeds, ratings } = lichessFilters;

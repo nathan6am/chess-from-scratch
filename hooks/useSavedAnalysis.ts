@@ -19,14 +19,19 @@ const fetcher = async (id: string | null) => {
 };
 
 //Hook for managing loading/saving analysis from DB
-export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tags: PGNTagData }) {
+interface Args {
+  pgn: string;
+  tags: PGNTagData;
+  shouldSync?: boolean;
+}
+export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync }: Args) {
   const pgn = useDebounce(_pgn, 1000);
   const router = useRouter();
   const id = router.query.id as string;
   const load = useCallback(
     (id: string | null) => {
-      if (id === null) return router.push(`/study/analyze`, undefined, { shallow: true });
-      router.push(`/study/analyze?id=${id}`, `/study/analyze?id=${id}`, { shallow: true });
+      if (id === null) return router.replace(`/study/analyze`, undefined, { shallow: true });
+      router.replace(`/study/analyze?id=${id}`, `/study/analyze?id=${id}`, { shallow: true });
     },
     [router]
   );
@@ -48,18 +53,11 @@ export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tag
     if (synced) return "synced";
     return "unsynced";
   }, [data, synced, isRefetching]);
-
-  useEffect(() => {
-    if (!data) return;
-    if (isSyncing) return;
-    if (data.analysis.pgn !== pgn || !_.isEqual(data.analysis.tagData, tags)) {
-      setIsSyncing(true);
-      console.log("syncing");
-      save({ id: data.analysis.id, data: { ...data.analysis, pgn, tagData: tags } });
-    }
-  }, [pgn, tags, autoSync, data, isSyncing]);
-
-  const { mutate: save } = useMutation({
+  const {
+    mutate: save,
+    isLoading: saveInProgress,
+    isError: saveError,
+  } = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: AnalysisData }) => {
       const response = await axios.put<Analysis>(`/api/analysis/${id}`, data);
       if (response && response.data) return response.data as Analysis;
@@ -73,12 +71,27 @@ export default function useSavedAnalysis({ pgn: _pgn, tags }: { pgn: string; tag
       load(data.id);
     },
   });
+  useEffect(() => {
+    if (!data) return;
+    if (!pgn) return;
+    if (!tags) return;
+    if (!data.analysis) return;
+    if (isSyncing) return;
+    if (!shouldSync) return;
+    if (saveInProgress) return;
+    if (saveError) return;
+    if (data.analysis.id !== id) return;
+    //Don't save if the debounced pgn isn't yet the same as the current pgn
+    if (_pgn !== pgn) return;
+    if (data.analysis.pgn !== pgn || !_.isEqual(data.analysis.tagData, tags)) {
+      setIsSyncing(true);
+      save({ id: data.analysis.id, data: { ...data.analysis, pgn, tagData: tags } });
+    }
+  }, [pgn, tags, autoSync, data, isSyncing, shouldSync, saveInProgress, saveError, id]);
 
   const { mutate: saveNew } = useMutation({
     mutationFn: async (data: AnalysisData) => {
       const response = await axios.post<Analysis>("/api/analysis/", data);
-      console.log(data);
-      console.log(response);
       if (response && response.data) return response.data as Analysis;
       else throw new Error("Save failed");
     },

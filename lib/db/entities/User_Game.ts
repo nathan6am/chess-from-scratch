@@ -4,16 +4,17 @@ import type { Relation } from "typeorm";
 import User from "./User";
 import Game from "./Game";
 
-interface SearchOptions {
+export interface GameSearchOptions {
   opponentId?: string;
   before?: Date;
   after?: Date;
-  asColor?: Color;
+  asColor?: Color | "any";
   result?: Array<"win" | "loss" | "draw">;
   ratingCategory?: RatingCategory[];
   sortBy?: "date" | "rating" | "opponentRating";
   sortDirection?: "ASC" | "DESC";
-  limit?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 @Entity()
@@ -47,7 +48,9 @@ export default class User_Game extends BaseEntity {
   @Column({ nullable: true })
   opponentId: string;
 
-  static async findGamesByUser(userid: string, searchOptions: SearchOptions) {
+  static async findGamesByUser(userid: string, searchOptions: GameSearchOptions) {
+    const page = searchOptions.page || 1;
+    const pageSize = searchOptions.pageSize || 12;
     const query = this.createQueryBuilder("user_game")
       .leftJoinAndSelect("user_game.game", "game")
       .leftJoin("game.players", "players")
@@ -62,7 +65,7 @@ export default class User_Game extends BaseEntity {
     if (searchOptions.after) {
       query.andWhere("game.date > :after", { after: searchOptions.after });
     }
-    if (searchOptions.asColor) {
+    if (searchOptions.asColor && searchOptions.asColor !== "any") {
       query.andWhere("user_game.color = :color", { color: searchOptions.asColor });
     }
     if (searchOptions.result) {
@@ -80,9 +83,8 @@ export default class User_Game extends BaseEntity {
     }
 
     query.select(["user_game", "game", "players", "user.id", "user.username"]);
-    if (searchOptions.limit) {
-      query.limit(searchOptions.limit);
-    }
+    query.skip((page - 1) * pageSize);
+    query.take(pageSize);
     const games = await query.getMany();
     return games;
   }

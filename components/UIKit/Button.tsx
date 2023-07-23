@@ -1,4 +1,5 @@
 import classNames from "classnames";
+import { twMerge } from "tailwind-merge";
 interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "neutral" | "success" | "danger";
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
@@ -43,13 +44,15 @@ export default function Button({
       {...props}
       disabled={disabled || isLoading}
       className={classNames(
-        "flex items-center flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-200  font-medium focus:outline-none",
+        "flex items-center h-fit flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-200 font-medium focus:outline-none",
         {
-          "bg-gold-300 border-2 border-gold-300 hover:bg-gold-400 hover:border-gold-400 text-light-100":
+          "bg-gold-300 border-gold-300 hover:bg-gold-400 hover:border-gold-400 text-light-100":
             variant === "primary" && !disabled,
           "bg-elevation-4 hover:bg-elevation-5 text-light-200 hover:text-gold-100": variant === "neutral" && !disabled,
-          "bg-success-700 border-2 border-success-700 hover:bg-success-600 hover:border-success-600 text-light-100":
+          "bg-success-700 border-success-700 hover:bg-success-600 hover:border-success-600 text-light-100":
             variant === "success" && !disabled,
+          "bg-danger-400 border-danger-400 hover:bg-danger-600 hover:border-danger-600 text-light-100":
+            variant === "danger" && !disabled,
           "w-full": width !== "fit",
           "w-fit": width === "fit",
           "max-w-sm": width === "sm",
@@ -64,7 +67,7 @@ export default function Button({
       )}
     >
       <>{Icon && iconPosition === "left" && <Icon className={iconClassName} />}</>
-      <p className={labelClassName}>{isLoading && loadingIcon ? loadingLabel : label || ""}</p>
+      <p className={twMerge("font-medium", labelClassName)}>{isLoading && loadingLabel ? loadingLabel : label || ""}</p>
       <>{Icon && iconPosition === "right" && <Icon className={iconClassName} />}</>
       <span className=""></span>
     </button>

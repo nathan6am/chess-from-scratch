@@ -18,7 +18,7 @@ export interface Evaler {
   fenEvaluating: string;
 }
 function useEvaler(fen: string, disabled?: boolean): Evaler {
-  const debouncedFen = useDebounce(fen, 500);
+  const debouncedFen = useDebounce(fen, 1000);
   const [evalScore, setEvalScore] = useState<EvalScore>(() => ({ value: 0, type: "cp" }));
   const currentScore = useThrottle(evalScore, 400);
   const [currentDepth, setCurrentDepth] = useState<number>(0);
@@ -82,7 +82,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
 
   useEffect(() => {
     if (disabled) {
-      console.log("disabling");
+      //console.log("disabling");
       workerRef.current?.postMessage({ type: "disable" });
     } else {
       workerRef.current?.postMessage({ type: "enable" });

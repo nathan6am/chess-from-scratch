@@ -7,6 +7,7 @@ import { ImMinus } from "react-icons/im";
 import { MdArrowDropUp, MdArrowDropDown, MdTimer } from "react-icons/md";
 import { FaArchive, FaChevronRight } from "react-icons/fa";
 import { IoMdMore } from "react-icons/io";
+import GameList from "./GameList";
 export default function RecentGames() {
   const { games: usergames } = useGameSearch({});
   return (
@@ -20,34 +21,11 @@ export default function RecentGames() {
           <FaChevronRight className="text-xs mt-[3px]" />
         </button>
       </div>
-
-      <div className="w-full h-full grow relative">
-        <ScrollContainer>
-          <table className="w-full">
-            <thead className="top-0 sticky border-b bg-elevation-3 border-light-400/[0.1]">
-              <tr>
-                <th className="w-[1rem]"></th>
-                <th className="text-xs text-left text-light-400 w-20 pl-0 py-1">Players</th>
-                <th className="text-xs text-left text-light-400 w-16 ">Result</th>
-                <th className="text-xs text-left text-light-400 w-[6rem]">Date</th>
-                <th className="text-xs text-left text-light-400 w-10">
-                  <MdTimer />
-                </th>
-                <th className="text-xs text-left text-light-400 w-[5rem] pr-4">Moves</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usergames &&
-                usergames.map((game) => {
-                  return <RenderGame key={game.id} game={game as User_Game} />;
-                })}
-            </tbody>
-          </table>
-        </ScrollContainer>
-      </div>
+      <GameList usergames={usergames} />
     </div>
   );
 }
+
 interface Player {
   username: string | null;
   rating?: number;

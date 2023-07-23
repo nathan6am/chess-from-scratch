@@ -1118,11 +1118,11 @@ export function validateFen(fen: string): true | string {
     const { position, activeColor } = gameState;
     const board = Array.from(position.entries()) as [Square, Piece][];
     const kings = board.filter(([square, piece]) => piece.type === "k").map(([square, piece]) => piece);
-    if (kings.length !== 2) return "Exactly one king of each color required";
+    if (kings.length !== 2) return "Exactly one king of each color is required";
     //check if more than one king of each color
     const whiteKings = kings.filter((king) => king.color === "w");
     const blackKings = kings.filter((king) => king.color === "b");
-    if (whiteKings.length !== 1 || blackKings.length !== 1) return "Exactly one king of each color required";
+    if (whiteKings.length !== 1 || blackKings.length !== 1) return "Exactly one king of each color is required";
     //check if the player that just moved is in check
     const inCheck = containsCheck(position, activeColor);
     if (inCheck) return "Last move left player in check";

@@ -1,101 +1,15 @@
-import { AnalysisHook } from "@/hooks/useAnalysisBoard";
 import React from "react";
-import { FaChessBoard, FaArchive, FaPaste } from "react-icons/fa";
-import { ImFolderUpload, ImFolder } from "react-icons/im";
-import { Disclosure, Transition } from "@headlessui/react";
-import { MdExpandMore, MdDelete } from "react-icons/md";
-import { BoardEditorHook } from "@/hooks/useBoardEditor";
 import { RiArrowGoBackFill } from "react-icons/ri";
+import { BoardEditorHook } from "@/hooks/useBoardEditor";
+import { BoardHandle } from "@/components/game/Board";
 import BoardSetupPanel from "./BoardSetupPanel";
-import { IoMdAdd } from "react-icons/io";
-import { BoardHandle } from "../game/Board";
-import PgnUpload from "./PgnUpload";
+import * as Chess from "@/lib/chess";
+import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";
-import { useState } from "react";
-import { Toggle, Select, Input } from "../UIKit";
 import { FiRepeat } from "react-icons/fi";
-import FenInput from "./FenInput";
-import { on } from "events";
-interface Props {
-  analysis: AnalysisHook;
-  boardRef: React.RefObject<BoardHandle>;
-  boardEditor: BoardEditorHook;
-  editMode: boolean;
-  setEditMode: (value: boolean) => void;
-  flipBoard: () => void;
-}
-export default function NewAnalysisPanel({ analysis, boardRef, boardEditor, editMode, setEditMode, flipBoard }: Props) {
-  return (
-    <div className="bg-elevation-2 w-full h-full">
-      {editMode ? (
-        <BoardEditor
-          boardEditor={boardEditor}
-          boardRef={boardRef}
-          onAnalyze={(fen: string) => {
-            analysis.loadFen(fen);
-            setEditMode(false);
-          }}
-          onPlayComputer={() => {}}
-          onPlayFriend={() => {}}
-          setEditMode={setEditMode}
-          flipBoard={flipBoard}
-        />
-      ) : (
-        <>
-          <div className="bg-elevation-3 shadow p-4">
-            <h2 className="text-lg font-semibold text-light-100 text-center">
-              <IoMdAdd className="inline mr-2 text-gold-200 mb-0.5" />
-              New Analysis
-            </h2>
-          </div>
-          <div className="flex flex-col p-3 gap-y-3 divide-white/[0.1]">
-            <p className="p-6 border-b border-white/[0.1]">Make Moves or...</p>
-            <Disclosure></Disclosure>
-            <button
-              onClick={() => {
-                setEditMode(true);
-              }}
-              className="p-3 px-4 flex flex-row justify-between rounded-md bg-elevation-3 text-left text-light-200  hover:bg-elevation-4 hover:text-light-100"
-            >
-              <span>
-                <FaChessBoard className="inline mr-2 text-gold-200" />
-                Set Up Board
-              </span>
-              <MdExpandMore
-                className={`text-gold-200 transition-transform duration-400 mt-[1px] text-xl rotate-[-90deg]
-              }`}
-              />
-            </button>
-
-            <StyledDiclosure icon={ImFolderUpload} label="Import PGN">
-              <PgnUpload loadPgn={analysis.loadPgn} />
-            </StyledDiclosure>
-            <StyledDiclosure icon={FaPaste} label="Paste FEN">
-              <FenInput
-                onEnter={(fen) => {
-                  analysis.loadFen(fen);
-                }}
-                buttonLabel="Analyze"
-              />
-            </StyledDiclosure>
-            <StyledDiclosure icon={ImFolder} label="Saved Analyses">
-              <p>Saved Analyses</p>
-            </StyledDiclosure>
-            <StyledDiclosure icon={FaArchive} label="Game Archive">
-              <p>Game Archive</p>
-            </StyledDiclosure>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function PasteFen() {
-  const [fen, setFen] = useState("");
-  return <Input label="Paste or input FEN" />;
-}
-
+import { Select, Toggle, Input, Button, NumbericInput } from "@/components/UIKit";
+import { WhiteIcon, BlackIcon } from "@/components/menu/NewGame";
+import { RiErrorWarningFill } from "react-icons/ri";
 interface EditorProps {
   boardEditor: BoardEditorHook;
   boardRef: React.RefObject<BoardHandle>;
@@ -105,7 +19,7 @@ interface EditorProps {
   flipBoard: () => void;
   setEditMode?: (value: boolean) => void;
 }
-export function BoardEditor({ boardEditor, boardRef, onAnalyze, setEditMode, flipBoard }: EditorProps) {
+export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditMode, flipBoard }: EditorProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
@@ -157,8 +71,8 @@ export function BoardEditor({ boardEditor, boardRef, onAnalyze, setEditMode, fli
           <Select
             className="grow"
             options={[
-              { label: "White to Play", value: "w" },
-              { label: "Black to Play", value: "b" },
+              { label: "White to Play", value: "w", icon: WhiteIcon },
+              { label: "Black to Play", value: "b", icon: BlackIcon },
             ]}
             value={boardEditor.activeColor}
             onChange={boardEditor.setActiveColor}
@@ -220,48 +134,61 @@ export function BoardEditor({ boardEditor, boardRef, onAnalyze, setEditMode, fli
             />
           </div>
         </div>
-        <p>Valid? {boardEditor.isValid}</p>
-        <button
-          onClick={() => {
-            if (boardEditor.isValid === true) {
-              onAnalyze(boardEditor.fen);
-            }
-          }}
-        >
-          Analyze
-        </button>
+        <div className="grid grid-cols-2 gap-x-2 my-4">
+          <NumbericInput
+            value={boardEditor.halfMoveCount}
+            min={0}
+            max={Math.min(99, boardEditor.fullMoveCount * 2 - 1)}
+            onChange={boardEditor.setHalfMoveCount}
+            label="Half Move Count"
+          />
+          <NumbericInput
+            value={boardEditor.fullMoveCount}
+            min={1}
+            max={999}
+            onChange={boardEditor.setFullMoveCount}
+            label="Full Move Count"
+          />
+        </div>
+        {boardEditor.isValid !== true && (
+          <p className="text-sm text-danger-300 my-1">
+            <span>
+              <RiErrorWarningFill className="inline mr-1 mb-1" />
+            </span>
+            Invalid position: {boardEditor.isValid}
+          </p>
+        )}
+        <div className="w-full gap-y-4 flex flex-col">
+          <Button
+            disabled={boardEditor.isValid !== true}
+            variant="neutral"
+            label="Analyze"
+            onClick={() => {
+              if (boardEditor.isValid === true) {
+                onAnalyze(boardEditor.fen);
+              }
+            }}
+          ></Button>
+          <Button
+            disabled={boardEditor.isValid !== true}
+            variant="neutral"
+            label="Practice vs Computer"
+            onClick={() => {
+              if (boardEditor.isValid === true) {
+              }
+            }}
+          ></Button>
+          <Button
+            disabled={boardEditor.isValid !== true}
+            variant="neutral"
+            label="Practice vs Friend"
+            onClick={() => {
+              if (boardEditor.isValid === true) {
+              }
+            }}
+          ></Button>
+        </div>
       </div>
     </div>
-  );
-}
-
-interface StyledDisclosureProps {
-  label: string;
-  icon: React.FC<any>;
-  children: JSX.Element | string | Array<JSX.Element | string>;
-}
-
-function StyledDiclosure({ children, label, icon: Icon }: StyledDisclosureProps) {
-  return (
-    <Disclosure>
-      {({ open }) => (
-        <>
-          <Disclosure.Button className="flex justify-between w-full px-4 py-3  font-medium text-left text-light-200  rounded-md hover:text-light-100 bg-elevation-3 hover:bg-elevation-4 focus:outline-none focus-visible:ring focus-visible:ring-white focus-visible:ring-opacity-75">
-            <span>
-              <Icon className="mr-2 inline text-gold-200" />
-              {label}
-            </span>
-            <MdExpandMore
-              className={`text-gold-200 transition-transform duration-400 mt-[1px] text-xl ${
-                open ? "" : "rotate-[-90deg]"
-              }`}
-            />
-          </Disclosure.Button>
-          <Transition show={open} enter="transition ease-out duration-500" enterFrom="opacity-0" enterTo="opacity-100">
-            <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white/[0.8]">{children}</Disclosure.Panel>
-          </Transition>
-        </>
-      )}
-    </Disclosure>
   );
 }

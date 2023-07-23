@@ -5,7 +5,7 @@ import useBoardEditor from "@/hooks/useBoardEditor";
 import { SettingsContext } from "@/context/settings";
 import { useContext } from "react";
 
-import EditorPanel from "./EditorPanel";
+import EditorPanel from "./panels/EditorPanel";
 export default function BoardEditor() {
   const boardRef = React.useRef<BoardHandle>(null);
   const { settings } = useContext(SettingsContext);

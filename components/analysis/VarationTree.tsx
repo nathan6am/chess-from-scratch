@@ -3,7 +3,7 @@ import { AnalysisContext } from "./AnalysisBoard";
 import * as Chess from "@/lib/chess";
 import { TreeNode } from "@/lib/types";
 import { MdArrowDropDown, MdExpandMore, MdOutlineMenuOpen, MdModeComment } from "react-icons/md";
-import { useContextMenu, Menu, Item, Separator, ItemParams } from "react-contexify";
+import { useContextMenu, Menu, Item, Separator, ItemParams, Submenu } from "react-contexify";
 import { BiHide } from "react-icons/bi";
 
 import { VscExpandAll } from "react-icons/vsc";
@@ -11,6 +11,7 @@ import { replacePieceChars } from "../game/MoveHistory";
 import { NAG } from "./Annotations";
 import { notEmpty } from "@/util/misc";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
+import { match } from "assert";
 interface Props {
   inlineView?: boolean;
 }
@@ -118,14 +119,7 @@ interface VariationProps {
   showContextMenu: (e: React.MouseEvent, node: Node) => void;
 }
 
-function RenderVariation({
-  node,
-  selectedKey,
-  setSelectedKey,
-  depth,
-  path,
-  showContextMenu,
-}: VariationProps) {
+function RenderVariation({ node, selectedKey, setSelectedKey, depth, path, showContextMenu }: VariationProps) {
   const { line, subVariations } = getVariation(node);
   const [expanded, setExpanded] = useState<boolean>(true);
   const forceExpand = useMemo(() => {
@@ -138,11 +132,7 @@ function RenderVariation({
     }
   }, [forceExpand]);
   return (
-    <div
-      className={`w-full ${
-        (depth || 0) > 0 ? "border-dotted border-l" : ""
-      } border-white/[0.2] text-sm`}
-    >
+    <div className={`w-full ${(depth || 0) > 0 ? "border-dotted border-l" : ""} border-white/[0.2] text-sm`}>
       <div className="flex flex-wrap py-2 pl-4 pr-2 relative rounded">
         <p className="text-gold-200 indent-[-1.5em] pl-[1.5em]">
           {subVariations.length > 0 && (
@@ -226,8 +216,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path, showContextMenu }: 
   const firstNode = nodes.find((node) => node !== null);
   const comment = nodes.find((node) => node?.data.comment?.length)?.data.comment;
   const forceExpand = useMemo(
-    () =>
-      path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
+    () => path.some((pathNode) => variations && variations.some((node) => node.key === pathNode.key)),
     [path, variations]
   );
   useEffect(() => {
@@ -255,7 +244,7 @@ function RenderRow({ row, selectedKey, setSelectedKey, path, showContextMenu }: 
       </div>
       {comment && (
         <div className="w-full p-1 px-2 border-b border-white/[0.2] border-r">
-          <p className="text-sepia/[0.8] pl-[2em] indent-[-2em] text-sm">
+          <p className="text-gold-200 pl-[2em] indent-[-2em] text-sm">
             <MdModeComment className="opacity-50 inline text-white mr-2" />
             {comment}
           </p>
@@ -324,7 +313,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey, showContextMenu }: 
 
   useEffect(() => {
     if (!ref.current || !selected) return;
-    ref.current.scrollIntoView({ behavior: "smooth" });
+    //ref.current.scrollIntoView({ behavior: "smooth" });
   }, [selected, ref]);
 
   return (
@@ -342,11 +331,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey, showContextMenu }: 
         }
       }}
       className={` border-white/[0.2] border-r h-full p-2 ${
-        selected
-          ? "bg-blue-400/[0.2] cursor-pointer"
-          : node
-          ? "hover:bg-white/[0.1] cursor-pointer"
-          : ""
+        selected ? "bg-blue-400/[0.2] cursor-pointer" : node ? "hover:bg-white/[0.1] cursor-pointer" : ""
       } `}
     >
       <div className="flex flex-row justify-between items-center">
@@ -433,9 +418,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index, showContextMenu 
           />
         </span>
       </span>
-      {annotationStr.length > 0 && (
-        <span className="inline text-white/[0.8] mr-1">{annotationStr}</span>
-      )}
+      {annotationStr.length > 0 && <span className="inline text-white/[0.8] mr-1">{annotationStr}</span>}
       {node.data.comment && " " + node.data.comment + " "}
     </>
   );
@@ -592,13 +575,7 @@ interface MoveTextProps {
   className?: string;
   usePieceIcons?: boolean;
 }
-function MoveText({
-  pgn,
-  color = "w",
-  annotations = [],
-  className,
-  usePieceIcons = true,
-}: MoveTextProps) {
+function MoveText({ pgn, color = "w", annotations = [], className, usePieceIcons = true }: MoveTextProps) {
   const nags = useMemo(() => {
     return annotations
       .sort((a, b) => a - b)
@@ -654,6 +631,11 @@ function NodeContextMenu({ analysis }: { analysis: AnalysisHook }) {
         analysis.commentControls.updateComment(key, "");
         break;
       default:
+        const digitExp = /^\d+$/;
+        if (id && digitExp.test(id)) {
+          if (!key) return;
+          analysis.commentControls.updateAnnotations(key, [parseInt(id)]);
+        }
         break;
     }
   }
@@ -675,6 +657,26 @@ function NodeContextMenu({ analysis }: { analysis: AnalysisHook }) {
       <Item id="clearComments" onClick={handleItemClick}>
         Clear Comments
       </Item>
+      <Submenu label="Quick Annotations">
+        <Item id="1" onClick={handleItemClick}>
+          <span className="text-green-500 mr-2">!</span> Good Move
+        </Item>
+        <Item id="2" onClick={handleItemClick}>
+          ? Mistake
+        </Item>
+        <Item id="3" onClick={handleItemClick}>
+          !! Brilliant Move
+        </Item>
+        <Item id="4" onClick={handleItemClick}>
+          ?? Blunder
+        </Item>
+        <Item id="5" onClick={handleItemClick}>
+          !? Interesting Move
+        </Item>
+        <Item id="6" onClick={handleItemClick}>
+          ?! Dubious Move
+        </Item>
+      </Submenu>
     </Menu>
   );
 }

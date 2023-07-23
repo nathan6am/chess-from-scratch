@@ -8,7 +8,7 @@ import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
 import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import PopupPlayer from "./PopupPlayer";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
-import AnalysisPanel from "./AnalysisPanel";
+import AnalysisPanel from "./panels/AnalysisPanel";
 import { Menu, Transition } from "@headlessui/react";
 import { BoardHandle } from "../game/Board";
 import MenuBar from "@/components/layout/MenuBar";
@@ -29,8 +29,9 @@ import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import { Duration } from "luxon";
 import axios from "axios";
-import Toggle from "../UI/Toggle";
-import NewAnalysisPanel from "./NewAnalysisPanel";
+import NewAnalysisPanel from "./panels/NewAnalysisPanel";
+import Link from "next/link";
+import OpenAnalysisDialog from "../dialogs/OpenAnalysisDialog";
 
 interface Props {
   initialId?: string | null;
@@ -75,7 +76,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const id = router.query.id as string | undefined;
   const currentIdRef = useRef<string | null | undefined>(id);
   const initialLoad = useRef(initialId || sourceGameId ? false : true);
-  const saveManager = useSavedAnalysis({ pgn, tags: tagData });
+  const saveManager = useSavedAnalysis({ pgn, tags: tagData, shouldSync: analysis.pgnLoaded });
 
   // Display state
   const [orientation, setOrientation] = useState<Chess.Color>("w");
@@ -83,6 +84,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     setOrientation((cur) => (cur === "w" ? "b" : "w"));
   };
   const [saveModalShown, setSaveModalShown] = useState(false);
+  const [openModalShown, setOpenModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
   const lastMoveAnnotation = useMemo(() => {
@@ -99,7 +101,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
       return;
     }
     if (sourceGameType === "nextchess") {
-      console.log("fetching nextchess game");
       axios.get(`/api/game/pgn/${sourceGameId}`).then((res) => {
         initialLoad.current = true;
         if (!res.data) return;
@@ -137,25 +138,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     }
     currentIdRef.current = id;
   }, [id, currentIdRef, saveManager.data, analysis.loadPgn, initialLoad]);
-  const saveCurrent = () => {
-    const analysis = saveManager.data?.analysis;
-    if (!analysis) return;
-    const id = analysis.id;
-    const { title, collectionIds, description, visibility, tagData } = analysis;
-    const pgn = tagDataToPGNString(tagData) + "\r\n" + moveText + " *";
-
-    saveManager.save({
-      id,
-      data: {
-        title,
-        description,
-        collectionIds,
-        visibility,
-        tagData,
-        pgn,
-      },
-    });
-  };
 
   return (
     <AnalysisContext.Provider
@@ -166,6 +148,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         saveManager,
       }}
     >
+      <OpenAnalysisDialog isOpen={openModalShown} onClose={() => setOpenModalShown(false)} />
       <OptionsOverlay
         isOpen={optionsOverlayShown}
         closeModal={() => {
@@ -191,11 +174,13 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           setSaveModalShown(false);
         }}
       />
-      <div className="flex flex-col h-full w-full justify-center">
+      <div className="flex flex-col h-full w-full justify-center ">
         <MenuBar>
           <MenuWrapper>
             <MenuButton>File</MenuButton>
             <MenuItems>
+              <MenuItem onClick={() => {}}>New Analysis</MenuItem>
+
               <MenuItem onClick={() => setSaveModalShown(true)} disabled={!!saveManager.id}>
                 {saveManager.id && saveManager.data?.analysis ? (
                   <span className="block truncate">{`Saved as "${saveManager.data?.analysis?.title}"`}</span>
@@ -203,8 +188,39 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                   <>Save</>
                 )}
               </MenuItem>
-              <MenuItem onClick={() => setPopupPlayerShown(true)}>Load</MenuItem>
-              <MenuItem onClick={() => setOptionsOverlayShown(true)}>Options</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setOpenModalShown(true);
+                }}
+              >
+                Open
+              </MenuItem>
+              <MenuItem onClick={() => {}}>Fork</MenuItem>
+              <MenuItem onClick={() => {}}>Import PGN</MenuItem>
+              <MenuItem onClick={() => {}}>Add to Collections</MenuItem>
+              <MenuItem onClick={() => setPopupPlayerShown(true)}>Load Game</MenuItem>
+            </MenuItems>
+          </MenuWrapper>
+          <MenuWrapper>
+            <MenuButton>Edit</MenuButton>
+            <MenuItems>
+              <MenuItem onClick={() => {}}>Undo</MenuItem>
+              <MenuItem onClick={() => {}}>Redo</MenuItem>
+              <MenuItem onClick={() => {}}>Delete from Here</MenuItem>
+              <MenuItem onClick={() => {}}>Promote Variation</MenuItem>
+              <MenuItem onClick={() => {}}>Make Mainline</MenuItem>
+              <MenuItem onClick={() => {}}>Delete Variations</MenuItem>
+              <MenuItem onClick={() => {}}>Edit PGN Tags</MenuItem>
+            </MenuItems>
+          </MenuWrapper>
+          <MenuWrapper>
+            <MenuButton>Share/Export</MenuButton>
+            <MenuItems>
+              <MenuItem onClick={() => {}}>Share</MenuItem>
+              <MenuItem onClick={() => {}}>Export PGN</MenuItem>
+              <MenuItem onClick={() => {}}>Export FEN</MenuItem>
+              <MenuItem onClick={() => {}}>Export Image</MenuItem>
+              <MenuItem onClick={() => {}}>Export GIF</MenuItem>
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
@@ -213,17 +229,23 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               <MenuItem onClick={() => setEditMode((cur) => !cur)}>Edit Board</MenuItem>
               <MenuItem onClick={() => {}}>Play vs. Computer</MenuItem>
               <MenuItem onClick={() => {}}>Play vs. a Friend</MenuItem>
+              <MenuItem onClick={() => {}}>Copy FEN</MenuItem>
               <MenuItem onClick={flipBoard}>Flip Board</MenuItem>
             </MenuItems>
           </MenuWrapper>
         </MenuBar>
-        <span>Synced: {`${saveManager.synced}`}</span>
+
         <BoardRow>
-          <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
+          <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center md:pl-4">
             <BoardColumn className="items-center relative">
               <>
-                <div className="absolute top-[-2em] bottom-[-2em] flex flex-row w-inherit">
-                  <div className="flex flex-col justify-between items-center shrink">
+                <div className="absolute top-[-2em] bottom-[-2em] flex flex-row justify-center w-inherit">
+                  <div
+                    className={classNames("flex justify-between items-center shrink", {
+                      "flex-col": orientation === "w",
+                      "flex-col-reverse": orientation === "b",
+                    })}
+                  >
                     <>
                       {analysis.tagData.black && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
@@ -241,7 +263,12 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       )}
                     </>
                   </div>
-                  <div className="flex flex-col justify-between items-center shrink">
+                  <div
+                    className={classNames("flex justify-between items-center shrink", {
+                      "flex-col": orientation === "w",
+                      "flex-col-reverse": orientation === "b",
+                    })}
+                  >
                     <span>
                       {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
                     </span>
@@ -328,7 +355,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
             )}
           </div>
 
-          <PanelColumnLg className="bg-[#1f1f1f]">
+          <PanelColumnLg className="bg-[#1f1f1f] mt-8 ">
             <>
               <>
                 {analysis.isNew ? (
@@ -342,6 +369,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                   />
                 ) : (
                   <>
+                    <div className="w-full md:hidden">
+                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                    </div>
                     <AnalysisPanel
                       modalControls={{
                         showPlayer: () => {
@@ -357,7 +387,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                         showExport: () => {},
                       }}
                     />
-                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                    <div className="w-full hidden md:block">
+                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                    </div>
                   </>
                 )}
               </>
