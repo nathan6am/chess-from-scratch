@@ -25,9 +25,9 @@ export function BoardRow({ children }: LayoutComponentProps) {
   );
 }
 
-export function PanelColumn({ children }: LayoutComponentProps) {
+export function PanelColumn({ children, className }: LayoutComponentProps) {
   return (
-    <div className="h-full hidden lg:block max-h-[1060px]">
+    <div className={twMerge("h-full hidden lg:block max-h-[1060px]", className)}>
       <div className="h-full w-[320px] xl:w-[400px] flex flex-col justify-center mx-4 py-20">
         <div className="h-full max-h-[60vw] w-full  flex flex-col">{children}</div>
       </div>
@@ -35,6 +35,20 @@ export function PanelColumn({ children }: LayoutComponentProps) {
   );
 }
 
+export function PanelColumnSm({ children, className }: LayoutComponentProps) {
+  return (
+    <div
+      className={twMerge(
+        "h-full w-full max-w-[36rem] md:max-w-[50vw] mx-auto lg:mx-0 lg:w-fit max-h-[1400px] bg-elevation-1 md:mt-0",
+        className
+      )}
+    >
+      <div className="h-full w-full md:min-w-[26rem]  lg:w-[30rem] xl:w-[36rem] flex flex-col justify-center ">
+        <div className="h-full min-h-[700px] w-full  flex flex-col">{children}</div>
+      </div>
+    </div>
+  );
+}
 export function PanelColumnLg({ children, className }: LayoutComponentProps) {
   return (
     <div

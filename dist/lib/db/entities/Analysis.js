@@ -61,6 +61,29 @@ let Analysis = Analysis_1 = class Analysis extends typeorm_1.BaseEntity {
         const updated = await analysis.save();
         return updated;
     }
+    static async rename(id, title) {
+        const analysis = await this.findOneBy({ id });
+        if (!analysis)
+            throw new Error("Analysis does not exits");
+        analysis.title = title;
+        const updated = await analysis.save();
+        return updated;
+    }
+    static async searchMine(userid, searchParams) {
+        const query = this.createQueryBuilder("analysis").where("analysis.authorId = :userid", { userid });
+        if (searchParams.query) {
+            query.andWhere("analysis.title ILIKE :query", { query: `%${searchParams.query}%` });
+        }
+        if (searchParams.sortBy) {
+            query.orderBy(`analysis.${searchParams.sortBy}`, searchParams.sortDirection || "ASC");
+        }
+        if (searchParams.pageCursor) {
+            query.skip((searchParams.pageSize || 10) * Number(searchParams.pageCursor));
+        }
+        query.take(searchParams.pageSize || 10);
+        const analyses = await query.getMany();
+        return analyses;
+    }
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),

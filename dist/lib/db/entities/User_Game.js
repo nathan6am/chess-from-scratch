@@ -42,7 +42,7 @@ let User_Game = class User_Game extends typeorm_1.BaseEntity {
         if (searchOptions.after) {
             query.andWhere("game.date > :after", { after: searchOptions.after });
         }
-        if (searchOptions.asColor) {
+        if (searchOptions.asColor && searchOptions.asColor !== "any") {
             query.andWhere("user_game.color = :color", { color: searchOptions.asColor });
         }
         if (searchOptions.result) {

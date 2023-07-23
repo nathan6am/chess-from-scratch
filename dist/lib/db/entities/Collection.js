@@ -58,6 +58,22 @@ let Collection = Collection_1 = class Collection extends typeorm_1.BaseEntity {
         await collection.save();
         return collection;
     }
+    static async removeAnalysis(id, analysisId) {
+        const collection = await this.findOneBy({ id });
+        if (!collection)
+            throw new Error("Collection not found");
+        collection.analyses = collection.analyses.filter((analysis) => analysis.id !== analysisId);
+        await collection.save();
+        return collection;
+    }
+    static async renameCollection(id, title) {
+        const collection = await this.findOneBy({ id });
+        if (!collection)
+            throw new Error("Collection not found");
+        collection.title = title;
+        await collection.save();
+        return collection;
+    }
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),

@@ -37,6 +37,33 @@ interface ItemProps {
   analysis: Analysis;
 }
 
+interface CollectionMenuProps {
+  showDialog: (args: { analysisId: string; dialog: DialogKey }) => void;
+  fileManager: FileManager;
+}
+export function CollectionMenu({ showDialog, fileManager }: CollectionMenuProps) {
+  function handleItemClick({ id, event, props }: ItemParams<{ collection: Collection }>) {
+    switch (id) {
+      case "rename":
+        if (props) showDialog({ analysisId: props.collection.id, dialog: "rename" });
+        break;
+      case "delete":
+        if (props) showDialog({ analysisId: props.collection.id, dialog: "delete" });
+        break;
+    }
+  }
+  return (
+    <Menu id="collection-context-menu" theme="dark">
+      <Item id="rename" onClick={handleItemClick}>
+        Rename
+      </Item>
+      <Item id="delete" onClick={handleItemClick}>
+        Delete
+      </Item>
+    </Menu>
+  );
+}
+
 interface FileMenuProps {
   showDialog: (args: { analysisId: string; dialog: DialogKey }) => void;
   fileManager: FileManager;
@@ -96,7 +123,13 @@ export function FileMenu({ showDialog, fileManager }: FileMenuProps) {
     </Menu>
   );
 }
-function RenderCollection({ collection, refetch }: { collection: Collection; refetch: () => void }) {
+function RenderCollection({
+  collection,
+  refetch,
+}: {
+  collection: Collection;
+  refetch: () => void;
+}) {
   return (
     <StyledDiclosure label={collection.title} size={collection.analyses.length}>
       <AnalysisList analyses={collection.analyses} refetch={refetch} hideLastUpdate />
@@ -291,7 +324,13 @@ interface AnalysisProps {
   setSelected: (analysisId: string) => void;
   hideLastUpdate?: boolean;
 }
-function RenderAnalysis({ analysis, onContextMenu, setSelected, selected, hideLastUpdate }: AnalysisProps) {
+function RenderAnalysis({
+  analysis,
+  onContextMenu,
+  setSelected,
+  selected,
+  hideLastUpdate,
+}: AnalysisProps) {
   const router = useRouter();
   const onDoubleClick = () => {
     router.push(`/study/analyze?id=${analysis.id}`);
@@ -343,7 +382,11 @@ function RenderAnalysis({ analysis, onContextMenu, setSelected, selected, hideLa
 export default function FileBrowser() {
   const [queryStr, setQueryStr] = useState("");
   const debouncedQueryStr = useDebounce(queryStr, 500);
-  const { collections, refetch: refetchCollections, isLoading: collectionsLoading } = useCollections();
+  const {
+    collections,
+    refetch: refetchCollections,
+    isLoading: collectionsLoading,
+  } = useCollections();
   const [sort, setSort] = useState<{ key: "lastUpdate" | "title"; direction: "ASC" | "DESC" }>({
     key: "lastUpdate",
     direction: "DESC",
@@ -390,7 +433,13 @@ export default function FileBrowser() {
             <>{!collections.length && collectionsLoading ? <Loading /> : <></>}</>
             <>
               {collections.map((collection) => {
-                return <RenderCollection key={collection.id} collection={collection} refetch={refetchAll} />;
+                return (
+                  <RenderCollection
+                    key={collection.id}
+                    collection={collection}
+                    refetch={refetchAll}
+                  />
+                );
               })}
             </>
           </ScrollContainer>
@@ -429,7 +478,8 @@ export default function FileBrowser() {
                 onClick={() => {
                   setSort({
                     key: "lastUpdate",
-                    direction: sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
+                    direction:
+                      sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
                   });
                 }}
                 className={classNames("p-1 px-2 rounded-md", {
@@ -507,9 +557,12 @@ function StyledDiclosure({ children, label, size = 0 }: StyledDisclosureProps) {
             )}
           >
             <div
-              className={classNames(" text-light-200 flex flex-row items-center group-hover:text-light-100", {
-                "text-light-100": open,
-              })}
+              className={classNames(
+                " text-light-200 flex flex-row items-center group-hover:text-light-100",
+                {
+                  "text-light-100": open,
+                }
+              )}
             >
               <BsFillCollectionFill className="mr-2 inline text-gold-200" />
               {label}
