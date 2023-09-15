@@ -83,7 +83,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const { settings } = useContext(SettingsContext);
   const [evalEnabled, setEvalEnabled] = useState(() => options.evalEnabled);
   const [tagData, setTagData] = useState<PGNTagData>({});
-  const pgnLoadedRef = useRef(false);
+  const pgnLoadedRef = useRef(true);
   const [pgnToLoad, setPgnToLoad] = useState<string | null>(null);
   useEffect(() => {
     if (options.startPosition !== defaultOptions.startPosition) setIsNew(false);
@@ -140,6 +140,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   };
   // Load pgn to tree
   const loadPgn = (pgn: string) => {
+    pgnLoadedRef.current = false;
     setPgnToLoad(pgn);
     try {
       const { tree, tagData } = parsePgn(pgn);
@@ -254,11 +255,9 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   }, [moveText, tagData]);
 
   useEffect(() => {
-    if (pgnToLoad !== null && pgn === pgnToLoad) {
-      pgnLoadedRef.current = true;
-      setPgnToLoad(null);
-    }
-  }, [pgn, pgnToLoad]);
+    pgnLoadedRef.current = true;
+    setPgnToLoad(null);
+  }, [pgn]);
 
   // Opening explorer and evaler
   const explorer = useOpeningExplorer(currentGame);

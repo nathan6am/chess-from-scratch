@@ -17,7 +17,7 @@ function MenuBar({ children }: Props) {
     <>
       <OptionsOverlay isOpen={showOptions} closeModal={closeModal} />
       <div className="w-full h-10 bg-elevation-2 flex flex-row justify-center items-center">
-        <div className="flex felx-row justify-between items-center container">
+        <div className="flex flex-row justify-between items-center container">
           <div>{children}</div>
           <div className="flex flex-row justify-start items-center">
             <button className="flex flex-row items-center justify-center p-2 rounded-md  hover:bg-elevation-4 text-light-200 hover:text-gold-100 hover:shadow-md">

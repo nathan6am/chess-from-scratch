@@ -4,6 +4,8 @@ import * as Chess from "@/lib/chess";
 import { SettingsContext } from "@/context/settings";
 import { useContext, useState } from "react";
 import { BoardColumn, BoardRow, PanelColumn } from "../layout/GameLayout";
+import MenuBar from "@/components/layout/MenuBar";
+import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
 import classNames from "classnames";
 interface Props {
   startPosition?: string;
@@ -21,9 +23,19 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
     timeControl,
   });
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full">
+    <div className="flex flex-col h-full w-full  min-h-screen">
+      <MenuBar>
+        <MenuWrapper>
+          <MenuButton>Game</MenuButton>
+          <MenuItems>
+            <MenuItem onClick={() => {}}>Restart</MenuItem>
+            <MenuItem onClick={() => {}}>Resign</MenuItem>
+            <MenuItem onClick={() => {}}>Export</MenuItem>
+          </MenuItems>
+        </MenuWrapper>
+      </MenuBar>
       <BoardRow>
-        <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
+        <div className="flex flex-row h-fit md:basis-[100vh] w-full justify-center md:pl-4 mt-8 lg:mt-0">
           <BoardColumn className="items-center relative">
             <>
               <div className="absolute top-[-2em] bottom-[-2em] flex flex-row w-inherit">
@@ -73,7 +85,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
           </BoardColumn>
         </div>
 
-        <PanelColumn className="bg-[#1f1f1f]">
+        <PanelColumn>
           <></>
         </PanelColumn>
       </BoardRow>

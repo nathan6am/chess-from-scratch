@@ -28,7 +28,7 @@ export function BoardRow({ children }: LayoutComponentProps) {
 export function PanelColumn({ children, className }: LayoutComponentProps) {
   return (
     <div className={twMerge("h-full hidden lg:block max-h-[1060px]", className)}>
-      <div className="h-full w-[320px] xl:w-[400px] flex flex-col justify-center mx-4 py-20">
+      <div className="h-full w-[400px] xl:w-[420px] flex flex-col justify-center mx-4 py-20">
         <div className="h-full max-h-[60vw] w-full  flex flex-col">{children}</div>
       </div>
     </div>

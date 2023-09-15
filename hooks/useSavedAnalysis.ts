@@ -77,7 +77,10 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync }: Args) 
     if (!tags) return;
     if (!data.analysis) return;
     if (isSyncing) return;
-    if (!shouldSync) return;
+    if (!shouldSync) {
+      console.log("should sync is false");
+      return;
+    }
     if (saveInProgress) return;
     if (saveError) return;
     if (data.analysis.id !== id) return;
