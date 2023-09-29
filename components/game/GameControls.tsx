@@ -11,15 +11,18 @@ interface Props {
 }
 export default function GameControls({ gameControls, flipBoard, className, size }: Props) {
   return (
-    <div className={`flex flex-row justify-around px-4 ${className ? className : ""}`}>
-      <button className="p-4 text-white/[0.7] hover:text-white  grow w-full" onClick={flipBoard}>
-        <FiRepeat className={`mx-auto ${size === "lg" ? "text-xl" : ""}`} />
+    <div className="flex flex-row justify-between w-full">
+      <button
+        onClick={gameControls.offerDraw}
+        className="bg-elevation-2 hover:bg-elevation-3 w-full py-2 text-light-200 hover:text-gold-100"
+      >
+        Offer Draw <FaHandshake className={`inline`} />
       </button>
-      <button onClick={gameControls.resign} className="p-4 text-white/[0.7] hover:text-red-500 grow w-full">
-        <FiFlag className={`mx-auto ${size === "lg" ? "text-xl" : ""}`} />
-      </button>
-      <button className="p-4 text-white/[0.7] hover:text-white  grow w-full">
-        <FaHandshake className={`mx-auto ${size === "lg" ? "text-xl" : ""}`} />
+      <button
+        onClick={gameControls.resign}
+        className="bg-elevation-2 hover:bg-elevation-3 w-full py-2 text-light-200 hover:text-gold-100"
+      >
+        Resign <FiFlag className={`inline`} />
       </button>
     </div>
   );
