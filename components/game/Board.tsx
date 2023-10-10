@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef, useImperativeHandle } from "react";
+import React, { useCallback, useState, useEffect, useRef, useImperativeHandle, useMemo } from "react";
 import styles from "@/styles/Board.module.scss";
 
 //Types
@@ -37,6 +37,7 @@ interface Props {
   orientation: Chess.Color; //Board orientation
   pieces: Chess.Board; //Array of pieces to display on the board
   legalMoves: Array<Chess.Move>; //Array of legal moves in the current position
+  legalPremoves?: Chess.Premove[]; //Array of available premoves in the current position
   lastMove: Chess.Move | undefined | null; //Last move made
   activeColor: Chess.Color; //Active color
   moveable: Chess.Color | "both" | "none"; //Color of pieces that can be moved
@@ -47,8 +48,9 @@ interface Props {
   showHighlights: boolean; //Whether or not to show the highlights for the selected piece, last move, etc.
   autoQueen: boolean; //Whether or not to auto queen on promotion
   onMove: (move: Chess.Move) => void; //Callback to execute when a move it attempted
-  onPremove: (start: Chess.Square, end: Chess.Square) => void; //Callback to execute when a premove is queued
-  premoveQueue?: Array<{ start: Chess.Square; end: Chess.Square }>; //Array of queued premove moves for display
+  onPremove: (premove: Chess.Premove) => void; //Callback to execute when a premove is queued
+  premoveQueue?: Chess.Premove[]; //Array of queued premove moves for display
+  clearPremoveQueue?: () => void;
   pieceSet: string; //Piece theme
   lastMoveAnnotation?: number | string; //Annotation to show on the board for the last move
   showAnnotation?: boolean; //Whether or not to show annotations on board
@@ -82,6 +84,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
       orientation,
       pieces,
       legalMoves,
+      legalPremoves,
+      premoveQueue,
+      clearPremoveQueue,
       lastMove,
       activeColor,
       moveable,
@@ -124,7 +129,13 @@ const Board = React.forwardRef<BoardHandle, Props>(
 
     //TODO: Clear selected piece when clicking outside the board
     const [selectedPiece, setSelectedPiece] = useState<[Chess.Square, Chess.Piece] | null>(null);
-
+    const premoveTargets = useMemo(() => {
+      if (!legalPremoves?.length) return [];
+      if (!selectedPiece) return [];
+      if (premoveQueue?.length) return [];
+      const [square, _piece] = selectedPiece;
+      return legalPremoves.filter((premove) => premove.start === square).map((premove) => premove.end);
+    }, [selectedPiece, legalPremoves, premoveQueue]);
     //Show Promotion Menu
     const [promotionMove, setPromotionMove] = useState<{
       start: Chess.Square;
@@ -161,7 +172,10 @@ const Board = React.forwardRef<BoardHandle, Props>(
 
         //Queue premove if the piece isn't of the active turn color and do not continue
         if (piece.color !== activeColor && preMoveable) {
-          onPremove(square, currentSquare);
+          console.log("here");
+          if (!legalPremoves?.length) return;
+          const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
+          if (premove) onPremove(premove);
         }
 
         if (piece.color !== activeColor) return;
@@ -214,7 +228,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
           if (piece.color !== moveable && moveable !== "both") return;
           //Queue premove if the piece isn't of the active turn color and do not continue
           if (piece.color !== activeColor && preMoveable) {
-            onPremove(square, targetSquare);
+            const premove = legalPremoves?.find((premove) => premove.start === square && premove.end === targetSquare);
+            if (premove) onPremove(premove);
           }
           if (piece.color !== activeColor) return;
           // Find the corresponding legal move - should be unique unless there is a promotion
@@ -237,6 +252,13 @@ const Board = React.forwardRef<BoardHandle, Props>(
       },
       [selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]
     );
+
+    //Premove
+    const nextPremove = useMemo(() => {
+      if (!premoveQueue?.length) return;
+      return premoveQueue[0];
+    }, [premoveQueue]);
+
     useEffect(() => {
       setSelectedPiece(null);
     }, [lastMove]);
@@ -244,6 +266,11 @@ const Board = React.forwardRef<BoardHandle, Props>(
       setSelectedPiece(null);
     };
 
+    useEffect(() => {
+      if (clearPremoveQueue && selectedPiece) {
+        clearPremoveQueue();
+      }
+    }, [selectedPiece]);
     //Array of rows representing the squares on the board
     const boardMap = orientation === "w" ? Chess.boardMap : Chess.boardMapReverse;
 
@@ -348,14 +375,25 @@ const Board = React.forwardRef<BoardHandle, Props>(
                     id={`${squareIdPrefix || ""}${square}`}
                     key={square}
                     piece={piece ? piece[1] : null}
-                    isTarget={(selectedPiece && selectedPiece[1].targets?.includes(square)) || false}
+                    isTarget={
+                      (selectedPiece && selectedPiece[1].targets?.includes(square)) ||
+                      premoveTargets.includes(square) ||
+                      false
+                    }
+                    isPremoved={nextPremove?.start === square || nextPremove?.end === square}
                     isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {
+                      if (premoveQueue?.length && clearPremoveQueue) {
+                        clearPremoveQueue();
+                      }
                       onSelectTarget(square);
                     }}
                     onClick={() => {
+                      if (premoveQueue?.length && clearPremoveQueue) {
+                        clearPremoveQueue();
+                      }
                       if (editMode && pieceCursor && onAddPiece && onRemovePiece) {
                         if (pieceCursor === "remove") {
                           onRemovePiece(square);
@@ -376,7 +414,6 @@ const Board = React.forwardRef<BoardHandle, Props>(
                       }
                     }}
                     setSelectedPiece={setSelectedPiece}
-                    isPremoved={false}
                     showTargets={showTargets}
                     showHighlights={showHighlights}
                     clearSelection={() => {
@@ -393,28 +430,37 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 );
               })
             )}
-            {pieces.map(([square, piece]) => (
-              <Piece
-                hidden={hidePieces}
-                boardRef={boardRef}
-                selectedPiece={selectedPiece}
-                animationSpeed={AnimSpeedEnum[animationSpeed]}
-                setSelectedPiece={setSelectedPiece}
-                key={`${keyPrefix}${piece.key}${orientation}`}
-                piece={piece}
-                square={square}
-                movementType={movementType}
-                disabled={
-                  editMode
-                    ? pieceCursor !== null
-                    : (moveable !== "both" && piece.color !== moveable) || (!preMoveable && piece.color !== activeColor)
-                }
-                orientation={orientation}
-                onDrop={onDrop}
-                squareSize={squareSize}
-                constrainToBoard={editMode === true ? false : true}
-              />
-            ))}
+            {pieces.map(([trueSquare, piece]) => {
+              const square = nextPremove?.start === trueSquare ? nextPremove.end : trueSquare;
+              const premovedFrom = nextPremove?.start === trueSquare ? trueSquare : undefined;
+              return (
+                <Piece
+                  hidden={hidePieces || nextPremove?.end === trueSquare}
+                  boardRef={boardRef}
+                  premovedFrom={premovedFrom}
+                  selectedPiece={selectedPiece}
+                  animationSpeed={AnimSpeedEnum[animationSpeed]}
+                  setSelectedPiece={setSelectedPiece}
+                  key={`${keyPrefix}${piece.key}${orientation}${premovedFrom}`}
+                  piece={piece}
+                  square={square}
+                  movementType={movementType}
+                  disabled={
+                    editMode
+                      ? pieceCursor !== null
+                      : (moveable !== "both" && piece.color !== moveable) ||
+                        (!preMoveable && piece.color !== activeColor) ||
+                        (selectedPiece !== null &&
+                          premoveTargets?.some((premove) => premove === square) !== undefined &&
+                          selectedPiece[0] !== square)
+                  }
+                  orientation={orientation}
+                  onDrop={onDrop}
+                  squareSize={squareSize}
+                  constrainToBoard={editMode === true ? false : true}
+                />
+              );
+            })}
 
             {editMode && (
               <EditModePiece

@@ -5,7 +5,6 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 
 //Layouts
-import RootLayout from "@/components/layout/RootLayout";
 import AuthLayout from "@/components/layout/AuthLayout";
 
 //UI Components
@@ -37,11 +36,7 @@ const Login: NextPageWithLayout = () => {
 };
 
 Login.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <RootLayout>
-      <AuthLayout>{page}</AuthLayout>
-    </RootLayout>
-  );
+  return <AuthLayout>{page}</AuthLayout>;
 };
 
 function LandingContent() {

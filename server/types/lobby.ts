@@ -12,6 +12,8 @@ export interface Game {
   clock: Clock; //Clock time remaining for each color
   players: Record<Chess.Color, Player>; //Player ids of each color
   ratingCategory: Chess.RatingCategory; //Rating category of the game
+  drawOffered?: Chess.Color; //Whether a draw has been offered
+  rated?: boolean; //Whether the game is rated
 }
 
 export interface Clock {
@@ -44,11 +46,11 @@ export interface Lobby {
   connections: Connection[];
   options: LobbyOptions;
   currentGame: Game | null;
-  chat: Message[];
+  chat: ChatMessage[];
 }
 
 import * as socketio from "socket.io";
-interface ChatMessage {
+export interface ChatMessage {
   message: string;
   timestampISO: string;
   author: {
@@ -92,10 +94,8 @@ export interface LobbyServerToClientEvents<isServer extends boolean = false, isS
     game: Game,
     ack: (...args: WithTimeoutAck<isServer, isSender, [Chess.Move]>) => void
   ) => void;
-  "game:draw-offered": (
-    timeoutSeconds: number,
-    ack: (...args: WithTimeoutAck<isServer, isSender, [boolean]>) => void
-  ) => void;
+  "game:draw-offered": (offeredBy: Chess.Color) => void;
+  "game:draw-declined": () => void;
   "lobby:rematch-requested": (
     timeoutSeconds: number,
     ack: (...args: WithTimeoutAck<isServer, isSender, [boolean]>) => void
@@ -113,11 +113,16 @@ export interface LobbyClientToServerEvents<isServer extends boolean = false, isS
 
   "lobby:disconnect": (lobbyid: string, ack: (response: SocketResponse<string>) => void) => void;
 
-  "lobby:chat": (message: string, ack: (response: SocketResponse<ChatMessage[]>) => void) => void;
+  "lobby:chat": (
+    args: { message: string; lobbyid: string },
+    ack: (response: SocketResponse<ChatMessage[]>) => void
+  ) => void;
 
   "game:move": (args: { move: Chess.Move; lobbyid: string }, ack: (response: SocketResponse<Game>) => void) => void;
 
   "game:offer-draw": (lobbyid: string) => void;
+
+  "game:accept-draw": (lobbyid: string, accepted: boolean) => void;
 
   "game:resign": (lobbyid: string) => void;
 

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from "react";
-
+import { ScrollContainer } from "../layout/GameLayout";
 //Util
 import { notEmpty } from "@/util/misc";
 import * as Chess from "@/lib/chess";
@@ -51,9 +51,8 @@ export default function MoveHistory({ moveHistory, usePieceIcons, jumpToOffset, 
 
   return (
     <>
-      <Header />
       <div className="grow w-full relative">
-        <div className="absolute top-0 left-0 bottom-0 right-0 bg-[#1f1f1f] flex flex-col border-t border-white/[0.2] overflow-y-scroll overflow-x-hidden">
+        <ScrollContainer>
           <table className="table-fixed w-full text">
             <tbody>
               {moveHistory.map((fullMove, idx) => {
@@ -90,7 +89,7 @@ export default function MoveHistory({ moveHistory, usePieceIcons, jumpToOffset, 
             </tbody>
           </table>
           <div ref={scrollRef} />
-        </div>
+        </ScrollContainer>
       </div>
     </>
   );

@@ -17,9 +17,14 @@ export function BoardColumn({ children, className }: LayoutComponentProps) {
   );
 }
 
-export function BoardRow({ children }: LayoutComponentProps) {
+export function BoardRow({ children, className }: LayoutComponentProps) {
   return (
-    <div className="flex flex-col md:flex-row h-full w-full items-start pt-[5rem] md:items-center justify-center md:py-6 lg:pb-10 lg:pt-4">
+    <div
+      className={twMerge(
+        "flex flex-col md:flex-row h-full w-full items-start pt-[5rem] md:items-center justify-center md:py-6 lg:pb-10 lg:pt-4",
+        className
+      )}
+    >
       {children}
     </div>
   );
@@ -53,7 +58,7 @@ export function PanelColumnLg({ children, className }: LayoutComponentProps) {
   return (
     <div
       className={twMerge(
-        "h-full w-full max-w-[36rem] md:max-w-[50vw] mx-auto lg:mx-0 lg:w-fit max-h-[1400px] bg-elevation-1 md:mt-0",
+        "h-full w-full max-w-[36rem] md:max-w-[50vw] mx-auto lg:mx-0 lg:w-fit max-h-[1400px]  md:mt-0",
         className
       )}
     >

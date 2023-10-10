@@ -54,6 +54,7 @@ export interface AnalysisHook {
     setArrowColor: (color: ArrowColor) => void;
   };
   loadFen: (fen: string) => void;
+  reset: (options: { pgn?: string | undefined }) => void;
 }
 
 interface AnalysisOptions {
@@ -264,12 +265,16 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const evaler = useEvaler(currentGame.fen, !evalEnabled);
 
   //Move sounds
-  const [playMove] = useSound("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
+  const moveVolume = useMemo(() => {
+    if (!settings.sound.moveSounds) return 0;
+    return settings.sound.volume / 100;
+  }, [settings.sound.volume, settings.sound.moveSounds]);
+  const [playMove] = useSound("/assets/sounds/move.wav", { volume: moveVolume });
   const [playCapture] = useSound("/assets/sounds/capture.wav", {
-    volume: settings.sound.volume / 100,
+    volume: moveVolume,
   });
   const [playCastle] = useSound("/assets/sounds/castle.wav", {
-    volume: settings.sound.volume / 100,
+    volume: moveVolume,
   });
   const lastMove = currentGame.lastMove;
   useEffect(() => {
@@ -426,6 +431,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const [arrowColor, setArrowColor] = useState<ArrowColor>("G");
 
   return {
+    reset,
     isNew,
     tree: variationTree,
     loadPgn,

@@ -105,7 +105,7 @@ export default function Square({
       )}
       {annotation && <Annotation squareSize={squareSize} code={annotation} />}
       <div
-        className={`${styles.contents} ${isSelected && styles.selected} ${
+        className={`${styles.contents} ${isSelected && styles.selected} ${isPremoved && styles.selected}  ${
           isLastMove && showHighlights && styles.lastmove
         }`}
       >

@@ -3,7 +3,7 @@ import { MdLogout, MdNotifications } from "react-icons/md";
 import { RiListSettingsLine } from "react-icons/ri";
 import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
 interface Props {
-  children: JSX.Element | string | Array<JSX.Element | string>;
+  children?: JSX.Element | string | Array<JSX.Element | string>;
 }
 function MenuBar({ children }: Props) {
   const [showOptions, setShowOptions] = useState(false);

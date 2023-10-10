@@ -2,7 +2,13 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from "react";
 
 //Types
-import { LobbyClientToServerEvents, LobbyServerToClientEvents, Game, Connection } from "../server/types/lobby";
+import {
+  LobbyClientToServerEvents,
+  LobbyServerToClientEvents,
+  Game,
+  Connection,
+  ChatMessage,
+} from "../server/types/lobby";
 import { Lobby, Player } from "server/types/lobby";
 
 //Util
@@ -15,6 +21,7 @@ import useSound from "use-sound";
 //Context
 import { UserContext } from "@/context/user";
 import { io, Socket } from "socket.io-client";
+import { SettingsContext } from "@/context/settings";
 
 export interface BoardControls {
   jumpForward: () => void;
@@ -26,10 +33,11 @@ export interface BoardControls {
 
 export interface GameControls {
   resign: () => void;
-  offerDraw?: () => void;
-  acceptDraw?: () => void;
+  offerDraw: () => void;
+  acceptDraw: (accepted: boolean) => void;
   onMove: (move: Chess.Move) => void;
-  onPremove?: (move: Chess.Move) => void;
+  onPremove?: (move: Chess.Premove) => void;
+  clearPremoveQueue?: () => void;
 }
 
 export interface OnlineGame {
@@ -41,24 +49,31 @@ export interface OnlineGame {
   currentGame: Game | null;
   players: Connection[];
   playerColor: Chess.Color;
-  premoveQueue: Chess.Move[];
+  premoveQueue: Chess.Premove[];
   currentBoard: Chess.Board | null;
   livePositionOffset: number;
   boardControls: BoardControls;
   gameControls: GameControls;
   lastMove: Chess.Move | null;
+  availablePremoves: Chess.Premove[];
   timeRemaining: Record<Chess.Color, DurationObjectUnits>;
+  drawOfferRecieved: boolean;
+  drawOfferSent: boolean;
   moveable: boolean;
+  chat: ChatMessage[];
+  sendMessage: (message: string) => void;
 }
 
 export default function useChessOnline(lobbyId: string): OnlineGame {
+  const { settings } = useContext(SettingsContext);
   const [socketConnected, setSocketConnected] = useState(false); //Socket connection status
   const [lobby, setLobby] = useState<Lobby | null>(null); //Current lobby data
   const lobbyid = lobby?.id || null; //ID of the connected lobby
   const [game, updateGame] = useState<Game | null>(null); //The current active game
-  const [premoveQueue, setPremoveQueue] = useState<Chess.Move[]>([]);
+  const [premoveQueue, setPremoveQueue] = useState<Chess.Premove[]>([]);
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const { user } = useContext(UserContext);
+  const chat = lobby?.chat;
   const [lastRatingDelta, setLastRatingDelta] = useState<number>(0);
   const lobbyConnected = lobby !== null;
   const gameActive = useMemo(() => {
@@ -113,10 +128,54 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move || null;
   }, [livePositionOffset, moveHistoryFlat, game]);
 
+  //Premoves
+  const availablePremoves = useMemo(() => {
+    if (!game) return [];
+    return Chess.getPremoves(game.data);
+  }, [game?.data]);
+
+  const onPremove = (premove: Chess.Premove) => {
+    if (availablePremoves.some((availablePremove) => _.isEqual(premove, availablePremove))) {
+      playPremove();
+      setPremoveQueue([premove]);
+    }
+  };
+  const clearPremoveQueue = () => {
+    setPremoveQueue([]);
+  };
   //Move sounds
-  const [playMove] = useSound("/assets/sounds/move.wav");
-  const [playCapture] = useSound("/assets/sounds/capture.wav");
-  const [playCastle] = useSound("/assets/sounds/castle.wav");
+  const moveVolume = useMemo(() => {
+    if (!settings.sound.moveSounds) return 0;
+    return settings.sound.volume / 100;
+  }, [settings.sound.volume, settings.sound.moveSounds]);
+  const [playMove] = useSound("/assets/sounds/move.wav", {
+    volume: moveVolume,
+  });
+  const [playCapture] = useSound("/assets/sounds/capture.wav", {
+    volume: moveVolume,
+  });
+  const [playCastle] = useSound("/assets/sounds/castle.wav", {
+    volume: moveVolume,
+  });
+  const [playPremove] = useSound("/assets/sounds/premove.wav", {
+    volume: moveVolume,
+  });
+  const [playMessage] = useSound("/assets/sounds/message.wav", {
+    volume: settings.sound.notifcationSounds ? settings.sound.volume / 100 : 0,
+  });
+
+  const lastMessage = useMemo(() => {
+    if (!chat) return null;
+    return chat[chat.length - 1];
+  }, [chat]);
+
+  useEffect(() => {
+    if (!lastMessage) return;
+    if (!user?.id) return;
+    if (lastMessage.author.id === user?.id) return;
+    playMessage();
+  }, [lastMessage, playMessage, user?.id]);
+
   const lastMoveRef = useRef<Chess.Move | null>(null);
   useEffect(() => {
     if (_.isEqual(lastMoveRef.current, lastMove)) return;
@@ -214,6 +273,32 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
   //server in response to a user event
   const callbackRef = useRef<(...args: any[]) => void>();
 
+  const requestUpdate = () => {
+    if (lobbyid) {
+      socket.emit("lobby:connect", lobbyid, (response) => {
+        const lobby = response.data;
+        if (lobby) {
+          setLobby(lobby);
+          if (lobby.currentGame) {
+            updateGame(lobby.currentGame);
+          }
+        }
+      });
+    }
+  };
+
+  const sendMessage = (message: string) => {
+    socket.emit("lobby:chat", { message, lobbyid: lobbyid || "" }, (response) => {
+      if (response.data) {
+        setLobby((current) => {
+          if (!current) return current;
+          if (!response.data) return current;
+          return { ...current, chat: response.data };
+        });
+      }
+    });
+  };
+
   //Register Event Listeners and auto-connect to the lobby on mount
   useEffect(() => {
     if (!socket.connected) socket.connect();
@@ -236,6 +321,11 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       });
       setSocketConnected(true);
     };
+    const onDisconnect = () => {
+      console.log("Disconnected from lobby");
+      setSocketConnected(false);
+      callbackRef.current = undefined;
+    };
     const onLobbyDidUpdate = (updates: Partial<Lobby>) => {
       setLobby((current) => {
         if (!current) return current;
@@ -243,7 +333,30 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       });
     };
     const onConnectError = (err: unknown) => {
+      console.log("Disconnected from lobby");
+      setSocketConnected(false);
+      callbackRef.current = undefined;
       setConnectionError(true);
+    };
+
+    const onDrawOffered = (offeredBy: Chess.Color) => {
+      updateGame((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          drawOffered: offeredBy,
+        };
+      });
+    };
+    const onDrawDeclined = () => {
+      console.log("draw declined");
+      updateGame((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          drawOffered: undefined,
+        };
+      });
     };
     const onMoveRecieved = (game: Game) => {
       setLivePositionOffset(0);
@@ -262,26 +375,45 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     const onOutcome = (game: Game, ratingDeltas?: Record<Chess.Color, number>) => {
       updateGame(game);
     };
+    const onChat = (chat: ChatMessage[]) => {
+      setLobby((lobby) =>
+        lobby
+          ? {
+              ...lobby,
+              chat,
+            }
+          : lobby
+      );
+    };
+
     //Register event listeners
     socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
     socket.on("lobby:update", onLobbyDidUpdate);
     socket.on("game:new", onNewGame);
     socket.on("game:move", onMoveRecieved);
     socket.on("game:outcome", onOutcome);
     socket.on("game:request-move", onMoveRequested);
+    socket.on("game:draw-offered", onDrawOffered);
+    socket.on("game:draw-declined", onDrawDeclined);
     socket.on("test:requestAck", onTest);
+    socket.on("lobby:chat", onChat);
 
     return () => {
       socket.disconnect();
       socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
       socket.off("game:move", onMoveRecieved);
       socket.off("game:new", onNewGame);
       socket.off("test:requestAck", onTest);
       socket.off("game:request-move", onMoveRequested);
+      socket.off("game:draw-offered", onDrawOffered);
+      socket.off("game:draw-declined", onDrawDeclined);
       socket.off("game:outcome", onOutcome);
       socket.off("connect_error", onConnectError);
       socket.off("lobby:update", onLobbyDidUpdate);
+      socket.off("lobby:chat", onChat);
     };
   }, []);
 
@@ -318,7 +450,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
               });
             } else {
               setConnectionError(true);
-              //Request the current game state from the server
+              requestUpdate();
             }
           });
         } else {
@@ -335,7 +467,7 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
         }
       }
     },
-    [socket, game, playerColor, lobbyid, delayRef]
+    [socket, game, playerColor, lobbyid, delayRef, requestUpdate]
   );
 
   const prevGame = useRef<Chess.Game>();
@@ -363,12 +495,42 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     socket.emit("game:resign", lobbyid);
   }, [socket, lobbyid]);
 
+  const offerDraw = useCallback(() => {
+    if (!lobbyid) return;
+    socket.emit("game:offer-draw", lobbyid);
+  }, [socket, lobbyid, playerColor]);
+
+  const acceptDraw = useCallback(
+    (accept: boolean) => {
+      if (!lobbyid) return;
+      socket.emit("game:accept-draw", lobbyid, accept);
+    },
+    [socket, lobbyid]
+  );
+
+  const drawOfferRecieved = useMemo(() => {
+    if (!game) return false;
+    if (game.data.outcome) return false;
+    if (game.drawOffered === playerColor || !game.drawOffered) return false;
+    return true;
+  }, [game, playerColor, game?.drawOffered]);
+
+  const drawOfferSent = useMemo(() => {
+    if (!game) return false;
+    if (game.data.outcome) return false;
+    if (game.drawOffered !== playerColor) return false;
+    return true;
+  }, [game, playerColor, game?.drawOffered]);
+
   return {
     connectionStatus: {
       socket: socketConnected,
       lobby: lobbyConnected,
     },
+    chat: chat || [],
+    sendMessage,
     lobby,
+    availablePremoves,
     premoveQueue,
     currentGame: game,
     currentBoard,
@@ -384,7 +546,13 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     gameControls: {
       onMove,
       resign,
+      onPremove,
+      clearPremoveQueue,
+      offerDraw,
+      acceptDraw,
     },
+    drawOfferRecieved,
+    drawOfferSent,
     lastMove,
     playerColor: playerColor || "w",
     players: players || [],

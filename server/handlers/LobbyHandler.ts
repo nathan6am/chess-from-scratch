@@ -1,6 +1,6 @@
 import { RedisClient } from "../index";
 import { wrapClient } from "../util/redisClientWrapper";
-import { Lobby, Game, Player, Connection, LobbySocket as Socket, LobbyServer } from "../types/lobby";
+import { Lobby, Game, Player, Connection, LobbySocket as Socket, LobbyServer, ChatMessage } from "../types/lobby";
 import { default as GameEntity } from "../../lib/db/entities/Game";
 import { Server } from "../types/socket";
 import * as Chess from "../../lib/chess";
@@ -376,6 +376,10 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     const updatedClock = switchClock(game.clock, moveRecievedISO, game.data.activeColor);
     const updatedGameData = Chess.move(game.data, move, updatedClock.timeRemainingMs[game.data.activeColor]);
 
+    //Clear the draw offer if the player who offred the draw has moved
+    if (game.drawOffered === game.data.activeColor) {
+      game.drawOffered = undefined;
+    }
     //Update the clocks if both players have played a move
     if (updatedGameData.fullMoveCount >= 2) {
       //Update the clock state and apply increment
@@ -392,7 +396,6 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
       });
     }
   }
-
   socket.on("game:move", async ({ move, lobbyid }, ack) => {
     const updated = await executeMove(move, lobbyid);
     //Return the updated game data to the client and emit to the opponent
@@ -425,5 +428,74 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
     const updated = await cache.updateGame(lobbyid, game);
     await handleGameResult(lobbyid, game);
+  });
+
+  socket.on("game:offer-draw", async (lobbyid) => {
+    const user = socket.data.sessionUser;
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user) return;
+    if (!lobby.connections.some((player) => player.id === user.id)) return;
+    const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+
+    const game = lobby.currentGame;
+    if (game.drawOffered && game.drawOffered !== playerColor) {
+      //Accept the draw if the other player has offered
+      game.data.outcome = { result: "d", by: "agreement" };
+      const updated = await cache.updateGame(lobbyid, game);
+      if (!updated) throw new Error("Unable to update game");
+      await handleGameResult(lobbyid, game);
+    } else {
+      const updated = await cache.updateGame(lobbyid, {
+        ...game,
+        drawOffered: playerColor,
+      });
+      nsp.to(lobbyid).emit("game:draw-offered", playerColor);
+    }
+  });
+
+  socket.on("game:accept-draw", async (lobbyid, accepted) => {
+    const user = socket.data.sessionUser;
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user) return;
+    if (!lobby.connections.some((player) => player.id === user.id)) return;
+    const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+    const game = lobby.currentGame;
+    if (!game.drawOffered || game.drawOffered === playerColor) return;
+    if (accepted) {
+      game.data.outcome = { result: "d", by: "agreement" };
+      const updated = await cache.updateGame(lobbyid, game);
+      if (!updated) throw new Error("Unable to update game");
+      await handleGameResult(lobbyid, game);
+    } else {
+      const updated = await cache.updateGame(lobbyid, {
+        ...game,
+        drawOffered: undefined,
+      });
+      nsp.to(lobbyid).emit("game:draw-declined");
+    }
+  });
+
+  socket.on("lobby:chat", async ({ message, lobbyid }, ack) => {
+    const user = socket.data.sessionUser;
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user) return;
+    if (!lobby.connections.some((player) => player.id === user.id)) return;
+    const messageObject: ChatMessage = {
+      timestampISO: new Date().toISOString(),
+      author: {
+        id: user.id || "",
+        username: user.username || "",
+      },
+      message: message,
+    };
+
+    const chat = [...lobby.chat, messageObject];
+    await cache.updateLobby(lobbyid, { chat });
+    ack({
+      status: true,
+      data: chat,
+      error: null,
+    });
+    socket.to(lobbyid).emit("lobby:chat", chat);
   });
 }

@@ -85,19 +85,18 @@ router.get(
   })
 );
 
-router.get(
-  "/guest",
-  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
-  (req, res) => {
-    res.redirect("/");
-  }
-);
+router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+  req.session.cookie.maxAge = 3600 * 24;
+  res.redirect("/");
+});
 
-router.get("/user", function (req, res, next) {
+router.get("/user", async function (req, res, next) {
   if (!req.user) {
     res.status(200).json({});
   } else {
-    res.status(200).json(req.user);
+    const sessionUser = await User.getSessionUser(req.user.id);
+    if (sessionUser) res.status(200).json(sessionUser);
+    else res.status(200).json({});
   }
 });
 
@@ -153,27 +152,24 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-router.post(
-  "/change-password",
-  async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
-    const sessionUser = req.user;
-    if (!sessionUser || sessionUser.type === "guest") {
-      res.status(401).end();
-      return;
-    }
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      res.status(400).end();
-      return;
-    }
-    const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
-
-    if (updated) return res.status(200).json({ updated: true });
-    else {
-      res.status(401).end();
-    }
+router.post("/change-password", async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
+  const sessionUser = req.user;
+  if (!sessionUser || sessionUser.type === "guest") {
+    res.status(401).end();
+    return;
   }
-);
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).end();
+    return;
+  }
+  const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
+
+  if (updated) return res.status(200).json({ updated: true });
+  else {
+    res.status(401).end();
+  }
+});
 
 router.get("/logout", function (req, res, next) {
   console.log("logging out");

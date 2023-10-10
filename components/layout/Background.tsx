@@ -2,7 +2,7 @@ import React from "react";
 interface Props {
   children?: JSX.Element | JSX.Element[];
 }
-export default function RootLayout({ children }: Props) {
+export default function Background({ children }: Props) {
   return (
     <div
       style={{

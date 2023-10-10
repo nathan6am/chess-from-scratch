@@ -76,7 +76,10 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const id = router.query.id as string | undefined;
   const currentIdRef = useRef<string | null | undefined>(id);
   const initialLoad = useRef(initialId || sourceGameId ? false : true);
-  const saveManager = useSavedAnalysis({ pgn, tags: tagData, shouldSync: analysis.pgnLoaded });
+  const shouldSave = useMemo(() => {
+    return analysis.pgnLoaded && initialLoad.current;
+  }, [analysis.pgnLoaded, initialLoad.current]);
+  const saveManager = useSavedAnalysis({ pgn, tags: tagData, shouldSync: shouldSave });
 
   // Display state
   const [orientation, setOrientation] = useState<Chess.Color>("w");
@@ -121,10 +124,16 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     }
   }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
 
+  //Reset initial load on id change
+  useEffect(() => {
+    initialLoad.current = false;
+  }, [id]);
+
   // Load saved analysis on initial load and id change
   useEffect(() => {
     if (!id) return;
     if (!saveManager.data?.analysis) return;
+    if (saveManager.data.analysis.id !== id) return;
     if (!initialLoad.current) {
       analysis.loadPgn(saveManager.data.analysis.pgn);
       initialLoad.current = true;
@@ -134,6 +143,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     if (id === currentIdRef.current) return;
     //Only load if the id was changed from null/undefined (prevents reloading on saving)
     if (currentIdRef.current) {
+      console.log("id changed");
       analysis.loadPgn(saveManager.data.analysis.pgn);
     }
     currentIdRef.current = id;
@@ -179,7 +189,15 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           <MenuWrapper>
             <MenuButton>File</MenuButton>
             <MenuItems>
-              <MenuItem onClick={() => {}}>New Analysis</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  router.query = {};
+                  router.push("/study/analyze");
+                  analysis.reset({});
+                }}
+              >
+                New Analysis
+              </MenuItem>
 
               <MenuItem onClick={() => setSaveModalShown(true)} disabled={!!saveManager.id}>
                 {saveManager.id && saveManager.data?.analysis ? (

@@ -71,7 +71,7 @@ const defaultRatings: Record<RatingCategory, Rating> = {
 export type SessionUser = {
   id: string;
   username: string | null;
-  type: "user" | "incomplete" | "guest" | "admin";
+  type: "user" | "incomplete" | "guest" | "admin" | "unverified";
 };
 
 @Entity()
@@ -84,9 +84,6 @@ export default class User extends BaseEntity {
 
   @Column({ nullable: true, unique: true })
   username: string;
-
-  @Column({ default: 800 })
-  rating: number;
 
   @Column("jsonb", { default: defaultRatings })
   ratings: Ratings;
@@ -106,8 +103,17 @@ export default class User extends BaseEntity {
   @OneToMany(() => Analysis, (analysis) => analysis.author)
   savedAnalyses: Relation<Analysis[]>;
 
-  @Column({ default: "incomplete" })
-  type: "user" | "incomplete" | "admin";
+  @Column({ default: false })
+  complete: boolean;
+
+  get type(): "user" | "incomplete" | "unverified" | "admin" {
+    if (!this.complete) return "incomplete";
+    if (!this.emailVerified) return "unverified";
+    return "user";
+  }
+
+  @Column({ default: false })
+  emailVerified: boolean;
 
   @OneToOne(() => Profile, (profile) => profile.id, { cascade: true })
   @JoinColumn()
@@ -161,8 +167,6 @@ export default class User extends BaseEntity {
           credentials: true,
         },
       });
-      console.log(credentials.username);
-      console.log(user);
       if (!user || !user.credentials) return null;
       const verified = await bcrypt.compare(credentials.password, user.credentials.hashedPassword);
       if (!verified) return null;
@@ -211,7 +215,7 @@ export default class User extends BaseEntity {
     return {
       id: newUser.id,
       username: null,
-      type: "incomplete",
+      type: newUser.type,
     };
   }
 
@@ -316,7 +320,6 @@ export default class User extends BaseEntity {
     const profile = new Profile();
     Object.assign(profile, profileData);
     user.profile = profile;
-    user.type = "user";
     await user.save();
   }
   static async getGames(id: string) {

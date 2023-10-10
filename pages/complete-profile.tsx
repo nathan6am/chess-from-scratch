@@ -6,24 +6,16 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 import { NextPageContext } from "next";
 
-//Layouts
-import RootLayout from "@/components/layout/RootLayout";
-import AuthLayout from "@/components/layout/AuthLayout";
-
 //UI Components
-import LoginForm from "@/components/UI/forms/LoginForm";
 
 //Icons
-import { FaGithub } from "react-icons/fa";
-import Knight from "../public/assets/knight.svg";
 import CompleteProfileForm from "@/components/UI/forms/CompleteProfileForm";
 import { SessionUser } from "@/lib/db/entities/User";
-import axios from "axios";
-import { initialize } from "@/lib/db/connect";
 interface Props {
   profile?: User;
 }
 import userofile from "@/hooks/useProfile";
+import Background from "@/components/layout/Background";
 const SignUp: NextPageWithLayout = () => {
   const { user, error } = userofile();
   if (!user) return <></>;
@@ -32,10 +24,7 @@ const SignUp: NextPageWithLayout = () => {
       <>
         <Head>
           <title>NextChess | Account Setup</title>
-          <meta
-            name="Account Setup"
-            content="Sign In to Continue to NextChess"
-          />
+          <meta name="Account Setup" content="Sign In to Continue to NextChess" />
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <div className="w-full h-full flex flex-col justify-center items-center">
@@ -47,7 +36,7 @@ const SignUp: NextPageWithLayout = () => {
 };
 
 SignUp.getLayout = function getLayout(page: ReactElement) {
-  return <RootLayout>{page}</RootLayout>;
+  return <Background>{page}</Background>;
 };
 
 export async function getServerSideProps(context: NextPageContext) {

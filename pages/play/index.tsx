@@ -23,11 +23,7 @@ const Play: NextPageWithLayout = () => {
 };
 
 Play.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <RootLayout>
-      <MenuLayout>{page}</MenuLayout>
-    </RootLayout>
-  );
+  return <MenuLayout>{page}</MenuLayout>;
 };
 
 export async function getServerSideProps(context: NextPageContext) {

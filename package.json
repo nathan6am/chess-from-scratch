@@ -104,7 +104,8 @@
     "uuid": "^9.0.0",
     "xml-js": "^1.6.11",
     "yup": "^0.32.11",
-    "yup-password": "^0.2.2"
+    "yup-password": "^0.2.2",
+    "zeptomail": "^5.0.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",

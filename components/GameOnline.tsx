@@ -3,27 +3,23 @@ import Board from "@/components/game/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import Result from "@/components/UI/dialogs/Result";
+import MenuBar from "./layout/MenuBar";
 import useChessOnline, {
   BoardControls as IBoardControls,
   GameControls as IGameControls,
+  OnlineGame,
 } from "@/hooks/useChessOnline";
 import BoardControls from "./game/BoardControls";
 import Waiting from "./game/Waiting";
 import { SettingsContext } from "@/context/settings";
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
-import { Connection, Player } from "@/server/types/lobby";
-import {
-  BoardColumn,
-  BoardRow,
-  PanelColumn,
-  PanelColumnLg,
-  PanelContainer,
-} from "./layout/GameLayout";
+import { ChatMessage, Connection, Player } from "@/server/types/lobby";
+import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, PanelContainer } from "./layout/GameLayout";
 import { DurationObjectUnits } from "luxon";
 import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
-
+import LiveChat from "./game/LiveChat";
 interface Props {
   lobbyid: string;
 }
@@ -33,9 +29,17 @@ interface GameDetails {
   timeControl: Chess.TimeControl | undefined | null;
   ratingCategory: Chess.RatingCategory | undefined | null;
 }
+
+export const GameContext = React.createContext<{
+  onlineGame: OnlineGame;
+  orientation: Chess.Color;
+}>({} as any);
+
 export default function GameOnline({ lobbyid }: Props) {
   const onlineGame = useChessOnline(lobbyid);
   const {
+    chat,
+    sendMessage,
     currentGame,
     currentBoard,
     timeRemaining,
@@ -46,11 +50,15 @@ export default function GameOnline({ lobbyid }: Props) {
     gameControls,
     boardControls,
     livePositionOffset,
+    availablePremoves,
+    premoveQueue,
   } = onlineGame;
   const { settings } = useContext(SettingsContext);
   const timeControl = currentGame?.data.config.timeControl;
   const ratingCategory = currentGame?.ratingCategory;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
+  const messages = lobby?.chat;
+
   const players = useMemo(() => {
     let result: Record<Chess.Color, Connection | undefined> = {
       w: undefined,
@@ -76,60 +84,64 @@ export default function GameOnline({ lobbyid }: Props) {
     return <div>Connecting...</div>;
   }
   //TODO: Add connecting component
-  if (!currentGame)
-    return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
+  if (!currentGame) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
   const gameData = currentGame.data;
   return (
-    <div className="flex flex-col h-full w-full justify-center">
-      <Result
-        outcome={gameData.outcome}
-        isOpen={gameData.outcome ? true : false}
-        close={() => {}}
-      />
-      <BoardRow>
-        <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
-          <BoardColumn>
-            <div className="w-full lg:hidden">
-              <MoveTape
-                moveHistory={gameData.moveHistory}
-                jumpToOffset={boardControls.jumpToOffset}
-                currentOffset={livePositionOffset}
-                usePieceIcons={true}
-              />
-            </div>
-            <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
-              <div className="flex flex-row w-full justify-between">
-                {players.b && <PlayerCard connection={players.b} />}
-                <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
+    <GameContext.Provider value={{ onlineGame, orientation }}>
+      <div className="flex flex-col h-full w-full justify-center ">
+        <MenuBar />
+        <Result outcome={gameData.outcome} isOpen={gameData.outcome ? true : false} close={() => {}} />
+        <div className="flex flex-col md:flex-row h-full w-full items-start  md:items-center justify-center ">
+          <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
+            <BoardColumn>
+              <div className="w-full lg:hidden">
+                <MoveTape
+                  moveHistory={gameData.moveHistory}
+                  jumpToOffset={boardControls.jumpToOffset}
+                  currentOffset={livePositionOffset}
+                  usePieceIcons={true}
+                />
+              </div>
+              <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
+                <div className="flex flex-row w-full justify-between">
+                  {players.b && <PlayerCard connection={players.b} />}
+                  <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
+                </div>
+
+                <Board
+                  showCoordinates={settings.display.showCoordinates}
+                  movementType={settings.gameBehavior.movementType}
+                  theme={settings.display.boardTheme}
+                  pieceSet={settings.display.pieceTheme}
+                  orientation={orientation}
+                  legalMoves={gameData.legalMoves}
+                  legalPremoves={availablePremoves}
+                  showHighlights={true}
+                  showTargets={true}
+                  pieces={currentBoard || gameData.board}
+                  animationSpeed={settings.display.animationSpeed}
+                  lastMove={lastMove}
+                  activeColor={gameData.activeColor}
+                  moveable={moveable ? playerColor || "none" : "none"}
+                  preMoveable={settings.gameBehavior.allowPremoves}
+                  autoQueen={settings.gameBehavior.autoQueen}
+                  onMove={gameControls.onMove}
+                  premoveQueue={premoveQueue}
+                  clearPremoveQueue={gameControls.clearPremoveQueue}
+                  onPremove={(move) => {
+                    if (gameControls.onPremove) {
+                      gameControls.onPremove(move);
+                    }
+                  }}
+                />
+                <div className="flex flex-row w-full justify-between">
+                  {players.w && <PlayerCard connection={players.w} />}
+                  <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
+                </div>
               </div>
 
-              <Board
-                showCoordinates={settings.display.showCoordinates}
-                movementType={settings.gameBehavior.movementType}
-                theme={settings.display.boardTheme}
-                pieceSet={settings.display.pieceTheme}
-                orientation={orientation}
-                legalMoves={gameData.legalMoves}
-                showHighlights={true}
-                showTargets={true}
-                pieces={currentBoard || gameData.board}
-                animationSpeed={settings.display.animationSpeed}
-                lastMove={lastMove}
-                activeColor={gameData.activeColor}
-                moveable={moveable ? playerColor || "none" : "none"}
-                preMoveable={settings.gameBehavior.allowPremoves}
-                autoQueen={settings.gameBehavior.autoQueen}
-                onMove={gameControls.onMove}
-                onPremove={() => {}}
-              />
-              <div className="flex flex-row w-full justify-between">
-                {players.w && <PlayerCard connection={players.w} />}
-                <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
-              </div>
-            </div>
-
-            <div className="min-h-[120px] w-full block lg:hidden">
+              {/* <div className="min-h-[120px] w-full block lg:hidden">
               <BoardControls controls={boardControls} />
               <GameControls
                 size="sm"
@@ -139,25 +151,28 @@ export default function GameOnline({ lobbyid }: Props) {
                   setOrientation((cur) => (cur === "w" ? "b" : "w"));
                 }}
               />
-            </div>
-          </BoardColumn>
+            </div> */}
+            </BoardColumn>
+          </div>
+          <PanelColumnLg className="py-10 ">
+            <PanelOnline
+              chat={chat}
+              sendMessage={sendMessage}
+              gameDetails={gameDetails}
+              timeRemaining={timeRemaining}
+              boardControls={boardControls}
+              gameControls={gameControls}
+              flipBoard={() => {
+                setOrientation((cur) => (cur === "w" ? "b" : "w"));
+              }}
+              currentOffset={livePositionOffset}
+              moveHistory={gameData.moveHistory}
+              orientation={orientation}
+            />
+          </PanelColumnLg>
         </div>
-        <PanelColumnLg>
-          <PanelOnline
-            gameDetails={gameDetails}
-            timeRemaining={timeRemaining}
-            boardControls={boardControls}
-            gameControls={gameControls}
-            flipBoard={() => {
-              setOrientation((cur) => (cur === "w" ? "b" : "w"));
-            }}
-            currentOffset={livePositionOffset}
-            moveHistory={gameData.moveHistory}
-            orientation={orientation}
-          />
-        </PanelColumnLg>
-      </BoardRow>
-    </div>
+      </div>
+    </GameContext.Provider>
   );
 }
 
@@ -170,16 +185,10 @@ interface PanelProps {
   currentOffset: number;
   orientation: Chess.Color;
   gameDetails: GameDetails;
+  chat: ChatMessage[];
+  sendMessage: (message: string) => void;
 }
-function PanelOnline({
-  gameDetails,
-  boardControls,
-  gameControls,
-  moveHistory,
-  flipBoard,
-  currentOffset,
-  orientation,
-}: PanelProps) {
+function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, flipBoard, currentOffset }: PanelProps) {
   return (
     <PanelContainer>
       <div className="w-full p-4 bg-elevation-2">
@@ -187,9 +196,7 @@ function PanelOnline({
           {`Unrated ${gameDetails.ratingCategory} game`}
           <span className="text-light-300">
             {gameDetails.timeControl
-              ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${
-                  gameDetails.timeControl.incrementSeconds
-                })`
+              ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
               : ""}
           </span>
         </p>
@@ -202,6 +209,7 @@ function PanelOnline({
       />
       <BoardControls controls={boardControls} flipBoard={flipBoard} />
       <GameControls gameControls={gameControls} flipBoard={flipBoard} size="lg" />
+      <LiveChat></LiveChat>
     </PanelContainer>
   );
 }

@@ -4,8 +4,7 @@ import _ from "lodash";
 import * as Chess from "../../lib/chess";
 import { coinflip } from "../../util/misc";
 import { v4 as uuidv4 } from "uuid";
-import { socket } from "@/context/socket";
-import { time } from "console";
+import { nanoid } from "nanoid";
 const indexed = <T extends {}>(obj: T): T & { [key: string]: never } => obj;
 
 export interface Redis {
@@ -59,6 +58,19 @@ export class Redis implements Redis {
     const updated = await this.client.json.set(`lobby:${lobbyid}`, "$", indexed(updatedLobby));
     if (!updated) throw new Error("Unable to update lobby");
     return updatedLobby;
+  };
+
+  generateVerificationToken = async (id: string) => {
+    const token = await this.client.set(`token:${id}`, nanoid(), {
+      EX: 3600 * 24,
+    });
+    return token;
+  };
+  validateVerificationToken = async (id: string, token: string) => {
+    const val = await this.client.get(`token:${id}`);
+    if (!val) return false;
+    if (val === token) return true;
+    return false;
   };
 
   updateLobby = async (lobbyid: string, updates: Partial<Lobby>): Promise<Lobby> => {

@@ -1,11 +1,9 @@
 import React from "react";
 
 import Head from "next/head";
-import MainMenu from "@/components/UI/Menus/MainMenu";
 import { NextPageContext } from "next";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "@/pages/_app";
-import RootLayout from "@/components/layout/RootLayout";
 import MenuLayout from "@/components/layout/MenuLayout";
 import Profile from "@/components/UI/Menus/content/Profile";
 const Page: NextPageWithLayout = () => {
@@ -22,11 +20,7 @@ const Page: NextPageWithLayout = () => {
 };
 
 Page.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <RootLayout>
-      <MenuLayout>{page}</MenuLayout>
-    </RootLayout>
-  );
+  return <MenuLayout>{page}</MenuLayout>;
 };
 
 export async function getServerSideProps(context: NextPageContext) {
