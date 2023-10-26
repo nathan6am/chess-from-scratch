@@ -69,7 +69,9 @@ export class Redis implements Redis {
   validateVerificationToken = async (id: string, token: string) => {
     const val = await this.client.get(`token:${id}`);
     if (!val) return false;
-    if (val === token) return true;
+    if (val === token) {
+      this.client.del(`token:${id}`);
+    }
     return false;
   };
 
@@ -139,8 +141,10 @@ export class Redis implements Redis {
       w: control.timeSeconds * 1000,
       b: control.timeSeconds * 1000,
     };
+    const hasGuest = lobby.connections.some((connection) => connection.player.type === "guest");
     const gameData = Chess.createGame(lobby.options.gameConfig);
     const game: Game = {
+      rated: hasGuest ? false : lobby.options.rated,
       ratingCategory: Chess.inferRatingCategeory(control),
       id: uuidv4(),
       data: gameData,
@@ -151,8 +155,11 @@ export class Redis implements Redis {
         incrementMs: control.incrementSeconds * 1000,
       },
     };
-
     const gameJSON = indexed(game);
+    const resetRematchOffers = await this.client.json.set(`lobby:${lobbyid}`, ".rematchRequested", {
+      w: null,
+      b: null,
+    });
     const success = await this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON);
     if (!success) throw new Error("Error creating game");
     return game;
@@ -223,6 +230,35 @@ export class Redis implements Redis {
     }
 
     throw new Error("Cannot connect to lobby");
+  };
+
+  disconnectFromLobby = async (
+    lobbyid: string,
+    {
+      userid,
+      timestampISO,
+      socketid,
+    }: {
+      userid: string;
+      timestampISO: string;
+      socketid: string;
+    }
+  ): Promise<Lobby> => {
+    const lobby = await this.getLobbyById(lobbyid);
+    if (!lobby) throw new Error("Lobby does not exist");
+    const updatedConnections = lobby.connections.map((connection) => {
+      if (connection.id === userid && connection.lastClientSocketId === socketid) {
+        return {
+          ...connection,
+          connectionStatus: false,
+          lastDisconnect: timestampISO,
+        };
+      }
+      return connection;
+    });
+    return await this._updateLobby(lobbyid, {
+      connections: updatedConnections,
+    });
   };
 }
 

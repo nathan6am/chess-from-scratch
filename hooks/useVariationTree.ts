@@ -3,6 +3,8 @@ import { TreeNode } from "@/lib/types";
 import { useState, useMemo, useCallback } from "react";
 import * as Chess from "@/lib/chess";
 import { encodeCommentFromNodeData } from "@/util/parsers/pgnParser";
+import { start } from "repl";
+import { render } from "react-dom";
 interface Options {
   annotate?: boolean;
   includeComments?: boolean;
@@ -29,6 +31,7 @@ export interface VariationTree<T extends Chess.NodeData = Chess.NodeData> {
   promoteToMainline: (key: string) => void;
   promoteVariation: (key: string) => void;
   deleteVariation: (key: string) => void;
+  deleteVariations: (key: string) => void;
   stepBackward: () => TreeNode<T> | null;
   stepForward: () => TreeNode<T> | null;
   treeArray: TreeNode<T>[];
@@ -157,71 +160,99 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
       includeArrows: true,
       initialMoveCount: 0,
     };
-    const { annotate, includeComments, includeNags, includeTimeRemaining, includeArrows, initialMoveCount } = {
+    const {
+      annotate,
+      includeComments,
+      includeNags,
+      includeTimeRemaining,
+      includeArrows,
+      initialMoveCount,
+      includeVariations,
+    } = {
       ...defaultOptions,
       ...options,
     };
-    let movetext = "";
+    let text = "";
     let stack: TreeNode<T>[] = [];
+    let variationStartStack: TreeNode<T>[] = [];
     let previousVariationDepth = 0;
     let isFirstMove = true;
-    // for (let i = treeArray.length - 1; i > 0; i--) {
-    //   stack.push(treeArray[i]);
-    // }
+    var parenthesisCount = 0;
     stack.push(treeArray[0]);
 
     while (stack.length) {
       const node = stack.pop();
+
       if (!node) break;
 
       const halfMoveCount = tree.getDepth(node.key) + initialMoveCount;
       const variationDepth = tree.getPly(node.key);
       const depthChange = variationDepth - previousVariationDepth;
+
       const index = tree.getSiblingIndex(node.key);
       const siblings = tree.getSiblings(node.key).slice(1);
-      if (depthChange > 1) throw new Error("Invalid tree structure");
-      if (depthChange < 0) {
-        for (let i = -1; i > depthChange; i--) {
-          movetext += ")";
+
+      const isVariationStart = index !== 0;
+      const path = tree.getPath(node.key);
+      //Remove nodes from the variationStartStack that are not in the current path
+      const ancestorsLost = variationStartStack.filter((node) => !path.some((pathnode) => pathnode.key === node.key));
+      if (ancestorsLost?.length) {
+        for (let i = 0; i < ancestorsLost.length; i++) {
+          text += ")";
+          parenthesisCount--;
         }
-        movetext += " ";
+        text += " ";
       }
-      if (index !== 0) movetext += "(";
+      variationStartStack = variationStartStack.filter((node) => path.some((pathnode) => pathnode.key === node.key));
+      if (isVariationStart) {
+        variationStartStack.push(node);
+      }
+
+      if (index !== 0) {
+        text += "(";
+        parenthesisCount++;
+      }
       const isWhite = halfMoveCount % 2 == 0;
       if (depthChange !== 0 || index !== 0 || isWhite || isFirstMove) {
         isFirstMove = false;
-        movetext += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
+        text += `${Math.floor(halfMoveCount / 2) + 1}${isWhite ? ". " : "... "}`;
       }
-      movetext += `${node.data.PGN} ${
+      text += `${node.data.PGN} ${
         node.data.annotations.length && annotate && includeNags
           ? node.data.annotations.map((annotation) => `$${annotation}`).join(" ")
           : ""
       } ${
         annotate
           ? encodeCommentFromNodeData(node.data, { includeArrows, includeComments, includeTimeRemaining })
-          : node.data.comment || ""
+          : includeComments && node.data.comment
+          ? `{${node.data.comment}} `
+          : ""
       }`;
-      if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) movetext += ")";
+      // if (!node.children[0] && (index !== 0 || siblings.length === 0) && variationDepth !== 0) text += ")";
       if (node.children[0]) {
         stack.push(node.children[0]);
       }
       if (index === 0) {
-        if (siblings.length) {
+        if (siblings.length && includeVariations) {
           for (let i = siblings.length - 1; i >= 0; i--) {
             stack.push(siblings[i]);
           }
         }
       }
-
-      previousVariationDepth = variationDepth;
     }
     if (previousVariationDepth !== 0) {
       for (let i = 1; i < previousVariationDepth; i++) {
-        movetext += ")";
+        text += ")";
+        parenthesisCount--;
       }
     }
-
-    return movetext;
+    if (parenthesisCount !== 0) {
+      for (let i = 0; i < parenthesisCount; i++) {
+        text += ")";
+      }
+      text += " ";
+    }
+    return text;
   }
   // Current line up to the current node
   const path = useMemo<TreeNode<T>[]>(() => {
@@ -259,6 +290,18 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
       const pathReversed = tree.getPath(key).reverse();
       pathReversed.forEach((node) => {
         tree.setSiblingIndex(node.key, 0);
+      });
+    },
+    [tree]
+  );
+
+  const deleteVariations = useCallback<(key: string) => void>(
+    (key: string) => {
+      const node = tree.getNode(key);
+      if (!node) return;
+      const variations = node.children.slice(1);
+      variations.forEach((variation) => {
+        tree.deleteNode(variation.key);
       });
     },
     [tree]
@@ -341,6 +384,7 @@ export default function useVariationTree<T extends Chess.NodeData = Chess.NodeDa
     promoteToMainline,
     promoteVariation,
     deleteVariation,
+    deleteVariations,
     stepBackward,
     stepForward,
     treeArray: tree.treeArray,

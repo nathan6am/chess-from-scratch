@@ -3,7 +3,7 @@ import MainMenu from "@/components/UI/Menus/MainMenu";
 import { NextPageContext } from "next";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
-import RootLayout from "@/components/layout/RootLayout";
+import AppLayout from "@/components/layout/AppLayout";
 const Home: NextPageWithLayout = () => {
   return (
     <>
@@ -17,7 +17,7 @@ const Home: NextPageWithLayout = () => {
 };
 
 Home.getLayout = function getLayout(page: ReactElement) {
-  return <RootLayout>{page}</RootLayout>;
+  return <AppLayout>{page}</AppLayout>;
 };
 
 export async function getServerSideProps(context: NextPageContext) {

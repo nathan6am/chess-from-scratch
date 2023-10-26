@@ -46,6 +46,7 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
         color: "random",
         ...options,
       },
+      rematchRequested: { w: null, b: null },
       chat: [],
     };
     try {

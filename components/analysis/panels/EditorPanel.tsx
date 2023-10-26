@@ -3,7 +3,6 @@ import { RiArrowGoBackFill } from "react-icons/ri";
 import { BoardEditorHook } from "@/hooks/useBoardEditor";
 import { BoardHandle } from "@/components/game/Board";
 import BoardSetupPanel from "./BoardSetupPanel";
-import * as Chess from "@/lib/chess";
 import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";
 import { FiRepeat } from "react-icons/fi";

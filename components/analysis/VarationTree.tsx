@@ -11,7 +11,7 @@ import { replacePieceChars } from "../game/MoveHistory";
 import { NAG } from "./Annotations";
 import { notEmpty } from "@/util/misc";
 import { AnalysisHook } from "@/hooks/useAnalysisBoard";
-import { match } from "assert";
+
 interface Props {
   inlineView?: boolean;
 }
@@ -313,7 +313,7 @@ function RenderRowEntry({ node, selectedKey, setSelectedKey, showContextMenu }: 
 
   useEffect(() => {
     if (!ref.current || !selected) return;
-    //ref.current.scrollIntoView({ behavior: "smooth" });
+    ref.current.scrollIntoView({ behavior: "smooth" });
   }, [selected, ref]);
 
   return (
@@ -385,7 +385,7 @@ function RenderNode({ node, selectedKey, setSelectedKey, index, showContextMenu 
   }, [nags]);
   useEffect(() => {
     if (!ref.current || !selected) return;
-    //ref.current.scrollIntoView({ behavior: "smooth" });
+    ref.current.scrollIntoView({ behavior: "smooth" });
   }, [selected, ref]);
 
   return (

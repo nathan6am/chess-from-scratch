@@ -66,14 +66,21 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
     id;
     name;
     username;
-    rating;
     ratings;
     notifications;
     games;
     solvedPuzzles;
     collections;
     savedAnalyses;
-    type;
+    complete;
+    get type() {
+        if (!this.complete)
+            return "incomplete";
+        if (!this.emailVerified)
+            return "unverified";
+        return "user";
+    }
+    emailVerified;
     profile;
     credentials;
     static async usernameExists(username) {
@@ -120,8 +127,6 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
                     credentials: true,
                 },
             });
-            console.log(credentials.username);
-            console.log(user);
             if (!user || !user.credentials)
                 return null;
             const verified = await bcrypt_1.default.compare(credentials.password, user.credentials.hashedPassword);
@@ -171,7 +176,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         return {
             id: newUser.id,
             username: null,
-            type: "incomplete",
+            type: newUser.type,
         };
     }
     static async createAccountWithCredentials(account) {
@@ -271,7 +276,6 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         const profile = new Profile();
         Object.assign(profile, profileData);
         user.profile = profile;
-        user.type = "user";
         await user.save();
     }
     static async getGames(id) {
@@ -345,10 +349,6 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "username", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 800 }),
-    __metadata("design:type", Number)
-], User.prototype, "rating", void 0);
-__decorate([
     (0, typeorm_1.Column)("jsonb", { default: defaultRatings }),
     __metadata("design:type", Object)
 ], User.prototype, "ratings", void 0);
@@ -373,9 +373,13 @@ __decorate([
     __metadata("design:type", Object)
 ], User.prototype, "savedAnalyses", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: "incomplete" }),
-    __metadata("design:type", String)
-], User.prototype, "type", void 0);
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "complete", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "emailVerified", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => Profile, (profile) => profile.id, { cascade: true }),
     (0, typeorm_1.JoinColumn)(),

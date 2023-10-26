@@ -27,6 +27,7 @@ exports.wrapClient = exports.Redis = void 0;
 const Chess = __importStar(require("../../lib/chess"));
 const misc_1 = require("../../util/misc");
 const uuid_1 = require("uuid");
+const nanoid_1 = require("nanoid");
 const indexed = (obj) => obj;
 class Redis {
     constructor(client) {
@@ -71,6 +72,21 @@ class Redis {
         if (!updated)
             throw new Error("Unable to update lobby");
         return updatedLobby;
+    };
+    generateVerificationToken = async (id) => {
+        const token = await this.client.set(`token:${id}`, (0, nanoid_1.nanoid)(), {
+            EX: 3600 * 24,
+        });
+        return token;
+    };
+    validateVerificationToken = async (id, token) => {
+        const val = await this.client.get(`token:${id}`);
+        if (!val)
+            return false;
+        if (val === token) {
+            this.client.del(`token:${id}`);
+        }
+        return false;
     };
     updateLobby = async (lobbyid, updates) => {
         const lobby = await this.getLobbyById(lobbyid);
@@ -147,8 +163,10 @@ class Redis {
             w: control.timeSeconds * 1000,
             b: control.timeSeconds * 1000,
         };
+        const hasGuest = lobby.connections.some((connection) => connection.player.type === "guest");
         const gameData = Chess.createGame(lobby.options.gameConfig);
         const game = {
+            rated: hasGuest ? false : lobby.options.rated,
             ratingCategory: Chess.inferRatingCategeory(control),
             id: (0, uuid_1.v4)(),
             data: gameData,
@@ -160,6 +178,10 @@ class Redis {
             },
         };
         const gameJSON = indexed(game);
+        const resetRematchOffers = await this.client.json.set(`lobby:${lobbyid}`, ".rematchRequested", {
+            w: null,
+            b: null,
+        });
         const success = await this.client.json.set(`lobby:${lobbyid}`, ".currentGame", gameJSON);
         if (!success)
             throw new Error("Error creating game");
@@ -228,6 +250,24 @@ class Redis {
             });
         }
         throw new Error("Cannot connect to lobby");
+    };
+    disconnectFromLobby = async (lobbyid, { userid, timestampISO, socketid, }) => {
+        const lobby = await this.getLobbyById(lobbyid);
+        if (!lobby)
+            throw new Error("Lobby does not exist");
+        const updatedConnections = lobby.connections.map((connection) => {
+            if (connection.id === userid && connection.lastClientSocketId === socketid) {
+                return {
+                    ...connection,
+                    connectionStatus: false,
+                    lastDisconnect: timestampISO,
+                };
+            }
+            return connection;
+        });
+        return await this._updateLobby(lobbyid, {
+            connections: updatedConnections,
+        });
     };
 }
 exports.Redis = Redis;

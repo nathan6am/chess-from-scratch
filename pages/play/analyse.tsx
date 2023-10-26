@@ -1,15 +1,8 @@
 import { UserContext } from "@/context/user";
 import Head from "next/head";
-import Image from "next/image";
-import Game from "@/components/GameLocal";
 import { useEffect, useState, useContext } from "react";
 import { SocketContext } from "@/context/socket";
-import styles from "@/styles/Home.module.scss";
-import Board from "@/components/Board";
-import { Color } from "@/util/chess";
 import NonSSRWrapper from "@/components/NonSSRWrapper";
-import ButtonSocial from "@/components/UI/ButtonSocial";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import GameLocal from "@/components/GameLocal";
 

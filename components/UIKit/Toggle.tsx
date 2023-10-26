@@ -39,8 +39,9 @@ export default function Toggle({
     >
       {label && (
         <label
-          className={classNames(labelClasses, "text-light-200", {
+          className={classNames(labelClasses, {
             "text-light-400": disabled,
+            "text-light-200": !disabled,
           })}
         >
           {label}

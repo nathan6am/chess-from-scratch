@@ -43,6 +43,7 @@ function default_1(io, socket, redisClient) {
                 color: "random",
                 ...options,
             },
+            rematchRequested: { w: null, b: null },
             chat: [],
         };
         try {

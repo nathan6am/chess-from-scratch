@@ -5,6 +5,7 @@ import { MdClose } from "react-icons/md";
 import { GameControls as IGameControls } from "@/hooks/useChessOnline";
 import { FiRepeat, FiFlag } from "react-icons/fi";
 import Button from "../UIKit/Button";
+import { useRouter } from "next/router";
 interface Props {
   gameControls: IGameControls;
   flipBoard: () => void;
@@ -13,9 +14,85 @@ interface Props {
 }
 export default function GameControls({}: Props) {
   const { onlineGame } = useContext(GameContext);
-  const { gameControls, drawOfferRecieved, drawOfferSent } = onlineGame;
+  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus } = onlineGame;
   return (
     <div className="grid grid-cols-2 w-full p-4 gap-4 bg-elevation-2">
+      {gameStatus === "complete" ? (
+        <>
+          <PostGameControls />
+        </>
+      ) : (
+        <InGameControls />
+      )}
+    </div>
+  );
+}
+
+function PostGameControls() {
+  const router = useRouter();
+  const { onlineGame } = useContext(GameContext);
+  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } = onlineGame;
+  const gameid = currentGame?.id;
+  return (
+    <>
+      {rematchOffer === "recieved" ? (
+        <>
+          <div className="col-span-2">
+            <p className="text-sm text-light-300 text-center">Your opponent wants a rematch!</p>
+          </div>
+          <Button
+            variant="neutral"
+            onClick={() => {
+              gameControls.acceptDraw(false);
+            }}
+            label="Decline"
+            icon={MdClose}
+            iconClassName="mr-1"
+            size="lg"
+          ></Button>
+          <Button
+            variant="neutral"
+            onClick={() => {
+              gameControls.acceptDraw(true);
+            }}
+            label="Accept"
+            icon={FaCheck}
+            iconClassName="mr-1"
+            size="lg"
+          ></Button>
+        </>
+      ) : (
+        <></>
+      )}
+      <Button
+        variant="neutral"
+        onClick={() => {
+          router.push(`/study/analyze?${gameid}&sourceType=nextChess`);
+        }}
+        label="Analysis"
+        icon={MdClose}
+        iconClassName="mr-1"
+        size="lg"
+      ></Button>
+      <Button
+        variant="neutral"
+        onClick={() => {
+          gameControls.requestRematch();
+        }}
+        disabled={rematchOffer === "offered" || rematchOffer === "declined"}
+        label="Rematch"
+        icon={FaCheck}
+        iconClassName="mr-1"
+        size="lg"
+      ></Button>
+    </>
+  );
+}
+function InGameControls() {
+  const { onlineGame } = useContext(GameContext);
+  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus } = onlineGame;
+  return (
+    <>
       {drawOfferRecieved ? (
         <>
           <div className="col-span-2">
@@ -67,7 +144,7 @@ export default function GameControls({}: Props) {
           )}
           <Button
             onClick={gameControls.resign}
-            label="Resign"
+            label={gameStatus === "active" ? "Resign" : "Abort"}
             icon={FiFlag}
             iconClassName="mr-1"
             variant="danger"
@@ -76,6 +153,6 @@ export default function GameControls({}: Props) {
           ></Button>
         </>
       )}
-    </div>
+    </>
   );
 }

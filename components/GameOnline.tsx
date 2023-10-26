@@ -16,6 +16,7 @@ import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
 import { ChatMessage, Connection, Player } from "@/server/types/lobby";
 import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, PanelContainer } from "./layout/GameLayout";
+
 import { DurationObjectUnits } from "luxon";
 import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
@@ -37,6 +38,7 @@ export const GameContext = React.createContext<{
 
 export default function GameOnline({ lobbyid }: Props) {
   const onlineGame = useChessOnline(lobbyid);
+  const [showResult, setShowResult] = useState(true);
   const {
     chat,
     sendMessage,
@@ -57,7 +59,6 @@ export default function GameOnline({ lobbyid }: Props) {
   const timeControl = currentGame?.data.config.timeControl;
   const ratingCategory = currentGame?.ratingCategory;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
-  const messages = lobby?.chat;
 
   const players = useMemo(() => {
     let result: Record<Chess.Color, Connection | undefined> = {
@@ -91,7 +92,13 @@ export default function GameOnline({ lobbyid }: Props) {
     <GameContext.Provider value={{ onlineGame, orientation }}>
       <div className="flex flex-col h-full w-full justify-center ">
         <MenuBar />
-        <Result outcome={gameData.outcome} isOpen={gameData.outcome ? true : false} close={() => {}} />
+        <Result
+          outcome={gameData.outcome}
+          isOpen={(gameData.outcome && showResult) || false}
+          close={() => {
+            setShowResult(false);
+          }}
+        />
         <div className="flex flex-col md:flex-row h-full w-full items-start  md:items-center justify-center ">
           <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
             <BoardColumn>
@@ -189,18 +196,39 @@ interface PanelProps {
   sendMessage: (message: string) => void;
 }
 function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, flipBoard, currentOffset }: PanelProps) {
+  const { onlineGame } = useContext(GameContext);
+  const { currentGame } = onlineGame;
+  const players = gameDetails.players;
+  const rated = onlineGame.currentGame?.rated;
+  const { opening } = onlineGame;
   return (
     <PanelContainer>
-      <div className="w-full p-4 bg-elevation-2">
-        <p>
-          {`Unrated ${gameDetails.ratingCategory} game`}
-          <span className="text-light-300">
-            {gameDetails.timeControl
-              ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
-              : ""}
-          </span>
-        </p>
-      </div>
+      {currentGame ? (
+        <>
+          <div className="w-full p-4 bg-elevation-2">
+            <p>
+              {`${rated ? "Rated" : "Unrated"} ${gameDetails.ratingCategory} game`}
+              <span className="text-light-300">
+                {gameDetails.timeControl
+                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
+                  : ""}
+              </span>
+            </p>
+            <p className="text-sm text-light-300">{`${players.w?.player.username} vs. ${players.b?.player.username}`}</p>
+          </div>
+          <div className="w-full p-2 px-3 text-sm bg-elevation-2 shadow-md">
+            {
+              <p className="text-light-200">
+                <span className="text-gold-100">{`Opening: `}</span>
+                {`${opening?.name || ""}`}
+                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+              </p>
+            }
+          </div>
+        </>
+      ) : (
+        <></>
+      )}
       <MoveHistory
         moveHistory={moveHistory}
         jumpToOffset={boardControls.jumpToOffset}

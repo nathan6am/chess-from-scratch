@@ -20,9 +20,6 @@ export default function FileBrowserPanel({ onBack }: Props) {
         <h2 className="text-lg font-semibold text-white text-center w-full">Saved Analyses</h2>
       </div>
       <FileBrowser />
-      <button>
-        <span>Open</span>
-      </button>
     </div>
   );
 }

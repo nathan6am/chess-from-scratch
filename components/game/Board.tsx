@@ -450,7 +450,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
                       ? pieceCursor !== null
                       : (moveable !== "both" && piece.color !== moveable) ||
                         (!preMoveable && piece.color !== activeColor) ||
-                        (selectedPiece !== null &&
+                        (preMoveable &&
+                          selectedPiece !== null &&
                           premoveTargets?.some((premove) => premove === square) !== undefined &&
                           selectedPiece[0] !== square)
                   }

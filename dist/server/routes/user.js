@@ -42,6 +42,7 @@ router.post("/complete-profile", async (req, res) => {
             user.name = name;
         if (username)
             user.username = username;
+        //Initialize ratings
         user.ratings = {
             bullet: {
                 rating: parseInt(rating),
@@ -80,6 +81,7 @@ router.post("/complete-profile", async (req, res) => {
                 gameCount: 0,
             },
         };
+        user.complete = true;
         const updated = await user.save();
         res.status(200).json({ updated: true, profile: updated });
     }
@@ -87,6 +89,7 @@ router.post("/complete-profile", async (req, res) => {
         return res.status(400).end();
     }
 });
+//Check if a username is available
 router.get("/checkusername", async function (req, res) {
     const username = req.query.username;
     if (!username || typeof username !== "string") {

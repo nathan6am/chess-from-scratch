@@ -29,6 +29,7 @@ export interface Connection {
   player: Player;
   lastClientSocketId: string; //Socket id of the primary client connection to the game
   lastPing?: number; //Last measured ping delay
+  lastDisconnect?: string; //ISO string of the last disconnect, used to track abandoned games
   score: number; //Game score in the current lobby
   connectionStatus: boolean; //Current connection status of the last socket
 }
@@ -47,6 +48,8 @@ export interface Lobby {
   options: LobbyOptions;
   currentGame: Game | null;
   chat: ChatMessage[];
+  rematchRequested: Record<Chess.Color, boolean | null>;
+  aborted?: boolean;
 }
 
 import * as socketio from "socket.io";
@@ -86,6 +89,7 @@ export interface LobbyServerToClientEvents<isServer extends boolean = false, isS
   "lobby:update": (updates: Partial<Lobby>) => void;
   "game:move": (game: Game) => void;
   "game:outcome": (game: Game, ratingDeltas?: Record<Chess.Color, number>) => void;
+  "game:aborted": () => void;
   "game:new": (game: Game) => void;
   newclient: () => void;
   "test:requestAck": (arg: string, ack: (...args: WithTimeoutAck<isServer, isSender, [string]>) => void) => void;
@@ -96,10 +100,8 @@ export interface LobbyServerToClientEvents<isServer extends boolean = false, isS
   ) => void;
   "game:draw-offered": (offeredBy: Chess.Color) => void;
   "game:draw-declined": () => void;
-  "lobby:rematch-requested": (
-    timeoutSeconds: number,
-    ack: (...args: WithTimeoutAck<isServer, isSender, [boolean]>) => void
-  ) => void;
+  "lobby:rematch-requested": (rematchOffers: Record<Chess.Color, boolean | null>) => void;
+  "lobby:rematch-declined": (rematchOffers: Record<Chess.Color, boolean | null>) => void;
 }
 
 export interface LobbyClientToServerEvents<isServer extends boolean = false, isSender extends boolean = false> {
@@ -118,6 +120,17 @@ export interface LobbyClientToServerEvents<isServer extends boolean = false, isS
     ack: (response: SocketResponse<ChatMessage[]>) => void
   ) => void;
 
+  "lobby:request-rematch": (
+    lobbyid: string,
+    ack: (response: SocketResponse<Record<Chess.Color, boolean | null>>) => void
+  ) => void;
+
+  "lobby:accept-rematch": (
+    lobbyid: string,
+    accepted: boolean,
+    ack: (response: SocketResponse<Record<Chess.Color, boolean | null>>) => void
+  ) => void;
+
   "game:move": (args: { move: Chess.Move; lobbyid: string }, ack: (response: SocketResponse<Game>) => void) => void;
 
   "game:offer-draw": (lobbyid: string) => void;
@@ -129,8 +142,6 @@ export interface LobbyClientToServerEvents<isServer extends boolean = false, isS
   "test:timeout": () => void;
 
   "game:update": (lobbyid: string, ack: (response: SocketResponse<Game>) => void) => void;
-
-  "lobby:request-rematch": (lobbyid: string, ack: (status: boolean) => void) => void;
 }
 
 export type LobbyServer = socketio.Namespace<

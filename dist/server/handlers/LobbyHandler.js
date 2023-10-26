@@ -180,11 +180,6 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             //console.log(saved);
         }
     }
-    socket.on("disconnect", () => {
-        //Find the active game if applicable and set a timeout for reconnection
-        //or, abort the game if it has not yet started
-        console.log(`Client ${socket.data.userid} has disconnected`);
-    });
     socket.on("lobby:connect", async (lobbyid, ack) => {
         try {
             console.log(`Client ${socket.data.userid} connecting to lobby ${lobbyid}`);
@@ -299,6 +294,119 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             }
         }
     });
+    socket.on("lobby:request-rematch", async (lobbyid) => {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby)
+            return;
+        if (!lobby.currentGame)
+            return;
+        const user = socket.data.sessionUser;
+        if (!user)
+            return;
+        if (!lobby.connections.some((connection) => connection.id === user.id))
+            return;
+        const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+        const opponentColor = playerColor === "w" ? "b" : "w";
+        lobby.rematchRequested[playerColor] = true;
+        if (lobby.rematchRequested[opponentColor] === false) {
+            //If the opponent has declined the rematch, return the declined event and abort
+            nsp.to(socket.id).emit("lobby:rematch-declined", lobby.rematchRequested);
+            return;
+        }
+        await cache.updateLobby(lobbyid, lobby);
+        socket.to(lobbyid).emit("lobby:rematch-requested", lobby.rematchRequested);
+        if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+            await cache.newGame(lobbyid);
+            startGame(lobbyid);
+        }
+    });
+    socket.on("lobby:accept-rematch", async (lobbyid, accpeted) => {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby)
+            return;
+        if (!lobby.currentGame)
+            return;
+        const user = socket.data.sessionUser;
+        if (!user)
+            return;
+        if (!lobby.connections.some((connection) => connection.id === user.id))
+            return;
+        const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+        const opponentColor = playerColor === "w" ? "b" : "w";
+        if (accpeted) {
+            lobby.rematchRequested[playerColor] = true;
+            if (lobby.rematchRequested[opponentColor] === false) {
+                //If the opponent has declined the rematch, return the declined event and abort
+                nsp.to(socket.id).emit("lobby:rematch-declined", lobby.rematchRequested);
+                return;
+            }
+            if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+                await cache.newGame(lobbyid);
+                startGame(lobbyid);
+            }
+        }
+        else {
+            lobby.rematchRequested[playerColor] = false;
+            socket.to(lobbyid).emit("lobby:rematch-declined", lobby.rematchRequested);
+        }
+    });
+    socket.on("disconnect", async () => {
+        if (!socket.data.userid)
+            return;
+        const lobbies = Array.from(socket.rooms).filter((room) => room !== socket.id);
+        for (const lobbyid of lobbies) {
+            const lobby = await cache.getLobbyById(lobbyid);
+            if (!lobby)
+                return;
+            const lastDisconnectISO = new Date().toISOString();
+            const updated = await cache.disconnectFromLobby(lobbyid, {
+                userid: socket.data.userid,
+                socketid: socket.id,
+                timestampISO: lastDisconnectISO,
+            });
+            if (!updated)
+                return;
+            console.log(updated.connections);
+            nsp.to(lobbyid).emit("lobby:update", {
+                connections: updated.connections,
+                reservedConnections: updated.reservedConnections,
+            });
+            if (lobby.currentGame && !lobby.currentGame.data.outcome) {
+                const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
+                const abandonTimeoutMap = {
+                    bullet: 15 * 1000,
+                    blitz: 45 * 1000,
+                    rapid: 2 * 60 * 1000,
+                    classical: 5 * 60 * 1000,
+                    puzzle: 0,
+                    correspondence: 0,
+                };
+                const abandonTimeout = abandonTimeoutMap[ratingCategory];
+                if (abandonTimeout === 0)
+                    return;
+                const timer = setTimeout(async () => {
+                    const lobby = await cache.getLobbyById(lobbyid);
+                    if (!lobby)
+                        return;
+                    if (!lobby.currentGame)
+                        return;
+                    if (lobby.currentGame.data.outcome)
+                        return;
+                    const connections = lobby.connections;
+                    const connection = connections.find((connection) => connection.id === socket.data.userid);
+                    if (!connection)
+                        return;
+                    if (connection.lastDisconnect !== lastDisconnectISO)
+                        return;
+                    const playerColor = lobby.currentGame.players.w.id === socket.data.userid ? "w" : "b";
+                    const game = lobby.currentGame;
+                    game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "abandonment" };
+                    const updated = await cache.updateGame(lobbyid, game);
+                    await handleGameResult(lobbyid, game);
+                }, abandonTimeout);
+            }
+        }
+    });
     const requestMoveWithTimeout = async (socket, timeoutMs, game, lobbyid) => {
         const lobby = await cache.getLobbyById(lobbyid);
         if (!lobby)
@@ -409,6 +517,10 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         //Execute the move
         const updatedClock = (0, clockFunctions_1.switchClock)(game.clock, moveRecievedISO, game.data.activeColor);
         const updatedGameData = Chess.move(game.data, move, updatedClock.timeRemainingMs[game.data.activeColor]);
+        //Clear the draw offer if the player who offred the draw has moved
+        if (game.drawOffered === game.data.activeColor) {
+            game.drawOffered = undefined;
+        }
         //Update the clocks if both players have played a move
         if (updatedGameData.fullMoveCount >= 2) {
             //Update the clock state and apply increment
@@ -454,6 +566,81 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "resignation" };
         const updated = await cache.updateGame(lobbyid, game);
         await handleGameResult(lobbyid, game);
+    });
+    socket.on("game:offer-draw", async (lobbyid) => {
+        const user = socket.data.sessionUser;
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
+            return;
+        if (!lobby.connections.some((player) => player.id === user.id))
+            return;
+        const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+        const game = lobby.currentGame;
+        if (game.drawOffered && game.drawOffered !== playerColor) {
+            //Accept the draw if the other player has offered
+            game.data.outcome = { result: "d", by: "agreement" };
+            const updated = await cache.updateGame(lobbyid, game);
+            if (!updated)
+                throw new Error("Unable to update game");
+            await handleGameResult(lobbyid, game);
+        }
+        else {
+            const updated = await cache.updateGame(lobbyid, {
+                ...game,
+                drawOffered: playerColor,
+            });
+            nsp.to(lobbyid).emit("game:draw-offered", playerColor);
+        }
+    });
+    socket.on("game:accept-draw", async (lobbyid, accepted) => {
+        const user = socket.data.sessionUser;
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
+            return;
+        if (!lobby.connections.some((player) => player.id === user.id))
+            return;
+        const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+        const game = lobby.currentGame;
+        if (!game.drawOffered || game.drawOffered === playerColor)
+            return;
+        if (accepted) {
+            game.data.outcome = { result: "d", by: "agreement" };
+            const updated = await cache.updateGame(lobbyid, game);
+            if (!updated)
+                throw new Error("Unable to update game");
+            await handleGameResult(lobbyid, game);
+        }
+        else {
+            const updated = await cache.updateGame(lobbyid, {
+                ...game,
+                drawOffered: undefined,
+            });
+            nsp.to(lobbyid).emit("game:draw-declined");
+        }
+    });
+    socket.on("lobby:chat", async ({ message, lobbyid }, ack) => {
+        const user = socket.data.sessionUser;
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
+            return;
+        if (!lobby.connections.some((player) => player.id === user.id))
+            return;
+        const messageObject = {
+            timestampISO: new Date().toISOString(),
+            author: {
+                id: user.id || "",
+                username: user.username || "",
+            },
+            message: message,
+        };
+        const chat = [...lobby.chat, messageObject];
+        await cache.updateLobby(lobbyid, { chat });
+        ack({
+            status: true,
+            data: chat,
+            error: null,
+        });
+        socket.to(lobbyid).emit("lobby:chat", chat);
     });
 }
 exports.default = LobbyHandler;

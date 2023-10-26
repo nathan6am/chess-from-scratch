@@ -17,6 +17,15 @@ export interface AnalysisHook {
   loadPgn: (pgn: string) => void;
   pgnLoaded: boolean;
   pgn: string;
+  exportPgn: (options: {
+    includeVariations: boolean;
+    includeComments: boolean;
+    annotate: boolean;
+    includeNags: boolean;
+    includeTimeRemaining: boolean;
+    includeArrows: boolean;
+    initialMoveCount: number;
+  }) => string;
   tagData: PGNTagData;
   setTagData: React.Dispatch<React.SetStateAction<PGNTagData>>;
   currentKey: string | null;
@@ -255,6 +264,24 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     return tagSection + "\r\n" + moveText + (tagData?.result || "*");
   }, [moveText, tagData]);
 
+  // Export pgn
+  const exportPgn = useCallback(
+    (options: {
+      includeVariations: boolean;
+      includeComments: boolean;
+      annotate: boolean;
+      includeNags: boolean;
+      includeTimeRemaining: boolean;
+      includeArrows: boolean;
+      initialMoveCount: number;
+    }) => {
+      const text = variationTree.exportMoveText(options);
+      const tagSection = tagDataToPGNString(tagData);
+      return tagSection + "\r\n" + text + (tagData?.result || "*");
+    },
+    [moveText, tagData]
+  );
+
   useEffect(() => {
     pgnLoadedRef.current = true;
     setPgnToLoad(null);
@@ -377,7 +404,6 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     } //"don't execute if a the game hasn't updated"
 
     if (!moveQueue.length) return;
-    console.log("Executing move queue");
     prevGame.current = currentGame;
     const move = currentGame.legalMoves.find((move) => move.PGN === moveQueue[0]);
     if (move) {
@@ -389,7 +415,6 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       setMoveQueue([]);
       console.error("Invalid move in move queue");
       console.error(moveQueue[0]);
-      console.log(currentGame.legalMoves);
     }
   }, [moveQueue, currentGame, onMove, prevGame, moveQueue.length]);
   const onArrow = useCallback(
@@ -436,6 +461,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     tree: variationTree,
     loadPgn,
     pgnLoaded: pgnLoadedRef.current,
+    exportPgn,
     loadFen,
     moveText,
     pgn,

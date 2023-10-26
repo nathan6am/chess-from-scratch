@@ -24,7 +24,9 @@ import useBoardEditor from "@/hooks/useBoardEditor";
 import { SettingsContext } from "@/context/settings";
 
 // Utils
+import html2canvas from "html2canvas";
 import { tagDataToPGNString } from "@/util/parsers/pgnParser";
+import { EditorPanel } from "./panels";
 import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import { Duration } from "luxon";
@@ -32,7 +34,9 @@ import axios from "axios";
 import NewAnalysisPanel from "./panels/NewAnalysisPanel";
 import Link from "next/link";
 import OpenAnalysisDialog from "../dialogs/OpenAnalysisDialog";
-
+import ExportPGNDialog from "../dialogs/ExportPGNDialog";
+import CollectionsDialog from "../dialogs/CollectionsDialog";
+import useFileManager from "@/hooks/useFileManager";
 interface Props {
   initialId?: string | null;
   sourceGameId?: string | null;
@@ -72,6 +76,11 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const editor = useBoardEditor(currentGame.fen);
+  useEffect(() => {
+    if (!editMode) {
+      editor.resetToStartPosition();
+    }
+  }, [editMode, editor]);
   // Handle id changes/initial load
   const id = router.query.id as string | undefined;
   const currentIdRef = useRef<string | null | undefined>(id);
@@ -88,8 +97,15 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   };
   const [saveModalShown, setSaveModalShown] = useState(false);
   const [openModalShown, setOpenModalShown] = useState(false);
+  const [exportModalShown, setExportModalShown] = useState(false);
+  const [collectionsModalShown, setCollectionsModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
+  const fileManager = useFileManager({
+    onAssignedCollections: () => {
+      setCollectionsModalShown(false);
+    },
+  });
   const lastMoveAnnotation = useMemo(() => {
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
@@ -143,7 +159,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     if (id === currentIdRef.current) return;
     //Only load if the id was changed from null/undefined (prevents reloading on saving)
     if (currentIdRef.current) {
-      console.log("id changed");
       analysis.loadPgn(saveManager.data.analysis.pgn);
     }
     currentIdRef.current = id;
@@ -158,6 +173,21 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         saveManager,
       }}
     >
+      <CollectionsDialog
+        isOpen={collectionsModalShown}
+        closeModal={() => {
+          setCollectionsModalShown(false);
+        }}
+        selectedAnalysis={saveManager.data?.analysis || null}
+        onConfirm={(id, collections) => {
+          if (id && collections)
+            fileManager.assignCollections({
+              analysisId: id,
+              collectionIds: collections,
+            });
+        }}
+      />
+      <ExportPGNDialog isOpen={exportModalShown} onClose={() => setExportModalShown(false)} />
       <OpenAnalysisDialog isOpen={openModalShown} onClose={() => setOpenModalShown(false)} />
       <OptionsOverlay
         isOpen={optionsOverlayShown}
@@ -215,19 +245,57 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               </MenuItem>
               <MenuItem onClick={() => {}}>Fork</MenuItem>
               <MenuItem onClick={() => {}}>Import PGN</MenuItem>
-              <MenuItem onClick={() => {}}>Add to Collections</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setCollectionsModalShown(true);
+                }}
+              >
+                Add to Collections
+              </MenuItem>
               <MenuItem onClick={() => setPopupPlayerShown(true)}>Load Game</MenuItem>
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
             <MenuButton>Edit</MenuButton>
             <MenuItems>
-              <MenuItem onClick={() => {}}>Undo</MenuItem>
-              <MenuItem onClick={() => {}}>Redo</MenuItem>
-              <MenuItem onClick={() => {}}>Delete from Here</MenuItem>
-              <MenuItem onClick={() => {}}>Promote Variation</MenuItem>
-              <MenuItem onClick={() => {}}>Make Mainline</MenuItem>
-              <MenuItem onClick={() => {}}>Delete Variations</MenuItem>
+              {/* <MenuItem onClick={() => {}}>Undo</MenuItem>
+              <MenuItem onClick={() => {}}>Redo</MenuItem> */}
+              <MenuItem
+                onClick={() => {
+                  if (currentNode?.key) {
+                    analysis.tree.deleteVariation(currentNode.key);
+                  }
+                }}
+              >
+                Delete from Here
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode?.key) {
+                    analysis.tree.promoteVariation(currentNode.key);
+                  }
+                }}
+              >
+                Promote Variation
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode?.key) {
+                    analysis.tree.promoteToMainline(currentNode.key);
+                  }
+                }}
+              >
+                Make Mainline
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode?.key) {
+                    analysis.tree.deleteVariations(currentNode.key);
+                  }
+                }}
+              >
+                Delete Variations
+              </MenuItem>
               <MenuItem onClick={() => {}}>Edit PGN Tags</MenuItem>
             </MenuItems>
           </MenuWrapper>
@@ -235,10 +303,43 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
             <MenuButton>Share/Export</MenuButton>
             <MenuItems>
               <MenuItem onClick={() => {}}>Share</MenuItem>
-              <MenuItem onClick={() => {}}>Export PGN</MenuItem>
-              <MenuItem onClick={() => {}}>Export FEN</MenuItem>
-              <MenuItem onClick={() => {}}>Export Image</MenuItem>
-              <MenuItem onClick={() => {}}>Export GIF</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setExportModalShown(true);
+                }}
+              >
+                Export PGN
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  navigator.clipboard.writeText(analysis.currentGame.fen);
+                }}
+              >
+                Copy FEN to Clipboard
+              </MenuItem>
+              {/* <MenuItem
+                onClick={async () => {
+                  const element = boardRef.current;
+                  if (!element) return;
+                  const canvas = await html2canvas(element);
+
+                  const data = canvas.toDataURL("image/jpg");
+                  const link = document.createElement("a");
+
+                  if (typeof link.download === "string") {
+                    link.href = data;
+                    link.download = "image.jpg";
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } else {
+                    window.open(data);
+                  }
+                }}
+              >
+                Export Image
+              </MenuItem> */}
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
@@ -387,27 +488,44 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                   />
                 ) : (
                   <>
-                    <div className="w-full md:hidden">
-                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                    </div>
-                    <AnalysisPanel
-                      modalControls={{
-                        showPlayer: () => {
-                          setPopupPlayerShown(true);
-                        },
-                        showSave: () => {
-                          setSaveModalShown(true);
-                        },
-                        showLoadGame: () => {},
-                        showEditDetails: () => {},
-                        showOpenFile: () => {},
-                        showShare: () => {},
-                        showExport: () => {},
-                      }}
-                    />
-                    <div className="w-full hidden md:block">
-                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                    </div>
+                    {editMode ? (
+                      <EditorPanel
+                        boardEditor={editor}
+                        boardRef={boardRef}
+                        flipBoard={flipBoard}
+                        setEditMode={setEditMode}
+                        onAnalyze={() => {
+                          setEditMode(false);
+                        }}
+                        onPlayComputer={() => {}}
+                        onPlayFriend={() => {}}
+                        key={editMode ? "edit" : "play"}
+                      />
+                    ) : (
+                      <>
+                        <div className="w-full md:hidden">
+                          <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                        </div>
+                        <AnalysisPanel
+                          modalControls={{
+                            showPlayer: () => {
+                              setPopupPlayerShown(true);
+                            },
+                            showSave: () => {
+                              setSaveModalShown(true);
+                            },
+                            showLoadGame: () => {},
+                            showEditDetails: () => {},
+                            showOpenFile: () => {},
+                            showShare: () => {},
+                            showExport: () => {},
+                          }}
+                        />
+                        <div className="w-full hidden md:block">
+                          <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </>

@@ -18,6 +18,7 @@ import { notEmpty } from "@/util/misc";
 import _ from "lodash";
 import useTimer from "./useTimer";
 import useSound from "use-sound";
+import useOpeningExplorer from "./useOpeningExplorer";
 //Context
 import { UserContext } from "@/context/user";
 import { io, Socket } from "socket.io-client";
@@ -35,6 +36,8 @@ export interface GameControls {
   resign: () => void;
   offerDraw: () => void;
   acceptDraw: (accepted: boolean) => void;
+  requestRematch: () => void;
+  acceptRematch: (accepted: boolean) => void;
   onMove: (move: Chess.Move) => void;
   onPremove?: (move: Chess.Premove) => void;
   clearPremoveQueue?: () => void;
@@ -47,6 +50,11 @@ export interface OnlineGame {
   };
   lobby: Lobby | null;
   currentGame: Game | null;
+  opening: {
+    eco: string;
+    name: string;
+  } | null;
+  gameStatus: "waiting" | "active" | "complete";
   players: Connection[];
   playerColor: Chess.Color;
   premoveQueue: Chess.Premove[];
@@ -57,6 +65,7 @@ export interface OnlineGame {
   lastMove: Chess.Move | null;
   availablePremoves: Chess.Premove[];
   timeRemaining: Record<Chess.Color, DurationObjectUnits>;
+  rematchOffer: "recieved" | "offered" | "declined" | null;
   drawOfferRecieved: boolean;
   drawOfferSent: boolean;
   moveable: boolean;
@@ -74,10 +83,34 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const { user } = useContext(UserContext);
   const chat = lobby?.chat;
-  const [lastRatingDelta, setLastRatingDelta] = useState<number>(0);
+  const currentGame = useMemo(() => {
+    return game?.data || Chess.createGame({});
+  }, [game?.data]);
+  const explorer = useOpeningExplorer(currentGame);
+  const { data, sourceGame } = explorer;
+
+  const startPositionOpening = useMemo(() => {
+    if (sourceGame.config.startPosition === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+      return "Start Position";
+    else return "Custom Position";
+  }, [sourceGame.config.startPosition]);
+  const prevOpening = useRef<{ name: string; eco: string } | null>({ name: startPositionOpening, eco: "" });
+  useEffect(() => {
+    if (!data) return;
+    if (data.opening && !_.isEqual(data.opening, prevOpening)) {
+      prevOpening.current = data.opening;
+    }
+  }, [data]);
+  const opening = useMemo(() => {
+    return data?.opening || prevOpening.current;
+  }, [data]);
+
   const lobbyConnected = lobby !== null;
-  const gameActive = useMemo(() => {
-    return game !== null;
+  const gameStatus = useMemo(() => {
+    if (!game) return "waiting";
+    if (game?.data.fullMoveCount < 2) return "waiting";
+    if (game?.data.outcome) return "complete";
+    return "active";
   }, [game]);
 
   const playerColor = useMemo<Chess.Color | null>(() => {
@@ -385,7 +418,15 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
           : lobby
       );
     };
-
+    const onRematchRequested = (rematchOffers: Record<Chess.Color, boolean | null>) => {
+      setLobby((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          rematchRequested: rematchOffers,
+        };
+      });
+    };
     //Register event listeners
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
@@ -399,6 +440,8 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     socket.on("game:draw-declined", onDrawDeclined);
     socket.on("test:requestAck", onTest);
     socket.on("lobby:chat", onChat);
+    socket.on("lobby:rematch-requested", onRematchRequested);
+    socket.on("lobby:rematch-declined", onRematchRequested);
 
     return () => {
       socket.disconnect();
@@ -414,6 +457,8 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       socket.off("connect_error", onConnectError);
       socket.off("lobby:update", onLobbyDidUpdate);
       socket.off("lobby:chat", onChat);
+      socket.off("lobby:rematch-requested", onRematchRequested);
+      socket.off("lobby:rematch-declined", onRematchRequested);
     };
   }, []);
 
@@ -508,6 +553,51 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     [socket, lobbyid]
   );
 
+  const rematchOffer = useMemo(() => {
+    if (!lobby) return null;
+    if (!lobby.rematchRequested) return null;
+    if (!playerColor) return null;
+    const opponentColor = playerColor === "w" ? "b" : "w";
+    if (lobby.rematchRequested[opponentColor] === true) return "recieved";
+    if (lobby.rematchRequested[playerColor] === true && lobby.rematchRequested[opponentColor] === null)
+      return "offered";
+    if (lobby.rematchRequested[opponentColor] === false) return "declined";
+    return null;
+  }, [lobby?.rematchRequested, playerColor, game?.data.outcome]);
+
+  const requestRematch = useCallback(() => {
+    if (!lobbyid) return;
+    socket.emit("lobby:request-rematch", lobbyid, (offers) => {
+      if (!offers.status || !offers.data) return;
+      console.log(offers);
+      setLobby((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          rematchRequested: offers.data || current.rematchRequested,
+        };
+      });
+    });
+  }, [socket, lobbyid]);
+
+  const acceptRematch = useCallback(
+    (accept: boolean) => {
+      if (!lobbyid) return;
+      if (rematchOffer !== "recieved") return;
+      socket.emit("lobby:accept-rematch", lobbyid, accept, (offers) => {
+        if (!offers.status || !offers.data) return;
+        setLobby((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            rematchRequested: offers.data || current.rematchRequested,
+          };
+        });
+      });
+    },
+    [socket, lobbyid]
+  );
+
   const drawOfferRecieved = useMemo(() => {
     if (!game) return false;
     if (game.data.outcome) return false;
@@ -533,9 +623,12 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
     availablePremoves,
     premoveQueue,
     currentGame: game,
+    opening,
+    gameStatus,
     currentBoard,
     livePositionOffset,
     moveable,
+    rematchOffer,
     boardControls: {
       stepBackward,
       stepForward,
@@ -550,9 +643,12 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       clearPremoveQueue,
       offerDraw,
       acceptDraw,
+      requestRematch,
+      acceptRematch,
     },
     drawOfferRecieved,
     drawOfferSent,
+
     lastMove,
     playerColor: playerColor || "w",
     players: players || [],

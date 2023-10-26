@@ -10,6 +10,7 @@ import { notEmpty } from "../../util/misc";
 import User from "../../lib/db/entities/User";
 import { updateRatings } from "../util/glicko";
 import { encodeGameToPgn } from "../../util/parsers/pgnParser";
+import { set } from "lodash";
 
 export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
@@ -149,12 +150,6 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     }
   }
 
-  socket.on("disconnect", () => {
-    //Find the active game if applicable and set a timeout for reconnection
-    //or, abort the game if it has not yet started
-    console.log(`Client ${socket.data.userid} has disconnected`);
-  });
-
   socket.on("lobby:connect", async (lobbyid, ack) => {
     try {
       console.log(`Client ${socket.data.userid} connecting to lobby ${lobbyid}`);
@@ -271,6 +266,104 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     }
   });
 
+  socket.on("lobby:request-rematch", async (lobbyid) => {
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby) return;
+    if (!lobby.currentGame) return;
+    const user = socket.data.sessionUser;
+    if (!user) return;
+    if (!lobby.connections.some((connection) => connection.id === user.id)) return;
+    const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+    const opponentColor = playerColor === "w" ? "b" : "w";
+    lobby.rematchRequested[playerColor] = true;
+    if (lobby.rematchRequested[opponentColor] === false) {
+      //If the opponent has declined the rematch, return the declined event and abort
+      nsp.to(socket.id).emit("lobby:rematch-declined", lobby.rematchRequested);
+      return;
+    }
+    await cache.updateLobby(lobbyid, lobby);
+    socket.to(lobbyid).emit("lobby:rematch-requested", lobby.rematchRequested);
+    if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+      await cache.newGame(lobbyid);
+      startGame(lobbyid);
+    }
+  });
+
+  socket.on("lobby:accept-rematch", async (lobbyid, accpeted) => {
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby) return;
+    if (!lobby.currentGame) return;
+    const user = socket.data.sessionUser;
+    if (!user) return;
+    if (!lobby.connections.some((connection) => connection.id === user.id)) return;
+    const playerColor = lobby.currentGame.players.w.id === user.id ? "w" : "b";
+    const opponentColor = playerColor === "w" ? "b" : "w";
+    if (accpeted) {
+      lobby.rematchRequested[playerColor] = true;
+      if (lobby.rematchRequested[opponentColor] === false) {
+        //If the opponent has declined the rematch, return the declined event and abort
+        nsp.to(socket.id).emit("lobby:rematch-declined", lobby.rematchRequested);
+        return;
+      }
+      if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+        await cache.newGame(lobbyid);
+        startGame(lobbyid);
+      }
+    } else {
+      lobby.rematchRequested[playerColor] = false;
+      socket.to(lobbyid).emit("lobby:rematch-declined", lobby.rematchRequested);
+    }
+  });
+
+  socket.on("disconnect", async () => {
+    if (!socket.data.userid) return;
+    const lobbies = Array.from(socket.rooms).filter((room) => room !== socket.id);
+    for (const lobbyid of lobbies) {
+      const lobby = await cache.getLobbyById(lobbyid);
+      if (!lobby) return;
+      const lastDisconnectISO = new Date().toISOString();
+      const updated = await cache.disconnectFromLobby(lobbyid, {
+        userid: socket.data.userid,
+        socketid: socket.id,
+        timestampISO: lastDisconnectISO,
+      });
+      if (!updated) return;
+      console.log(updated.connections);
+      nsp.to(lobbyid).emit("lobby:update", {
+        connections: updated.connections,
+        reservedConnections: updated.reservedConnections,
+      });
+      if (lobby.currentGame && !lobby.currentGame.data.outcome) {
+        const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
+        const abandonTimeoutMap: Record<Chess.RatingCategory, number> = {
+          bullet: 15 * 1000,
+          blitz: 45 * 1000,
+          rapid: 2 * 60 * 1000,
+          classical: 5 * 60 * 1000,
+          puzzle: 0,
+          correspondence: 0,
+        };
+        const abandonTimeout = abandonTimeoutMap[ratingCategory];
+        if (abandonTimeout === 0) return;
+
+        const timer = setTimeout(async () => {
+          const lobby = await cache.getLobbyById(lobbyid);
+          if (!lobby) return;
+          if (!lobby.currentGame) return;
+          if (lobby.currentGame.data.outcome) return;
+          const connections = lobby.connections;
+          const connection = connections.find((connection) => connection.id === socket.data.userid);
+          if (!connection) return;
+          if (connection.lastDisconnect !== lastDisconnectISO) return;
+          const playerColor = lobby.currentGame.players.w.id === socket.data.userid ? "w" : "b";
+          const game = lobby.currentGame;
+          game.data.outcome = { result: playerColor === "w" ? "b" : "w", by: "abandonment" };
+          const updated = await cache.updateGame(lobbyid, game);
+          await handleGameResult(lobbyid, game);
+        }, abandonTimeout);
+      }
+    }
+  });
   const requestMoveWithTimeout = async (socket: Socket, timeoutMs: number, game: Game, lobbyid: string) => {
     const lobby = await cache.getLobbyById(lobbyid);
     if (!lobby) throw new Error("lobby does not exist");

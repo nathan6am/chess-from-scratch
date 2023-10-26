@@ -6,6 +6,7 @@ import { ImMinus } from "react-icons/im";
 import { IoMdMore } from "react-icons/io";
 import * as Chess from "@/lib/chess";
 import { ScrollContainer } from "../layout/GameLayout";
+import { useRouter } from "next/router";
 interface ItemProps {
   usergame: User_Game;
 }
@@ -66,6 +67,7 @@ export default function GameList({ usergames }: { usergames: User_Game[] }) {
 }
 
 function GameContextMenu() {
+  const router = useRouter();
   function handleItemClick({ id, event, props }: ItemParams<ItemProps, any>) {
     const gameid = props?.usergame?.game.id;
     switch (id) {
@@ -76,7 +78,7 @@ function GameContextMenu() {
         console.log(gameid);
         break;
       case "analyze":
-        console.log(gameid);
+        router.push(`/study/analyze?gameId=${gameid}&sourceType=nextchess`);
         break;
       default:
         break;

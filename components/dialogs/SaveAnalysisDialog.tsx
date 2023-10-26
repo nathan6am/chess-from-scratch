@@ -104,6 +104,7 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
       pgn,
     };
     save(saveData);
+    closeModal();
   };
   return (
     <div>

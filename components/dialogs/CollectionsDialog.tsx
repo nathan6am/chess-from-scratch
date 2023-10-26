@@ -30,9 +30,7 @@ export default function CollectionsDialog({ selectedAnalysis, isOpen, closeModal
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          console.log(selectedAnalysis);
           if (selectedAnalysis) {
-            console.log(selectedAnalysis.id, selected);
             onConfirm(selectedAnalysis.id, selected);
           }
         }}

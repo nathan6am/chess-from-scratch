@@ -139,9 +139,6 @@ nextApp.prepare().then(async () => {
     });
     lobbyNsp.on("connection", (socket) => {
         (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
-        socket.on("disconnect", () => {
-            console.log("client disconnected from lobby nsp");
-        });
     });
     io.on("connection", (socket) => {
         (0, MainHandler_1.default)(io, socket, redisClient);

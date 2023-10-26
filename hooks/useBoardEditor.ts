@@ -1,4 +1,5 @@
 import * as Chess from "@/lib/chess";
+import s from "connect-redis";
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 
@@ -115,8 +116,8 @@ export default function useBoardEditor(
   }, [startPosition]);
 
   const resetToStartPosition = useCallback(() => {
-    setFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-  }, []);
+    setFromFen(startPosition);
+  }, [startPosition]);
 
   const isValid = useMemo(() => {
     return Chess.validateFen(fen);
