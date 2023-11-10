@@ -1,10 +1,11 @@
 import { Dialog, Transition, RadioGroup } from "@headlessui/react";
-
+import { UseMutateFunction } from "@tanstack/react-query";
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
 import { Input, RadioButton } from "@/components/UIKit";
 import CollectionSelect from "./CollectionSelect";
 import Collection from "@/lib/db/entities/Collection";
+import type Analysis from "@/lib/db/entities/Analysis";
 //Util
 import axios from "axios";
 import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
@@ -14,7 +15,7 @@ import { HiSave } from "react-icons/hi";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
-  save: (data: AnalysisData) => void;
+  save: UseMutateFunction<Analysis, unknown, AnalysisData, unknown>;
   moveText: string;
 }
 import { AnalysisData } from "@/lib/types";
@@ -107,7 +108,7 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
       collectionIds: selected.map((c) => c.id),
       pgn,
     };
-    console.log(saveData);
+
     save(saveData);
   };
   return (

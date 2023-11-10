@@ -40,9 +40,7 @@ export default function ExportPGNDialog({ isOpen, onClose }: Props) {
   });
 
   const [filename, setFilename] = useState<string>("analysis");
-  const pgn = useMemo(() => {
-    return analysis.exportPgn(options);
-  }, [options, analysis.pgn]);
+  const pgn = "useMemo(() => {return analysis.exportPgn(options);}, [options, analysis.pgn])";
   const handleDownload = () => {
     downloadPGN({ pgn, filename: filename || "analysis" });
   };

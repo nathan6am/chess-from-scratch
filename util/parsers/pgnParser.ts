@@ -8,6 +8,7 @@ type ValueOf<T> = T[keyof T];
 type Entries<T> = [keyof T, ValueOf<T>][];
 import { Game } from "@/server/types/lobby";
 import { Arrow, ArrowColor, MarkedSquare } from "@/lib/types";
+import { VariationTree } from "@/hooks/useVariationTree";
 const getEntries = <T extends object>(obj: T) => Object.entries(obj) as Entries<T>;
 const tagExpr = /^\[.* ".*"\]$/;
 const bracketsExpr = /^\[(.+(?=\]$))\]$/;
@@ -544,3 +545,4 @@ const encodeTermination = (outcome: Chess.Outcome) => {
   else if (by === "50-move-rule") termination += " by 50 move rule";
   else if (by === "abandonment") termination += " by abandonment";
 };
+

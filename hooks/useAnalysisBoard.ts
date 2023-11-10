@@ -3,7 +3,7 @@ import { SettingsContext } from "@/context/settings";
 import useSound from "use-sound";
 import useVariationTree, { VariationTree } from "./useVariationTree";
 import useEvaler, { Evaler } from "./useEvaler";
-import useDebounce from "./useDebounce";
+
 import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _, { set } from "lodash";
@@ -14,7 +14,8 @@ type Node = TreeNode<Chess.NodeData>;
 export interface AnalysisHook {
   isNew: boolean;
   tree: VariationTree;
-  loadPgn: (pgn: string) => void;
+  treeId: string | null;
+  loadPgn: (pgn: string, id?: string) => void;
   pgnLoaded: boolean;
   pgn: string;
   exportPgn: (options: {
@@ -129,36 +130,50 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     initialTree,
     initialMoveCount: initialGame.fullMoveCount - 1 + (initialGame.activeColor === "w" ? 0 : 1),
   });
-  const { currentNode, path, continuation, stepBackward, stepForward, currentKey, moveText, mainLine, setCurrentKey } =
-    variationTree;
+  const {
+    currentNode,
+    path,
+    continuation,
+    stepBackward,
+    stepForward,
+    currentKey,
+    moveText,
+    mainLine,
+    setCurrentKey,
+    treeId,
+  } = variationTree;
+
   const currentLine = useMemo(() => {
     return [...path, ...continuation];
   }, [path, continuation]);
 
   //Reset analysis
   const reset = (options: { pgn?: string }) => {
+    variationTree.setTreeId(null);
     if (options.pgn) {
       const { tree, tagData } = parsePgn(options.pgn);
       loadPgn(options.pgn);
       setTagData(tagData);
       setIsNew(false);
     } else {
+      setOptions((cur) => {
+        return { ...cur, startPosition: defaultOptions.startPosition };
+      });
       variationTree.loadNewTree([]);
       setTagData({});
       setIsNew(true);
     }
   };
   // Load pgn to tree
-  const loadPgn = (pgn: string) => {
+  const loadPgn = (pgn: string, id?: string) => {
     pgnLoadedRef.current = false;
     setPgnToLoad(pgn);
     try {
       const { tree, tagData } = parsePgn(pgn);
-      if (tagData.fen) {
-        setOptions((cur) => {
-          return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
-        });
-      }
+      setOptions((cur) => {
+        return { ...cur, startPosition: tagData.fen || defaultOptions.startPosition };
+      });
+
       // Dont assign unknown values
       setTagData({
         event: tagData.event === "?" ? undefined : tagData.event,
@@ -167,7 +182,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
         round: tagData.round === "?" ? undefined : tagData.round,
         ...tagData,
       });
-      variationTree.loadNewTree(tree);
+      variationTree.loadNewTree(tree, id);
       setIsNew(false);
     } catch (e) {
       console.error(e);
@@ -373,13 +388,11 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       if (isNew) setIsNew(false);
       const existingMoveKey = variationTree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
-        const next = variationTree.setCurrentKey(existingMoveKey);
-        //if (next) evaler.getEvaluation(next.data.fen);
+        variationTree.setCurrentKey(existingMoveKey);
       } else {
         const halfMoveCount = variationTree.path.length + (initialGame.activeColor === "w" ? 1 : 2);
         const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
         variationTree.addMove(nodeToInsert);
-        //evaler.getEvaluation(nodeToInsert.fen);
       }
     },
     [currentGame, variationTree, initialGame]
@@ -402,7 +415,6 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       console.log("Game hasn't updated");
       return;
     } //"don't execute if a the game hasn't updated"
-
     if (!moveQueue.length) return;
     prevGame.current = currentGame;
     const move = currentGame.legalMoves.find((move) => move.PGN === moveQueue[0]);
@@ -417,6 +429,8 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
       console.error(moveQueue[0]);
     }
   }, [moveQueue, currentGame, onMove, prevGame, moveQueue.length]);
+
+  // Arrow and square marking callbacks
   const onArrow = useCallback(
     (arrow: Arrow) => {
       if (!currentNode) return;
@@ -459,6 +473,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     reset,
     isNew,
     tree: variationTree,
+    treeId,
     loadPgn,
     pgnLoaded: pgnLoadedRef.current,
     exportPgn,

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { TreeNode } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,34 +15,40 @@ export type TreeHook<T> = {
   setSiblingIndex: (key: string, index: number) => void;
   getDepth: (key: string) => number;
   getPly: (key: string) => number;
-  findChild: (
-    key: string | null,
-    callbackFn: (node: TreeNode<T>) => boolean
-  ) => TreeNode<T> | undefined;
-  findFirstAncestor: (
-    key: string,
-    callbackFn: (node: TreeNode<T>) => boolean
-  ) => TreeNode<T> | undefined;
+  findChild: (key: string | null, callbackFn: (node: TreeNode<T>) => boolean) => TreeNode<T> | undefined;
+  findFirstAncestor: (key: string, callbackFn: (node: TreeNode<T>) => boolean) => TreeNode<T> | undefined;
   getContinuation: (key: string | null) => TreeNode<T>[];
-  loadTree: (treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) => void;
-  findNode?: (
-    predicate: (node: TreeNode<T>) => boolean,
-    traversalMethod?: string
-  ) => TreeNode<T> | undefined;
+  loadTree: (treeData: Map<string, TreeNode<T>> | TreeNode<T>[], treeId?: string) => void;
+  loading: boolean;
+  id: string | null;
+  setId: React.Dispatch<React.SetStateAction<string | null>>;
+  findNode?: (predicate: (node: TreeNode<T>) => boolean, traversalMethod?: string) => TreeNode<T> | undefined;
 };
 
-function useTreeData<T extends object>(
-  initialTree: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()
-): TreeHook<T> {
+function useTreeData<T extends object>(initialTree: Map<string, TreeNode<T>> | TreeNode<T>[] = new Map()): TreeHook<T> {
   const [map, setMap] = useState<Map<string, TreeNode<T>>>(() =>
     initialTree instanceof Map ? initialTree : buildMapFromTreeArray(initialTree)
   );
-  function loadTree(treeData: Map<string, TreeNode<T>> | TreeNode<T>[]) {
+  const [loading, setLoading] = useState(false);
+
+  //The id of the loaded tree (for file saving/syncing)
+  const [id, setId] = useState<string | null>(null);
+
+  const [treeArray, setTreeArray] = useState(buildTreeArray(map));
+  function loadTree(treeData: Map<string, TreeNode<T>> | TreeNode<T>[], treeId?: string) {
+    //set loading to true while the tree array is being updated (pre load)
+    setLoading(true);
+
+    //Build the map from the tree array and update state
     const newMap = treeData instanceof Map ? treeData : buildMapFromTreeArray(treeData);
     setMap(newMap);
     setTreeArray(buildTreeArray(newMap));
+    setId(treeId || null);
   }
-  const [treeArray, setTreeArray] = useState(buildTreeArray(map));
+  useEffect(() => {
+    //set loading to false once the tree array has been updated (post load)
+    setLoading(false);
+  }, [treeArray]);
 
   function getNode(key: string): TreeNode<T> | undefined {
     return map.get(key);
@@ -55,11 +61,11 @@ function useTreeData<T extends object>(
    * @param keygen An optional callback function to generate a key string for the node; if none is provided a new uuid will be generated
    * @returns The newly inserted node, or ``undefined`` if the parent key is invalid
    */
-  function addNode(
-    data: T,
-    parentKey: string | null,
-    keygen?: () => string
-  ): TreeNode<T> | undefined {
+  function addNode(data: T, parentKey: string | null, keygen?: () => string): TreeNode<T> | undefined {
+    //Block updates while loading
+    if (loading) return;
+
+    //Generate key and create new node
     const key = keygen ? keygen() : uuidv4();
     const newNode = { key, data, parentKey: parentKey, children: [] };
     map.set(newNode.key, newNode);
@@ -68,6 +74,8 @@ function useTreeData<T extends object>(
       if (!parentNode) throw new Error("Invalid parent key.");
       parentNode.children.push(newNode);
     }
+
+    //Force update derived state (because React is stupid and the map is a reference type)
     setTreeArray(buildTreeArray(map));
     return newNode;
   }
@@ -78,6 +86,7 @@ function useTreeData<T extends object>(
    * @param data The updated data for the node(can be partial)
    */
   function updateNode(key: string, data: Partial<T>): void {
+    if (loading) return;
     const node = map.get(key);
     if (!node) {
       console.log(`Error: node with key ${key} not found`);
@@ -92,6 +101,7 @@ function useTreeData<T extends object>(
    * @param key The key of the node to delete
    */
   function deleteNode(key: string): void {
+    if (loading) return;
     const node = map.get(key);
     if (!node) {
       console.log(`Error: node with key ${key} not found`);
@@ -115,10 +125,7 @@ function useTreeData<T extends object>(
    * @param callbackFn A callback function for each child of the node; it takes the child node as an argument and should return a boolean
    * @returns The first child that satisfies the callback function or undefined
    */
-  function findChild(
-    key: string | null,
-    callbackFn: (node: TreeNode<T>) => boolean
-  ): TreeNode<T> | undefined {
+  function findChild(key: string | null, callbackFn: (node: TreeNode<T>) => boolean): TreeNode<T> | undefined {
     if (!key) {
       const rootNodes = Array.from(map.values()).filter((node) => !node.parentKey);
       return rootNodes.find((node) => callbackFn(node));
@@ -136,10 +143,7 @@ function useTreeData<T extends object>(
    * @param callbackFn A callback function for each direct descendatn of the node; it takes the node as an argument and should return a boolean
    * @returns The first child that satisfies the callback function or undefined
    */
-  function findNextDescendant(
-    node: TreeNode<T>,
-    callbackFn: (node: TreeNode<T>) => boolean
-  ): string | undefined {
+  function findNextDescendant(node: TreeNode<T>, callbackFn: (node: TreeNode<T>) => boolean): string | undefined {
     if (callbackFn(node)) {
       return node.key;
     } else if (node.children.length > 0) {
@@ -149,10 +153,7 @@ function useTreeData<T extends object>(
     }
   }
 
-  function findFirstAncestor(
-    key: string,
-    callbackFn: (node: TreeNode<T>) => boolean
-  ): TreeNode<T> | undefined {
+  function findFirstAncestor(key: string, callbackFn: (node: TreeNode<T>) => boolean): TreeNode<T> | undefined {
     const node = getNode(key);
     if (!node) return undefined;
     if (!node.parentKey) return undefined;
@@ -164,6 +165,11 @@ function useTreeData<T extends object>(
     }
   }
 
+  /**
+   *
+   * @param key The key of the node to find the path for
+   * @returns An array of nodes representing the path from the root to the node
+   */
   function getPath(key: string): TreeNode<T>[] {
     const destNode = getNode(key);
     if (!destNode) return [];
@@ -183,6 +189,11 @@ function useTreeData<T extends object>(
     return path.length - 1;
   }
 
+  /**
+   *
+   * @param key The key of the node to find the ply for
+   * @returns The ply of the node
+   */
   function getPly(key: string): number {
     const path = getPath(key);
     let ply = 0;
@@ -192,10 +203,14 @@ function useTreeData<T extends object>(
     });
     return ply;
   }
+
+  /**
+   *
+   * @param key The key of the node to find the continuation for
+   * @returns The continuation of first descendants of the given node
+   */
   function getContinuation(key: string | null): TreeNode<T>[] {
-    const startNode = key
-      ? getNode(key)
-      : Array.from(map.values()).filter((node) => !node.parentKey)[0];
+    const startNode = key ? getNode(key) : Array.from(map.values()).filter((node) => !node.parentKey)[0];
     let path: TreeNode<T>[] = [];
     let currentNode: TreeNode<T> | undefined = startNode;
     while (currentNode) {
@@ -207,7 +222,11 @@ function useTreeData<T extends object>(
     return path.slice(1);
   }
 
-  //Get the index of a node amongst it's siblings
+  /**
+   *
+   * @param key The key of the node to find the sibling index for
+   * @returns The index of the node among its siblings
+   */
   function getSiblingIndex(key: string): number {
     const node = map.get(key);
     if (!node) {
@@ -224,6 +243,11 @@ function useTreeData<T extends object>(
     return parentNode.children.indexOf(node);
   }
 
+  /**
+   *
+   * @param key The key of the node to set the sibling index for
+   * @param index the index to set the node to
+   */
   function setSiblingIndex(key: string, index: number): void {
     let targetIndex = index;
     const siblings = getSiblings(key);
@@ -246,15 +270,15 @@ function useTreeData<T extends object>(
     if (!parentNode) {
       return;
     }
-    parentNode.children.splice(
-      targetIndex,
-      0,
-      parentNode.children.splice(parentNode.children.indexOf(node), 1)[0]
-    );
+    parentNode.children.splice(targetIndex, 0, parentNode.children.splice(parentNode.children.indexOf(node), 1)[0]);
     setTreeArray(buildTreeArray(map));
   }
 
-  //Get the siblings of a node
+  /**
+   *
+   * @param key The key of the node to find the siblings for
+   * @returns the siblings of the node (including the node itself)
+   */
   function getSiblings(key: string): TreeNode<T>[] {
     const node = map.get(key);
     if (!node) {
@@ -288,13 +312,14 @@ function useTreeData<T extends object>(
     findChild,
     findFirstAncestor,
     loadTree,
+    loading,
+    id,
+    setId,
   };
 }
 
-function buildTreeArray<T>(
-  map: Map<string, TreeNode<T>>,
-  parentKey: string | null = null
-): TreeNode<T>[] {
+//Get the tree array from the map (filter out root nodes)
+function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -305,6 +330,7 @@ function buildTreeArray<T>(
   return parentNode.children;
 }
 
+//Recursively build a map from an exisitin tree array
 function buildMapFromTreeArray<T>(treeArray: TreeNode<T>[]): Map<string, TreeNode<T>> {
   const map = new Map<string, TreeNode<T>>();
   const buildMapRecursive = (array: TreeNode<T>[], parentKey: string | null): void => {
