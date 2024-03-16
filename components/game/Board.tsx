@@ -26,6 +26,7 @@ import * as Chess from "@/lib/chess";
 import _ from "lodash";
 
 interface Props {
+  id?: string; //Id of the board
   editMode?: boolean; //Whether or not to enable edit mode
   squareIdPrefix?: string; //Prefix to add to the square id
   keyPrefix?: string; //Prefix to add to the key (rerender on change)
@@ -75,6 +76,7 @@ export interface BoardHandle extends HTMLDivElement {
 const Board = React.forwardRef<BoardHandle, Props>(
   (
     {
+      id,
       disableTransitions,
       overrideTheme,
       squareIdPrefix,
@@ -172,7 +174,6 @@ const Board = React.forwardRef<BoardHandle, Props>(
 
         //Queue premove if the piece isn't of the active turn color and do not continue
         if (piece.color !== activeColor && preMoveable) {
-          console.log("here");
           if (!legalPremoves?.length) return;
           const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
           if (premove) onPremove(premove);
@@ -331,6 +332,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
           pendingArrow={currentArrow}
         >
           <div
+            id={id}
             className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onMouseDown={onMouseDown}

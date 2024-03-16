@@ -2,7 +2,7 @@ import { default as PuzzleEntity } from "@/lib/db/entities/Puzzle";
 import * as Chess from "@/lib/chess";
 import { gameFromNodeData, nodeDataFromMove, parseUciMove } from "@/lib/chess";
 import _, { set } from "lodash";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useMemo, useRef, useCallback, useEffect, useContext } from "react";
 import axios from "axios";
 import { treeFromLine } from "@/util/parsers/pgnParser";
@@ -184,7 +184,7 @@ function usePuzzle(puzzle: Puzzle | null) {
     if (continuation.length === 0) return false;
     if (currentGame.activeColor !== puzzle?.playerColor) return false;
     if (!isMainline) return false;
-    if (currentKey !== visibleNodes[visibleNodes.length - 1]?.key) return false;
+    //if (currentKey !== visibleNodes[visibleNodes.length - 1]?.key) return false;
     return true;
   }, [continuation, currentGame, currentKey, isMainline, visibleNodes]);
 
@@ -215,19 +215,22 @@ function usePuzzle(puzzle: Puzzle | null) {
   }, [visibleNodes, mainLine, currentNode, touchedKeys]);
   const onMove = useCallback(
     (move: Chess.Move) => {
+      console.log(moveable);
       if (!moveable) return;
+
       const existingMoveKey = tree.findNextMove(Chess.MoveToUci(move));
       if (existingMoveKey) {
         tree.setCurrentKey(existingMoveKey);
         setTouchedKeys((cur) => [...cur, existingMoveKey]);
       } else {
+        console.log(move);
         setSolveState("failed");
         const halfMoveCount = currentNode?.data.halfMoveCount || 1;
         const nodeToInsert = Chess.nodeDataFromMove(currentGame, move, halfMoveCount);
         tree.addMove(nodeToInsert);
       }
     },
-    [currentGame, tree, currentNode]
+    [currentGame, tree, currentNode, moveable]
   );
   const [playMove] = useSound("/assets/sounds/move.wav", { volume: settings.sound.volume / 100 });
   const [playCapture] = useSound("/assets/sounds/capture.wav", {

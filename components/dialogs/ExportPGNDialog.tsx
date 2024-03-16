@@ -2,10 +2,11 @@ import { AnalysisContext } from "../analysis/AnalysisBoard";
 import { useContext, useMemo, useState } from "react";
 import Modal from "@/components/UIKit/Modal";
 import { Toggle, Button, Input, Label } from "../UIKit";
-import TextArea from "../UIKit/TextArea";
+import sanitize from "sanitize-filename";
 interface Props {
   isOpen: boolean;
   onClose: any;
+  fileName?: string;
 }
 
 interface Options {
@@ -27,7 +28,7 @@ function downloadPGN({ pgn, filename }: { pgn: string; filename?: string }) {
   a.click();
   URL.revokeObjectURL(url);
 }
-export default function ExportPGNDialog({ isOpen, onClose }: Props) {
+export default function ExportPGNDialog({ isOpen, onClose, fileName }: Props) {
   const { analysis } = useContext(AnalysisContext);
   const [options, setOptions] = useState<Options>({
     includeArrows: true,
@@ -39,8 +40,15 @@ export default function ExportPGNDialog({ isOpen, onClose }: Props) {
     initialMoveCount: 0,
   });
 
-  const [filename, setFilename] = useState<string>("analysis");
-  const pgn = "useMemo(() => {return analysis.exportPgn(options);}, [options, analysis.pgn])";
+  const [filename, setFilename] = useState<string>(() => {
+    if (fileName) {
+      return sanitize(fileName);
+    }
+    return "analysis";
+  });
+  const pgn = useMemo(() => {
+    return analysis.exportPgn(options);
+  }, [options, analysis.pgn]);
   const handleDownload = () => {
     downloadPGN({ pgn, filename: filename || "analysis" });
   };

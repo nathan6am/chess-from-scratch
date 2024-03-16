@@ -117,6 +117,7 @@ export default function GameOnline({ lobbyid }: Props) {
                 </div>
 
                 <Board
+                  key={currentGame.id}
                   showCoordinates={settings.display.showCoordinates}
                   movementType={settings.gameBehavior.movementType}
                   theme={settings.display.boardTheme}

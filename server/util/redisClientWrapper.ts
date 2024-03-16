@@ -43,8 +43,12 @@ export class Redis implements Redis {
     const lobby = await this.getLobbyById(lobbyid);
     if (!lobby) return false;
     const game = lobby.currentGame;
+    console.log(game);
     if (!game) return false;
-    if (game.data.outcome) return false;
+    if (game.data.outcome) {
+      console.log("game has outcome");
+      return false;
+    }
     return true;
   };
 

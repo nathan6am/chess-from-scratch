@@ -55,6 +55,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
       return;
     }
     requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
+    console.log("starting game");
     nsp.to(lobbyid).emit("game:new", game);
   }
 
@@ -284,7 +285,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
     await cache.updateLobby(lobbyid, lobby);
     socket.to(lobbyid).emit("lobby:rematch-requested", lobby.rematchRequested);
     if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
-      await cache.newGame(lobbyid);
+      console.log("starting rematch");
       startGame(lobbyid);
     }
   });
@@ -306,6 +307,7 @@ export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socke
         return;
       }
       if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+        console.log("starting rematch");
         await cache.newGame(lobbyid);
         startGame(lobbyid);
       }

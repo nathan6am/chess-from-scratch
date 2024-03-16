@@ -75,7 +75,6 @@ function GameContextMenu() {
         console.log(gameid);
         break;
       case "export":
-        console.log(gameid);
         break;
       case "analyze":
         router.push(`/study/analyze?gameId=${gameid}&sourceType=nextchess`);

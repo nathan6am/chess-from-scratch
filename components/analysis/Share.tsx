@@ -1,34 +1,30 @@
-import React from "react";
+import React, { useCallback } from "react";
 import html2canvas from "html2canvas";
 import { MdContentCopy } from "react-icons/md";
 import { AnalysisContext } from "./AnalysisBoard";
 import { useContext } from "react";
+import { toPng } from "html-to-image";
 export default function Share() {
-  const { boardRef, analysis } = useContext(AnalysisContext);
+  const { analysis } = useContext(AnalysisContext);
   const { pgn, currentGame } = analysis;
   const { fen } = currentGame;
-  const handleDownloadImage = async () => {
-    const element = boardRef.current;
-    if (!element) return;
-    const canvas = await html2canvas(element);
-
-    const data = canvas.toDataURL("image/jpg");
-    const link = document.createElement("a");
-
-    if (typeof link.download === "string") {
-      link.href = data;
-      link.download = "image.jpg";
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      window.open(data);
-    }
-  };
+  const handleDownloadImage = useCallback(async () => {
+    const node = document.getElementById("analysis-board");
+    if (!node) return;
+    toPng(node, { cacheBust: true })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = "board.png";
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
   return (
     <div className="w-full h-fit bg-[#202020] flex flex-col py-2">
-      <button onClick={handleDownloadImage}>Share as Image</button>
+      <button onClick={handleDownloadImage}>Download as Image</button>
       <div className="w-full px-2">
         <p className="px-1 text-sm opacity-50">PGN:</p>
         <textarea

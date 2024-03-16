@@ -8,7 +8,9 @@ import { MdArrowDropUp, MdArrowDropDown, MdTimer } from "react-icons/md";
 import { FaArchive, FaChevronRight } from "react-icons/fa";
 import { IoMdMore } from "react-icons/io";
 import GameList from "./GameList";
+import useAuth from "@/hooks/useAuth";
 export default function RecentGames() {
+  const { user } = useAuth();
   const { games: usergames } = useGameSearch({});
   return (
     <div className="flex flex-col w-full h-full items-center min-h-[20rem] bg-elevation-2 shadow-lg rounded-lg">
@@ -21,7 +23,19 @@ export default function RecentGames() {
           <FaChevronRight className="text-xs mt-[3px]" />
         </button>
       </div>
-      <GameList usergames={usergames} />
+
+      {user?.type === "guest" ? (
+        <div className="w-full h-full grow relative">
+          <p
+            className="italic text-sm text-light-400 m-4 w-full text-center
+        "
+          >
+            Make an account to save your games and access them from any device.
+          </p>
+        </div>
+      ) : (
+        <GameList usergames={usergames} />
+      )}
     </div>
   );
 }

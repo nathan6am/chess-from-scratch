@@ -33,6 +33,7 @@ import NewAnalysisPanel from "./panels/NewAnalysisPanel";
 import Link from "next/link";
 import OpenAnalysisDialog from "../dialogs/OpenAnalysisDialog";
 import { set } from "lodash";
+import ExportPGNDialog from "../dialogs/ExportPGNDialog";
 
 interface Props {
   initialId?: string | null;
@@ -101,6 +102,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const [openModalShown, setOpenModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
+  const [exportModalShown, setExportModalShown] = useState(false);
   const lastMoveAnnotation = useMemo(() => {
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
@@ -162,6 +164,13 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         saveManager,
       }}
     >
+      <ExportPGNDialog
+        fileName={saveManager.data?.analysis?.title || "analysis"}
+        isOpen={exportModalShown}
+        onClose={() => {
+          setExportModalShown(false);
+        }}
+      />
       <OpenAnalysisDialog isOpen={openModalShown} onClose={() => setOpenModalShown(false)} />
       <OptionsOverlay
         isOpen={optionsOverlayShown}
@@ -245,7 +254,13 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
             <MenuButton>Share/Export</MenuButton>
             <MenuItems>
               <MenuItem onClick={() => {}}>Share</MenuItem>
-              <MenuItem onClick={() => {}}>Export PGN</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setExportModalShown(true);
+                }}
+              >
+                Export PGN
+              </MenuItem>
               <MenuItem onClick={() => {}}>Export FEN</MenuItem>
               <MenuItem onClick={() => {}}>Export Image</MenuItem>
               <MenuItem onClick={() => {}}>Export GIF</MenuItem>
@@ -307,6 +322,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 </div>
               </>
               <Board
+                id="analysis-board"
                 overrideArrows={currentNode?.data ? true : false}
                 onArrow={markupControls.onArrow}
                 onMarkSquare={markupControls.onMarkSquare}

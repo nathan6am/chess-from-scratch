@@ -80,6 +80,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             return;
         }
         requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
+        console.log("starting game");
         nsp.to(lobbyid).emit("game:new", game);
     }
     //Handle game result
@@ -316,7 +317,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         await cache.updateLobby(lobbyid, lobby);
         socket.to(lobbyid).emit("lobby:rematch-requested", lobby.rematchRequested);
         if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
-            await cache.newGame(lobbyid);
+            console.log("starting rematch");
             startGame(lobbyid);
         }
     });
@@ -341,6 +342,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 return;
             }
             if (lobby.rematchRequested.w && lobby.rematchRequested.b) {
+                console.log("starting rematch");
                 await cache.newGame(lobbyid);
                 startGame(lobbyid);
             }

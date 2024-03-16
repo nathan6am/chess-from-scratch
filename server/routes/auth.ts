@@ -86,17 +86,17 @@ router.get(
 );
 
 router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
-  req.session.cookie.maxAge = 3600 * 24;
   res.redirect("/");
 });
 
 router.get("/user", async function (req, res, next) {
+  console.log("user", req.user);
   if (!req.user) {
-    res.status(200).json({});
+    res.status(401).send("Unauthorized");
   } else {
     const sessionUser = await User.getSessionUser(req.user.id);
     if (sessionUser) res.status(200).json(sessionUser);
-    else res.status(200).json({});
+    else res.status(200).json(req.user);
   }
 });
 

@@ -68,7 +68,7 @@ function TagForm({ tags, setTags }: TagFormProps) {
   }, [loading, saveManager.syncStatus, saveManager.id]);
 
   return (
-    <>
+    <div className="grow">
       <form onSubmit={handleSubmit(onSubmit)} className="py-4 px-6 bg-elevation-2">
         <div className="flex flex-row items-end">
           <Input
@@ -204,6 +204,6 @@ function TagForm({ tags, setTags }: TagFormProps) {
           </div>
         )}
       </form>
-    </>
+    </div>
   );
 }

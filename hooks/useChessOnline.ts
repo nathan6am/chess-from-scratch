@@ -396,6 +396,9 @@ export default function useChessOnline(lobbyId: string): OnlineGame {
       updateGame(game);
     };
     const onNewGame = (game: Game) => {
+      //Reset the opening explorer
+      prevOpening.current = { name: startPositionOpening, eco: "" };
+      console.log("New game recieved");
       updateGame(game);
     };
     const onTest = (response: string, ack: (arg: string) => void) => {

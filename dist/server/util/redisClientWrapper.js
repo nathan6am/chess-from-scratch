@@ -54,10 +54,13 @@ class Redis {
         if (!lobby)
             return false;
         const game = lobby.currentGame;
+        console.log(game);
         if (!game)
             return false;
-        if (game.data.outcome)
+        if (game.data.outcome) {
+            console.log("game has outcome");
             return false;
+        }
         return true;
     };
     _updateLobby = async (lobbyid, updates) => {

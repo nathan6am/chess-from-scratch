@@ -103,7 +103,44 @@ export default function AnalysisPanel({ modalControls }: Props) {
           <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <EditDetails />
+          <>
+            <div className="w-full px-4 py-4 bg-elevation-2 flex flex-row items-center justify-between">
+              {saveManager.id && saveManager.data ? (
+                <>
+                  <p>{saveManager.data.analysis.title}</p>
+                  <span className="text-sm text-light-300 flex flex-row items-end">
+                    {saveManager.syncStatus === "synced" ? (
+                      <>
+                        <p>Saved</p>
+                        <AiFillCheckCircle className="text-success-400 ml-1 text-md mb-0.5" />
+                      </>
+                    ) : (
+                      <>
+                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                      </>
+                    )}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <p className="text-light-200">{`* Unsaved Analysis`}</p>
+                  <Button
+                    onClick={modalControls.showSave}
+                    className="px-4 py-1"
+                    variant="success"
+                    label="Save"
+                    width="fit"
+                    size="sm"
+                    icon={HiSave}
+                    iconClassName="text-lg ml-1"
+                    iconPosition="right"
+                  />
+                </>
+              )}
+            </div>
+
+            <EditDetails />
+          </>
         </Tab.Panel>
       </Tab.Group>
       <div className="w-full border-t border-white/[0.2] ">

@@ -40,11 +40,7 @@ const options = [
     label: "Play vs. Computer",
     value: "computer",
   },
-  {
-    icon: FaRandom,
-    label: "Play vs. Random",
-    value: "random",
-  },
+
   {
     icon: IoMdPlay,
     label: "Play Local",
@@ -61,6 +57,7 @@ export default function NewGame() {
       <>
         {selected === "friend" && <Friend />}
         {selected === "computer" && <Computer />}
+        {selected === "local" && <Local />}
       </>
     </div>
   );
@@ -172,6 +169,35 @@ function Computer() {
         icon={IoMdPlay}
         variant="neutral"
         label="Start Game"
+        iconPosition="right"
+        iconClassName="ml-2 mt-0.5"
+      />
+    </div>
+  );
+}
+
+function Local() {
+  const [autoFlip, setAutoFlip] = useState(false);
+  const [invertPieces, setInvertPieces] = useState(false);
+  const [timeControl, setTimeControl] = useState<TimeControl | undefined>();
+  return (
+    <div className="w-full max-w-md">
+      <Toggle label="Flip Board on Turn" className="my-2 w-fit" checked={autoFlip} onChange={setAutoFlip} reverse />
+      <Toggle
+        label="Invert Opposing Pieces"
+        className="my-2 w-fit"
+        checked={invertPieces}
+        onChange={setInvertPieces}
+        reverse
+      />
+      <TimeControlSelect setTimeControl={setTimeControl} />
+      <Button
+        onClick={() => {}}
+        className="w-full mt-8"
+        size="lg"
+        icon={IoMdPlay}
+        variant="neutral"
+        label="Create Game"
         iconPosition="right"
         iconClassName="ml-2 mt-0.5"
       />

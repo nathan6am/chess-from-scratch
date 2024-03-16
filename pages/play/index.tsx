@@ -31,6 +31,7 @@ export async function getServerSideProps(context: NextPageContext) {
   const res = context.res;
   if (!res) return { props: {} };
   if (!req?.user) {
+    
     res.setHeader("location", "/login");
     res.statusCode = 302;
     res.end();

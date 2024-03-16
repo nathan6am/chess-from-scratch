@@ -3,6 +3,7 @@ import Tools from "@/components/menu/Tools";
 import React from "react";
 
 export default function Study() {
+  
   return (
     <>
       <div className="w-full h-full flex flex-col p-6 md:px-10 lg:px-16 bg-elevation-1 items-center">

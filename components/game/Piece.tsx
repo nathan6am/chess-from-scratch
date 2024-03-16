@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
-import _ from "lodash";
+import _, { invert } from "lodash";
 import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
 import * as Chess from "@/lib/chess";
 import styles from "@/styles/Board.module.scss";
@@ -20,6 +20,7 @@ interface PieceProps {
   square: Chess.Square;
   animationSpeed: number;
   constrainToBoard?: boolean;
+  invert?: boolean;
 }
 
 export interface PieceHandle extends HTMLDivElement {
@@ -42,6 +43,7 @@ export default function Piece({
   disableTransition,
   premovedFrom,
   constrainToBoard = true,
+  invert,
 }: PieceProps) {
   const transitionRef = useRef<boolean>(false);
   const selectedRef = useRef<boolean>(false);
@@ -198,7 +200,7 @@ export default function Piece({
           ref={nodeRef}
         >
           <div
-            className={`${styles.piece} ${piece.color}${piece.type} bg-cover`}
+            className={`${styles.piece} ${piece.color}${piece.type} bg-cover ${invert ? "rotate-180" : ""}`}
             style={{
               pointerEvents: "none",
               width: `90%`,
