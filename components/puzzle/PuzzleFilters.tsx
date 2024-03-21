@@ -359,8 +359,12 @@ const CATEGORIES = [
     ],
   },
 ];
-export default function PuzzleFilters() {
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+
+interface Props {
+  selectedThemes: string[];
+  setSelectedThemes: React.Dispatch<React.SetStateAction<string[]>>;
+}
+export default function PuzzleFilters({ selectedThemes, setSelectedThemes }: Props) {
   const addThemes = (themes: string[]) => {
     setSelectedThemes((current) => {
       return Array.from(new Set([...current, ...themes]).values());

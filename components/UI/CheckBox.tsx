@@ -29,7 +29,7 @@ export default function CheckBox({
           <div className={`flex flex-row items-center cursor-pointer`}>
             <span
               className={
-                disabled ? "text-[#8c8c8c]" : `${checked || indeterminate ? "text-[#b99873]" : "text-white/[0.5]"}`
+                disabled ? "text-[#8c8c8c]" : `${checked || indeterminate ? "text-gold-300" : "text-white/[0.5]"}`
               }
             >
               <CheckBoxIcon checked={checked} indeterminate={indeterminate} disabled={disabled} />

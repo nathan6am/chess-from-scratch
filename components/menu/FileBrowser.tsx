@@ -105,12 +105,12 @@ export function FileMenu({ showDialog, fileManager }: FileMenuProps) {
       <Item id="rename" onClick={handleItemClick}>
         Rename
       </Item>
-      <Item id="export" onClick={handleItemClick}>
+      {/* <Item id="export" onClick={handleItemClick}>
         Export
-      </Item>
-      <Item id="share" onClick={handleItemClick}>
+      </Item> */}
+      {/* <Item id="share" onClick={handleItemClick}>
         Share
-      </Item>
+      </Item> */}
       <Item id="delete" onClick={handleItemClick}>
         Delete
       </Item>
@@ -422,7 +422,12 @@ export default function FileBrowser() {
           </ScrollContainer>
         </Tab.Panel>
         <Tab.Panel as="table" className="w-full grow flex flex-col">
-          <input value={queryStr} onChange={(e) => setQueryStr(e.target.value)} />
+          <input
+            value={queryStr}
+            placeholder="Search analyses"
+            onChange={(e) => setQueryStr(e.target.value)}
+            className="display-none bg-elevation-2 rounded-md m-2 border border-light-400 pl-8 py-1.5 px-4"
+          ></input>
           <thead className="flex flex-row items-center justify-between py-1 px-4 border-b border-light-400 text-sm pr-2 text-light-300">
             <td>
               <button

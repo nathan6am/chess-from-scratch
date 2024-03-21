@@ -22,6 +22,12 @@ export interface AppSettings {
     invalidMoveSounds: boolean;
     notifcationSounds: boolean;
   };
+  puzzles: {
+    filterByTheme: boolean;
+    selectedThemes: string[];
+    minRating: number;
+    maxRating: number;
+  };
 
   UITheme: "light" | "dark";
 }
@@ -41,6 +47,12 @@ export const defaultSettings: AppSettings = {
     usePieceIcons: true,
     boardTheme: "default",
     pieceTheme: "default",
+  },
+  puzzles: {
+    filterByTheme: false,
+    selectedThemes: [],
+    minRating: 100,
+    maxRating: 3500,
   },
 
   sound: {

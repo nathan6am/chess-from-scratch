@@ -21,6 +21,12 @@ exports.defaultSettings = {
         boardTheme: "default",
         pieceTheme: "default",
     },
+    puzzles: {
+        filterByTheme: false,
+        selectedThemes: [],
+        minRating: 100,
+        maxRating: 3500,
+    },
     sound: {
         volume: 100,
         lowTimeWarning: true,

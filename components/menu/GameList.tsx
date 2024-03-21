@@ -7,6 +7,14 @@ import { IoMdMore } from "react-icons/io";
 import * as Chess from "@/lib/chess";
 import { ScrollContainer } from "../layout/GameLayout";
 import { useRouter } from "next/router";
+import { createPortal } from "react-dom";
+const Portal = ({ children }: { children: JSX.Element | string | Array<JSX.Element | string> }) => {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  return mounted ? createPortal(children, document.body) : null;
+};
 interface ItemProps {
   usergame: User_Game;
 }
@@ -29,7 +37,9 @@ export default function GameList({ usergames }: { usergames: User_Game[] }) {
   return (
     <>
       <div className="w-full h-full grow relative">
-        <GameContextMenu />
+        <Portal>
+          <GameContextMenu />
+        </Portal>
         <ScrollContainer>
           <table className="w-full">
             <thead className="top-0 sticky border-b bg-elevation-3 border-light-400/[0.1]">
@@ -71,13 +81,11 @@ function GameContextMenu() {
   function handleItemClick({ id, event, props }: ItemParams<ItemProps, any>) {
     const gameid = props?.usergame?.game.id;
     switch (id) {
-      case "view":
-        console.log(gameid);
-        break;
-      case "export":
-        break;
       case "analyze":
         router.push(`/study/analyze?gameId=${gameid}&sourceType=nextchess`);
+        break;
+      case "export":
+        console.log(props?.usergame.game);
         break;
       default:
         break;
@@ -85,14 +93,11 @@ function GameContextMenu() {
   }
   return (
     <Menu id="game-context-menu" theme="dark" animation="fade">
-      <Item id="view" onClick={handleItemClick}>
-        View
+      <Item id="analyze" onClick={handleItemClick}>
+        Open in Analysis Board
       </Item>
       <Item id="export" onClick={handleItemClick}>
-        Export
-      </Item>
-      <Item id="analyze" onClick={handleItemClick}>
-        Analyze
+        Download PGN
       </Item>
     </Menu>
   );

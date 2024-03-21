@@ -14,8 +14,19 @@ import { FaLightbulb } from "react-icons/fa";
 import { MdRestartAlt } from "react-icons/md";
 import { IoCaretForwardSharp } from "react-icons/io5";
 import { ClipLoader } from "react-spinners";
+import { Toggle } from "../UIKit";
+import { RangeSlider } from "../UIKit";
 export default function PuzzleSolver() {
-  const { puzzle, history, next } = usePuzzleQueue();
+  const [filterByTheme, setFilterByTheme] = useState(false);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState(100);
+  const [maxRating, setMaxRating] = useState(3500);
+  const { puzzle, history, next } = usePuzzleQueue({
+    themes: filterByTheme ? selectedThemes : null,
+    minRating,
+    maxRating,
+  });
+
   const { settings } = useContext(SettingsContext);
   const currentGame = puzzle.currentGame;
   const [checked, setChecked] = useState(true);
@@ -62,9 +73,23 @@ export default function PuzzleSolver() {
           <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
             <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
           </h2>
+          <p>Rating Range</p>
+          <RangeSlider
+            minLabel={`${minRating}`}
+            maxLabel={`${maxRating === 3500 ? `\u221E` : maxRating}`}
+            value={[minRating, maxRating]}
+            min={100}
+            max={3500}
+            step={100}
+            onChange={([min, max]) => {
+              setMinRating(min);
+              setMaxRating(max);
+            }}
+          />
+          <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} />
           <div className="h-full w-full bg-elevation-2 grow relative">
             <ScrollContainer>
-              <PuzzleFilters />
+              <PuzzleFilters selectedThemes={selectedThemes} setSelectedThemes={setSelectedThemes} />
             </ScrollContainer>
           </div>
           <PuzzleControls

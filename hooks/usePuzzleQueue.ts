@@ -9,7 +9,6 @@ import { treeFromLine } from "@/util/parsers/pgnParser";
 import useVariationTree from "./useVariationTree";
 import useSound from "use-sound";
 import { SettingsContext } from "@/context/settings";
-import { main } from "@popperjs/core";
 
 export interface Puzzle {
   id: string;
@@ -67,23 +66,39 @@ const defaultOptions = {
   showTimer: true,
   allowHints: false,
 };
-export default function usePuzzleQueue(initialOptions?: Partial<PuzzleQueueOptions>) {
-  const [options, setOptions] = useState<PuzzleQueueOptions>({
-    ...defaultOptions,
-    ...initialOptions,
-  });
+import useDebounce from "./useDebounce";
+export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {}) {
+  const options = useMemo(
+    () => ({
+      ...defaultOptions,
+      ..._options,
+    }),
+    [_options]
+  );
+  const debouncedOptions = useDebounce(options, 500);
   let [rated, setRated] = useState(true);
   const [history, setHistory] = useState<SolvedPuzzle[]>([]);
   const [queue, setQueue] = useState<Puzzle[]>([]);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
-
+  const filters = useMemo(() => {
+    return {
+      minRating: options.minRating,
+      maxRating: options.maxRating,
+      themes: options.themes,
+    };
+  }, [options]);
+  useEffect(() => {
+    //Reset the queue to the current puzzle if the filters change
+    setQueue((queue) => (currentPuzzle ? [currentPuzzle] : []));
+  }, [filters.maxRating, filters.minRating, filters.themes]);
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: ["puzzleQueue", options],
+    queryKey: ["puzzleQueue", debouncedOptions],
     queryFn: async () => {
       const response = await axios.get<{ puzzles: PuzzleEntity[] }>("/api/puzzles", {
         params: {
-          minRating: options.minRating,
-          maxRating: options.maxRating,
+          minRating: debouncedOptions.minRating,
+          maxRating: debouncedOptions.maxRating,
+          themes: debouncedOptions.themes?.join(",") || null,
         },
       });
       if (response && response.data.puzzles) return response.data.puzzles;
@@ -134,7 +149,6 @@ export default function usePuzzleQueue(initialOptions?: Partial<PuzzleQueueOptio
     puzzle,
     history,
     options,
-    setOptions,
   };
 }
 
@@ -198,12 +212,14 @@ function usePuzzle(puzzle: Puzzle | null) {
     else if (currentKey && isMainline && continuation.length === 0) return "puzzle-solved";
     return undefined;
   }, [currentKey, isMainline, continuation]);
-
+  const [playSuccess] = useSound("/assets/sounds/success.mp3", { volume: settings.sound.volume / 100 });
   useEffect(() => {
     if (!puzzle) return;
     if (!currentKey) return;
     const lastMove = mainLine[mainLine.length - 1];
-    if (currentKey === lastMove.key && solveState !== "failed") setSolveState("solved");
+    if (currentKey === lastMove.key && solveState !== "failed") {
+      setSolveState("solved");
+    }
   }, [mainLine, currentKey, puzzle]);
 
   const prompt = useMemo(() => {
@@ -215,7 +231,6 @@ function usePuzzle(puzzle: Puzzle | null) {
   }, [visibleNodes, mainLine, currentNode, touchedKeys]);
   const onMove = useCallback(
     (move: Chess.Move) => {
-      console.log(moveable);
       if (!moveable) return;
 
       const existingMoveKey = tree.findNextMove(Chess.MoveToUci(move));
@@ -262,7 +277,16 @@ function usePuzzle(puzzle: Puzzle | null) {
         if (nextMove) setTouchedKeys((cur) => [...cur, nextMove.key]);
       }, 500);
     }
-  }, [currentGame, puzzle, tree, currentKey, opponentMoveQueued, visibleNodes, continuation]);
+  }, [
+    currentGame.activeColor,
+    puzzle,
+    puzzle?.playerColor,
+    tree,
+    currentKey,
+    opponentMoveQueued,
+    visibleNodes,
+    continuation,
+  ]);
   const stepForward = useCallback(() => {
     const nextNode = continuation[0];
     if (nextNode && touchedKeys.includes(nextNode.key)) {
@@ -293,6 +317,14 @@ function usePuzzle(puzzle: Puzzle | null) {
     setOrientation(puzzle.playerColor);
     setSolveState("pending");
   }, [puzzle, tree.loadNewTree]);
+
+  const prevSolveState = useRef(solveState);
+  useEffect(() => {
+    if (solveState !== prevSolveState.current) {
+      prevSolveState.current = solveState;
+      if (solveState === "solved") playSuccess();
+    }
+  }, [solveState, playSuccess]);
 
   return {
     puzzle,
