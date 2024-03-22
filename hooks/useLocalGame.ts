@@ -20,7 +20,7 @@ const defaultGameConfig: Chess.GameConfig = {
 
 export const useLocalGame = (options: Options) => {
   //Get settings from context
-  const { settings } = useSettings();
+  const settings = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {
     const configOptions = removeUndefinedFields(options.gameConfig);
