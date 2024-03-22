@@ -203,8 +203,8 @@ export default function Piece({
             className={`${styles.piece} ${piece.color}${piece.type} bg-cover ${invert ? "rotate-180" : ""}`}
             style={{
               pointerEvents: "none",
-              width: `90%`,
-              height: `90%`,
+              width: `95%`,
+              height: `95%`,
             }}
           />
         </div>
@@ -250,8 +250,8 @@ function GhostPiece({ piece, square, orientation }: GhostPieceProps) {
         className={`${styles.piece} ${piece.color}${piece.type} bg-cover`}
         style={{
           pointerEvents: "none",
-          width: `90%`,
-          height: `90%`,
+          width: `95%`,
+          height: `95%`,
           opacity: `25%`,
         }}
       />
