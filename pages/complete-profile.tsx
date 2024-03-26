@@ -1,11 +1,11 @@
 //Framework
 import User from "@/lib/db/entities/User";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Head from "next/head";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 import { NextPageContext } from "next";
-
+import useAuth from "@/hooks/useAuth";
 //UI Components
 
 //Icons
@@ -14,11 +14,13 @@ import { SessionUser } from "@/lib/db/entities/User";
 interface Props {
   profile?: User;
 }
-import userofile from "@/hooks/useProfile";
 import Background from "@/components/layout/Background";
 const SignUp: NextPageWithLayout = () => {
-  const { user, error } = userofile();
-  if (!user) return <></>;
+  useEffect(() => {
+    refetch();
+  }, []);
+  const { user, profile, isLoading, authStatus, refetch } = useAuth();
+  if (!profile) return <></>;
   return (
     <div className=" min-h-[85%] max-w-screen lg:max-w-[900px] w-full backdrop-blur-lg bg-gradient-to-r from-[#1f1f1f]/[0.5] to-[#181818]/[0.5] flex flex-col justify-center items-center overflow-hidden sm:rounded-lg shadow-lg ">
       <>
@@ -28,7 +30,7 @@ const SignUp: NextPageWithLayout = () => {
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <div className="w-full h-full flex flex-col justify-center items-center">
-          <CompleteProfileForm profile={user} />
+          <CompleteProfileForm profile={profile} />
         </div>
       </>
     </div>

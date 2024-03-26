@@ -9,7 +9,7 @@ import User, { SessionUser } from "../../lib/db/entities/User";
 const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
-const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
+const facebookCallbackURL = process.env.BASE_URL + "/api/auth/facebook/callback";
 
 passport.use(
   new passportLocal.Strategy(async function (username, password, done) {

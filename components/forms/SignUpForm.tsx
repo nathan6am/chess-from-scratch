@@ -71,7 +71,7 @@ export default function SignUpForm() {
           if (error.field === "email") setError(error.field, { message: error.message });
         });
       } else if (res.data.user) {
-        refresh(res.data.user);
+        refresh();
         router.push("/complete-profile");
       }
     }
