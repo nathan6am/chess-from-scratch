@@ -6,20 +6,15 @@ import User, { SessionUser } from "@/lib/db/entities/User";
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function useProfile() {
-  const queryClient = useQueryClient();
-
-  const {
-    data: profile,
-    isLoading,
-    refetch,
-  } = useQuery<SessionUser, Error>(["profile"], {
+  const { data, error, isValidating, mutate } = useSWR<User, Error>("/api/user/profile", fetcher);
+  const { data: profile } = useQuery<SessionUser, Error>(["profile"], {
     queryFn: () => axios.get("/api/user/profile").then((res) => res.data),
   });
   const updateProfile = useMutation(["update-profile"], {
     mutationFn: (data: User) => axios.put("/api/user/profile", data).then((res) => res.data),
     onSuccess: (data) => {
-      queryClient.setQueryData(["profile"], data);
+      mutate(data);
     },
   });
-  return { profile, refetch, isLoading, updateProfile };
+  return { user: data, error, isValidating, mutate, updateProfile };
 }
