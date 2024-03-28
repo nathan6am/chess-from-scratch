@@ -1,7 +1,7 @@
 import React from "react";
 import { RiArrowGoBackFill } from "react-icons/ri";
 import { BoardEditorHook } from "@/hooks/useBoardEditor";
-import { BoardHandle } from "@/components/game/Board";
+import { BoardHandle } from "@/components/board/Board";
 import BoardSetupPanel from "./BoardSetupPanel";
 import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";

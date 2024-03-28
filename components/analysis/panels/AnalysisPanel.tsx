@@ -1,26 +1,28 @@
 import React, { useState, Fragment, useContext } from "react";
+
 import { AnalysisContext } from "@/components/analysis/AnalysisBoard";
-import { AnalysisHook } from "@/hooks/useAnalysisBoard";
-import EditDetails from "@/components/analysis/EditDetails";
-import { Tab } from "@headlessui/react";
-import EvalInfo from "@/components/analysis/EvalInfo";
-import { ScrollContainer } from "@/components/layout/GameLayout";
-import VarationTree from "@/components/analysis/VarationTree";
-import { MdModeComment, MdExpandMore } from "react-icons/md";
+
+//icons
+import { MdModeComment } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
-import { AiFillTag } from "react-icons/ai";
+import { AiFillTag, AiFillCheckCircle } from "react-icons/ai";
 import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
-import { BsShareFill } from "react-icons/bs";
+import { HiSave } from "react-icons/hi";
+
+//content components
 import Comments from "@/components/analysis/Comments";
 import Annotations from "@/components/analysis/Annotations";
 import Share from "@/components/analysis/Share";
 import Explorer from "@/components/analysis/Explorer";
-import { PGNTagData } from "@/lib/types";
-import { Input, Button } from "@/components/UIKit";
-import { HiSave } from "react-icons/hi";
-import { useForm } from "react-hook-form";
+import VarationTree from "@/components/analysis/VarationTree";
+import EvalInfo from "@/components/analysis/EvalInfo";
+import EditDetails from "@/components/analysis/EditDetails";
+
+//ui components
+import { Button } from "@/components/UIKit";
 import { PulseLoader } from "react-spinners";
-import { AiFillCheckCircle } from "react-icons/ai";
+import { ScrollContainer } from "@/components/layout/GameLayout";
+import { Tab } from "@headlessui/react";
 
 interface Props {
   modalControls: {
@@ -54,9 +56,8 @@ export default function AnalysisPanel({ modalControls }: Props) {
         </Tab.List>
         <Tab.Panel as={Fragment}>
           <>
-            <div className="shadow-md">
+            
               <EvalInfo />
-            </div>
             <div className="w-full px-4 py-2 bg-elevation-2 flex flex-row items-center justify-between">
               {saveManager.id && saveManager.data ? (
                 <>
@@ -240,76 +241,5 @@ function TopTab({ children }: TabProps) {
     >
       {children}
     </Tab>
-  );
-}
-interface TagFormProps {
-  tags: PGNTagData;
-  setTags: React.Dispatch<React.SetStateAction<PGNTagData>>;
-}
-function TagForm({ tags, setTags }: TagFormProps) {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setError,
-    clearErrors,
-    formState: { errors },
-  } = useForm<PGNTagData>({ defaultValues: tags, mode: "onBlur" });
-
-  const submitHandler = (data: PGNTagData) => {
-    setTags(data);
-  };
-  return (
-    <div className="py-4 px-6 bg-elevation-2">
-      <div className="flex flex-row items-end">
-        <Input
-          containerClassName="mb-2"
-          label="White"
-          {...register("white")}
-          error={errors.white?.message || null}
-          id="white"
-          placeholder="White Player"
-          showErrorMessages={false}
-        />
-        <Input
-          label="Elo"
-          containerClassName="w-40 ml-4 mb-2"
-          {...register("eloWhite")}
-          error={errors.eloWhite?.message || null}
-          id="whiteElo"
-          placeholder="Rating"
-          showErrorMessages={false}
-        />
-      </div>
-
-      <div className="flex flex-row items-end">
-        <Input
-          containerClassName="mb-2"
-          label="Black"
-          {...register("black")}
-          error={errors.white?.message || null}
-          id="black"
-          placeholder="Black Player"
-          showErrorMessages={false}
-        />
-        <Input
-          label="Elo"
-          containerClassName="w-40 ml-4 mb-2"
-          {...register("eloBlack")}
-          error={errors.eloWhite?.message || null}
-          id="eloBlack"
-          placeholder="Rating"
-          showErrorMessages={false}
-        />
-      </div>
-      <Input
-        label="Event"
-        {...register("event")}
-        error={errors.event?.message || null}
-        id="event"
-        placeholder="Event"
-        showErrorMessages={false}
-      />
-    </div>
   );
 }

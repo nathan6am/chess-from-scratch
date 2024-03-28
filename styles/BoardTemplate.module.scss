@@ -1,0 +1,20 @@
+.boardContainer {
+  aspect-ratio: 1/1;
+  width: min(100%, 100vw, calc(100vh - 8em));
+  background-color: chartreuse;
+  position: relative;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  aspect-ratio: 1/1;
+  position: relative;
+  background-color: red;
+}
+
+.boardWidth {
+  width: min(100%, 100vw, calc(100vh - 8em));
+}

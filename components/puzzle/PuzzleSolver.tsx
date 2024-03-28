@@ -5,7 +5,7 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, ScrollContainer } from "../layout/GameLayout";
 import PuzzleFilters from "./PuzzleFilters";
 import CheckBox from "../UI/CheckBox";
-import Board from "../game/Board";
+import Board from "../board/Board";
 import { IoExtensionPuzzle } from "react-icons/io5";
 import BoardControls from "../game/BoardControls";
 import { BsFillCheckSquareFill, BsFillXSquareFill, BsCheckLg } from "react-icons/bs";

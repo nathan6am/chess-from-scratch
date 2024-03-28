@@ -58,7 +58,7 @@ export function PanelColumnLg({ children, className }: LayoutComponentProps) {
   return (
     <div
       className={twMerge(
-        "h-full w-full max-w-[36rem] md:max-w-[50vw] mx-auto lg:mx-0 lg:w-fit max-h-[1400px]  md:mt-0",
+        "h-full w-full max-w-[36rem] md:max-w-[50vw] mx-auto lg:mx-0 lg:w-fit max-h-screen  md:mt-0",
         className
       )}
     >

@@ -13,7 +13,7 @@ import { CgRemoveR } from "react-icons/cg";
 import * as Chess from "@/lib/chess";
 
 //Util
-import { ColorEnum } from "./BoardArrows";
+import { ColorEnum } from "../board/BoardArrows";
 import classNames from "classnames";
 import { useColorOverride } from "@/hooks/useBoardMarkup";
 //Numbered Annotation Glyphs

@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useMemo, useState, useContext } from "react";
+import React, {  useMemo, useState, useContext } from "react";
 //Contexts
 import { AnalysisContext } from "./AnalysisBoard";
 
@@ -69,7 +69,7 @@ export default function EvalInfo() {
     return fullMoveCount * 2 - (activeColor === "w" ? 1 : 0);
   }, [evaler.fenEvaluating]);
   return (
-    <div className="w-full">
+    <div className="w-full shadow-md">
       <div className="w-full bg-elevation-3">
         <Popover>
           <div className="flex flex-row">
@@ -145,7 +145,6 @@ export default function EvalInfo() {
               </> */}
               {evaler.lines.length > 0 &&
                 evaler.lines.map((line, idx) => {
-                  // if (!line?.score) console.log(evaler.lines);
                   return (
                     <RenderLine
                       key={idx}

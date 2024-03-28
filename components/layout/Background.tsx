@@ -16,7 +16,7 @@ export default function Background({ children }: Props) {
       className="grid grid-cols-1 w-screen max-w-screen min-h-screen justify-center items-start "
     >
       <div className="h-full w-full justify-center items-center flex grid-cols-auto">
-        <main className="flex container justify-center items-center w-full h-full">{children}</main>
+        <div className="flex container justify-center items-center w-full h-full">{children}</div>
       </div>
     </div>
   );

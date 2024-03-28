@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef, Fragment } from "react";
-import Board from "../game/Board";
+import Board from "../board/Board";
 import Draggable from "react-draggable";
 import { Transition } from "@headlessui/react";
 import { SettingsContext } from "@/context/settings";

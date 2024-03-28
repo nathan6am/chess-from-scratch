@@ -1,4 +1,4 @@
-import Board from "./Board";
+import Board from "../board/Board";
 import { useEngineGame } from "@/hooks/useEngineGame";
 import * as Chess from "@/lib/chess";
 import { SettingsContext } from "@/context/settings";

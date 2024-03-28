@@ -28,10 +28,8 @@ export default function Play() {
   const { games } = useGameSearch({});
   return (
     <>
-      <div className="w-full h-full flex flex-col p-6 md:px-10 lg:px-16 bg-elevation-1 items-center ">
+      <div className="flex-1 flex flex-col p-0 py-6 md:px-10 lg:px-16 bg-elevation-1 items-center ">
         <div className="w-full h-full flex flex-col xl:flex-row gap-x-4">
-
-
           <div className="w-[26rem] h-fit shrink-0 mb-4">
             <NewGameMenu />
           </div>

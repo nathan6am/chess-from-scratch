@@ -1,7 +1,7 @@
 import React, { useState, useRef, Fragment, useContext, useMemo, useEffect } from "react";
 
 // Components
-import Board from "../game/Board";
+import Board from "../board/Board";
 import EvalBar from "./EvalBar";
 import BoardControls from "../game/BoardControls";
 import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
@@ -10,7 +10,7 @@ import PopupPlayer from "./PopupPlayer";
 import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
 import AnalysisPanel from "./panels/AnalysisPanel";
 
-import { BoardHandle } from "../game/Board";
+import { BoardHandle } from "../board/Board";
 import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
 //Icons

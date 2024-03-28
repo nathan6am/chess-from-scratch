@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from "react";
-import _, { invert } from "lodash";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import _ from "lodash";
 import { DraggableCore, DraggableData, DraggableEvent, DraggableEventHandler } from "react-draggable";
 import * as Chess from "@/lib/chess";
 import styles from "@/styles/Board.module.scss";
@@ -226,7 +226,7 @@ function GhostPiece({ piece, square, orientation }: GhostPieceProps) {
     return orientation === "w" ? [x, 7 - y] : [7 - x, y];
   }, [square, orientation]);
   //Controlled position for draggable; only set on start, drop, or square/coordinates change
-  const [position, setPosition] = useState<{ x: number; y: number }>({
+  const [position, _setPosition] = useState<{ x: number; y: number }>({
     x: coordinates[0] * 100,
     y: coordinates[1] * 100,
   });

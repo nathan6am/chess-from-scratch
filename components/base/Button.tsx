@@ -29,7 +29,7 @@ export default function Button({
   icon: Icon,
   label,
   isLoading,
-  width = "full",
+  width = "md",
   loadingLabel,
   loadingIcon,
   loadingWidth,
@@ -46,7 +46,7 @@ export default function Button({
       {...props}
       disabled={disabled || isLoading}
       className={cn(
-        "flex items-center h-fit flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-200 font-medium focus:outline-none",
+        "flex items-center my-2 h-fit flex-row justify-center shadow hover:shadow-lg justify-center rounded-md transition-colors duration-200 font-medium focus:outline-none",
         {
           "bg-gold-300 border-gold-300 hover:bg-gold-400 hover:border-gold-400 text-light-100":
             variant === "primary" && !disabled,
@@ -57,13 +57,14 @@ export default function Button({
             variant === "danger" && !disabled,
           "w-full": width !== "fit",
           "w-fit": width === "fit",
-          "max-w-sm": width === "sm",
-          "max-w-md": width === "md",
-          "max-w-lg": width === "lg",
+          "max-w-xs": width === "sm",
+          "max-w-sm": width === "md",
+          "max-w-md": width === "lg",
           "py-1 px-4 text-sm": size === "sm",
           "py-1.5 px-3": size === "md",
           "py-2 px-4 ": size === "lg",
-          "bg-elevation-3 text-light-400": disabled,
+          "bg-elevation-3 text-light-400 cursor-not-allowed": disabled,
+          "cursor-progress": isLoading,
         },
         className
       )}

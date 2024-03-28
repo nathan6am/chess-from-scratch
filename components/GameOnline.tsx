@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useContext } from "react";
-import Board from "@/components/game/Board";
+import Board from "@/components/board/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
 import Result from "@/components/UI/dialogs/Result";
@@ -91,7 +91,6 @@ export default function GameOnline({ lobbyid }: Props) {
   return (
     <GameContext.Provider value={{ onlineGame, orientation }}>
       <div className="flex flex-col h-full w-full justify-center ">
-        <MenuBar />
         <Result
           outcome={gameData.outcome}
           isOpen={(gameData.outcome && showResult) || false}
@@ -102,7 +101,7 @@ export default function GameOnline({ lobbyid }: Props) {
         <div className="flex flex-col md:flex-row h-full w-full items-start  md:items-center justify-center ">
           <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
             <BoardColumn>
-              <div className="w-full lg:hidden">
+              <div className="w-full md:hidden">
                 <MoveTape
                   moveHistory={gameData.moveHistory}
                   jumpToOffset={boardControls.jumpToOffset}

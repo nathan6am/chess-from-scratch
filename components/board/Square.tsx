@@ -2,7 +2,7 @@ import styles from "@/styles/Board.module.scss";
 import React, { useMemo } from "react";
 import * as Chess from "@/lib/chess";
 import classnames from "classnames";
-import { ColorEnum } from "../analysis/BoardArrows";
+import { ColorEnum } from "./BoardArrows";
 import { ArrowColor } from "@/lib/types";
 import { BiSquareRounded } from "react-icons/bi";
 import { on } from "events";

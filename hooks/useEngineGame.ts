@@ -42,7 +42,7 @@ const defaultGameConfig: Chess.GameConfig = {
 };
 
 export const useEngineGame = (options: Options) => {
-  //Get settings from context
+  
   const settings = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {

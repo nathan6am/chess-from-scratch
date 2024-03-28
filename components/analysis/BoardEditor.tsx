@@ -1,5 +1,5 @@
 import React from "react";
-import Board, { BoardHandle } from "../game/Board";
+import Board, { BoardHandle } from "../board/Board";
 import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import useBoardEditor from "@/hooks/useBoardEditor";
 import { SettingsContext } from "@/context/settings";

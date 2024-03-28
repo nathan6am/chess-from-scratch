@@ -10,7 +10,7 @@ import Square from "./Square";
 import Piece from "./Piece";
 import EditModePiece, { PieceHandle } from "./EditModePiece";
 import PromotionMenu from "./PromotionMenu";
-import BoardArrows from "../analysis/BoardArrows";
+import BoardArrows from "./BoardArrows";
 
 //Hooks;
 import { useArrowState } from "@/hooks/useBoardMarkup";
@@ -147,62 +147,60 @@ const Board = React.forwardRef<BoardHandle, Props>(
     useEffect(() => {
       setPromotionMove(null);
     }, [lastMove]);
-    /* Callback to execute when a selected piece is dropped on a square; 
-  if the drop square is a valid move, it calls the passed `onMove` prop, passing it the 
-  selected piece and the target square */
+
+    /**  Callback to execute when a selected piece is dropped on a square; 
+      if the drop square is a valid move, it calls the passed `onMove` prop, passing it the 
+      selected piece and the target square */
     const onDrop = useCallback(() => {
       if (editMode && selectedPiece && !currentSquare && onRemovePiece) {
         onRemovePiece(selectedPiece[0]);
         setSelectedPiece(null);
         return;
       }
-      if (!currentSquare || !selectedPiece) {
-        //console.log("here");
-        return;
-      } else {
-        const [square, piece] = selectedPiece;
-        //If in edit mode, move the piece to the new square
-        if (editMode) {
-          if (onMovePiece) {
-            onMovePiece(square, currentSquare);
-          }
-          setSelectedPiece(null);
-          return;
-        }
-        //Just in case, guard against non moveable pieces
-        if (piece.color !== moveable && moveable !== "both") return;
+      if (!currentSquare || !selectedPiece) return;
 
-        //Queue premove if the piece isn't of the active turn color and do not continue
-        if (piece.color !== activeColor && preMoveable) {
-          if (!legalPremoves?.length) return;
-          const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
-          if (premove) onPremove(premove);
-        }
-
-        if (piece.color !== activeColor) return;
-
-        // Find the corresponding legal move - should be unique unless there is a promotion
-        const move = legalMoves.find((move) => move.start === square && move.end === currentSquare);
-        //Return if no legal move is found
-        if (!move) return;
-
-        //Call onMove if the move is not a promotion
-        if (!move.promotion) onMove(move);
-
-        // Auto promote to queen if enabled in settings, otherwise show the promotion menu
-        if (move.promotion && autoQueen) {
-          const move = legalMoves.find(
-            (move) => move.start === square && move.end === currentSquare && move.promotion === "q"
-          );
-          if (move) onMove(move);
-        } else if (move.promotion) {
-          setPromotionMove({
-            start: move.start,
-            end: move.end,
-          });
+      const [square, piece] = selectedPiece;
+      //If in edit mode, move the piece to the new square
+      if (editMode) {
+        if (onMovePiece) {
+          onMovePiece(square, currentSquare);
         }
         setSelectedPiece(null);
+        return;
       }
+      //Protect against non moveable pieces
+      if (piece.color !== moveable && moveable !== "both") return;
+
+      //Queue premove if the piece isn't of the active turn color and do not continue
+      if (piece.color !== activeColor && preMoveable) {
+        if (!legalPremoves?.length) return;
+        const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
+        if (premove) onPremove(premove);
+      }
+
+      if (piece.color !== activeColor) return;
+
+      // Find the corresponding legal move - should be unique unless there is a promotion
+      const move = legalMoves.find((move) => move.start === square && move.end === currentSquare);
+      //Return if no legal move is found
+      if (!move) return;
+
+      //Call onMove if the move is not a promotion
+      if (!move.promotion) onMove(move);
+
+      // Auto promote to queen if enabled in settings, otherwise show the promotion menu
+      if (move.promotion && autoQueen) {
+        const move = legalMoves.find(
+          (move) => move.start === square && move.end === currentSquare && move.promotion === "q"
+        );
+        if (move) onMove(move);
+      } else if (move.promotion) {
+        setPromotionMove({
+          start: move.start,
+          end: move.end,
+        });
+      }
+      setSelectedPiece(null);
     }, [
       currentSquare,
       selectedPiece,
@@ -221,35 +219,35 @@ const Board = React.forwardRef<BoardHandle, Props>(
   selected piece and the target square */
     const onSelectTarget = useCallback(
       (targetSquare: Chess.Square) => {
-        if (!selectedPiece) {
-          return;
-        } else {
-          const [square, piece] = selectedPiece;
-          //Just in case, guard against non moveable pieces
-          if (piece.color !== moveable && moveable !== "both") return;
-          //Queue premove if the piece isn't of the active turn color and do not continue
-          if (piece.color !== activeColor && preMoveable) {
-            const premove = legalPremoves?.find((premove) => premove.start === square && premove.end === targetSquare);
-            if (premove) onPremove(premove);
-          }
-          if (piece.color !== activeColor) return;
-          // Find the corresponding legal move - should be unique unless there is a promotion
-          const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
-          //Return if no legal move is found
-          if (!move) return;
-          //Call onMove if the move is not a promotion
-          if (!move.promotion) onMove(move);
-          // Auto promote to queen if enabled in settings, otherwise show the promotion menu
-          if (move.promotion && autoQueen) {
-            onMove({ ...move, promotion: "q" });
-          } else if (move.promotion) {
-            setPromotionMove({
-              start: move.start,
-              end: move.end,
-            });
-          }
-          setSelectedPiece(null);
+        if (!selectedPiece) return;
+        const [square, piece] = selectedPiece;
+
+        //Just in case, guard against non moveable pieces
+        if (piece.color !== moveable && moveable !== "both") return;
+
+        //Queue premove if the piece isn't of the active turn color and do not continue
+        if (piece.color !== activeColor && preMoveable) {
+          const premove = legalPremoves?.find((premove) => premove.start === square && premove.end === targetSquare);
+          if (premove) onPremove(premove);
         }
+        if (piece.color !== activeColor) return;
+
+        // Find the corresponding legal move - should be unique unless there is a promotion
+        const move = legalMoves.find((move) => move.start === square && move.end === targetSquare);
+        //Return if no legal move is found
+        if (!move) return;
+        //Call onMove if the move is not a promotion
+        if (!move.promotion) onMove(move);
+        // Auto promote to queen if enabled in settings, otherwise show the promotion menu
+        if (move.promotion && autoQueen) {
+          onMove({ ...move, promotion: "q" });
+        } else if (move.promotion) {
+          setPromotionMove({
+            start: move.start,
+            end: move.end,
+          });
+        }
+        setSelectedPiece(null);
       },
       [selectedPiece, autoQueen, legalMoves, activeColor, moveable, onMove, preMoveable, onPremove]
     );

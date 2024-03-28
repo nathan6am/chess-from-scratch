@@ -1,7 +1,8 @@
 import React from "react";
 import { NextPage, NextPageContext } from "next";
+import type { NextPageWithLayout } from "@/pages/_app";
 import type { GetServerSideProps } from "next";
-
+import Dashboard from "@/components/layout/Dashboard";
 import NonSSRWrapper from "@/components/NonSSRWrapper";
 import AnalysisBoard from "@/components/analysis/AnalysisBoard";
 
@@ -10,18 +11,19 @@ interface Props {
   game: string | null;
   sourceType: "masters" | "lichess" | null;
 }
-const Analyze: NextPage<Props> = ({ id, game, sourceType }: Props) => {
+const Page: NextPageWithLayout<Props> = ({ id, game, sourceType }: Props) => {
   return (
-    <div className=" min-h-screen lg:h-screen  w-full  justify-center items-center flex bg-elevation-0">
+    <div className="min-h-screen lg:h-screen w-full justify-center items-center flex bg-elevation-1">
       <main className="flex justify-center items-center w-full h-full">
-        <div className="h-full w-full w-full flex justify-center items-center  ">
-          <NonSSRWrapper>
-            <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />
-          </NonSSRWrapper>
-        </div>
+        <NonSSRWrapper>
+          <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />
+        </NonSSRWrapper>
       </main>
     </div>
   );
+};
+Page.getLayout = function getLayout(page) {
+  return <Dashboard>{page}</Dashboard>;
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -38,4 +40,4 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     },
   };
 };
-export default Analyze;
+export default Page;
