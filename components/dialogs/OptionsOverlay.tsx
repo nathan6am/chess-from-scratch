@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
-import { PreferencesTabs } from "../Menus/content/Options";
+import { PreferencesTabs } from "../menu/options/Options";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;

@@ -1,7 +1,7 @@
 .boardContainer {
   aspect-ratio: 1/1;
   width: min(100%, 100vw, calc(100vh - 8em));
-  background-color: chartreuse;
+
   position: relative;
 }
 
@@ -12,7 +12,6 @@
   width: 100%;
   aspect-ratio: 1/1;
   position: relative;
-  background-color: red;
 }
 
 .boardWidth {

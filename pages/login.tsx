@@ -7,10 +7,6 @@ import type { NextPageWithLayout } from "./_app";
 //Layouts
 import AuthLayout from "@/components/layout/AuthLayout";
 
-//UI Components
-import LoginForm from "@/components/UI/forms/LoginForm";
-import SignUpForm from "@/components/UI/forms/SignUpForm";
-
 //Icons
 import { FaGithub } from "react-icons/fa";
 import Knight from "../public/assets/knight.svg";

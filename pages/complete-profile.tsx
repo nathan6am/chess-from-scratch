@@ -9,7 +9,7 @@ import useAuth from "@/hooks/useAuth";
 //UI Components
 
 //Icons
-import CompleteProfileForm from "@/components/UI/forms/CompleteProfileForm";
+import CompleteProfileForm from "@/components/forms/CompleteProfileForm";
 import { SessionUser } from "@/lib/db/entities/User";
 interface Props {
   profile?: User;

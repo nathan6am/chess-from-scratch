@@ -331,7 +331,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
         >
           <div
             id={id}
-            className={`${styles.board} relative mx-0 ${showCoordinates === "outside" ? "m-2" : ""} board-bg`}
+            className={`${styles.board} relative board-bg`}
             ref={mergeRefs([ref, boardRef])}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}

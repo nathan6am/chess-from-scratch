@@ -4,9 +4,10 @@ import { AiFillFolderAdd, AiFillFolder } from "react-icons/ai";
 import { IoMdAddCircleOutline, IoMdCheckmarkCircle } from "react-icons/io";
 import { ScrollContainer } from "@/components/layout/GameLayout";
 import { TbSelector } from "react-icons/tb";
-import useCollections from "@/hooks/useCollections";
+
 import Collection from "@/lib/db/entities/Collection";
-import { Input, Label } from "@/components/UIKit";
+import { Input } from "@/components/base";
+import { Label } from "@/components/base/Typography";
 import classNames from "classnames";
 
 interface Props {

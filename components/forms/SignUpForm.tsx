@@ -4,9 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 
 //UI Components
-import ButtonSocial from "@/components/base/ButtonSocial";
-import Button from "../UIKit/Button";
-import Input from "@/components/base/Input";
+import { Button, ButtonSocial, Input } from "@/components/base";
 
 //Context
 import { UserContext } from "@/context/user";
@@ -22,16 +20,9 @@ YupPassword(yup);
 
 //ValidationSchemas
 const schema = yup.object({
-  username: yup
-    .string()
-    .required("Username is required")
-    .min(3, "Username must be at least 3 characters")
-    .max(20),
+  username: yup.string().required("Username is required").min(3, "Username must be at least 3 characters").max(20),
   email: yup.string().required("Email is required").email("Please enter a valid email address"),
-  password: yup
-    .string()
-    .required("Password is required")
-    .min(8, "Password must contain 8 or more characters"),
+  password: yup.string().required("Password is required").min(8, "Password must contain 8 or more characters"),
   confirmPassword: yup.string().test("match", "Passwords do not match", function (confirmPassword) {
     return confirmPassword === this.parent.password;
   }),
@@ -106,11 +97,7 @@ export default function SignUpForm() {
         <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
           <Input
             id="Username"
-            error={
-              usernameValid
-                ? (errors.username?.message as string) || null
-                : "Username already in use"
-            }
+            error={usernameValid ? (errors.username?.message as string) || null : "Username already in use"}
             label="Username"
             status={errors.username || !usernameValid ? "error" : null}
             type="text"
@@ -179,8 +166,7 @@ export default function SignUpForm() {
         </ButtonSocial>
 
         <p className="text-white/[0.25] text-center px-4 mb-4 mt-2 text-xs">
-          By signing up, you agree to our{" "}
-          <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
+          By signing up, you agree to our <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
           <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
         </p>
         <span className="flex flex-row justify-between px-2">

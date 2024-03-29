@@ -1,13 +1,13 @@
 import React, { Fragment, useState, useContext } from "react";
 import { RadioGroup, Tab } from "@headlessui/react";
 import { SettingsContext } from "@/context/settings";
-import { Toggle, RadioButton } from "@/components/UIKit";
-import { values } from "lodash";
+import { Toggle, RadioButton } from "@/components/base";
+
 import ChangePasswordForm from "../../forms/ChangePasswordForm";
 import VolumeSlider from "./VolumeSlider";
 import { ScrollContainer } from "@/components/layout/GameLayout";
-import BoardSelect from "../../BoardSelect";
-import PieceSetSelect from "../../PieceSetSelect";
+import BoardSelect from "./BoardSelect";
+import PieceSetSelect from "./PieceSetSelect";
 import { BsDisplay, BsVolumeUpFill } from "react-icons/bs";
 import { FaPaintBrush } from "react-icons/fa";
 import { IoGameController } from "react-icons/io5";

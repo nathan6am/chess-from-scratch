@@ -69,7 +69,7 @@ export default function TimeControlSelect({
   const [lastSelected, setLastSelected] = useState(defaultOptionIndices);
   const [lastCustom, setLastCustom] = useState(defaultCustom);
   return (
-    <div className="w-full max-w-md px-2 py-4 sm:px-0 h-[12rem]">
+    <div className="w-full max-w-md px-2 py-4 sm:px-0 h-fit">
       <Label className="mb-2">Time Control</Label>
       <Tab.Group defaultIndex={defaultTabIndex}>
         <Tab.List className="flex rounded-lg overflow-hidden divide-x divide-gold-300 border border-gold-300 bg-elevation-2 ">

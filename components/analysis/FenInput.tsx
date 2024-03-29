@@ -1,6 +1,5 @@
-import { Input, Button } from "../UIKit";
+import { Input, Button } from "@/components/base";
 import * as Chess from "@/lib/chess";
-import { on } from "events";
 import { useState } from "react";
 
 interface FenInputProps {

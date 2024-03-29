@@ -1,4 +1,4 @@
-import React, {  useMemo, useState, useContext } from "react";
+import React, { useMemo, useState, useContext } from "react";
 //Contexts
 import { AnalysisContext } from "./AnalysisBoard";
 
@@ -6,7 +6,7 @@ import { AnalysisContext } from "./AnalysisBoard";
 import { Evaler } from "@/hooks/useEvaler";
 import { Popover } from "@headlessui/react";
 import ProgressBar from "./ProgressBar";
-import { Toggle, NumbericInput } from "../UIKit";
+import { Toggle, NumericInput } from "@/components/base";
 
 //Icons
 
@@ -262,7 +262,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
           });
         }}
       />
-      <NumbericInput
+      <NumericInput
         label="MultiPV"
         value={evaler.options.multiPV}
         min={1}
@@ -271,7 +271,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
           evaler.updateOptions({ multiPV: val });
         }}
       />
-      <NumbericInput
+      <NumericInput
         label="Depth"
         value={evaler.options.depth}
         min={1}
@@ -280,7 +280,7 @@ function OptionsMenu({ evaler }: { evaler: Evaler }) {
           evaler.updateOptions({ depth: val });
         }}
       />
-      <NumbericInput
+      <NumericInput
         label="Show Lines After Depth"
         value={evaler.options.showLinesAfterDepth}
         min={evaler.options.depth < 10 ? evaler.options.depth : 10}

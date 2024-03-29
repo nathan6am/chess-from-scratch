@@ -1,4 +1,4 @@
-import FileBrowser from "@/components/menu/FileBrowser";
+import FileBrowser from "@/components/menu/study/FileBrowser";
 import { RiArrowGoBackFill } from "react-icons/ri";
 
 interface Props {

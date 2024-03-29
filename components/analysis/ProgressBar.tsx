@@ -8,9 +8,7 @@ export default function ProgressBar({ progress: progressRaw }: { progress: numbe
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (!ref.current) return;
-        ref.current.style.transform = `translate3d(${
-          -100 + (progress < 100 ? progress : 100)
-        }%, 0px, 0px)`;
+        ref.current.style.transform = `translate3d(${-100 + (progress < 100 ? progress : 100)}%, 0px, 0px)`;
       });
     });
   }, [progress, ref]);
@@ -18,9 +16,7 @@ export default function ProgressBar({ progress: progressRaw }: { progress: numbe
     <div className="bg-[#404040] h-2 w-full overflow-hidden relative">
       <div
         ref={ref}
-        className={`absolute top-0 bottom-0 left-0 right-0 h-full bg-green-500 ${
-          progress < 100 ? "shimmer" : ""
-        }`}
+        className={`absolute top-0 bottom-0 left-0 right-0 h-full bg-green-500 ${progress < 100 ? "shimmer" : ""}`}
         style={{
           width: "100%",
           transition: "transform 0.6s ease",

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { MdLogout, MdNotifications } from "react-icons/md";
 import { RiListSettingsLine } from "react-icons/ri";
-import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
+import OptionsOverlay from "../dialogs/OptionsOverlay";
 interface Props {
   children?: JSX.Element | string | Array<JSX.Element | string>;
 }
@@ -16,7 +16,7 @@ function MenuBar({ children }: Props) {
   return (
     <>
       <OptionsOverlay isOpen={showOptions} closeModal={closeModal} />
-      <div className="w-full h-10 bg-elevation-2 flex flex-row justify-center items-center">
+      <div className="w-full z-[98] h-10 bg-elevation-2 flex flex-row justify-center items-center absolute top-0 left-0 right-0">
         <div className="flex flex-row justify-between items-center container">
           <div>{children}</div>
           <div className="flex flex-row justify-start items-center">

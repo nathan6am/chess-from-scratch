@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { Modal, Input, Button } from "../UIKit";
+import { Modal, Input, Button } from "@/components/base";
 import { useForm } from "react-hook-form";
 interface Props {
   isOpen: boolean;

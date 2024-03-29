@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import * as Chess from "@/lib/chess";
 import { MdArrowDropUp, MdOutlineRestartAlt, MdAnalytics, MdExitToApp } from "react-icons/md";
-import { Modal } from "@/components/UIKit";
+import { Modal } from "@/components/base";
 interface Props {
   outcome: Chess.Outcome;
   isOpen: boolean;

@@ -53,3 +53,29 @@ export default function BoardWithPanel() {
     </div>
   );
 }
+
+export function BoardWithPanelContainer({ children }: { children: JSX.Element | JSX.Element[] }) {
+  return (
+    <div className="flex-1 flex-col md:flex-row flex sm:items-center justify-between relative pt-10">{children}</div>
+  );
+}
+
+export function BoardRow({ children }: { children: JSX.Element | JSX.Element[] }) {
+  return (
+    <div className="flex flex-1 h-fit w-full flex-row grow items-stretch justify-center relative py-[2em]">
+      {children}
+    </div>
+  );
+}
+
+export function BoardContainer({ children }: { children: JSX.Element | JSX.Element[] }) {
+  return <div className={`${styles.boardContainer}`}>{children}</div>;
+}
+
+export function PanelContainer({ children }: { children: JSX.Element | JSX.Element[] }) {
+  return (
+    <div className="h-full bg-elevation-3 w-full md:w-[26em] lg:w-[32em] flex-col flex max-w-[100vw] overflow-hidden">
+      {children}
+    </div>
+  );
+}

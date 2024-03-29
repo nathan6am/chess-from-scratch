@@ -42,3 +42,11 @@ export const Row = ({ children, className }: LayoutComponentProps) => {
 export const CenteredCol = ({ children, className }: LayoutComponentProps) => {
   return <div className={cn("flex flex-1 justify-center", className)}>{children}</div>;
 };
+
+export const PageContainer = ({ children, className }: LayoutComponentProps) => {
+  return (
+    <CenteredCol>
+      <div className="max-w-[1536px] w-full flex-1 py-2 sm:px-4 lg:px-6 flex flex-col">{children}</div>
+    </CenteredCol>
+  );
+};

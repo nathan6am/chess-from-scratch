@@ -4,8 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 
 //UI Components
-import ButtonSocial from "@/components/UI/ButtonSocial";
-import Input from "@/components/UI/Input";
+import { Input, ButtonSocial } from "@/components/base";
 
 //Context
 import { UserContext } from "@/context/user";

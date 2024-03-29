@@ -1,10 +1,8 @@
 import React from "react";
 import { NextPage, NextPageContext } from "next";
 import type { GetServerSideProps } from "next";
-import GameLocal from "@/components/GameLocal";
 import NonSSRWrapper from "@/components/NonSSRWrapper";
 import EngineGame from "@/components/game/EngineGame";
-import AnalysisBoard from "@/components/analysis/AnalysisBoard";
 import { SkillPreset } from "@/hooks/useEngineGame";
 import { TimeControl } from "@/lib/chess";
 import { removeUndefinedFields } from "@/util/misc";

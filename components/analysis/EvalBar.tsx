@@ -49,7 +49,7 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
     });
   }, [throttledPercentage, orientation, barRef]);
   return (
-    <div className="h-inherit w-[30px] md:w-[40px] lg:w-[50px] rounded-sm overflow-hidden relative md:mx-4">
+    <div className=" w-[30px] md:w-[40px] lg:w-[50px] rounded-sm overflow-hidden relative ">
       <div className="h-inherit absolute top-0 bottom-0 left-0 right-0">
         <div className="left-0 w-full top-[50%] border-t border-red-600 z-10 opacity-50 border-2 absolute" />
         {orientation === "w" ? (

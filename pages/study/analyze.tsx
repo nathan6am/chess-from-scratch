@@ -12,15 +12,7 @@ interface Props {
   sourceType: "masters" | "lichess" | null;
 }
 const Page: NextPageWithLayout<Props> = ({ id, game, sourceType }: Props) => {
-  return (
-    <div className="min-h-screen lg:h-screen w-full justify-center items-center flex bg-elevation-1">
-      <main className="flex justify-center items-center w-full h-full">
-        <NonSSRWrapper>
-          <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />
-        </NonSSRWrapper>
-      </main>
-    </div>
-  );
+  return <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />;
 };
 Page.getLayout = function getLayout(page) {
   return <Dashboard>{page}</Dashboard>;

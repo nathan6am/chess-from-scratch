@@ -8,7 +8,9 @@ interface PageTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
  * Page Title Header
  */
 export function PageTitle({ children, className }: PageTitleProps) {
-  return <h1 className={cn("text-2xl text-light-100", className)}>{children}</h1>;
+  return (
+    <h1 className={cn("text-3xl font-bold text-gold-100 my-4 text-center sm:text-left", className)}>{children}</h1>
+  );
 }
 
 interface LabelProps extends React.HTMLAttributes<HTMLLabelElement> {
@@ -38,6 +40,6 @@ export function Label({ disabled, children, className, ...props }: LabelProps) {
   );
 }
 
-export function H2({ children, className }: LabelProps) {
-  return <h2 className={cn("text-xl font-semibold text-gold-200", className)}>{children}</h2>;
+export function PanelHeader({ children, className }: PageTitleProps) {
+  return <h2 className={cn("text-gold-100 font-bold text-xl", className)}>{children}</h2>;
 }

@@ -1,13 +1,13 @@
 import React, { useState, useRef, Fragment, useContext, useMemo, useEffect } from "react";
-
+import { BoardWithPanelContainer, BoardContainer, BoardRow, PanelContainer } from "../layout/templates/AnalysisBoard";
 // Components
 import Board from "../board/Board";
 import EvalBar from "./EvalBar";
 import BoardControls from "../game/BoardControls";
-import OptionsOverlay from "../UI/dialogs/OptionsOverlay";
-import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
+import OptionsOverlay from "../dialogs/OptionsOverlay";
+import { BoardColumn, PanelColumnLg } from "../layout/GameLayout";
 import PopupPlayer from "./PopupPlayer";
-import SaveAnalysis from "../UI/dialogs/SaveAnalysis";
+import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
 import AnalysisPanel from "./panels/AnalysisPanel";
 
 import { BoardHandle } from "../board/Board";
@@ -24,7 +24,6 @@ import useBoardEditor from "@/hooks/useBoardEditor";
 import { SettingsContext } from "@/context/settings";
 
 // Utils
-import { tagDataToPGNString } from "@/util/parsers/pgnParser";
 import * as Chess from "@/lib/chess";
 import classNames from "classnames";
 import { Duration } from "luxon";
@@ -183,9 +182,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame
-            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
-            : ""
+          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -199,7 +196,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           setSaveModalShown(false);
         }}
       />
-      <div className="flex flex-col h-full w-full justify-center ">
+      <BoardWithPanelContainer>
         <MenuBar>
           <MenuWrapper>
             <MenuButton>File</MenuButton>
@@ -281,92 +278,85 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         </MenuBar>
 
         <BoardRow>
-          <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center md:pl-4">
-            <BoardColumn className="items-center relative">
-              <>
-                <div className="absolute top-[-2em] bottom-[-2em] flex flex-row justify-center w-inherit">
-                  <div
-                    className={classNames("flex justify-between items-center shrink", {
-                      "flex-col": orientation === "w",
-                      "flex-col-reverse": orientation === "b",
-                    })}
-                  >
-                    <>
-                      {analysis.tagData.black && (
-                        <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
-                          {analysis.tagData.black}{" "}
-                          <span className="inline opacity-50">{`(${
-                            analysis.tagData.eloBlack || "?"
-                          })`}</span>
-                        </p>
-                      )}
-                    </>
-                    <>
-                      {analysis.tagData.white && (
-                        <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
-                          {analysis.tagData.white}{" "}
-                          <span className="inline opacity-50">{`(${
-                            analysis.tagData.eloWhite || "?"
-                          })`}</span>
-                        </p>
-                      )}
-                    </>
-                  </div>
-                  <div
-                    className={classNames("flex justify-between items-center shrink", {
-                      "flex-col": orientation === "w",
-                      "flex-col-reverse": orientation === "b",
-                    })}
-                  >
-                    <span>
-                      {analysis.timeRemaining.b !== null && (
-                        <DisplayClock time={analysis.timeRemaining.b} color="b" />
-                      )}
-                    </span>
-                    <span>
-                      {analysis.timeRemaining.w !== null && (
-                        <DisplayClock time={analysis.timeRemaining.w} color="w" />
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </>
-              <Board
-                id="analysis-board"
-                overrideArrows={currentNode?.data ? true : false}
-                onArrow={markupControls.onArrow}
-                onMarkSquare={markupControls.onMarkSquare}
-                onClear={markupControls.onClear}
-                arrows={currentNode?.data.arrows}
-                markedSquares={currentNode?.data.markedSquares}
-                lastMoveAnnotation={lastMoveAnnotation}
-                showCoordinates={settings.display.showCoordinates}
-                movementType={settings.gameBehavior.movementType}
-                theme={settings.display.boardTheme}
-                pieceSet={settings.display.pieceTheme}
-                ref={boardRef}
-                orientation={orientation}
-                legalMoves={currentGame.legalMoves}
-                showHighlights={editMode ? false : settings.display.showHighlights}
-                showTargets={editMode ? false : settings.display.showValidMoves}
-                pieces={editMode ? editor.board : currentGame.board}
-                animationSpeed={settings.display.animationSpeed}
-                lastMove={editMode ? null : currentGame.lastMove}
-                activeColor={currentGame.activeColor}
-                moveable={"both"}
-                preMoveable={false}
-                autoQueen={settings.gameBehavior.autoQueen}
-                onMove={onMove}
-                markupColor={markupControls.arrowColor}
-                onPremove={() => {}}
-                disableArrows={editMode}
-                editMode={editMode}
-                onMovePiece={editor.onMovePiece}
-                onAddPiece={editor.onAddPiece}
-                onRemovePiece={editor.onRemovePiece}
-                pieceCursor={editor.pieceCursor}
-              />
-            </BoardColumn>
+          {/* <>
+            <div className="absolute top-[-2em] bottom-[-2em] flex flex-row justify-center w-inherit">
+              <div
+                className={classNames("flex justify-between items-center shrink", {
+                  "flex-col": orientation === "w",
+                  "flex-col-reverse": orientation === "b",
+                })}
+              >
+                <>
+                  {analysis.tagData.black && (
+                    <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
+                      {analysis.tagData.black}{" "}
+                      <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
+                    </p>
+                  )}
+                </>
+                <>
+                  {analysis.tagData.white && (
+                    <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
+                      {analysis.tagData.white}{" "}
+                      <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
+                    </p>
+                  )}
+                </>
+              </div>
+              <div
+                className={classNames("flex justify-between items-center shrink", {
+                  "flex-col": orientation === "w",
+                  "flex-col-reverse": orientation === "b",
+                })}
+              >
+                <span>
+                  {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
+                </span>
+                <span>
+                  {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
+                </span>
+              </div>
+            </div>
+          </> */}
+          <BoardContainer>
+            <Board
+              id="analysis-board"
+              overrideArrows={currentNode?.data ? true : false}
+              onArrow={markupControls.onArrow}
+              onMarkSquare={markupControls.onMarkSquare}
+              onClear={markupControls.onClear}
+              arrows={currentNode?.data.arrows}
+              markedSquares={currentNode?.data.markedSquares}
+              lastMoveAnnotation={lastMoveAnnotation}
+              showCoordinates={settings.display.showCoordinates}
+              movementType={settings.gameBehavior.movementType}
+              theme={settings.display.boardTheme}
+              pieceSet={settings.display.pieceTheme}
+              ref={boardRef}
+              orientation={orientation}
+              legalMoves={currentGame.legalMoves}
+              showHighlights={editMode ? false : settings.display.showHighlights}
+              showTargets={editMode ? false : settings.display.showValidMoves}
+              pieces={editMode ? editor.board : currentGame.board}
+              animationSpeed={settings.display.animationSpeed}
+              lastMove={editMode ? null : currentGame.lastMove}
+              activeColor={currentGame.activeColor}
+              moveable={"both"}
+              preMoveable={false}
+              autoQueen={settings.gameBehavior.autoQueen}
+              onMove={onMove}
+              markupColor={markupControls.arrowColor}
+              onPremove={() => {}}
+              disableArrows={editMode}
+              editMode={editMode}
+              onMovePiece={editor.onMovePiece}
+              onAddPiece={editor.onAddPiece}
+              onRemovePiece={editor.onRemovePiece}
+              pieceCursor={editor.pieceCursor}
+            />
+          </BoardContainer>
+
+          <>
             {evalEnabled && (
               <EvalBar
                 scoreType={evaler.currentScore.type}
@@ -376,50 +366,50 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 key={orientation}
               />
             )}
-          </div>
-
-          <PanelColumnLg className="bg-[#1f1f1f] mt-8 ">
-            <>
-              <>
-                {analysis.isNew ? (
-                  <NewAnalysisPanel
-                    analysis={analysis}
-                    boardEditor={editor}
-                    boardRef={boardRef}
-                    editMode={editMode}
-                    setEditMode={setEditMode}
-                    flipBoard={flipBoard}
-                  />
-                ) : (
-                  <>
-                    <div className="w-full md:hidden">
-                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                    </div>
-                    <AnalysisPanel
-                      modalControls={{
-                        showPlayer: () => {
-                          setPopupPlayerShown(true);
-                        },
-                        showSave: () => {
-                          setSaveModalShown(true);
-                        },
-                        showLoadGame: () => {},
-                        showEditDetails: () => {},
-                        showOpenFile: () => {},
-                        showShare: () => {},
-                        showExport: () => {},
-                      }}
-                    />
-                    <div className="w-full hidden md:block">
-                      <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                    </div>
-                  </>
-                )}
-              </>
-            </>
-          </PanelColumnLg>
+          </>
         </BoardRow>
-      </div>
+
+        <PanelContainer>
+          <>
+            <>
+              {analysis.isNew ? (
+                <NewAnalysisPanel
+                  analysis={analysis}
+                  boardEditor={editor}
+                  boardRef={boardRef}
+                  editMode={editMode}
+                  setEditMode={setEditMode}
+                  flipBoard={flipBoard}
+                />
+              ) : (
+                <>
+                  <div className="w-full md:hidden">
+                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                  </div>
+                  <AnalysisPanel
+                    modalControls={{
+                      showPlayer: () => {
+                        setPopupPlayerShown(true);
+                      },
+                      showSave: () => {
+                        setSaveModalShown(true);
+                      },
+                      showLoadGame: () => {},
+                      showEditDetails: () => {},
+                      showOpenFile: () => {},
+                      showShare: () => {},
+                      showExport: () => {},
+                    }}
+                  />
+                  <div className="w-full hidden md:block">
+                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                  </div>
+                </>
+              )}
+            </>
+          </>
+        </PanelContainer>
+      </BoardWithPanelContainer>
     </AnalysisContext.Provider>
   );
 }

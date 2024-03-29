@@ -18,13 +18,7 @@ interface EditorProps {
   flipBoard: () => void;
   setEditMode?: (value: boolean) => void;
 }
-export default function EditorPanel({
-  boardEditor,
-  boardRef,
-  onAnalyze,
-  setEditMode,
-  flipBoard,
-}: EditorProps) {
+export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditMode, flipBoard }: EditorProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
@@ -82,10 +76,7 @@ export default function EditorPanel({
             value={boardEditor.activeColor}
             onChange={boardEditor.setActiveColor}
           />
-          <button
-            onClick={flipBoard}
-            className="shrink-0  text-light-200 hover:text-gold-200 py-3 px-4"
-          >
+          <button onClick={flipBoard} className="shrink-0  text-light-200 hover:text-gold-200 py-3 px-4">
             <FiRepeat className="mr-2 inline" /> Flip Board
           </button>
         </div>

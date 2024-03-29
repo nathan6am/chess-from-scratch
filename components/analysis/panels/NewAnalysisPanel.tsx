@@ -9,10 +9,8 @@ import { BoardEditorHook } from "@/hooks/useBoardEditor";
 import { IoMdAdd } from "react-icons/io";
 import { BoardHandle } from "@/components/board/Board";
 import PgnUpload from "@/components/analysis/PgnUpload";
-import GameSearch from "@/components/menu/GameSearch";
-import BrowseAnalyses from "@/components/menu/BrowseAnalyses";
 import { useState } from "react";
-import { Input } from "@/components/UIKit";
+import { Input } from "@/components/base";
 
 import FenInput from "@/components/analysis/FenInput";
 import EditorPanel from "./EditorPanel";

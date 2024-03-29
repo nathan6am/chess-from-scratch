@@ -1,7 +1,7 @@
-import { AnalysisContext } from "../analysis/AnalysisBoard";
+import { AnalysisContext } from "@/components/analysis/AnalysisBoard";
 import { useContext, useMemo, useState } from "react";
-import Modal from "@/components/base/Modal";
-import { Toggle, Button, Input, Label } from "../UIKit";
+import { Toggle, Button, Input, Modal } from "@/components/base";
+import { Label } from "@/components/base/Typography";
 import sanitize from "sanitize-filename";
 interface Props {
   isOpen: boolean;

@@ -1,20 +1,20 @@
-import { Dialog, Transition, RadioGroup } from "@headlessui/react";
-
+import { Dialog, Transition } from "@headlessui/react";
+import { UseMutateFunction } from "@tanstack/react-query";
 //Framework
-import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
-import { Input, RadioButton } from "@/components/UIKit";
-import CollectionSelect from "./CollectionSelect";
-import Collection from "@/lib/db/entities/Collection";
+import React, { useState, Fragment, useMemo } from "react";
+import { Input, Button } from "@/components/base";
+import CollectionSelect from "@/components/menu/study/CollectionSelect";
+import type Analysis from "@/lib/db/entities/Analysis";
 //Util
-import axios from "axios";
-import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import _ from "lodash";
-import { Button } from "@/components/UIKit";
+
+//Icons
 import { HiSave } from "react-icons/hi";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
-  save: (data: AnalysisData) => void;
+  save: UseMutateFunction<Analysis, unknown, AnalysisData, unknown>;
   moveText: string;
 }
 import { AnalysisData } from "@/lib/types";
@@ -49,7 +49,7 @@ export default function SaveAnalysis({ isOpen, closeModal, save, moveText }: Pro
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-lg  px-4 sm:px-8 transform overflow-show rounded-2xl bg-[#202020] py-10 text-left align-middle shadow-lg transition-all">
-                  <Dialog.Title as="h3" className="text-xl font-semibold text-center font-gold-200">
+                  <Dialog.Title as="h3" className="text-xl font-semibold text-center text-gold-100">
                     Save Analysis
                   </Dialog.Title>
                   <div className="max-w-sm mx-auto ">
@@ -79,14 +79,14 @@ type FormValues = {
 };
 function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps) {
   const { collections, isLoading, createNew } = useCollections();
-  const [selected, setSelected] = useState<Collection[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selected = useMemo(() => {
+    return collections.filter((c) => selectedIds.includes(c.id));
+  }, [selectedIds, collections]);
+
   const {
     register,
     handleSubmit,
-    watch,
-    setError,
-    clearErrors,
-    reset,
     formState: { errors },
   } = useForm<FormValues>({ mode: "onSubmit", reValidateMode: "onChange" });
   const [visibility, setVisibility] = useState<"public" | "private" | "unlisted">("public");
@@ -103,8 +103,8 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
       collectionIds: selected.map((c) => c.id),
       pgn,
     };
+
     save(saveData);
-    closeModal();
   };
   return (
     <div>
@@ -128,8 +128,8 @@ function SaveAnalysisForm({ initialData, save, moveText, closeModal }: FormProps
           {...register("description")}
         /> */}
         <CollectionSelect
-          selected={selected}
-          setSelected={setSelected}
+          selected={selectedIds}
+          setSelected={setSelectedIds}
           createNew={createNew}
           collections={collections}
           isLoading={isLoading}

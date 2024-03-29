@@ -1,5 +1,5 @@
 import { Select, Button, Toggle } from "@/components/base";
-import { Label } from "@/components/base/Typography";
+import { Label, PanelHeader } from "@/components/base/Typography";
 import React, { useCallback, useState, useContext, useMemo } from "react";
 import TimeControlSelect from "./TimeControlSelect";
 import PlayLocalMenu from "./PlayLocalMenu";
@@ -11,7 +11,6 @@ import { SocketContext } from "@/context/socket";
 import { useRouter } from "next/router";
 import { FaUserFriends, FaRandom } from "react-icons/fa";
 import { WhiteIcon, BlackIcon, RandomIcon } from "@/components/icons";
-import DashboardPanel from "../DashboardPanel";
 import * as Chess from "@/lib/chess";
 
 const options = [
@@ -36,22 +35,17 @@ const options = [
 export default function NewGame() {
   const [selected, setSelected] = useState(options[0].value);
   return (
-    <DashboardPanel>
+    <div className="flex flex-col p-3 items-center">
       <>
-        <h2 className="text-gold-200 font-bold text-xl">New Game</h2>
-        <Select
-          className="w-full max-w-md my-4"
-          options={options}
-          value={selected}
-          onChange={setSelected}
-        />
+        <PanelHeader className="w-full text-center">New Game</PanelHeader>
+        <Select className="w-full max-w-md my-4" options={options} value={selected} onChange={setSelected} />
         <>
           {selected === "friend" && <Friend />}
           {selected === "computer" && <Computer />}
           {selected === "local" && <PlayLocalMenu />}
         </>
       </>
-    </DashboardPanel>
+    </div>
   );
 }
 const colorOptions = [
@@ -107,6 +101,7 @@ function Friend() {
         onClick={createLobby}
         className="w-full mt-8"
         size="lg"
+        width="full"
         icon={IoMdPlay}
         variant="neutral"
         label="Create Game"
@@ -127,21 +122,13 @@ function Computer() {
   const onStart = useCallback(() => {
     router.push(
       `/play/vs-computer/?color=${color}&skillLevel=${level}${
-        timeControl
-          ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}`
-          : ""
+        timeControl ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}` : ""
       }`
     );
   }, [router, level, timeControl, color]);
   return (
     <div className="w-full max-w-md">
-      <Toggle
-        label="Timed?"
-        className="my-2 w-fit"
-        checked={useClock}
-        onChange={setUseClock}
-        reverse
-      />
+      <Toggle label="Timed?" className="my-2 w-fit" checked={useClock} onChange={setUseClock} reverse />
       <>{useClock && <TimeControlSelect setTimeControl={setTimeControl} />}</>
       <Label className="mb-2">Play as</Label>
       <Select className="w-full" options={colorOptions} value={color} onChange={setColor} />

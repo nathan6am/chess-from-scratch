@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useContext } from "react";
 import Board from "@/components/board/Board";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import Result from "@/components/UI/dialogs/Result";
+import Result from "@/components/dialogs/Result";
 import MenuBar from "./layout/MenuBar";
 import useChessOnline, {
   BoardControls as IBoardControls,

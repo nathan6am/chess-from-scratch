@@ -1,8 +1,8 @@
 import { AnalysisContext } from "./AnalysisBoard";
 import { useContext, useEffect, useState } from "react";
-import { Button, Input, Label, Select } from "@/components/UIKit";
+import { Button, Input, Select } from "@/components/base";
+import { Label } from "@/components/base/Typography";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
-import { WhiteIcon, BlackIcon, DrawIcon } from "../menu/NewGame";
 import type { PGNTagData } from "@/lib/types";
 export default function EditDetails() {
   const { analysis, saveManager } = useContext(AnalysisContext);

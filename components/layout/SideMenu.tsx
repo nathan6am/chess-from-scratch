@@ -1,17 +1,17 @@
-import React, { useContext, useEffect, useState, Component, useMemo } from "react";
-import Logo from "../base/Logo";
-import IconButton from "@/components/base/IconButton";
+import React, { useMemo } from "react";
+
 //icons
-import { GiHamburgerMenu, GiFullMotorcycleHelmet } from "react-icons/gi";
-import { BsFillCalendar2WeekFill, BsArrowBarRight, BsArrowBarLeft } from "react-icons/bs";
-import { FaFlagCheckered, FaTrophy, FaPuzzlePiece, FaUser } from "react-icons/fa";
-import { MdSchool, MdLogout, MdOutlineFormatListNumbered, MdOutlineHelpOutline, MdSettings } from "react-icons/md";
+import { BsArrowBarRight, BsArrowBarLeft } from "react-icons/bs";
+import { FaPuzzlePiece, FaUser } from "react-icons/fa";
+import { MdSchool, MdLogout, MdOutlineHelpOutline, MdSettings } from "react-icons/md";
 import { IoMdPlay } from "react-icons/io";
-//componenets
-import Link from "next/link";
 
 //hooks
 import { useRouter } from "next/router";
+
+//components
+import { IconButton, Logo } from "@/components/base";
+import Link from "next/link";
 
 //utils
 import cn from "@/util/cn";

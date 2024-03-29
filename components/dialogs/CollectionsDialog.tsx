@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
-import { Modal, Button } from "../UIKit";
-import CollectionSelect from "../UI/dialogs/CollectionSelect";
+import { Modal, Button } from "@/components/base";
+import CollectionSelect from "../menu/study/CollectionSelect";
 import Analysis from "@/lib/db/entities/Analysis";
-import Collection from "@/lib/db/entities/Collection";
 import useCollections from "@/hooks/useCollections";
+
 interface Props {
   isOpen: boolean;
   closeModal: () => void;

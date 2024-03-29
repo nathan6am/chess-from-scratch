@@ -1,9 +1,8 @@
-import SavedAnalyses from "@/components/menu/SavedAnalyses";
-import Tools from "@/components/menu/Tools";
+import SavedAnalyses from "@/components/menu/study/SavedAnalyses";
+import Tools from "@/components/menu/study/Tools";
 import React from "react";
 
 export default function Study() {
-  
   return (
     <>
       <div className="w-full h-full flex flex-col p-6 md:px-10 lg:px-16 bg-elevation-1 items-center">

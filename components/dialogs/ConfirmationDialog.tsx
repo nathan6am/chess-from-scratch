@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button } from "@/components/UIKit";
+import { Modal, Button } from "@/components/base";
 
 interface Props {
   isOpen: boolean;

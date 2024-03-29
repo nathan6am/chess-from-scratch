@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 
 //UI Components
-import { Input, Button, ButtonSocial } from "@/components/UIKit";
+import { Input, Button, ButtonSocial } from "@/components/base";
 
 //Context
 import { UserContext } from "@/context/user";
@@ -98,13 +98,7 @@ export default function SignInForm() {
 
         <p className="my-2 text-white opacity-50">or</p>
         <Link href={"/api/auth/guest"} className="w-full">
-          <Button
-            variant="neutral"
-            className="my-2"
-            width="full"
-            label="Continue as Guest"
-            loadingLabel="Loading..."
-          />
+          <Button variant="neutral" className="my-2" width="full" label="Continue as Guest" loadingLabel="Loading..." />
         </Link>
         <p className="text-white/[0.25] text-center px-4 mb-4 text-xs">
           By continuing or signing in, you agree to our{" "}
