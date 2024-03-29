@@ -5,7 +5,7 @@ import Loading from "../UI/Loading";
 import { replacePieceChars } from "../game/MoveHistory";
 import * as Chess from "@/lib/chess";
 import _ from "lodash";
-import RangeSlider from "../UIKit/RangeSlider";
+import RangeSlider from "../base/RangeSlider";
 import { Popover, Listbox, Transition } from "@headlessui/react";
 import { usePopper } from "react-popper";
 import { MdFilterList, MdCheck } from "react-icons/md";
@@ -42,11 +42,16 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
     [onMove, sourceGame]
   );
   const startPositionOpening = useMemo(() => {
-    if (sourceGame.config.startPosition === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    if (
+      sourceGame.config.startPosition === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    )
       return "Start Position";
     else return "Custom Position";
   }, [sourceGame.config.startPosition]);
-  const prevOpening = useRef<{ name: string; eco: string } | null>({ name: startPositionOpening, eco: "" });
+  const prevOpening = useRef<{ name: string; eco: string } | null>({
+    name: startPositionOpening,
+    eco: "",
+  });
   useEffect(() => {
     if (!data) return;
     if (data.opening && !_.isEqual(data.opening, prevOpening)) {
@@ -74,7 +79,12 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
             </Popover.Button>
           </div>
 
-          <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
+          <Popover.Panel
+            ref={setPopperElement}
+            className="z-50"
+            style={styles.popper}
+            {...attributes.popper}
+          >
             <LichessFilters explorer={explorer} />
           </Popover.Panel>
         </Popover>
@@ -83,7 +93,9 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
             <p className="text-light-200">
               <span className="text-gold-100">{`Opening: `}</span>
               {`${opening?.name || ""}`}
-              <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+              <span className="inline text-light-300">{`${
+                opening?.eco ? ` (${opening.eco})` : ""
+              }`}</span>
             </p>
           }
         </div>
@@ -108,7 +120,11 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
               {data && !isLoading && (
                 <>
                   {data.moves.map((moveData) => (
-                    <RenderMoveRow attemptMove={attemptMove} moveData={moveData} key={moveData.uci} />
+                    <RenderMoveRow
+                      attemptMove={attemptMove}
+                      moveData={moveData}
+                      key={moveData.uci}
+                    />
                   ))}
                 </>
               )}
@@ -141,8 +157,10 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
   const notation = replacePieceChars(moveData.san, "w");
   const totalGames = moveData.white + moveData.black + moveData.draws;
   const total = useMemo(() => {
-    if (totalGames > 1000000 * 1000) return `${(Math.round((totalGames * 10) / 1000000000) / 10).toFixed(1)}B`;
-    if (totalGames > 1000000) return `${(Math.round((totalGames * 10) / 1000000) / 10).toFixed(1)}M`;
+    if (totalGames > 1000000 * 1000)
+      return `${(Math.round((totalGames * 10) / 1000000000) / 10).toFixed(1)}B`;
+    if (totalGames > 1000000)
+      return `${(Math.round((totalGames * 10) / 1000000) / 10).toFixed(1)}M`;
     //else if (totalGames > 1000) return `${Math.round(totalGames/1000)}K`
     else return `${totalGames}`;
   }, [totalGames]);
@@ -159,7 +177,12 @@ function RenderMoveRow({ moveData, attemptMove }: MoveRowProps) {
         </button>
         <p className="text-xs ">{total}</p>
       </div>
-      <PercentageBar total={totalGames} black={moveData.black} draws={moveData.draws} white={moveData.white} />
+      <PercentageBar
+        total={totalGames}
+        black={moveData.black}
+        draws={moveData.draws}
+        white={moveData.white}
+      />
     </div>
   );
 }
@@ -178,20 +201,26 @@ function PercentageBar({ total, white, black, draws }: BarProps) {
           className="bg-white text-black text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((white / total) * 100)}%` }}
         >
-          <p>{`${Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white}`}</p>
+          <p>{`${
+            Math.round((white / total) * 100) > 1 ? `${Math.round((white / total) * 100)}%` : white
+          }`}</p>
         </div>
       )}
       {draws > 0 && (
         <div
           className="bg-[#363636] text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((draws / total) * 100)}%` }}
-        >{`${Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws}`}</div>
+        >{`${
+          Math.round((draws / total) * 100) > 1 ? `${Math.round((draws / total) * 100)}%` : draws
+        }`}</div>
       )}
       {black > 0 && (
         <div
           className="bg-black grow text-white text-xs px-2 flex items-center"
           style={{ flexBasis: `${Math.round((black / total) * 100)}%` }}
-        >{`${Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black}`}</div>
+        >{`${
+          Math.round((black / total) * 100) > 1 ? `${Math.round((black / total) * 100)}%` : black
+        }`}</div>
       )}
     </div>
   );
@@ -206,12 +235,23 @@ interface TopGameProps {
   loadGame: (gameid: string) => void;
   isLoading?: boolean;
 }
-function TopGames({ topGames, recentGames, sourceGame, attemptMove, loadGame, isLoading, database }: TopGameProps) {
+function TopGames({
+  topGames,
+  recentGames,
+  sourceGame,
+  attemptMove,
+  loadGame,
+  isLoading,
+  database,
+}: TopGameProps) {
   const [gameList, setGameList] = useState<"top" | "recent">("recent");
   useEffect(() => {
     if (database === "masters") setGameList("top");
   }, [database]);
-  const games = useMemo(() => (gameList === "top" ? topGames : recentGames), [gameList, topGames, recentGames]);
+  const games = useMemo(
+    () => (gameList === "top" ? topGames : recentGames),
+    [gameList, topGames, recentGames]
+  );
   return (
     <div className="w-full grow overflow-hidden flex flex-col min-height-[250px]">
       <div className="w-full text-sm bg-elevation-2 text-gold-100 py-1 px-3 shadow flex flex-row justify-start">
@@ -230,7 +270,8 @@ function TopGames({ topGames, recentGames, sourceGame, attemptMove, loadGame, is
           onClick={() => setGameList("recent")}
           className={classNames("rounded-md px-2 py-0.5 mr-3 border", {
             "bg-gold-100/[0.1] border-gold-100 text-gold-100": gameList === "recent",
-            "text-light-300 border-transparent hover:text-light-100": gameList !== "recent" && database === "lichess",
+            "text-light-300 border-transparent hover:text-light-100":
+              gameList !== "recent" && database === "lichess",
             "text-light-400/[0.5] border-transparent": database === "masters",
           })}
         >
@@ -281,7 +322,9 @@ function RenderGame({
     return (
       sourceGame.legalMoves.find(
         (move) =>
-          move.start === uci.start && move.end === uci.end && (move.promotion ? move.promotion === uci.promotion : true)
+          move.start === uci.start &&
+          move.end === uci.end &&
+          (move.promotion ? move.promotion === uci.promotion : true)
       )?.PGN || null
     );
   }, [game, sourceGame]);
@@ -297,12 +340,16 @@ function RenderGame({
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
             {game.white.name}
-            <span className="inline opacity-60 ml-1">{game.white.rating && `(${game.white.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {game.white.rating && `(${game.white.rating})`}
+            </span>
           </p>
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
             {game.black.name}
-            <span className="inline opacity-60 ml-1">{game.black.rating && `(${game.black.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {game.black.rating && `(${game.black.rating})`}
+            </span>
           </p>
         </div>
         <RenderGameResult winner={game.winner} />
@@ -347,7 +394,13 @@ function FiltersMenu() {
   return <div className="w-[24rem] p-4 bg-elevation-3 rounded-md shadow-lg"></div>;
 }
 
-function DBSelect({ value, onChange }: { value: string; onChange: (value: "lichess" | "masters") => void }) {
+function DBSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: "lichess" | "masters") => void;
+}) {
   const options = [
     { value: "lichess", label: "Lichess" },
     { value: "masters", label: "Masters" },
@@ -373,7 +426,12 @@ function DBSelect({ value, onChange }: { value: string; onChange: (value: "liche
               <HiOutlineSelector />
             </span>
           </Listbox.Button>
-          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
             <Listbox.Options className="z-[20] absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#242424] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none ">
               {options.map((option) => (
                 <Listbox.Option
@@ -387,7 +445,9 @@ function DBSelect({ value, onChange }: { value: string; onChange: (value: "liche
                 >
                   {({ selected }) => (
                     <>
-                      <span className={`block truncate ${selected ? "text-white" : "text-white/[0.6]"}`}>
+                      <span
+                        className={`block truncate ${selected ? "text-white" : "text-white/[0.6]"}`}
+                      >
                         {option.label}
                       </span>
                       {selected ? (

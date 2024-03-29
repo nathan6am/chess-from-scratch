@@ -12,7 +12,7 @@ import AnalysisPanel from "./panels/AnalysisPanel";
 
 import { BoardHandle } from "../board/Board";
 import MenuBar from "@/components/layout/MenuBar";
-import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
+import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
 //Icons
 import { IoMdStopwatch } from "react-icons/io";
 // Hooks
@@ -183,7 +183,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
+          explorer.otbGame
+            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
+            : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -293,7 +295,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.black && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.black}{" "}
-                          <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
+                          <span className="inline opacity-50">{`(${
+                            analysis.tagData.eloBlack || "?"
+                          })`}</span>
                         </p>
                       )}
                     </>
@@ -301,7 +305,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                       {analysis.tagData.white && (
                         <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
                           {analysis.tagData.white}{" "}
-                          <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
+                          <span className="inline opacity-50">{`(${
+                            analysis.tagData.eloWhite || "?"
+                          })`}</span>
                         </p>
                       )}
                     </>
@@ -313,10 +319,14 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                     })}
                   >
                     <span>
-                      {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
+                      {analysis.timeRemaining.b !== null && (
+                        <DisplayClock time={analysis.timeRemaining.b} color="b" />
+                      )}
                     </span>
                     <span>
-                      {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
+                      {analysis.timeRemaining.w !== null && (
+                        <DisplayClock time={analysis.timeRemaining.w} color="w" />
+                      )}
                     </span>
                   </div>
                 </div>

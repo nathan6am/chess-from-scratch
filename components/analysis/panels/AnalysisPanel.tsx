@@ -19,7 +19,7 @@ import EvalInfo from "@/components/analysis/EvalInfo";
 import EditDetails from "@/components/analysis/EditDetails";
 
 //ui components
-import { Button } from "@/components/UIKit";
+import { Button } from "@/components/base";
 import { PulseLoader } from "react-spinners";
 import { ScrollContainer } from "@/components/layout/GameLayout";
 import { Tab } from "@headlessui/react";
@@ -56,8 +56,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
         </Tab.List>
         <Tab.Panel as={Fragment}>
           <>
-            
-              <EvalInfo />
+            <EvalInfo />
             <div className="w-full px-4 py-2 bg-elevation-2 flex flex-row items-center justify-between">
               {saveManager.id && saveManager.data ? (
                 <>
@@ -70,7 +69,8 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes{" "}
+                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
@@ -101,7 +101,11 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </>
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
+          <Explorer
+            explorer={analysis.explorer}
+            onMove={onMove}
+            showPlayer={modalControls.showPlayer}
+          />
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
           <>
@@ -117,7 +121,8 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes{" "}
+                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
@@ -173,7 +178,11 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Comments
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -215,7 +224,9 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-sm text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

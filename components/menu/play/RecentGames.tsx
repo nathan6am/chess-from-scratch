@@ -1,19 +1,20 @@
 import React, { useMemo } from "react";
 import useGameSearch from "@/hooks/useGameSearch";
-import { ScrollContainer } from "../layout/GameLayout";
+import { ScrollContainer } from "../../layout/GameLayout";
 import User_Game from "@/lib/db/entities/User_Game";
 import * as Chess from "@/lib/chess";
 import { ImMinus } from "react-icons/im";
 import { MdArrowDropUp, MdArrowDropDown, MdTimer } from "react-icons/md";
 import { FaArchive, FaChevronRight } from "react-icons/fa";
 import { IoMdMore } from "react-icons/io";
-import GameList from "./GameList";
+import GameList from "../GameList";
 import useAuth from "@/hooks/useAuth";
+import DashboardPanel from "../DashboardPanel";
 export default function RecentGames() {
   const { user } = useAuth();
   const { games: usergames } = useGameSearch({});
   return (
-    <div className="flex flex-col w-full h-full items-center min-h-[20rem] bg-elevation-2 shadow-lg rounded-lg">
+    <DashboardPanel className="max-h-[70vh] min-h-[30em] px-0">
       <div className="p-3 w-full px-6 flex flex-row justify-between">
         <h2 className="text-gold-200 font-bold text-xl  text-left shadow-lg">Recent Games</h2>
 
@@ -36,7 +37,7 @@ export default function RecentGames() {
       ) : (
         <GameList usergames={usergames} />
       )}
-    </div>
+    </DashboardPanel>
   );
 }
 
@@ -92,7 +93,9 @@ function RenderGame({ game: userGame }: { game: User_Game }) {
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">{players.w.rating && `(${players.w.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {players.w.rating && `(${players.w.rating})`}
+            </span>
           </p>
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
@@ -101,7 +104,9 @@ function RenderGame({ game: userGame }: { game: User_Game }) {
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">{players.b.rating && `(${players.b.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {players.b.rating && `(${players.b.rating})`}
+            </span>
           </p>
         </div>
       </td>

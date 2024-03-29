@@ -1,7 +1,8 @@
-import { Label, Select } from "../UIKit";
+import { Select, Button, Toggle } from "@/components/base";
+import { Label } from "@/components/base/Typography";
 import React, { useCallback, useState, useContext, useMemo } from "react";
-import TimeControlSelect from "../UI/TimeControlSelect";
-import { Toggle, Button } from "@/components/UIKit";
+import TimeControlSelect from "./TimeControlSelect";
+import PlayLocalMenu from "./PlayLocalMenu";
 import { TimeControl } from "@/lib/chess";
 import { LobbyOptions } from "@/server/types/lobby";
 import { IoMdPlay } from "react-icons/io";
@@ -9,26 +10,10 @@ import { MdComputer } from "react-icons/md";
 import { SocketContext } from "@/context/socket";
 import { useRouter } from "next/router";
 import { FaUserFriends, FaRandom } from "react-icons/fa";
+import { WhiteIcon, BlackIcon, RandomIcon } from "@/components/icons";
+import DashboardPanel from "../DashboardPanel";
 import * as Chess from "@/lib/chess";
-const RandomIcon = () => {
-  return (
-    <div
-      className="relative h-[1em] w-[1em] rounded-sm"
-      style={{
-        backgroundImage: "linear-gradient(to bottom right, White 50%, Black 50%)",
-      }}
-    ></div>
-  );
-};
-export const WhiteIcon = () => {
-  return <div className="bg-white h-[1em] w-[1em] rounded-sm"></div>;
-};
-export const BlackIcon = () => {
-  return <div className="bg-black h-[1em] w-[1em] rounded-sm"></div>;
-};
-export const DrawIcon = () => {
-  return <div className="bg-gray-400 h-[1em] w-[1em] rounded-sm"></div>;
-};
+
 const options = [
   {
     icon: FaUserFriends,
@@ -51,15 +36,22 @@ const options = [
 export default function NewGame() {
   const [selected, setSelected] = useState(options[0].value);
   return (
-    <div className="flex flex-col w-full h-full items-center p-4 px-6 bg-elevation-2 shadow-lg rounded-lg mb-4">
-      <h2 className="text-gold-200 font-bold text-xl">New Game</h2>
-      <Select className="w-full max-w-md my-4" options={options} value={selected} onChange={setSelected} />
+    <DashboardPanel>
       <>
-        {selected === "friend" && <Friend />}
-        {selected === "computer" && <Computer />}
-        {selected === "local" && <Local />}
+        <h2 className="text-gold-200 font-bold text-xl">New Game</h2>
+        <Select
+          className="w-full max-w-md my-4"
+          options={options}
+          value={selected}
+          onChange={setSelected}
+        />
+        <>
+          {selected === "friend" && <Friend />}
+          {selected === "computer" && <Computer />}
+          {selected === "local" && <PlayLocalMenu />}
+        </>
       </>
-    </div>
+    </DashboardPanel>
   );
 }
 const colorOptions = [
@@ -135,13 +127,21 @@ function Computer() {
   const onStart = useCallback(() => {
     router.push(
       `/play/vs-computer/?color=${color}&skillLevel=${level}${
-        timeControl ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}` : ""
+        timeControl
+          ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}`
+          : ""
       }`
     );
   }, [router, level, timeControl, color]);
   return (
     <div className="w-full max-w-md">
-      <Toggle label="Timed?" className="my-2 w-fit" checked={useClock} onChange={setUseClock} reverse />
+      <Toggle
+        label="Timed?"
+        className="my-2 w-fit"
+        checked={useClock}
+        onChange={setUseClock}
+        reverse
+      />
       <>{useClock && <TimeControlSelect setTimeControl={setTimeControl} />}</>
       <Label className="mb-2">Play as</Label>
       <Select className="w-full" options={colorOptions} value={color} onChange={setColor} />
@@ -169,35 +169,6 @@ function Computer() {
         icon={IoMdPlay}
         variant="neutral"
         label="Start Game"
-        iconPosition="right"
-        iconClassName="ml-2 mt-0.5"
-      />
-    </div>
-  );
-}
-
-function Local() {
-  const [autoFlip, setAutoFlip] = useState(false);
-  const [invertPieces, setInvertPieces] = useState(false);
-  const [timeControl, setTimeControl] = useState<TimeControl | undefined>();
-  return (
-    <div className="w-full max-w-md">
-      <Toggle label="Flip Board on Turn" className="my-2 w-fit" checked={autoFlip} onChange={setAutoFlip} reverse />
-      <Toggle
-        label="Invert Opposing Pieces"
-        className="my-2 w-fit"
-        checked={invertPieces}
-        onChange={setInvertPieces}
-        reverse
-      />
-      <TimeControlSelect setTimeControl={setTimeControl} />
-      <Button
-        onClick={() => {}}
-        className="w-full mt-8"
-        size="lg"
-        icon={IoMdPlay}
-        variant="neutral"
-        label="Create Game"
         iconPosition="right"
         iconClassName="ml-2 mt-0.5"
       />

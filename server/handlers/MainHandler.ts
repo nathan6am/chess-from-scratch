@@ -1,9 +1,14 @@
-import { nanoid } from "nanoid";
-import { RedisClient } from "../index";
-import { wrapClient } from "../util/redisClientWrapper";
+//Types
 import { Socket, Server } from "../types/socket";
 import { Lobby } from "../types/lobby";
-import * as Chess from "../../lib/chess";
+
+//Redis
+import { RedisClient } from "../index";
+import { wrapClient } from "../util/redisClientWrapper";
+
+//Utils
+import { nanoid } from "nanoid";
+
 export default function (io: Server, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
   socket.on("authenticate", async (ack) => {
@@ -24,7 +29,6 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
   });
 
   socket.on("lobby:create", async (options, ack) => {
-    console.log(socket.data);
     const userid = socket.data.userid;
     if (!userid) {
       console.log("unauthenticated");

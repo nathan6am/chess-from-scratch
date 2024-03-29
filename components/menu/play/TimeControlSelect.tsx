@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
-import { TimeControl } from "@/lib/chess";
-import { Select } from "../UIKit";
+import React from "react";
+import type { TimeControl } from "@/lib/chess";
+import { Label } from "@/components/base/Typography";
+import { NumericInput } from "@/components/base";
 import _ from "lodash";
 interface Category {
   label: string;
@@ -47,7 +48,6 @@ const CATEGORIES: Category[] = [
 
 import { useState } from "react";
 import { Tab, RadioGroup } from "@headlessui/react";
-import { Label, NumbericInput } from "../UIKit";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -69,7 +69,8 @@ export default function TimeControlSelect({
   const [lastSelected, setLastSelected] = useState(defaultOptionIndices);
   const [lastCustom, setLastCustom] = useState(defaultCustom);
   return (
-    <div className="w-full max-w-md px-2 py-4 sm:px-0 h-[9rem]">
+    <div className="w-full max-w-md px-2 py-4 sm:px-0 h-[12rem]">
+      <Label className="mb-2">Time Control</Label>
       <Tab.Group defaultIndex={defaultTabIndex}>
         <Tab.List className="flex rounded-lg overflow-hidden divide-x divide-gold-300 border border-gold-300 bg-elevation-2 ">
           {CATEGORIES.map((category, idx) => (
@@ -175,8 +176,8 @@ function CustomSelect({ onChange, defaultValue }: CustomSelectProps) {
   const [incrementSeconds, setIncrementSeconds] = useState(defaultValue?.incrementSeconds || 3);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4">
-      <NumbericInput
+    <div className="grid grid-cols-2 gap-y-4">
+      <NumericInput
         label="Minutes per side"
         min={0}
         max={90}
@@ -189,7 +190,7 @@ function CustomSelect({ onChange, defaultValue }: CustomSelectProps) {
           });
         }}
       />
-      <NumbericInput
+      <NumericInput
         label="Increment (s)"
         min={0}
         max={60}

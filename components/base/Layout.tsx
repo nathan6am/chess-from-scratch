@@ -38,3 +38,7 @@ export const ScrollContainer = React.forwardRef<HTMLDivElement, ScrollContainerP
 export const Row = ({ children, className }: LayoutComponentProps) => {
   return <div className={cn("flex flex-row, items-center", className)}>{children}</div>;
 };
+
+export const CenteredCol = ({ children, className }: LayoutComponentProps) => {
+  return <div className={cn("flex flex-1 justify-center", className)}>{children}</div>;
+};

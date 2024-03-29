@@ -1,4 +1,3 @@
-import FileBrowser from "@/components/menu/FileBrowser";
 import GameSearch from "@/components/menu/GameSearch";
 import { RiArrowGoBackFill } from "react-icons/ri";
 

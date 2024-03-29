@@ -1,11 +1,16 @@
 import express from "express";
-import { customAlphabet } from "nanoid";
+
+//DB Entities
 import User, { SessionUser } from "../../lib/db/entities/User";
+
+//Middleware
 import verifyUser from "../middleware/verifyUser";
-const nanoid = customAlphabet("1234567890", 10);
 
 const router = express.Router();
 
+/**
+ * Get the profile of the authenticated user
+ */
 router.get("/profile", async function (req, res) {
   const id = req.user?.id;
   if (!id) return res.status(401);
@@ -22,6 +27,9 @@ router.get("/profile", async function (req, res) {
   }
 });
 
+/**
+ * Complete the profile of the authenticated user
+ */
 router.post("/complete-profile", async (req, res) => {
   const id = req.user?.id;
   if (!id) return res.status(401);
@@ -81,7 +89,9 @@ router.post("/complete-profile", async (req, res) => {
   }
 });
 
-//Check if a username is available
+/**
+ * Check if a username is available
+ */
 router.get("/checkusername", async function (req, res) {
   const username = req.query.username;
   if (!username || typeof username !== "string") {

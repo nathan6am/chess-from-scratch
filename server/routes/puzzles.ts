@@ -1,7 +1,12 @@
-import Puzzle from "../../lib/db/entities/Puzzle";
 import express, { Request } from "express";
+
+//DB Entities
+import Puzzle from "../../lib/db/entities/Puzzle";
 import User from "../../lib/db/entities/User";
+
+//Middleware
 import verifyUser from "../middleware/verifyUser";
+
 const router = express.Router({ mergeParams: true });
 
 interface PuzzleQuery {
@@ -11,6 +16,10 @@ interface PuzzleQuery {
   themes?: string;
   exclude?: string;
 }
+
+/**
+ * Query puzzles
+ */
 router.get("/", async (req: Request<any, any, any, Partial<PuzzleQuery>>, res) => {
   const minRating = parseInt(req.query.minRating || "0");
   const maxRating = parseInt(req.query.maxRating || "4000");
@@ -27,6 +36,10 @@ router.get("/", async (req: Request<any, any, any, Partial<PuzzleQuery>>, res) =
     res.status(500).end();
   }
 });
+
+/**
+ * Get a single puzzle
+ */
 router.get("/puzzle/:id", async (req, res) => {
   const { id } = req.params;
   const puzzle = await Puzzle.findOne({ where: { id } });
@@ -43,12 +56,17 @@ function stringIsResult(s: string): s is Result {
   return ["solved", "solved-w-hint", "failed"].includes(s);
 }
 
+/**
+ * Solve a puzzle for the authenticated user
+ */
 router.post("/solve/:id", verifyUser, async (req, res) => {
   const userid = req.user?.id;
   const { id } = req.params;
   const { result, rated } = req.query;
-  if (typeof result !== "string" || !stringIsResult(result)) return res.status(400).end("Invalid result");
-  if (typeof rated !== "string" || !["true", "false"].includes(rated)) return res.status(400).end("Invalid rated");
+  if (typeof result !== "string" || !stringIsResult(result))
+    return res.status(400).end("Invalid result");
+  if (typeof rated !== "string" || !["true", "false"].includes(rated))
+    return res.status(400).end("Invalid rated");
   try {
     const solvedPuzzle = await User.solvePuzzle(userid, id, result, rated === "true");
     if (solvedPuzzle) {

@@ -8,6 +8,8 @@ import * as Chess from "@/lib/chess";
 import { ScrollContainer } from "../layout/GameLayout";
 import { useRouter } from "next/router";
 import { createPortal } from "react-dom";
+
+//Context menu portal
 const Portal = ({ children }: { children: JSX.Element | string | Array<JSX.Element | string> }) => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
@@ -15,6 +17,7 @@ const Portal = ({ children }: { children: JSX.Element | string | Array<JSX.Eleme
   }, []);
   return mounted ? createPortal(children, document.body) : null;
 };
+
 interface ItemProps {
   usergame: User_Game;
 }
@@ -154,7 +157,9 @@ function RenderGame({
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">{players.w.rating && `(${players.w.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {players.w.rating && `(${players.w.rating})`}
+            </span>
           </p>
           <p className="flex flex-row items-center">
             <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
@@ -163,7 +168,9 @@ function RenderGame({
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">{players.b.rating && `(${players.b.rating})`}</span>
+            <span className="inline opacity-60 ml-1">
+              {players.b.rating && `(${players.b.rating})`}
+            </span>
           </p>
         </div>
       </td>
@@ -187,6 +194,6 @@ function ResultIcon({ result }: { result: "win" | "loss" | "draw" }) {
     case "loss":
       return <MdArrowDropDown className="text-red-400 text-3xl" />;
     case "draw":
-      return <ImMinus className="text-light-300 text-sm" />;
+      return <ImMinus className="text-light-300 text-sm ml-2" />;
   }
 }

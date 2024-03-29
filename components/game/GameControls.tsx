@@ -4,7 +4,7 @@ import { FaHandshake, FaCheck } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { GameControls as IGameControls } from "@/hooks/useChessOnline";
 import { FiRepeat, FiFlag } from "react-icons/fi";
-import Button from "../UIKit/Button";
+import { Button } from "../base";
 import { useRouter } from "next/router";
 interface Props {
   gameControls: IGameControls;
@@ -31,7 +31,8 @@ export default function GameControls({}: Props) {
 function PostGameControls() {
   const router = useRouter();
   const { onlineGame } = useContext(GameContext);
-  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } = onlineGame;
+  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } =
+    onlineGame;
   const gameid = currentGame?.id;
   return (
     <>

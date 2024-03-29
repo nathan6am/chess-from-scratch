@@ -10,14 +10,23 @@ interface Props<T> {
   className?: string;
   optionsClassName?: string;
 }
-export default function Select({ value, onChange, options, className, optionsClassName }: Props<any>) {
-  const selected = useMemo(() => options.find((option) => option.value === value), [value, options]);
+export default function Select({
+  value,
+  onChange,
+  options,
+  className,
+  optionsClassName,
+}: Props<any>) {
+  const selected = useMemo(
+    () => options.find((option) => option.value === value),
+    [value, options]
+  );
   const Icon = selected?.icon;
   return (
     <div className={className}>
       <Listbox value={value} onChange={onChange}>
         <div className="relative">
-          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-elevation-3 hover:bg-elevation-4 py-1.5 border-2 border-transparent pl-3 pr-8 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
+          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-elevation-4 hover:bg-elevation-5 py-1.5 border-2 border-transparent pl-3 pr-8 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 ">
             <div className="flex flex-row items-center">
               {Icon && (
                 <span className={`inline mt-1 mr-2 text-lg text-light-200 `}>
@@ -31,7 +40,12 @@ export default function Select({ value, onChange, options, className, optionsCla
               <TbSelector className="text-xl text-gold-100 opacity-70 cursor-pointer hover:opacity-90" />
             </span>
           </Listbox.Button>
-          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
             <Listbox.Options
               className={twMerge(
                 "z-[50] absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-elevation-3 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none  scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y",
@@ -103,11 +117,17 @@ export function SelectOption({ label, value, children, icon: Icon, iconClassName
           <div className="flex flex-row items-center justify-start px-4 py-2 ">
             {children}
             {Icon && (
-              <span className={`inline mt-1 mr-2 text-lg  ${selected ? "text-ligh-200" : "text-light-300"}`}>
+              <span
+                className={`inline mt-1 mr-2 text-lg  ${
+                  selected ? "text-ligh-200" : "text-light-300"
+                }`}
+              >
                 <Icon className={iconClassName} />
               </span>
             )}
-            <span className={`block truncate ${selected ? "text-light-100" : "text-light-200"}`}>{label}</span>
+            <span className={`block truncate ${selected ? "text-light-100" : "text-light-200"}`}>
+              {label}
+            </span>
           </div>
           {selected ? (
             <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gold-200">

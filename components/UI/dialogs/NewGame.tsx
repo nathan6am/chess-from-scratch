@@ -5,7 +5,7 @@ interface Props {
   isOpen: boolean;
   closeModal: () => void;
 }
-import TimeControlSelect from "../TimeControlSelect";
+import TimeControlSelect from "../../menu/play/TimeControlSelect";
 import { Toggle } from "@/components/UIKit";
 import { TimeControl } from "@/lib/chess";
 import { LobbyOptions } from "@/server/types/lobby";

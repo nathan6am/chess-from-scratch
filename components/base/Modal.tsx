@@ -57,7 +57,7 @@ export default function Modal({
               >
                 <Dialog.Panel
                   className={twMerge(
-                    "px-4 sm:px-8 transform overflow-show rounded-lg bg-[elevation-2] py-10 align-middle shadow-lg transition-all",
+                    "px-4 sm:px-8 transform overflow-show rounded-sm bg-[elevation-2] py-10 align-middle shadow-lg transition-all",
                     panelClassName
                   )}
                 >

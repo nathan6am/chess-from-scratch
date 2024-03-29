@@ -3,9 +3,15 @@ import { useEngineGame } from "@/hooks/useEngineGame";
 import * as Chess from "@/lib/chess";
 import { SettingsContext } from "@/context/settings";
 import { useContext, useState } from "react";
-import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, PanelContainer } from "../layout/GameLayout";
+import {
+  BoardColumn,
+  BoardRow,
+  PanelColumn,
+  PanelColumnLg,
+  PanelContainer,
+} from "../layout/GameLayout";
 import MenuBar from "@/components/layout/MenuBar";
-import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../UIKit/ToolMenu";
+import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
 import classNames from "classnames";
 import MoveHistory from "./MoveHistory";
 import BoardControls from "./BoardControls";
@@ -18,13 +24,22 @@ interface Props {
 export default function EngineGame({ startPosition, preset, playerColor, timeControl }: Props) {
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const { settings } = useContext(SettingsContext);
-  const { currentGame, ready, onMove, clock, livePositionOffset, boardControls, currentBoard, moveable, lastMove } =
-    useEngineGame({
-      gameConfig: { startPosition },
-      preset: preset || 10,
-      playerColor,
-      timeControl,
-    });
+  const {
+    currentGame,
+    ready,
+    onMove,
+    clock,
+    livePositionOffset,
+    boardControls,
+    currentBoard,
+    moveable,
+    lastMove,
+  } = useEngineGame({
+    gameConfig: { startPosition },
+    preset: preset || 10,
+    playerColor,
+    timeControl,
+  });
   return (
     <div className="flex flex-col h-full w-full  min-h-screen">
       <MenuBar>

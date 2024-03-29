@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import User_Game, { GameSearchOptions } from "@/lib/db/entities/User_Game";
-import { MultiSelect, Select, Input, Label, Button } from "../UIKit";
+import { GameSearchOptions } from "@/lib/db/entities/User_Game";
+import { MultiSelect, Select, Input, Button } from "@/components/base";
+import { Label } from "@/components/base/Typography";
 
 import useGameSearch from "@/hooks/useGameSearch";
 import GameList from "./GameList";
@@ -22,7 +23,9 @@ export default function GameSearch() {
   return (
     <div className="flex flex-col w-full h-full">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <h3 className="text-lg font-semibold text-gold-200 bg-elevation-2 w-full pt-3 px-4">Filter Games</h3>
+        <h3 className="text-lg font-semibold text-gold-200 bg-elevation-2 w-full pt-3 px-4">
+          Filter Games
+        </h3>
         <div className="flex flex-wrap flex-row items-end bg-elevation-2 space-x-2 p-2 pl-3 pb-4 space-y-2">
           <Controller
             control={control}
@@ -117,7 +120,13 @@ export default function GameSearch() {
               );
             }}
           />
-          <Input containerClassName="w-48" type="date" {...register("after")} label="From" showErrorMessages={false} />
+          <Input
+            containerClassName="w-48"
+            type="date"
+            {...register("after")}
+            label="From"
+            showErrorMessages={false}
+          />
           <Input
             containerClassName="w-48"
             className="py-2"
@@ -126,7 +135,13 @@ export default function GameSearch() {
             label="Until"
             showErrorMessages={false}
           />
-          <Button type="submit" variant="neutral" label="Update Search" width="fit" className="mt-2"></Button>
+          <Button
+            type="submit"
+            variant="neutral"
+            label="Update Search"
+            width="fit"
+            className="mt-2"
+          ></Button>
         </div>
       </form>
       <GameList usergames={games} />

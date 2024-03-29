@@ -1,6 +1,6 @@
 import { AnalysisContext } from "../analysis/AnalysisBoard";
 import { useContext, useMemo, useState } from "react";
-import Modal from "@/components/UIKit/Modal";
+import Modal from "@/components/base/Modal";
 import { Toggle, Button, Input, Label } from "../UIKit";
 import sanitize from "sanitize-filename";
 interface Props {

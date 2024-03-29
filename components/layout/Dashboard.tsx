@@ -45,13 +45,16 @@ export default function Dashboard({ children }: Props) {
         ]}
       />
       <div
-        className={cn("w-full bg-elevation-1 trasition ease-in-out duration-500 min-h-screen flex max-w-screen", {
-          "pl-0 sm:pl-[60px]": sidebarCollapsed,
-          "sm:pl-[60px] lg:pl-[240px]": !sidebarCollapsed,
-        })}
+        className={cn(
+          "w-full bg-elevation-1 trasition ease-in-out duration-500 min-h-screen flex max-w-screen",
+          {
+            "pl-0 sm:pl-[60px]": sidebarCollapsed,
+            "sm:pl-[60px] lg:pl-[240px]": !sidebarCollapsed,
+          }
+        )}
       >
         <NonSSRWrapper>
-          <main className="flex-1 pt-12 sm:pt-0 flex">{children}</main>
+          <main className="flex-1 pt-12 sm:pt-0 flex flex-col">{children}</main>
         </NonSSRWrapper>
       </div>
     </>

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { IoMdArrowDropup, IoMdArrowDropdown } from "react-icons/io";
-import classNames from "classnames";
-import Label from "./Label";
+import cn from "@/util/cn";
+import { Label } from "./Typography";
 interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   label?: string;
   className?: string;
@@ -71,7 +71,10 @@ export default function NumbericInput({
           value={value}
           pattern="\d*"
           placeholder="0"
-          className={classNames("py-1.5 px-2 shadow bg-elevation-1 rounded-md focus:outline-none", inputClassName)}
+          className={cn(
+            "py-1.5 px-2 shadow bg-elevation-1 rounded-md focus:outline-none",
+            inputClassName
+          )}
         ></input>
       </div>
     </div>

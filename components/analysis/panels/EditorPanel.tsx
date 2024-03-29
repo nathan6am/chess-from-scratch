@@ -6,8 +6,8 @@ import BoardSetupPanel from "./BoardSetupPanel";
 import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";
 import { FiRepeat } from "react-icons/fi";
-import { Select, Toggle, Input, Button, NumbericInput } from "@/components/UIKit";
-import { WhiteIcon, BlackIcon } from "@/components/menu/NewGame";
+import { Select, Toggle, Input, Button, NumericInput } from "@/components/base";
+import { WhiteIcon, BlackIcon } from "@/components/icons";
 import { RiErrorWarningFill } from "react-icons/ri";
 interface EditorProps {
   boardEditor: BoardEditorHook;
@@ -18,7 +18,13 @@ interface EditorProps {
   flipBoard: () => void;
   setEditMode?: (value: boolean) => void;
 }
-export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditMode, flipBoard }: EditorProps) {
+export default function EditorPanel({
+  boardEditor,
+  boardRef,
+  onAnalyze,
+  setEditMode,
+  flipBoard,
+}: EditorProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
@@ -76,7 +82,10 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
             value={boardEditor.activeColor}
             onChange={boardEditor.setActiveColor}
           />
-          <button onClick={flipBoard} className="shrink-0  text-light-200 hover:text-gold-200 py-3 px-4">
+          <button
+            onClick={flipBoard}
+            className="shrink-0  text-light-200 hover:text-gold-200 py-3 px-4"
+          >
             <FiRepeat className="mr-2 inline" /> Flip Board
           </button>
         </div>
@@ -134,14 +143,14 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
           </div>
         </div>
         <div className="grid grid-cols-2 gap-x-2 my-4">
-          <NumbericInput
+          <NumericInput
             value={boardEditor.halfMoveCount}
             min={0}
             max={Math.min(99, boardEditor.fullMoveCount * 2 - 1)}
             onChange={boardEditor.setHalfMoveCount}
             label="Half Move Count"
           />
-          <NumbericInput
+          <NumericInput
             value={boardEditor.fullMoveCount}
             min={1}
             max={999}

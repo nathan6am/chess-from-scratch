@@ -1,5 +1,5 @@
 import FileBrowser from "@/components/menu/FileBrowser";
-import Modal from "@/components/UIKit/Modal";
+import Modal from "@/components/base/Modal";
 
 interface Props {
   isOpen: boolean;

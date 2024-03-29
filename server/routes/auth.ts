@@ -1,16 +1,26 @@
-import passport from "passport";
-import * as passportFacebook from "passport-facebook";
 import express, { Request } from "express";
+
+//Auth Libraries
+import passport from "passport";
 import passportCustom from "passport-custom";
+import * as passportLocal from "passport-local";
+import * as passportFacebook from "passport-facebook";
+
+//Utilities
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
-import * as passportLocal from "passport-local";
+
+//Entities
 import User, { SessionUser } from "../../lib/db/entities/User";
+
 const nanoid = customAlphabet("1234567890", 10);
+
+//Environment Variables
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "/api/auth/facebook/callback";
 
+//Local Strategy
 passport.use(
   new passportLocal.Strategy(async function (username, password, done) {
     const user = await User.login({ username, password });
@@ -22,6 +32,7 @@ passport.use(
   })
 );
 
+//Facebook Strategy
 passport.use(
   new passportFacebook.Strategy(
     {
@@ -43,6 +54,7 @@ passport.use(
   )
 );
 
+//Guest Strategy
 passport.use(
   "guest",
   new passportCustom.Strategy((_req, done) => {
@@ -56,6 +68,7 @@ passport.use(
   })
 );
 
+//Serialize and Deserialize
 passport.serializeUser((user, done) => {
   done(null, JSON.stringify(user));
 });
@@ -73,6 +86,7 @@ passport.deserializeUser((req: any, id: string, done: any) => {
     });
   }
 });
+
 const router = express.Router();
 
 router.get("/facebook", passport.authenticate("facebook"));
@@ -85,9 +99,13 @@ router.get(
   })
 );
 
-router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
-  res.redirect("/");
-});
+router.get(
+  "/guest",
+  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
+  (req, res) => {
+    res.redirect("/");
+  }
+);
 
 router.get("/user", async function (req, res, next) {
   console.log("user", req.user);
@@ -152,24 +170,27 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-router.post("/change-password", async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
-  const sessionUser = req.user;
-  if (!sessionUser || sessionUser.type === "guest") {
-    res.status(401).end();
-    return;
-  }
-  const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword) {
-    res.status(400).end();
-    return;
-  }
-  const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
+router.post(
+  "/change-password",
+  async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
+    const sessionUser = req.user;
+    if (!sessionUser || sessionUser.type === "guest") {
+      res.status(401).end();
+      return;
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      res.status(400).end();
+      return;
+    }
+    const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
 
-  if (updated) return res.status(200).json({ updated: true });
-  else {
-    res.status(401).end();
+    if (updated) return res.status(200).json({ updated: true });
+    else {
+      res.status(401).end();
+    }
   }
-});
+);
 
 router.get("/logout", function (req, res, next) {
   console.log("logging out");

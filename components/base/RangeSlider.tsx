@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import classNames from "classnames";
 import styles from "./RangeSlider.module.scss";
 import { twMerge } from "tailwind-merge";
-import s from "connect-redis";
+
 interface Props {
   min: number;
   max: number;
@@ -93,7 +93,13 @@ export default function RangeSlider({
     </div>
   );
 }
-function InputContainer({ children, className }: { children: JSX.Element | JSX.Element[]; className?: string }) {
+function InputContainer({
+  children,
+  className,
+}: {
+  children: JSX.Element | JSX.Element[];
+  className?: string;
+}) {
   return (
     <div
       className={` my-0 mx-[8px] absolute h-[16px]`}
@@ -152,7 +158,12 @@ function Control({
 }: ControlProps) {
   return (
     <div className="w-full absolute h-[16px]">
-      <Thumb position={minPos} label={minLabel} className={minThumbClassName} labelPosition={labelPosition} />
+      <Thumb
+        position={minPos}
+        label={minLabel}
+        className={minThumbClassName}
+        labelPosition={labelPosition}
+      />
       <div
         className={twMerge(
           "w-full top-[50%] h-[6px] bg-light-400 rounded-full absolute -translate-y-1/2",
@@ -164,7 +175,12 @@ function Control({
           style={{ left: `${minPos}%`, right: `${100 - maxPos}%` }}
         />
       </div>
-      <Thumb position={maxPos} label={maxLabel} className={maxThumbClassName} labelPosition={labelPosition} />
+      <Thumb
+        position={maxPos}
+        label={maxLabel}
+        className={maxThumbClassName}
+        labelPosition={labelPosition}
+      />
     </div>
   );
 }
@@ -182,14 +198,20 @@ function Thumb({
 }) {
   return (
     <div
-      className={twMerge("rounded-full bg-gold-200 h-[16px] w-[16px] absolute z-[2] ml-[-8px]", className)}
+      className={twMerge(
+        "rounded-full bg-gold-200 h-[16px] w-[16px] absolute z-[2] ml-[-8px]",
+        className
+      )}
       style={{ transform: "translate3d(0%, 0%, 0)", left: `${position}%` }}
     >
       <span
-        className={classNames("text-center -translate-x-1/2 ml-[8px] absolute text-xs text-light-200", {
-          "-translate-y-[24px]": labelPosition === "top",
-          "translate-y-[18px]": labelPosition === "bottom",
-        })}
+        className={classNames(
+          "text-center -translate-x-1/2 ml-[8px] absolute text-xs text-light-200",
+          {
+            "-translate-y-[24px]": labelPosition === "top",
+            "translate-y-[18px]": labelPosition === "bottom",
+          }
+        )}
       >
         {label}
       </span>
