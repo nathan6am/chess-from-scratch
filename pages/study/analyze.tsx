@@ -15,7 +15,7 @@ const Page: NextPageWithLayout<Props> = ({ id, game, sourceType }: Props) => {
   return <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />;
 };
 Page.getLayout = function getLayout(page) {
-  return <Dashboard>{page}</Dashboard>;
+  return <Dashboard className="bg-elevation-0">{page}</Dashboard>;
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -28,7 +28,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       id: typeof id === "string" ? id : null,
       game: typeof game === "string" ? game : null,
       sourceType:
-        sourceType === "masters" || sourceType === "lichess" || sourceType === "nextchess" ? sourceType : null,
+        sourceType === "masters" || sourceType === "lichess" || sourceType === "nextchess"
+          ? sourceType
+          : null,
     },
   };
 };

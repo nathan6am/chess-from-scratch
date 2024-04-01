@@ -12,7 +12,7 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onCha
   onChange: (val: number) => void;
   allowClickAndHold?: boolean;
 }
-export default function NumbericInput({
+export default function NumericInput({
   value,
   min,
   max,

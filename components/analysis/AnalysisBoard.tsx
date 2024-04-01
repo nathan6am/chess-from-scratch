@@ -1,11 +1,17 @@
 import React, { useState, useRef, Fragment, useContext, useMemo, useEffect } from "react";
-import { BoardWithPanelContainer, BoardContainer, BoardRow, PanelContainer } from "../layout/templates/AnalysisBoard";
+import PlayerDetails from "./PlayerDetails";
+import {
+  BoardWithPanelContainer,
+  BoardContainer,
+  BoardRow,
+  PanelContainer,
+} from "../layout/templates/AnalysisBoardLayout";
 // Components
 import Board from "../board/Board";
 import EvalBar from "./EvalBar";
 import BoardControls from "../game/BoardControls";
 import OptionsOverlay from "../dialogs/OptionsOverlay";
-import { BoardColumn, PanelColumnLg } from "../layout/GameLayout";
+import cn from "@/util/cn";
 import PopupPlayer from "./PopupPlayer";
 import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
 import AnalysisPanel from "./panels/AnalysisPanel";
@@ -13,8 +19,7 @@ import AnalysisPanel from "./panels/AnalysisPanel";
 import { BoardHandle } from "../board/Board";
 import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
-//Icons
-import { IoMdStopwatch } from "react-icons/io";
+
 // Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard, { AnalysisHook } from "@/hooks/useAnalysisBoard";
@@ -182,7 +187,9 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
+          explorer.otbGame
+            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
+            : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -278,46 +285,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         </MenuBar>
 
         <BoardRow>
-          {/* <>
-            <div className="absolute top-[-2em] bottom-[-2em] flex flex-row justify-center w-inherit">
-              <div
-                className={classNames("flex justify-between items-center shrink", {
-                  "flex-col": orientation === "w",
-                  "flex-col-reverse": orientation === "b",
-                })}
-              >
-                <>
-                  {analysis.tagData.black && (
-                    <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
-                      {analysis.tagData.black}{" "}
-                      <span className="inline opacity-50">{`(${analysis.tagData.eloBlack || "?"})`}</span>
-                    </p>
-                  )}
-                </>
-                <>
-                  {analysis.tagData.white && (
-                    <p className={classNames(" p-1 px-4 bg-white/[0.1] w-full")}>
-                      {analysis.tagData.white}{" "}
-                      <span className="inline opacity-50">{`(${analysis.tagData.eloWhite || "?"})`}</span>
-                    </p>
-                  )}
-                </>
-              </div>
-              <div
-                className={classNames("flex justify-between items-center shrink", {
-                  "flex-col": orientation === "w",
-                  "flex-col-reverse": orientation === "b",
-                })}
-              >
-                <span>
-                  {analysis.timeRemaining.b !== null && <DisplayClock time={analysis.timeRemaining.b} color="b" />}
-                </span>
-                <span>
-                  {analysis.timeRemaining.w !== null && <DisplayClock time={analysis.timeRemaining.w} color="w" />}
-                </span>
-              </div>
-            </div>
-          </> */}
+          <PlayerDetails orientation={orientation} />
           <BoardContainer>
             <Board
               id="analysis-board"
@@ -411,21 +379,5 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         </PanelContainer>
       </BoardWithPanelContainer>
     </AnalysisContext.Provider>
-  );
-}
-
-function DisplayClock({ time, color }: { time: number; color: Chess.Color }) {
-  const duration = Duration.fromMillis(time);
-
-  return (
-    <div
-      className={classNames("p-1 px-4 flex flex-row items-center justify-center", {
-        "bg-[#919191] text-black/[0.7]": color === "w",
-        "bg-black text-white": color === "b",
-      })}
-    >
-      <IoMdStopwatch className="mr-2" />
-      {duration.toFormat("hh:mm:ss")}
-    </div>
   );
 }

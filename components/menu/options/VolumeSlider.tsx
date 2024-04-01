@@ -9,7 +9,7 @@ export default function VolumeSlider({ onChange, value }: Props) {
     <div className="flex flex-row items-center w-80">
       <input
         type="range"
-        className="bg-sepia disabled w-full mr-2"
+        className="bg-gold-100 disabled w-full mr-2"
         max={100}
         min={0}
         value={value}

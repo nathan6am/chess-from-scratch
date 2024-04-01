@@ -7,9 +7,10 @@ import type { NextPageWithLayout } from "@/pages/_app";
 import Dashboard from "@/components/layout/Dashboard";
 import Button from "@/components/base/Button";
 import { Label } from "@/components/base/Typography";
-import BoardWithPanel from "@/components/layout/templates/AnalysisBoard";
+import BoardWithPanel from "@/components/layout/templates/AnalysisBoardLayout";
+import GameLayout from "@/components/layout/templates/GameLayout";
 function Content() {
-  return <BoardWithPanel />;
+  return <GameLayout />;
 }
 const Page: NextPageWithLayout = () => {
   return (

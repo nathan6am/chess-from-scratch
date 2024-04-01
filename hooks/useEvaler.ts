@@ -29,6 +29,10 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   const lines = useMemo(() => {
     return currentLines.filter(notEmpty);
   }, [currentLines]);
+
+  const bestMove = useMemo(() => {
+    return lines[0]?.moves[0];
+  }, [lines]);
   const [options, setOptions] = useState<EvalOptions>({
     useCloudEval: true,
     depth: 18,

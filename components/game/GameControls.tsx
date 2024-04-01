@@ -6,6 +6,9 @@ import { GameControls as IGameControls } from "@/hooks/useChessOnline";
 import { FiRepeat, FiFlag } from "react-icons/fi";
 import { Button } from "../base";
 import { useRouter } from "next/router";
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import { useState } from "react";
+import { set } from "lodash";
 interface Props {
   gameControls: IGameControls;
   flipBoard: () => void;
@@ -34,9 +37,10 @@ function PostGameControls() {
   const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } =
     onlineGame;
   const gameid = currentGame?.id;
+  const [declined, setDeclined] = useState(false);
   return (
     <>
-      {rematchOffer === "recieved" ? (
+      {rematchOffer === "recieved" && !declined ? (
         <>
           <div className="col-span-2">
             <p className="text-sm text-light-300 text-center">Your opponent wants a rematch!</p>
@@ -44,7 +48,7 @@ function PostGameControls() {
           <Button
             variant="neutral"
             onClick={() => {
-              gameControls.acceptDraw(false);
+              setDeclined(true);
             }}
             label="Decline"
             icon={MdClose}
@@ -54,7 +58,7 @@ function PostGameControls() {
           <Button
             variant="neutral"
             onClick={() => {
-              gameControls.acceptDraw(true);
+              gameControls.requestRematch();
             }}
             label="Accept"
             icon={FaCheck}
@@ -63,32 +67,34 @@ function PostGameControls() {
           ></Button>
         </>
       ) : (
-        <></>
+        <>
+          {" "}
+          <Button
+            variant="neutral"
+            onClick={() => {
+              router.push(`/study/analyze?${gameid}&sourceType=nextChess`);
+            }}
+            label="Analysis"
+            icon={MdClose}
+            iconClassName="mr-1"
+            size="lg"
+          ></Button>
+          <Button
+            variant="neutral"
+            onClick={() => {
+              gameControls.requestRematch();
+            }}
+            label="Rematch"
+            icon={FaCheck}
+            iconClassName="mr-1"
+            size="lg"
+          ></Button>
+        </>
       )}
-      <Button
-        variant="neutral"
-        onClick={() => {
-          router.push(`/study/analyze?${gameid}&sourceType=nextChess`);
-        }}
-        label="Analysis"
-        icon={MdClose}
-        iconClassName="mr-1"
-        size="lg"
-      ></Button>
-      <Button
-        variant="neutral"
-        onClick={() => {
-          gameControls.requestRematch();
-        }}
-        disabled={rematchOffer === "offered" || rematchOffer === "declined"}
-        label="Rematch"
-        icon={FaCheck}
-        iconClassName="mr-1"
-        size="lg"
-      ></Button>
     </>
   );
 }
+
 function InGameControls() {
   const { onlineGame } = useContext(GameContext);
   const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus } = onlineGame;
@@ -107,7 +113,6 @@ function InGameControls() {
             label="Decline"
             icon={MdClose}
             iconClassName="mr-1"
-            size="lg"
           ></Button>
           <Button
             variant="neutral"
@@ -117,7 +122,6 @@ function InGameControls() {
             label="Accept"
             icon={FaCheck}
             iconClassName="mr-1"
-            size="lg"
           ></Button>
         </>
       ) : (
@@ -136,24 +140,45 @@ function InGameControls() {
               label="Offer Draw"
               icon={FaHandshake}
               iconClassName="mr-1"
-              size="lg"
             >
               <>
                 Offer Draw <FaHandshake className={`inline`} />
               </>
             </Button>
           )}
-          <Button
-            onClick={gameControls.resign}
+          <ResignButton
+            onResign={gameControls.resign}
             label={gameStatus === "active" ? "Resign" : "Abort"}
-            icon={FiFlag}
-            iconClassName="mr-1"
-            variant="danger"
-            size="lg"
-            outline
-          ></Button>
+          ></ResignButton>
         </>
       )}
+    </>
+  );
+}
+
+function ResignButton({ onResign, label }: { onResign: () => void; label: string }) {
+  const [dialogShown, setDialogShown] = useState(false);
+  return (
+    <>
+      <ConfirmationDialog
+        title="Resign Game"
+        message="Are you sure you want to resign?"
+        onConfirm={onResign}
+        isOpen={dialogShown}
+        onCancel={() => setDialogShown(false)}
+        closeModal={() => {
+          setDialogShown(false);
+        }}
+        confirmText="Resign"
+        cancelText="Keep Playing"
+      />
+      <Button
+        onClick={() => setDialogShown(true)}
+        icon={FiFlag}
+        label={label}
+        iconClassName="mr-1"
+        variant="neutral"
+      ></Button>
     </>
   );
 }

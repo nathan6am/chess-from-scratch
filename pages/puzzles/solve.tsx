@@ -2,7 +2,7 @@ import React from "react";
 import { NextPage, NextPageContext } from "next";
 import GameLocal from "@/components/GameLocal";
 import NonSSRWrapper from "@/components/NonSSRWrapper";
-import PuzzleSolver from "@/components/puzzle/PuzzleSolver";
+import PuzzleSolver from "@/components/puzzle/ZenMode";
 import Head from "next/head";
 const SolvePuzzles: NextPage = () => {
   return (

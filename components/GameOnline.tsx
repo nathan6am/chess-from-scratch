@@ -15,12 +15,18 @@ import { SettingsContext } from "@/context/settings";
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
 import { ChatMessage, Connection, Player } from "@/server/types/lobby";
-import { BoardColumn, BoardRow, PanelColumn, PanelColumnLg, PanelContainer } from "./layout/GameLayout";
-
-import { DurationObjectUnits } from "luxon";
+import {
+  BoardColumn,
+  InfoRow,
+  GameContainer,
+  PanelContainer,
+  BoardContainer,
+} from "./layout/templates/GameLayout";
+import { DurationObjectUnits, Info } from "luxon";
 import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
 import LiveChat from "./game/LiveChat";
+import cn from "@/util/cn";
 interface Props {
   lobbyid: string;
 }
@@ -81,16 +87,26 @@ export default function GameOnline({ lobbyid }: Props) {
     if (playerColor) setOrientation(playerColor);
   }, [playerColor]);
 
+  const gameData = useMemo(() => {
+    if (!currentGame) return Chess.createGame({});
+    return currentGame.data;
+  }, [currentGame]);
   if (!onlineGame.connectionStatus.lobby) {
     return <div>Connecting...</div>;
   }
   //TODO: Add connecting component
-  if (!currentGame) return <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />;
 
-  const gameData = currentGame.data;
   return (
     <GameContext.Provider value={{ onlineGame, orientation }}>
-      <div className="flex flex-col h-full w-full justify-center ">
+      <GameContainer className="pt-10 md:pt-0">
+        <div className="w-full md:hidden absolute top-0 right-0 left-0">
+          <MoveTape
+            moveHistory={gameData.moveHistory}
+            jumpToOffset={boardControls.jumpToOffset}
+            currentOffset={livePositionOffset}
+            usePieceIcons={true}
+          />
+        </div>
         <Result
           outcome={gameData.outcome}
           isOpen={(gameData.outcome && showResult) || false}
@@ -98,57 +114,66 @@ export default function GameOnline({ lobbyid }: Props) {
             setShowResult(false);
           }}
         />
-        <div className="flex flex-col md:flex-row h-full w-full items-start  md:items-center justify-center ">
-          <div className="flex flex-row w-full lg:h-fit lg:basis-[100vh] justify-center">
-            <BoardColumn>
-              <div className="w-full md:hidden">
-                <MoveTape
-                  moveHistory={gameData.moveHistory}
-                  jumpToOffset={boardControls.jumpToOffset}
-                  currentOffset={livePositionOffset}
-                  usePieceIcons={true}
-                />
-              </div>
+        <BoardColumn
+          className={cn({
+            "flex-col": orientation === "w",
+            "flex-col-reverse": orientation === "b",
+          })}
+        >
+          <InfoRow>
+            <div className="shrink-0 grow">
+              {players.b && <PlayerCard connection={players.b} />}
+            </div>
+            <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
+          </InfoRow>
+          {/* 
+              
               <div className={`flex ${orientation === "w" ? "flex-col" : "flex-col-reverse"} w-full`}>
                 <div className="flex flex-row w-full justify-between">
                   {players.b && <PlayerCard connection={players.b} />}
                   <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
-                </div>
-
-                <Board
-                  key={currentGame.id}
-                  showCoordinates={settings.display.showCoordinates}
-                  movementType={settings.gameBehavior.movementType}
-                  theme={settings.display.boardTheme}
-                  pieceSet={settings.display.pieceTheme}
-                  orientation={orientation}
-                  legalMoves={gameData.legalMoves}
-                  legalPremoves={availablePremoves}
-                  showHighlights={true}
-                  showTargets={true}
-                  pieces={currentBoard || gameData.board}
-                  animationSpeed={settings.display.animationSpeed}
-                  lastMove={lastMove}
-                  activeColor={gameData.activeColor}
-                  moveable={moveable ? playerColor || "none" : "none"}
-                  preMoveable={settings.gameBehavior.allowPremoves}
-                  autoQueen={settings.gameBehavior.autoQueen}
-                  onMove={gameControls.onMove}
-                  premoveQueue={premoveQueue}
-                  clearPremoveQueue={gameControls.clearPremoveQueue}
-                  onPremove={(move) => {
-                    if (gameControls.onPremove) {
-                      gameControls.onPremove(move);
-                    }
-                  }}
-                />
-                <div className="flex flex-row w-full justify-between">
+                </div> */}
+          <BoardContainer>
+            <Board
+              key={currentGame?.id}
+              showCoordinates={settings.display.showCoordinates}
+              movementType={settings.gameBehavior.movementType}
+              theme={settings.display.boardTheme}
+              pieceSet={settings.display.pieceTheme}
+              orientation={orientation}
+              legalMoves={gameData.legalMoves}
+              legalPremoves={availablePremoves}
+              showHighlights={true}
+              showTargets={true}
+              pieces={currentBoard || gameData.board}
+              animationSpeed={settings.display.animationSpeed}
+              lastMove={lastMove}
+              activeColor={gameData.activeColor}
+              moveable={moveable ? playerColor || "none" : "none"}
+              preMoveable={settings.gameBehavior.allowPremoves}
+              autoQueen={settings.gameBehavior.autoQueen}
+              onMove={gameControls.onMove}
+              premoveQueue={premoveQueue}
+              clearPremoveQueue={gameControls.clearPremoveQueue}
+              onPremove={(move) => {
+                if (gameControls.onPremove) {
+                  gameControls.onPremove(move);
+                }
+              }}
+            />
+          </BoardContainer>
+          {/* <div className="flex flex-row w-full justify-between">
                   {players.w && <PlayerCard connection={players.w} />}
                   <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
                 </div>
-              </div>
-
-              {/* <div className="min-h-[120px] w-full block lg:hidden">
+              </div> */}
+          <InfoRow>
+            <div className="shrink-0 grow">
+              {players.w && <PlayerCard connection={players.w} />}
+            </div>
+            <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
+          </InfoRow>
+          {/* <div className="min-h-[120px] w-full block lg:hidden">
               <BoardControls controls={boardControls} />
               <GameControls
                 size="sm"
@@ -159,26 +184,30 @@ export default function GameOnline({ lobbyid }: Props) {
                 }}
               />
             </div> */}
-            </BoardColumn>
-          </div>
-          <PanelColumnLg className="py-10 ">
-            <PanelOnline
-              chat={chat}
-              sendMessage={sendMessage}
-              gameDetails={gameDetails}
-              timeRemaining={timeRemaining}
-              boardControls={boardControls}
-              gameControls={gameControls}
-              flipBoard={() => {
-                setOrientation((cur) => (cur === "w" ? "b" : "w"));
-              }}
-              currentOffset={livePositionOffset}
-              moveHistory={gameData.moveHistory}
-              orientation={orientation}
-            />
-          </PanelColumnLg>
-        </div>
-      </div>
+        </BoardColumn>
+        <PanelContainer>
+          <>
+            {currentGame ? (
+              <PanelOnline
+                chat={chat}
+                sendMessage={sendMessage}
+                gameDetails={gameDetails}
+                timeRemaining={timeRemaining}
+                boardControls={boardControls}
+                gameControls={gameControls}
+                flipBoard={() => {
+                  setOrientation((cur) => (cur === "w" ? "b" : "w"));
+                }}
+                currentOffset={livePositionOffset}
+                moveHistory={gameData.moveHistory}
+                orientation={orientation}
+              />
+            ) : (
+              <Waiting lobbyUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/play/${lobbyid}`} />
+            )}
+          </>
+        </PanelContainer>
+      </GameContainer>
     </GameContext.Provider>
   );
 }
@@ -195,7 +224,14 @@ interface PanelProps {
   chat: ChatMessage[];
   sendMessage: (message: string) => void;
 }
-function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, flipBoard, currentOffset }: PanelProps) {
+function PanelOnline({
+  gameDetails,
+  boardControls,
+  gameControls,
+  moveHistory,
+  flipBoard,
+  currentOffset,
+}: PanelProps) {
   const { onlineGame } = useContext(GameContext);
   const { currentGame } = onlineGame;
   const players = gameDetails.players;
@@ -205,23 +241,27 @@ function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, fl
     <PanelContainer>
       {currentGame ? (
         <>
-          <div className="w-full p-4 bg-elevation-2">
+          <div className="w-full p-4 bg-elevation-2 hidden md:block">
             <p>
               {`${rated ? "Rated" : "Unrated"} ${gameDetails.ratingCategory} game`}
               <span className="text-light-300">
                 {gameDetails.timeControl
-                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
+                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${
+                      gameDetails.timeControl.incrementSeconds
+                    })`
                   : ""}
               </span>
             </p>
             <p className="text-sm text-light-300">{`${players.w?.player.username} vs. ${players.b?.player.username}`}</p>
           </div>
-          <div className="w-full p-2 px-3 text-sm bg-elevation-2 shadow-md">
+          <div className="w-full p-2 px-3 text-sm bg-elevation-2 shadow-md hidden md:block">
             {
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+                <span className="inline text-light-300">{`${
+                  opening?.eco ? ` (${opening.eco})` : ""
+                }`}</span>
               </p>
             }
           </div>

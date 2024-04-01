@@ -1,5 +1,14 @@
 //Framework
-import React, { useState, Fragment, useMemo, useCallback, useRef, ChangeEvent, KeyboardEvent, useEffect } from "react";
+import React, {
+  useState,
+  Fragment,
+  useMemo,
+  useCallback,
+  useRef,
+  ChangeEvent,
+  KeyboardEvent,
+  useEffect,
+} from "react";
 
 //Types
 import { ArrowColor, TreeNode } from "@/lib/types";
@@ -63,7 +72,11 @@ export default function Annotations({ node, controls, markupControls }: Props) {
         toggleLocked={markupControls.toggleLocked}
       />
       <div className="flex flex-row items-center">
-        <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
+        <AnnotationSelect
+          updateAnnotations={updateAnnotations}
+          selected={selectedAnnotations}
+          disabled={!node}
+        />
         <a
           data-tooltip-id="my-tooltip"
           data-tooltip-content="Clear all"
@@ -76,7 +89,7 @@ export default function Annotations({ node, controls, markupControls }: Props) {
           <CgRemoveR className="inline ml-1" />
         </a>
       </div>
-      <TimeInput />
+      {/* <TimeInput /> */}
     </div>
   );
 }
@@ -131,7 +144,14 @@ function TimeInput() {
   }, [value, selectionStartRef.current]);
 
   return (
-    <input type="text" value={value} ref={inputRef} onKeyDown={handleKeyDown} placeholder="--:--:--" maxLength={8} />
+    <input
+      type="text"
+      value={value}
+      ref={inputRef}
+      onKeyDown={handleKeyDown}
+      placeholder="--:--:--"
+      maxLength={8}
+    />
   );
 }
 
@@ -154,7 +174,9 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           updateAnnotations(values);
         } else {
           const filterValues = category.options.map((option) => option.code);
-          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
+          updateAnnotations(
+            values.filter((value) => value === valueAdded || !filterValues.includes(value))
+          );
         }
       }
     },
@@ -168,14 +190,21 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
             Annotate With Glyphs
             <>
               {selected.length > 0 && (
-                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">{selected.length}</span>
+                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">
+                  {selected.length}
+                </span>
               )}
             </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
               <MdEditNote className="h-5 w-5" aria-hidden="true" />
             </span>
           </Listbox.Button>
-          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <Transition
+            as={Fragment}
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
             <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
@@ -193,7 +222,11 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
                       >
                         {({ selected }) => (
                           <>
-                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                            <span
+                              className={`block truncate ${
+                                selected ? "font-medium" : "font-normal"
+                              }`}
+                            >
                               <span className="inline text-sepia mr-1">{option.unicode}</span>
                               {option.description}
                             </span>
@@ -223,7 +256,13 @@ interface MarkupControlProps {
   locked: boolean;
   toggleLocked: () => void;
 }
-function MarkupControls({ selectedColor, setSelectedColor, clear, locked, toggleLocked }: MarkupControlProps) {
+function MarkupControls({
+  selectedColor,
+  setSelectedColor,
+  clear,
+  locked,
+  toggleLocked,
+}: MarkupControlProps) {
   const colorOverride = useColorOverride();
   return (
     <div className="w-full">

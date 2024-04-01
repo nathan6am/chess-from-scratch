@@ -9,9 +9,10 @@ import IconButton from "../base/IconButton";
 import NonSSRWrapper from "../NonSSRWrapper";
 interface Props {
   children?: JSX.Element | JSX.Element[];
+  className?: string;
 }
 
-export default function Dashboard({ children }: Props) {
+export default function Dashboard({ children, className }: Props) {
   const isMobile = useMediaQuery("only screen and (max-width: 640px)");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
@@ -54,7 +55,7 @@ export default function Dashboard({ children }: Props) {
         )}
       >
         <NonSSRWrapper>
-          <main className="flex-1 pt-12 sm:pt-0 flex flex-col">{children}</main>
+          <main className={cn("flex-1 pt-12 sm:pt-0 flex flex-col", className)}>{children}</main>
         </NonSSRWrapper>
       </div>
     </>

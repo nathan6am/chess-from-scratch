@@ -76,12 +76,12 @@ export function FileMenu({ showDialog, fileManager }: FileMenuProps) {
       case "rename":
         if (props) showDialog({ analysisId: props.analysis.id, dialog: "rename" });
         break;
-      case "export":
-        console.log("export");
-        break;
-      case "share":
-        console.log("share");
-        break;
+      // case "export":
+      //   console.log("export");
+      //   break;
+      // case "share":
+      //   console.log("share");
+      //   break;
       case "delete":
         if (props) showDialog({ analysisId: props.analysis.id, dialog: "delete" });
         break;
@@ -121,7 +121,13 @@ export function FileMenu({ showDialog, fileManager }: FileMenuProps) {
     </Menu>
   );
 }
-function RenderCollection({ collection, refetch }: { collection: Collection; refetch: () => void }) {
+function RenderCollection({
+  collection,
+  refetch,
+}: {
+  collection: Collection;
+  refetch: () => void;
+}) {
   return (
     <StyledDiclosure label={collection.title} size={collection.analyses.length}>
       <AnalysisList analyses={collection.analyses} refetch={refetch} hideLastUpdate />
@@ -315,7 +321,13 @@ interface AnalysisProps {
   setSelected: (analysisId: string) => void;
   hideLastUpdate?: boolean;
 }
-function RenderAnalysis({ analysis, onContextMenu, setSelected, selected, hideLastUpdate }: AnalysisProps) {
+function RenderAnalysis({
+  analysis,
+  onContextMenu,
+  setSelected,
+  selected,
+  hideLastUpdate,
+}: AnalysisProps) {
   const router = useRouter();
   const onDoubleClick = () => {
     router.push(`/study/analyze?id=${analysis.id}`);
@@ -367,7 +379,11 @@ function RenderAnalysis({ analysis, onContextMenu, setSelected, selected, hideLa
 export default function FileBrowser() {
   const [queryStr, setQueryStr] = useState("");
   const debouncedQueryStr = useDebounce(queryStr, 500);
-  const { collections, refetch: refetchCollections, isLoading: collectionsLoading } = useCollections();
+  const {
+    collections,
+    refetch: refetchCollections,
+    isLoading: collectionsLoading,
+  } = useCollections();
   const [sort, setSort] = useState<{ key: "lastUpdate" | "title"; direction: "ASC" | "DESC" }>({
     key: "lastUpdate",
     direction: "DESC",
@@ -414,71 +430,82 @@ export default function FileBrowser() {
             <>{!collections.length && collectionsLoading ? <Loading /> : <></>}</>
             <>
               {collections.map((collection) => {
-                return <RenderCollection key={collection.id} collection={collection} refetch={refetchAll} />;
+                return (
+                  <RenderCollection
+                    key={collection.id}
+                    collection={collection}
+                    refetch={refetchAll}
+                  />
+                );
               })}
             </>
           </ScrollContainer>
         </Tab.Panel>
         <Tab.Panel as="table" className="w-full grow flex flex-col">
-          <input
-            value={queryStr}
-            placeholder="Search analyses"
-            onChange={(e) => setQueryStr(e.target.value)}
-            className="display-none bg-elevation-2 rounded-md m-2 border border-light-400 pl-8 py-1.5 px-4"
-          ></input>
-          <thead className="flex flex-row items-center justify-between py-1 px-4 border-b border-light-400 text-sm pr-2 text-light-300">
-            <td>
-              <button
-                onClick={() => {
-                  setSort({
-                    key: "title",
-                    direction: sort.key === "title" && sort.direction === "ASC" ? "DESC" : "ASC",
-                  });
-                }}
-                className={classNames("p-1 px-2 rounded-md", {
-                  "bg-elevation-3 text-light-200": sort.key === "title",
-                })}
-              >
-                Name
-                <span
-                  className={classNames({
-                    "opacity-0": sort.key !== "title",
+          <div>
+            <input
+              value={queryStr}
+              placeholder="Search analyses"
+              onChange={(e) => setQueryStr(e.target.value)}
+              className="display-none bg-elevation-2 rounded-md m-2 border border-light-400 pl-8 py-1.5 px-4"
+            ></input>
+          </div>
+          <thead>
+            <tr className="flex flex-row items-center justify-between py-1 px-4 border-b border-light-400 text-sm pr-2 text-light-300">
+              <td>
+                <button
+                  onClick={() => {
+                    setSort({
+                      key: "title",
+                      direction: sort.key === "title" && sort.direction === "ASC" ? "DESC" : "ASC",
+                    });
+                  }}
+                  className={classNames("p-1 px-2 rounded-md", {
+                    "bg-elevation-3 text-light-200": sort.key === "title",
                   })}
                 >
-                  {sort.direction === "ASC" ? (
-                    <HiSortAscending className="inline ml-1" />
-                  ) : (
-                    <HiSortDescending className="inline ml-1" />
-                  )}
-                </span>
-              </button>
-            </td>
-            <td>
-              <button
-                onClick={() => {
-                  setSort({
-                    key: "lastUpdate",
-                    direction: sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
-                  });
-                }}
-                className={classNames("p-1 px-2 rounded-md", {
-                  "bg-elevation-3 text-light-200": sort.key === "lastUpdate",
-                })}
-              >
-                Last Updated
-                <span
-                  className={classNames({
-                    "opacity-0": sort.key !== "lastUpdate",
+                  Name
+                  <span
+                    className={classNames({
+                      "opacity-0": sort.key !== "title",
+                    })}
+                  >
+                    {sort.direction === "ASC" ? (
+                      <HiSortAscending className="inline ml-1" />
+                    ) : (
+                      <HiSortDescending className="inline ml-1" />
+                    )}
+                  </span>
+                </button>
+              </td>
+              <td>
+                <button
+                  onClick={() => {
+                    setSort({
+                      key: "lastUpdate",
+                      direction:
+                        sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
+                    });
+                  }}
+                  className={classNames("p-1 px-2 rounded-md", {
+                    "bg-elevation-3 text-light-200": sort.key === "lastUpdate",
                   })}
                 >
-                  {sort.direction === "ASC" ? (
-                    <HiSortAscending className="inline ml-1" />
-                  ) : (
-                    <HiSortDescending className="inline ml-1" />
-                  )}
-                </span>
-              </button>
-            </td>
+                  Last Updated
+                  <span
+                    className={classNames({
+                      "opacity-0": sort.key !== "lastUpdate",
+                    })}
+                  >
+                    {sort.direction === "ASC" ? (
+                      <HiSortAscending className="inline ml-1" />
+                    ) : (
+                      <HiSortDescending className="inline ml-1" />
+                    )}
+                  </span>
+                </button>
+              </td>
+            </tr>
           </thead>
           <div className="w-full grow relative">
             <ScrollContainer>
@@ -536,9 +563,12 @@ function StyledDiclosure({ children, label, size = 0 }: StyledDisclosureProps) {
             )}
           >
             <div
-              className={classNames(" text-light-200 flex flex-row items-center group-hover:text-light-100", {
-                "text-light-100": open,
-              })}
+              className={classNames(
+                " text-light-200 flex flex-row items-center group-hover:text-light-100",
+                {
+                  "text-light-100": open,
+                }
+              )}
             >
               <BsFillCollectionFill className="mr-2 inline text-gold-200" />
               {label}

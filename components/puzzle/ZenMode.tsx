@@ -1,16 +1,15 @@
 import { SettingsContext } from "@/context/settings";
 import usePuzzleQueue from "@/hooks/usePuzzleQueue";
-import PuzzlePanel from "./PuzzlePanel";
+
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import {
-  BoardColumn,
-  BoardRow,
-  PanelColumn,
-  PanelColumnLg,
-  ScrollContainer,
-} from "../layout/GameLayout";
+import { ScrollContainer } from "../layout/GameLayout";
 import PuzzleFilters from "./PuzzleFilters";
-import CheckBox from "../base/CheckBox";
+import {
+  GameContainer,
+  BoardColumn,
+  BoardContainer,
+  PanelContainer,
+} from "../layout/templates/GameLayout";
 import Board from "../board/Board";
 import { IoExtensionPuzzle } from "react-icons/io5";
 import BoardControls from "../game/BoardControls";
@@ -20,8 +19,7 @@ import { FaLightbulb } from "react-icons/fa";
 import { MdRestartAlt } from "react-icons/md";
 import { IoCaretForwardSharp } from "react-icons/io5";
 import { ClipLoader } from "react-spinners";
-import { Toggle } from "../UIKit";
-import { RangeSlider } from "../UIKit";
+import { Toggle, RangeSlider } from "@/components/base";
 export default function PuzzleSolver() {
   const [filterByTheme, setFilterByTheme] = useState(false);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
@@ -47,9 +45,9 @@ export default function PuzzleSolver() {
   }, [puzzle.puzzle]);
   return (
     <>
-      <BoardRow>
-        <div className="flex flex-row h-fit basis-[100vh] justify-center md:pl-4">
-          <BoardColumn>
+      <GameContainer>
+        <BoardColumn>
+          <BoardContainer>
             <Board
               keyPrefix={puzzle.puzzle?.id || "empty"}
               disableTransitions={hidePiecesRef.current}
@@ -73,9 +71,9 @@ export default function PuzzleSolver() {
               onMove={puzzle.onMove}
               onPremove={() => {}}
             />
-          </BoardColumn>
-        </div>
-        <PanelColumnLg>
+          </BoardContainer>
+        </BoardColumn>
+        <PanelContainer>
           <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
             <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
           </h2>
@@ -120,8 +118,8 @@ export default function PuzzleSolver() {
           </div>
           <div className="w-full flex flex-row"></div>
           <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
-        </PanelColumnLg>
-      </BoardRow>
+        </PanelContainer>
+      </GameContainer>
     </>
   );
 }

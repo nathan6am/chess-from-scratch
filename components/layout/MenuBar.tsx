@@ -15,11 +15,10 @@ function MenuBar({ children }: Props) {
   };
   return (
     <>
-      <OptionsOverlay isOpen={showOptions} closeModal={closeModal} />
       <div className="w-full z-[98] h-10 bg-elevation-2 flex flex-row justify-center items-center absolute top-0 left-0 right-0">
         <div className="flex flex-row justify-between items-center container">
           <div>{children}</div>
-          <div className="flex flex-row justify-start items-center">
+          {/* <div className="flex flex-row justify-start items-center">
             <button className="flex flex-row items-center justify-center p-2 rounded-md  hover:bg-elevation-4 text-light-200 hover:text-gold-100 hover:shadow-md">
               <MdNotifications className="text-xl" />
             </button>
@@ -32,7 +31,7 @@ function MenuBar({ children }: Props) {
             <button className="flex flex-row items-center justify-center p-2 rounded-md  hover:bg-elevation-4 text-light-200 hover:text-gold-100 hover:shadow-md">
               <MdLogout className="text-xl" />
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </>

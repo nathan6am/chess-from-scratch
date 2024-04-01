@@ -55,6 +55,8 @@ export default function LobbyHandler(
     const lobby = await cache.getLobbyById(lobbyid);
     if (!lobby) throw new Error("Lobby does not exist");
 
+    lobby.rematchRequested = { w: null, b: null };
+    await cache.updateLobby(lobbyid, lobby);
     const game = await cache.newGame(lobbyid);
     if (!game) throw new Error("Unable to start game");
 

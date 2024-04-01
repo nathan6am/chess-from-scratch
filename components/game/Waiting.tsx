@@ -9,10 +9,9 @@ export default function Waiting({ lobbyUrl }: Props) {
   const router = useRouter();
   return (
     <div className="container flex justify-center items-center">
-      <div className="w-2xl py-10 px-10 lg:px-20 flex flex-col items-center justify-center rounded-lg bg-[#1f1f1f] shadow-lg">
-        <h2 className="w-full my-4 text-xl flex flex-row items-baseline">
-          Waiting for opponent to join{" "}
-          <BeatLoader className="inline ml-1" size={6} color="white" />
+      <div className="w-fullflex flex-col items-center justify-center shadow-lg">
+        <h2 className="w-full my-4 text-lg text-center flex flex-row items-baseline">
+          Waiting for opponent to join <BeatLoader className="inline ml-1" size={6} color="white" />
         </h2>
         <LobbyLink lobbyUrl={lobbyUrl} />
         <button
@@ -32,9 +31,7 @@ function LobbyLink({ lobbyUrl }: Props) {
   const [fade, setFade] = useState(true);
   return (
     <div className="w-full p-6 my-4 bg-white/[0.05] rounded-md">
-      <p className="text-sm opacity-50">
-        Share this link to invite a friend to join the game
-      </p>
+      <p className="text-sm opacity-50">Share this link to invite a friend to join the game</p>
       <div className="flex flex-row rounded-md my-4 min-w-[400px]  overflow-hidden">
         <div className="px-4 py-2 pr-8 bg-[#121212] rounded-l-md border-white/[0.5] border-y-2 border-l-2 grow">
           {lobbyUrl}
@@ -48,9 +45,7 @@ function LobbyLink({ lobbyUrl }: Props) {
           Copy Link
         </button>
       </div>
-      <p className="text-sm opacity-50">
-        The first player to user this link will be your opponent
-      </p>
+      <p className="text-sm opacity-50">The first player to user this link will be your opponent</p>
     </div>
   );
 }

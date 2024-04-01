@@ -4,7 +4,7 @@ import axios from "axios";
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Chess from "@/lib/chess";
-import { TreeNode } from "@/lib/types";
+
 import { notEmpty } from "@/util/misc";
 import useDebounce from "./useDebounce";
 
@@ -82,10 +82,10 @@ interface LichessFilters {
   topGames: number;
 }
 interface MastersFilters {
-  since?: number;
-  until?: number;
-  moves?: number;
-  topGames?: number;
+  since: number;
+  until: number;
+  moves: number;
+  topGames: number;
 }
 
 type RatingGroup = 0 | 1000 | 1200 | 1400 | 1600 | 1800 | 2000 | 2200 | 2500;
@@ -133,7 +133,12 @@ export interface ExplorerHook {
 
 export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHook {
   const [database, setDatabase] = useState<"lichess" | "masters">("masters");
-  const [mastersFilters, setMastersFilters] = useState<MastersFilters>({});
+  const [mastersFilters, setMastersFilters] = useState<MastersFilters>({
+    since: 1952,
+    until: 2023,
+    moves: 12,
+    topGames: 15,
+  });
   const [lichessFilters, setLichessFilters] = useState<LichessFilters>({
     speeds: ["bullet", "blitz", "rapid", "classical"],
     ratings: [0, 2500],
@@ -158,7 +163,10 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
       return mastersFilters;
     }
   }, [database, lichessFilters, mastersFilters]);
-  const queryParams = useMemo(() => ({ fen, play, currentFen, ...filters }), [fen, play, currentFen, filters]);
+  const queryParams = useMemo(
+    () => ({ fen, play, currentFen, ...filters }),
+    [fen, play, currentFen, filters]
+  );
   const params = useDebounce(queryParams, 500);
   //Ref to set loading state when currentGame changes before debounced game upates
   const debounceSyncRef = useRef<boolean>(false);
@@ -208,7 +216,10 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     },
   });
 
-  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
+  const fetchGameAsync = async (
+    gameid: string,
+    gameType: "lichess" | "masters"
+  ): Promise<string | undefined> => {
     if (gameType === "lichess") {
       const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
       if (response && response.data) return response.data as string;

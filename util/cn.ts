@@ -1,6 +1,5 @@
 import clsx, { ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type * as React from "react";
 
 /**
  * Merges class names with tailwindcss classes

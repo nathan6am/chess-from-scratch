@@ -27,10 +27,17 @@ export default function RecentGames() {
       {user?.type === "guest" ? (
         <div className="w-full h-full grow relative">
           <p
-            className="italic text-sm text-light-400 m-4 w-full text-center
+            className="italic text-sm text-light-400 m-4 my-8 w-full text-center
         "
           >
-            <Link href="/signup">Make an account</Link> to save your games and access them from any device.
+            <Link href="/login" className="underline hover:text-light-300">
+              Login
+            </Link>{" "}
+            or{" "}
+            <Link href="/signup" className="underline hover:text-light-300">
+              make an account
+            </Link>{" "}
+            to view your game history.
           </p>
         </div>
       ) : (

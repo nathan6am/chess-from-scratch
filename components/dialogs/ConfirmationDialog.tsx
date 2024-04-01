@@ -27,8 +27,13 @@ export default function ConfirmationDialog({
   loadingText,
 }: Props) {
   return (
-    <Modal isOpen={isOpen} onClose={closeModal} panelClassName="max-w-md p-6 bg-elevation-2" showCloseButton>
-      <div className="text-center">
+    <Modal
+      isOpen={isOpen}
+      onClose={closeModal}
+      panelClassName="w-full max-w-md p-6 bg-elevation-2"
+      showCloseButton
+    >
+      <div className="text-center ">
         <h2 className="font-semibold text-xl text-gold-200">{title}</h2>
       </div>
       <p className="my-4 text-left">{message}</p>

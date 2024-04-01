@@ -1,4 +1,11 @@
-import React, { useCallback, useState, useEffect, useRef, useImperativeHandle, useMemo } from "react";
+import React, {
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  useMemo,
+} from "react";
 import styles from "@/styles/Board.module.scss";
 
 //Types
@@ -57,6 +64,7 @@ interface Props {
   showAnnotation?: boolean; //Whether or not to show annotations on board
   arrows?: Arrow[]; //Array of arrows to display on the board
   markedSquares?: MarkedSquare[]; //Array of marked squares to display on the board
+  bestMove?: Chess.Move; //Best move to display on the board
   onArrow?: (arrow: Arrow) => void; //Callback to execute when an arrow is drawn
   onMarkSquare?: (markedSquare: MarkedSquare) => void; //Callback to execute when a square is marked
   onClear?: () => void; //Callback to execute when the annotations are cleared
@@ -136,7 +144,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
       if (!selectedPiece) return [];
       if (premoveQueue?.length) return [];
       const [square, _piece] = selectedPiece;
-      return legalPremoves.filter((premove) => premove.start === square).map((premove) => premove.end);
+      return legalPremoves
+        .filter((premove) => premove.start === square)
+        .map((premove) => premove.end);
     }, [selectedPiece, legalPremoves, premoveQueue]);
     //Show Promotion Menu
     const [promotionMove, setPromotionMove] = useState<{
@@ -174,7 +184,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
       //Queue premove if the piece isn't of the active turn color and do not continue
       if (piece.color !== activeColor && preMoveable) {
         if (!legalPremoves?.length) return;
-        const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
+        const premove = legalPremoves.find(
+          (premove) => premove.start === square && premove.end === currentSquare
+        );
         if (premove) onPremove(premove);
       }
 
@@ -227,7 +239,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
 
         //Queue premove if the piece isn't of the active turn color and do not continue
         if (piece.color !== activeColor && preMoveable) {
-          const premove = legalPremoves?.find((premove) => premove.start === square && premove.end === targetSquare);
+          const premove = legalPremoves?.find(
+            (premove) => premove.start === square && premove.end === targetSquare
+          );
           if (premove) onPremove(premove);
         }
         if (piece.color !== activeColor) return;
@@ -349,7 +363,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
+                    move.start === promotionMove.start &&
+                    move.end === promotionMove.end &&
+                    move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -381,7 +397,9 @@ const Board = React.forwardRef<BoardHandle, Props>(
                       false
                     }
                     isPremoved={nextPremove?.start === square || nextPremove?.end === square}
-                    isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
+                    isSelected={
+                      (!editMode && selectedPiece && selectedPiece[0] === square) || false
+                    }
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {
