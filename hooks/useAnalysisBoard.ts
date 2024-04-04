@@ -65,6 +65,7 @@ export interface AnalysisHook {
   };
   loadFen: (fen: string) => void;
   reset: (options: { pgn?: string | undefined }) => void;
+  setOptions: React.Dispatch<React.SetStateAction<AnalysisOptions>>;
 }
 
 interface AnalysisOptions {
@@ -499,6 +500,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     currentKey,
     currentNode,
     explorer,
+    setOptions,
     commentControls: {
       updateComment,
       updateAnnotations,

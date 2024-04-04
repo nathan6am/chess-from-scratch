@@ -88,4 +88,16 @@ export default class User_Game extends BaseEntity {
     const games = await query.getMany();
     return games;
   }
+
+  static async getRatingHistory(userid: string, ratingCategory: RatingCategory, from: Date) {
+    const query = this.createQueryBuilder("user_game")
+      .select(["user_game.rating", "game.date"])
+      .leftJoin("user_game.game", "game")
+      .where("user_game.user_id = :userid", { userid })
+      .andWhere("user_game.rating_category = :ratingCategory", { ratingCategory })
+      .andWhere("game.date > :from", { from })
+      .orderBy("game.date", "ASC");
+    const games = await query.getMany();
+    return games.map((g) => ({ rating: g.rating, date: g.game.date }));
+  }
 }

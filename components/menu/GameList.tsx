@@ -151,26 +151,22 @@ function RenderGame({
       <td>
         <div className="flex flex-col w-[180px] text-xs p-1 pl-0 ">
           <p className="flex flex-row items-center">
-            <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
+            <ColorIcon color="w" />
             {players.w.username || (
               <span className="opacity-50">
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">
-              {players.w.rating && `(${players.w.rating})`}
-            </span>
+            <span className="inline opacity-60 ml-1">{players.w.rating && `(${players.w.rating})`}</span>
           </p>
           <p className="flex flex-row items-center">
-            <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
+            <ColorIcon color="b" />
             {players.b.username || (
               <span className="opacity-50">
                 <em>Account Deleted</em>
               </span>
             )}
-            <span className="inline opacity-60 ml-1">
-              {players.b.rating && `(${players.b.rating})`}
-            </span>
+            <span className="inline opacity-60 ml-1">{players.b.rating && `(${players.b.rating})`}</span>
           </p>
         </div>
       </td>
@@ -187,6 +183,15 @@ function RenderGame({
   );
 }
 
+function ColorIcon({ color }: { color: Chess.Color }) {
+  if (color === "w")
+    return (
+      <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
+    );
+  return (
+    <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-black mr-1" />
+  );
+}
 function ResultIcon({ result }: { result: "win" | "loss" | "draw" }) {
   switch (result) {
     case "win":

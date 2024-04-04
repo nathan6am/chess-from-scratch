@@ -7,6 +7,7 @@ import { MdModeComment } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
 import { AiFillTag, AiFillCheckCircle } from "react-icons/ai";
 import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
+import { MdDriveFileRenameOutline } from "react-icons/md";
 import { HiSave } from "react-icons/hi";
 
 //content components
@@ -17,12 +18,18 @@ import Explorer from "@/components/analysis/Explorer";
 import VarationTree from "@/components/analysis/VarationTree";
 import EvalInfo from "@/components/analysis/EvalInfo";
 import EditDetails from "@/components/analysis/EditDetails";
+import RenameDialog from "@/components/dialogs/RenameDialog";
 
 //ui components
-import { Button } from "@/components/base";
+import { Button, IconButton } from "@/components/base";
 import { PulseLoader } from "react-spinners";
 import { ScrollContainer } from "@/components/layout/GameLayout";
 import { Tab } from "@headlessui/react";
+
+//hooks
+import useFileManager from "@/hooks/useFileManager";
+import useAuth from "@/hooks/useAuth";
+import Link from "next/link";
 
 interface Props {
   modalControls: {
@@ -36,12 +43,37 @@ interface Props {
   };
 }
 export default function AnalysisPanel({ modalControls }: Props) {
+  const { user } = useAuth();
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const { analysis, saveManager } = useContext(AnalysisContext);
   const [expanded, setExpanded] = useState(true);
   const { onMove, currentNode, commentControls, setMoveQueue } = analysis;
+  const fileManager = useFileManager({
+    onRenamed: () => {
+      setRenameDialogOpen(false);
+      saveManager.sync();
+    },
+  });
 
   return (
     <>
+      <RenameDialog
+        isOpen={renameDialogOpen}
+        closeModal={() => {
+          setRenameDialogOpen(false);
+        }}
+        currentName={saveManager.data?.analysis.title || ""}
+        onConfirm={({ name }) => {
+          if (saveManager.id && saveManager.data) {
+            fileManager.renameAnalysis({
+              analysisId: saveManager.id,
+              newName: name,
+            });
+          } else {
+            setRenameDialogOpen(false);
+          }
+        }}
+      />
       <Tab.Group>
         <Tab.List className="flex bg-elevation-1 shadow-lg">
           <TopTab>
@@ -57,7 +89,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
         <Tab.Panel as={Fragment}>
           <>
             <EvalInfo />
-            <div className="w-full px-4 py-2 bg-elevation-2 flex flex-row items-center justify-between">
+            <div className="w-full px-4 py-2 bg-elevation-3 flex flex-row items-center justify-between">
               {saveManager.id && saveManager.data ? (
                 <>
                   <p>{saveManager.data.analysis.title}</p>
@@ -69,26 +101,44 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes{" "}
-                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
                 </>
               ) : (
                 <>
-                  <p className="text-light-200">{`* Unsaved Analysis`}</p>
-                  <Button
-                    onClick={modalControls.showSave}
-                    className="px-4 py-1"
-                    variant="success"
-                    label="Save"
-                    width="fit"
-                    size="sm"
-                    icon={HiSave}
-                    iconClassName="text-lg ml-1"
-                    iconPosition="right"
-                  />
+                  {user?.type === "guest" ? (
+                    <p
+                      className="italic text-sm text-light-400 m-4 my-2 w-full text-center
+        "
+                    >
+                      <Link href="/login" className="underline hover:text-light-300">
+                        Login
+                      </Link>{" "}
+                      or{" "}
+                      <Link href="/signup" className="underline hover:text-light-300">
+                        make an account
+                      </Link>{" "}
+                      to save your analyses and access them from anywhere.
+                    </p>
+                  ) : (
+                    <>
+                      {" "}
+                      <p className="text-light-200">{`* Unsaved Analysis`}</p>
+                      <Button
+                        onClick={modalControls.showSave}
+                        className="px-4 py-1"
+                        variant="success"
+                        label="Save"
+                        width="fit"
+                        size="sm"
+                        icon={HiSave}
+                        iconClassName="text-lg ml-1"
+                        iconPosition="right"
+                      />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -101,18 +151,22 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </>
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <Explorer
-            explorer={analysis.explorer}
-            onMove={onMove}
-            showPlayer={modalControls.showPlayer}
-          />
+          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
           <>
-            <div className="w-full px-4 py-4 bg-elevation-2 flex flex-row items-center justify-between">
+            <div className="w-full px-4 py-2 bg-elevation-3 flex flex-row items-center justify-between">
               {saveManager.id && saveManager.data ? (
                 <>
-                  <p>{saveManager.data.analysis.title}</p>
+                  <div className="flex flex-row items-center">
+                    <p>{saveManager.data.analysis.title}</p>
+                    <IconButton
+                      icon={MdDriveFileRenameOutline}
+                      onClick={() => setRenameDialogOpen(true)}
+                      className="inline p-1 m-1"
+                    />
+                  </div>
+
                   <span className="text-sm text-light-300 flex flex-row items-end">
                     {saveManager.syncStatus === "synced" ? (
                       <>
@@ -121,26 +175,46 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes{" "}
-                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
                 </>
               ) : (
                 <>
-                  <p className="text-light-200">{`* Unsaved Analysis`}</p>
-                  <Button
-                    onClick={modalControls.showSave}
-                    className="px-4 py-1"
-                    variant="success"
-                    label="Save"
-                    width="fit"
-                    size="sm"
-                    icon={HiSave}
-                    iconClassName="text-lg ml-1"
-                    iconPosition="right"
-                  />
+                  {user?.type === "guest" ? (
+                    <>
+                      <p
+                        className="italic text-sm text-light-400 m-4 my-2 w-full text-center
+        "
+                      >
+                        <Link href="/login" className="underline hover:text-light-300">
+                          Login
+                        </Link>{" "}
+                        or{" "}
+                        <Link href="/signup" className="underline hover:text-light-300">
+                          make an account
+                        </Link>{" "}
+                        to save your analyses and access them from anywhere.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      <p className="text-light-200">{`* Unsaved Analysis`}</p>
+                      <Button
+                        onClick={modalControls.showSave}
+                        className="px-4 py-1"
+                        variant="success"
+                        label="Save"
+                        width="fit"
+                        size="sm"
+                        icon={HiSave}
+                        iconClassName="text-lg ml-1"
+                        iconPosition="right"
+                      />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -178,11 +252,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments
-                key={currentNode?.key || "none"}
-                node={currentNode}
-                controls={commentControls}
-              />
+              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -224,9 +294,7 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-sm text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected
-            ? "bg-[#202020]"
-            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

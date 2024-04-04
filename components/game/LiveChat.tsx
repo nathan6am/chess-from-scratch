@@ -40,12 +40,12 @@ export default function LiveChat() {
           }}
           className="text-xs"
         >
-          Hide Chat
+          {showChat ? "Hide Chat" : "Show Chat"}
         </button>
       </div>
       {showChat && (
         <>
-          <div className="h-[10em] relative">
+          <div className="h-[10em] relative ">
             <ScrollContainer>
               <div className="w-full flex flex-col px-4 py-4">
                 {chat.map((message, idx, messages) => {
@@ -78,7 +78,7 @@ export default function LiveChat() {
                 spellCheck={false}
                 placeholder="Type to chat"
                 rows={1}
-                className={`w-full bg-transparent border border-light-400 rounded-md resize-none px-2 py-1 text-light-200 placeholder:text-light-400 focus:outline-none focus:border-gold-200`}
+                className={`w-full bg-transparent border border-light-400 rounded-md resize-none px-2 py-1 text-light-200 placeholder:text-light-400 focus:outline-none focus:border-gold-200 focus:bg-elevation-1`}
                 id="messageInput"
                 value={message}
                 onKeyDown={(e) => {
@@ -130,8 +130,8 @@ function RenderMessage({
         )}
         <div
           className={classNames("px-4 py-1 w-fit text-light-100 my-2 shadow", {
-            "bg-elevation-3 mr-8 justify-self-start rounded-r-md rounded-bl-md": !isSender,
-            "bg-gold-300/[0.8] ml-8 justify-self-end rounded-l-md rounded-br-md": isSender,
+            "bg-gold-300/[0.8] mr-8 justify-self-start rounded-r-md rounded-bl-md": !isSender,
+            "bg-elevation-4 ml-8 justify-self-end rounded-l-md rounded-br-md": isSender,
           })}
         >
           <p>{message.message}</p>

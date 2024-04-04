@@ -18,12 +18,7 @@ import { DateTime } from "luxon";
 import { currentISO, currentTimeRemaining, switchClock } from "../util/clockFunctions";
 import * as Chess from "../../lib/chess";
 
-export default function LobbyHandler(
-  io: Server,
-  nsp: LobbyServer,
-  socket: Socket,
-  redisClient: RedisClient
-): void {
+export default function LobbyHandler(io: Server, nsp: LobbyServer, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
 
   //UTILITY FUNCTIONS
@@ -41,9 +36,7 @@ export default function LobbyHandler(
     if (!currentLobby) return;
     if (!currentLobby.currentGame) return;
     const nextPlayer = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor];
-    const nextPlayerConnection = currentLobby.connections.find(
-      (player) => player.id === nextPlayer.id
-    );
+    const nextPlayerConnection = currentLobby.connections.find((player) => player.id === nextPlayer.id);
     if (!nextPlayerConnection) return;
     const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
     const nextPlayerSocket = await socketInstanceById(nextPlayerSocketId);
@@ -74,18 +67,22 @@ export default function LobbyHandler(
     nsp.to(lobbyid).emit("game:new", game);
   }
 
+  //Abort game
+  async function abortGame(lobbyid: string) {
+    const lobby = await cache.getLobbyById(lobbyid);
+    if (!lobby || !lobby.currentGame) return;
+    await cache.deleteLobby(lobbyid);
+    nsp.to(lobbyid).emit("game:aborted");
+  }
+
   //Handle game result
   async function handleGameResult(lobbyid: string, game: Game) {
     const lobby = await cache.getLobbyById(lobbyid);
     if (!lobby || !lobby.currentGame) return;
 
     const updated = await cache.updateGame(lobbyid, game);
-    const connectionWhite = lobby.connections.find(
-      (connection) => connection.id === game.players.w.id
-    );
-    const connectionBlack = lobby.connections.find(
-      (connection) => connection.id === game.players.b.id
-    );
+    const connectionWhite = lobby.connections.find((connection) => connection.id === game.players.w.id);
+    const connectionBlack = lobby.connections.find((connection) => connection.id === game.players.b.id);
     if (!connectionBlack || !connectionWhite) throw new Error("connections mismatched");
     const connections = { w: connectionWhite, b: connectionBlack };
     const outcome = updated.data.outcome;
@@ -112,16 +109,11 @@ export default function LobbyHandler(
     }
     let ratingDeltas = { w: 0, b: 0 };
     //update user ratings if applicable
-    if (
-      lobby.connections.every((connection) => connection.player.type !== "guest") &&
-      lobby.options.rated
-    ) {
+    if (lobby.connections.every((connection) => connection.player.type !== "guest") && lobby.options.rated) {
       const playerw = await User.findOneBy({ id: connectionWhite.player.id });
       const playerb = await User.findOneBy({ id: connectionBlack.player.id });
       if (!playerw || !playerb) throw new Error("User not found");
-      const ratingCategory = Chess.inferRatingCategeory(
-        lobby.options.gameConfig.timeControl || null
-      );
+      const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
       const ratingw = playerw.ratings[ratingCategory];
       const ratingb = playerb.ratings[ratingCategory];
       const result = outcome.result === "w" ? 1 : outcome.result === "b" ? 0 : 0.5;
@@ -164,7 +156,7 @@ export default function LobbyHandler(
       w: connections.w.player,
       b: connections.b.player,
     };
-    nsp.to(lobbyid).emit("game:outcome", updated);
+    nsp.to(lobbyid).emit("game:outcome", updated, ratingDeltas);
     nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
     //Save the game to db if any user is not a guest
     if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
@@ -191,7 +183,8 @@ export default function LobbyHandler(
         let connection: Connection;
         if (type !== "guest") {
           //Get the user's current rating if the user is not a guest
-          const user = await User.findById(id);
+
+          const user = await User.getProfile(id);
           if (!user) throw new Error("Unauthenticated");
           const timeControl = lobby.options.gameConfig.timeControl;
           const ratingCategory = Chess.inferRatingCategeory(timeControl || null);
@@ -201,6 +194,7 @@ export default function LobbyHandler(
             player: {
               ...sessionUser,
               rating: user.ratings[ratingCategory].rating,
+              country: user.profile?.country,
             },
             score: 0,
             lastClientSocketId: socket.id,
@@ -246,10 +240,7 @@ export default function LobbyHandler(
             const activeColor = game.data.activeColor;
             const clock = game.clock;
             //Correct the time remaining if both player have played a move
-            if (
-              game.data.moveHistory.flat().filter(notEmpty).length > 2 &&
-              clock.lastMoveTimeISO !== null
-            ) {
+            if (game.data.moveHistory.flat().filter(notEmpty).length >= 2 && clock.lastMoveTimeISO !== null) {
               clock.timeRemainingMs[activeColor] = currentTimeRemaining(
                 clock.lastMoveTimeISO,
                 clock.timeRemainingMs[activeColor]
@@ -341,8 +332,11 @@ export default function LobbyHandler(
   });
 
   socket.on("disconnect", async () => {
+    console.log("Player disconnected");
+    console.log(`Socket data: ${socket.data.userid}`);
     if (!socket.data.userid) return;
     const lobbies = Array.from(socket.rooms).filter((room) => room !== socket.id);
+    console.log(lobbies);
     for (const lobbyid of lobbies) {
       const lobby = await cache.getLobbyById(lobbyid);
       if (!lobby) return;
@@ -359,9 +353,7 @@ export default function LobbyHandler(
         reservedConnections: updated.reservedConnections,
       });
       if (lobby.currentGame && !lobby.currentGame.data.outcome) {
-        const ratingCategory = Chess.inferRatingCategeory(
-          lobby.options.gameConfig.timeControl || null
-        );
+        const ratingCategory = Chess.inferRatingCategeory(lobby.options.gameConfig.timeControl || null);
         const abandonTimeoutMap: Record<Chess.RatingCategory, number> = {
           bullet: 15 * 1000,
           blitz: 45 * 1000,
@@ -391,123 +383,101 @@ export default function LobbyHandler(
       }
     }
   });
-  const requestMoveWithTimeout = async (
-    socket: Socket,
-    timeoutMs: number,
-    game: Game,
-    lobbyid: string
-  ) => {
+  const requestMoveWithTimeout = async (socket: Socket, timeoutMs: number, game: Game, lobbyid: string) => {
     const lobby = await cache.getLobbyById(lobbyid);
     if (!lobby) throw new Error("lobby does not exist");
     if (!lobby.currentGame || lobby.currentGame.id !== game.id) throw new Error("game not found");
     //Correct the time remaining before emitting
     const clock = lobby.currentGame.clock;
     if (clock.lastMoveTimeISO) {
-      lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] =
-        currentTimeRemaining(
-          clock.lastMoveTimeISO,
-          clock.timeRemainingMs[lobby.currentGame.data.activeColor]
-        );
+      lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = currentTimeRemaining(
+        clock.lastMoveTimeISO,
+        clock.timeRemainingMs[lobby.currentGame.data.activeColor]
+      );
     }
     //Timeout event to end the game if the user hasn't played a move in the allotted time
-    socket
-      .timeout(timeoutMs)
-      .emit("game:request-move", timeoutMs, lobby.currentGame, async (err, response) => {
-        if (err) {
+    socket.timeout(timeoutMs).emit("game:request-move", timeoutMs, lobby.currentGame, async (err, response) => {
+      if (err) {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby) return;
+        if (!lobby.currentGame) return;
+        //return if the game has an outcome or a new game has started
+        if (lobby.currentGame?.id !== game.id || lobby.currentGame.data.outcome) return;
+        //return if moves have been played since the initial request
+        if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length) return;
+        //Abort the game if both players have not yet made a move
+        if (lobby.currentGame.data.moveHistory.flat().length < 2) {
+          await cache.updateGame(lobbyid, lobby.currentGame);
+          await handleGameResult(lobbyid, lobby.currentGame);
+          return;
+        }
+
+        //Set outcome by timeout and emit
+        const board = lobby.currentGame.data.board;
+        const pieces: Record<Chess.Color, Chess.Piece[]> = {
+          w: board.filter(([square, piece]) => piece.color === "w").map(([square, piece]) => piece),
+          b: board.filter(([square, piece]) => piece.color === "b").map(([square, piece]) => piece),
+        };
+        const nextColor = lobby.currentGame.data.activeColor === "w" ? "b" : "w";
+        if (Chess.isSufficientMaterial(pieces[nextColor])) {
+          lobby.currentGame.data.outcome = {
+            result: nextColor,
+            by: "timeout",
+          };
+        } else {
+          lobby.currentGame.data.outcome = {
+            result: "d",
+            by: "timeout-w-insufficient",
+          };
+        }
+
+        lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
+        await cache.updateGame(lobbyid, lobby.currentGame);
+        await handleGameResult(lobbyid, lobby.currentGame);
+      } else {
+        //Attempt to execute the move upon response from the client
+        try {
+          const updated = await executeMove(response, lobbyid);
+          nsp.to(lobbyid).emit("game:move", updated);
+          if (updated.data.outcome) {
+            await handleGameResult(lobbyid, updated);
+            return;
+          }
+          const currentLobby = await cache.getLobbyById(lobbyid);
+
+          //Retrieve the socket instance for the next player
+          if (!currentLobby) return;
+          if (!currentLobby.currentGame) return;
+          const nextPlayerId = currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor].id;
+          const nextPlayerConnection = currentLobby.connections.find((player) => player.id === nextPlayerId);
+          if (!nextPlayerConnection) return;
+          const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
+          const nextPlayerSocket = await socketInstanceById(nextPlayerSocketId);
+          //TODO: set abandonment timeout
+          if (!nextPlayerSocket) return;
+          const timeRemainingMs = currentTimeRemaining(
+            currentLobby.currentGame.clock.lastMoveTimeISO || DateTime.now().toISO(),
+            currentLobby.currentGame.clock.timeRemainingMs[currentLobby.currentGame.data.activeColor]
+          );
+          //Request move from next player
+          requestMoveWithTimeout(nextPlayerSocket, timeRemainingMs, currentLobby.currentGame, lobbyid);
+        } catch (e) {
           const lobby = await cache.getLobbyById(lobbyid);
           if (!lobby) return;
           if (!lobby.currentGame) return;
           //return if the game has an outcome or a new game has started
           if (lobby.currentGame?.id !== game.id || lobby.currentGame.data.outcome) return;
           //return if moves have been played since the initial request
-          if (
-            lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length
-          )
-            return;
-          //Set outcome by timeout and emit
-          const board = lobby.currentGame.data.board;
-          const pieces: Record<Chess.Color, Chess.Piece[]> = {
-            w: board
-              .filter(([square, piece]) => piece.color === "w")
-              .map(([square, piece]) => piece),
-            b: board
-              .filter(([square, piece]) => piece.color === "b")
-              .map(([square, piece]) => piece),
-          };
-          const nextColor = lobby.currentGame.data.activeColor === "w" ? "b" : "w";
-          if (Chess.isSufficientMaterial(pieces[nextColor])) {
-            lobby.currentGame.data.outcome = {
-              result: nextColor,
-              by: "timeout",
-            };
-          } else {
-            lobby.currentGame.data.outcome = {
-              result: "d",
-              by: "timeout-w-insufficient",
-            };
-          }
-
-          lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor] = 0;
-          await cache.updateGame(lobbyid, lobby.currentGame);
-          await handleGameResult(lobbyid, lobby.currentGame);
-        } else {
-          //Attempt to execute the move upon response from the client
-          try {
-            const updated = await executeMove(response, lobbyid);
-            nsp.to(lobbyid).emit("game:move", updated);
-            if (updated.data.outcome) {
-              await handleGameResult(lobbyid, updated);
-              return;
-            }
-            const currentLobby = await cache.getLobbyById(lobbyid);
-
-            //Retrieve the socket instance for the next player
-            if (!currentLobby) return;
-            if (!currentLobby.currentGame) return;
-            const nextPlayerId =
-              currentLobby.currentGame.players[currentLobby.currentGame.data.activeColor].id;
-            const nextPlayerConnection = currentLobby.connections.find(
-              (player) => player.id === nextPlayerId
-            );
-            if (!nextPlayerConnection) return;
-            const nextPlayerSocketId = nextPlayerConnection.lastClientSocketId;
-            const nextPlayerSocket = await socketInstanceById(nextPlayerSocketId);
-            //TODO: set abandonment timeout
-            if (!nextPlayerSocket) return;
-            const timeRemainingMs = currentTimeRemaining(
-              currentLobby.currentGame.clock.lastMoveTimeISO || DateTime.now().toISO(),
-              currentLobby.currentGame.clock.timeRemainingMs[
-                currentLobby.currentGame.data.activeColor
-              ]
-            );
-            //Request move from next player
-            requestMoveWithTimeout(
-              nextPlayerSocket,
-              timeRemainingMs,
-              currentLobby.currentGame,
-              lobbyid
-            );
-          } catch (e) {
-            const lobby = await cache.getLobbyById(lobbyid);
-            if (!lobby) return;
-            if (!lobby.currentGame) return;
-            //return if the game has an outcome or a new game has started
-            if (lobby.currentGame?.id !== game.id || lobby.currentGame.data.outcome) return;
-            //return if moves have been played since the initial request
-            if (
-              lobby.currentGame.data.moveHistory.flat().length !==
-              game.data.moveHistory.flat().length
-            )
-              return;
-            const timeRemainingMs = currentTimeRemaining(
-              lobby.currentGame.clock.lastMoveTimeISO || DateTime.now().toISO(),
-              lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]
-            );
-            //Rerequest with new timeout
-            requestMoveWithTimeout(socket, timeRemainingMs, game, lobbyid);
-          }
+          if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length) return;
+          const timeRemainingMs = currentTimeRemaining(
+            lobby.currentGame.clock.lastMoveTimeISO || DateTime.now().toISO(),
+            lobby.currentGame.clock.timeRemainingMs[lobby.currentGame.data.activeColor]
+          );
+          //Rerequest with new timeout
+          requestMoveWithTimeout(socket, timeRemainingMs, game, lobbyid);
         }
-      });
+      }
+    });
   };
 
   //Execute a move and updated the cached game state
@@ -519,16 +489,11 @@ export default function LobbyHandler(
     if (!lobby) throw new Error("Lobby does not exist");
     const game = lobby.currentGame;
     if (game === null) throw new Error("no active game");
-    if (!lobby.reservedConnections.some((id) => id === socket.data.userid))
-      throw new Error("Player is not in lobby");
+    if (!lobby.reservedConnections.some((id) => id === socket.data.userid)) throw new Error("Player is not in lobby");
 
     //Execute the move
     const updatedClock = switchClock(game.clock, moveRecievedISO, game.data.activeColor);
-    const updatedGameData = Chess.move(
-      game.data,
-      move,
-      updatedClock.timeRemainingMs[game.data.activeColor]
-    );
+    const updatedGameData = Chess.move(game.data, move, updatedClock.timeRemainingMs[game.data.activeColor]);
 
     //Clear the draw offer if the player who offred the draw has moved
     if (game.drawOffered === game.data.activeColor) {
@@ -632,7 +597,7 @@ export default function LobbyHandler(
   socket.on("lobby:chat", async ({ message, lobbyid }, ack) => {
     const user = socket.data.sessionUser;
     const lobby = await cache.getLobbyById(lobbyid);
-    if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user) return;
+    if (!lobby || !user) return;
     if (!lobby.connections.some((player) => player.id === user.id)) return;
     const messageObject: ChatMessage = {
       timestampISO: new Date().toISOString(),

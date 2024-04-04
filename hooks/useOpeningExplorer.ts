@@ -163,10 +163,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
       return mastersFilters;
     }
   }, [database, lichessFilters, mastersFilters]);
-  const queryParams = useMemo(
-    () => ({ fen, play, currentFen, ...filters }),
-    [fen, play, currentFen, filters]
-  );
+  const queryParams = useMemo(() => ({ fen, play, currentFen, ...filters }), [fen, play, currentFen, filters]);
   const params = useDebounce(queryParams, 500);
   //Ref to set loading state when currentGame changes before debounced game upates
   const debounceSyncRef = useRef<boolean>(false);
@@ -216,10 +213,7 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     },
   });
 
-  const fetchGameAsync = async (
-    gameid: string,
-    gameType: "lichess" | "masters"
-  ): Promise<string | undefined> => {
+  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
     if (gameType === "lichess") {
       const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
       if (response && response.data) return response.data as string;

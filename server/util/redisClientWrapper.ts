@@ -12,6 +12,7 @@ export interface Redis {
   activeLobbyByUser: (id: string) => Promise<String | null>;
   getLobbyById: (id: string) => Promise<Lobby | undefined>;
   newLobby: (lobby: Lobby) => Promise<Lobby>;
+  deleteLobby: (id: string) => Promise<void>;
   newGame: (lobbyid: string) => Promise<Game>;
   updateGame: (lobbyid: string, update: Game) => Promise<Game>;
   postMessage: (lobbyid: string, message: Message) => Promise<Message[]>;
@@ -107,6 +108,11 @@ export class Redis implements Redis {
     return lobby;
   };
 
+  //Deletes a lobby by id
+  deleteLobby = async (id: string) => {
+    const deleted = await this.client.del(`lobby:${id}`);
+    if (!deleted) throw new Error("Error deleting lobby");
+  };
   //Generates a new game based on the lobby configuration
   newGame = async (lobbyid: string): Promise<Game> => {
     const lobby = await this.getLobbyById(lobbyid);

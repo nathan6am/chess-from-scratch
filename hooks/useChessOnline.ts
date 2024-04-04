@@ -73,7 +73,13 @@ export interface OnlineGame {
   sendMessage: (message: string) => void;
 }
 
-export default function useChessOnline(lobbyId: string): OnlineGame {
+interface Options {
+  lobbyId: string;
+  onConnectionError?: () => void;
+  onResult?: (result: Game) => void;
+}
+
+export default function useChessOnline({ lobbyId, onConnectionError, onResult }: Options): OnlineGame {
   const { settings } = useContext(SettingsContext);
   const [socketConnected, setSocketConnected] = useState(false); //Socket connection status
   const [lobby, setLobby] = useState<Lobby | null>(null); //Current lobby data

@@ -39,12 +39,7 @@ interface Props {
   jumpToOffset: (offset: number) => void;
 }
 
-export default function MoveHistory({
-  moveHistory,
-  usePieceIcons,
-  jumpToOffset,
-  currentOffset,
-}: Props) {
+export default function MoveHistory({ moveHistory, usePieceIcons, jumpToOffset, currentOffset }: Props) {
   const isVerticalLayout = useMediaQuery("only screen and (max-width: 768px)");
   //Memoize the move count to trigger scroll on update
   const moveCount = useMemo(() => {
@@ -59,21 +54,16 @@ export default function MoveHistory({
 
   return (
     <>
-      <div className="grow w-full relative">
+      <div className="grow w-full relative hidden md:block">
         <ScrollContainer>
           <table className="table-fixed w-full text">
             <tbody>
               {moveHistory.map((fullMove, idx) => {
                 const length = moveHistory.flat().filter(notEmpty).length;
-                const offset =
-                  length % 2 === 0
-                    ? (moveHistory.length - idx) * 2
-                    : (moveHistory.length - idx) * 2 - 1;
+                const offset = length % 2 === 0 ? (moveHistory.length - idx) * 2 : (moveHistory.length - idx) * 2 - 1;
                 return (
                   <tr key={idx} className="border-b border-white/[0.1]">
-                    <td className="p-1 text-center w-10 bg-white/[0.1] border-r border-white/[0.2]">{`${
-                      idx + 1
-                    }.`}</td>
+                    <td className="p-1 text-center w-10 bg-white/[0.1] border-r border-white/[0.2]">{`${idx + 1}.`}</td>
                     <td
                       onClick={() => {
                         jumpToOffset(offset - 1);
@@ -88,9 +78,7 @@ export default function MoveHistory({
                       onClick={() => {
                         jumpToOffset(offset - 2);
                       }}
-                      className={`p-1 px-4 cursor-pointer ${
-                        currentOffset === offset - 2 ? "bg-blue-300/[0.2]" : ""
-                      }`}
+                      className={`p-1 px-4 cursor-pointer ${currentOffset === offset - 2 ? "bg-blue-300/[0.2]" : ""}`}
                     >
                       {fullMove[1]?.PGN
                         ? usePieceIcons
@@ -131,7 +119,7 @@ export function MoveTape({ moveHistory, usePieceIcons, jumpToOffset, currentOffs
   }, [moveHistory]);
   return (
     <>
-      <div className="pl-4 py-2 flex flex-row w-full  overflow-x-scroll scrollbar-none bg-elevation-3">
+      <div className="pl-4 py-2 flex flex-row w-full  overflow-x-scroll scrollbar-none bg-elevation-1">
         {flattened.map((move, idx) => {
           const offset = flattened.length - 1 - idx;
           return (
@@ -162,9 +150,7 @@ function RenderMove({ pgn, active, onClick, halfMoveCount }: MoveProps) {
   return (
     <div className="flex flex-row text-sm">
       {isWhite && (
-        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>
-          {Chess.moveCountToNotation(halfMoveCount)}
-        </span>
+        <span className={` ml-[2px] opacity-50 text-white py-[1px]`}>{Chess.moveCountToNotation(halfMoveCount)}</span>
       )}
       <span
         className={`cursor-pointer  mx-[2px] py-[1px] px-[2px] rounded hover:bg-white/[0.1] text-white ${

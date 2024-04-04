@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import useCurrentOpening from "./useCurrentOpening";
 import useSound from "use-sound";
 import useSettings from "@/hooks/useSettings";
 export type SkillPreset = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -36,13 +37,13 @@ import { Message, Response, EngineGameConfig } from "@/lib/stockfish/stockfishWo
 import useChessClock from "./useChessClock";
 import _ from "lodash";
 import { removeUndefinedFields } from "@/util/misc";
+import { config } from "process";
 const defaultGameConfig: Chess.GameConfig = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   timeControl: null,
 };
 
 export const useEngineGame = (options: Options) => {
-  
   const settings = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {
@@ -57,8 +58,9 @@ export const useEngineGame = (options: Options) => {
   const [currentGame, setCurrentGame] = useState<Chess.Game>(() => {
     return Chess.createGame(gameConfig);
   });
+  const { opening, reset } = useCurrentOpening(currentGame);
+
   const [premoveQueue, setPremoveQueue] = useState<Chess.Premove[]>([]);
-  const currentFen = useMemo(() => currentGame.fen, [currentGame]);
 
   //Use the chess clock if a time control is provided
   const useClock = useMemo(() => options.timeControl !== undefined, [options.timeControl]);
@@ -76,7 +78,6 @@ export const useEngineGame = (options: Options) => {
       depth: useClock ? "auto" : 20,
     };
   }, [gameConfig, options.playerColor, options.preset, options.timeControl]);
-
   const [ready, setReady] = useState(false);
   const readyRef = useRef(false);
   const workerRef = useRef<Worker | null>(null);
@@ -101,6 +102,9 @@ export const useEngineGame = (options: Options) => {
 
   //Register a listener for messages from the worker, remove and reregister when the callback changes
 
+  const startGame = useCallback(() => {
+    workerRef.current?.postMessage({ type: "newGame", config: engineGameConfig });
+  }, [workerRef, config]);
   //Start a new game once the worker is ready - only triggers once when the ready state changes from false to true
   useEffect(() => {
     if (ready && readyRef.current === false) {
@@ -108,6 +112,14 @@ export const useEngineGame = (options: Options) => {
       workerRef.current?.postMessage({ type: "newGame", config: engineGameConfig });
     }
   }, [ready, engineGameConfig, readyRef]);
+
+  //Handle Restarting the game
+  const restartGame = useCallback(() => {
+    setCurrentGame(Chess.createGame(gameConfig));
+    setLivePositionOffset(0);
+    reset();
+    startGame();
+  }, [gameConfig, startGame]);
 
   //Hande player moves
   const onMove = useCallback(
@@ -304,9 +316,12 @@ export const useEngineGame = (options: Options) => {
     lastMove,
     moveable,
     onMove,
+    availablePremoves,
+    premoveQueue,
     clock,
     ready,
-
+    opening,
+    restartGame,
     boardControls: {
       stepBackward,
       stepForward,

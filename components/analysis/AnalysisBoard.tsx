@@ -30,19 +30,18 @@ import { SettingsContext } from "@/context/settings";
 
 // Utils
 import * as Chess from "@/lib/chess";
-import classNames from "classnames";
-import { Duration } from "luxon";
 import axios from "axios";
 import NewAnalysisPanel from "./panels/NewAnalysisPanel";
-import Link from "next/link";
 import OpenAnalysisDialog from "../dialogs/OpenAnalysisDialog";
-import { set } from "lodash";
 import ExportPGNDialog from "../dialogs/ExportPGNDialog";
+import useGameCache from "@/hooks/useGameCache";
+import { parsePuzzleEntity } from "@/util/parsers/puzzleParser";
+import { treeFromLine } from "@/util/parsers/pgnParser";
 
 interface Props {
   initialId?: string | null;
   sourceGameId?: string | null;
-  sourceGameType?: "masters" | "lichess" | "nextchess" | null;
+  sourceGameType?: "masters" | "lichess" | "nextchess" | "last" | "puzzle" | null;
   fromFen?: string;
 }
 
@@ -110,7 +109,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   const lastMoveAnnotation = useMemo(() => {
     return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
   }, [currentNode, currentNode?.data.annotations]);
-
+  const { cachedGame } = useGameCache();
   // Fetch source game on initial load
   useEffect(() => {
     if (id) return;
@@ -120,24 +119,51 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
       initialLoad.current = true;
       return;
     }
-    if (sourceGameType === "nextchess") {
-      axios.get(`/api/game/pgn/${sourceGameId}`).then((res) => {
+    switch (sourceGameType) {
+      case "last":
+        if (!cachedGame) return;
         initialLoad.current = true;
-        if (!res.data) return;
-        analysis.loadPgn(res.data);
-      });
-    } else {
-      analysis.explorer
-        .fetchGameAsync(sourceGameId, sourceGameType)
-        .then((game) => {
+        analysis.loadPgn(cachedGame.pgn);
+        break;
+      case "puzzle":
+        axios.get(`/api/puzzles/puzzle/${sourceGameId}`).then((res) => {
           initialLoad.current = true;
-          if (!game) return;
-          analysis.loadPgn(game);
-        })
-        .catch((e) => {
-          initialLoad.current = true;
-          console.error(e);
+          if (!res.data) return;
+          try {
+            const puzzle = parsePuzzleEntity(res.data.puzzle);
+            const puzzleTree = treeFromLine(puzzle.solution);
+            analysis.setOptions((current) => ({
+              ...current,
+              startPosition: puzzle.game.fen,
+            }));
+            analysis.tree.loadNewTree(puzzleTree);
+          } catch (e) {
+            console.error(e);
+          }
         });
+        break;
+      case "nextchess":
+        axios.get(`/api/game/pgn/${sourceGameId}`).then((res) => {
+          initialLoad.current = true;
+          if (!res.data) return;
+          analysis.loadPgn(res.data);
+        });
+        break;
+      default:
+        /**
+         * Fetch game from lichess api
+         */
+        analysis.explorer
+          .fetchGameAsync(sourceGameId, sourceGameType)
+          .then((game) => {
+            initialLoad.current = true;
+            if (!game) return;
+            analysis.loadPgn(game);
+          })
+          .catch((e) => {
+            initialLoad.current = true;
+            console.error(e);
+          });
     }
   }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
 
@@ -187,9 +213,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         shown={popupPlayerShown}
         pgn={explorer.otbGame?.pgn || ""}
         link={
-          explorer.otbGame
-            ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}`
-            : ""
+          explorer.otbGame ? `/study/analyze?gameId=${explorer.otbGame.id}&sourceType=${explorer.otbGame.type}` : ""
         }
         closePlayer={() => {
           setPopupPlayerShown(false);
@@ -238,10 +262,10 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               >
                 Open
               </MenuItem>
-              <MenuItem onClick={() => {}}>Fork</MenuItem>
+              {/* <MenuItem onClick={() => {}}>Fork</MenuItem>
               <MenuItem onClick={() => {}}>Import PGN</MenuItem>
               <MenuItem onClick={() => {}}>Add to Collections</MenuItem>
-              <MenuItem onClick={() => setPopupPlayerShown(true)}>Load Game</MenuItem>
+              <MenuItem onClick={() => setPopupPlayerShown(true)}>Load Game</MenuItem> */}
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
@@ -249,11 +273,28 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
             <MenuItems>
               <MenuItem onClick={() => {}}>Undo</MenuItem>
               <MenuItem onClick={() => {}}>Redo</MenuItem>
-              <MenuItem onClick={() => {}}>Delete from Here</MenuItem>
-              <MenuItem onClick={() => {}}>Promote Variation</MenuItem>
-              <MenuItem onClick={() => {}}>Make Mainline</MenuItem>
-              <MenuItem onClick={() => {}}>Delete Variations</MenuItem>
-              <MenuItem onClick={() => {}}>Edit PGN Tags</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode) analysis.tree.deleteVariation(currentNode?.key);
+                }}
+              >
+                Delete from Here
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode) analysis.tree.promoteVariation(currentNode?.key);
+                }}
+              >
+                Promote Variation
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  if (currentNode) analysis.tree.promoteToMainline(currentNode?.key);
+                }}
+              >
+                Make Mainline
+              </MenuItem>
+              {/* <MenuItem onClick={() => {}}>Edit PGN Tags</MenuItem> */}
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
@@ -267,18 +308,18 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               >
                 Export PGN
               </MenuItem>
-              <MenuItem onClick={() => {}}>Export FEN</MenuItem>
+              {/* <MenuItem onClick={() => {}}>Export FEN</MenuItem>
               <MenuItem onClick={() => {}}>Export Image</MenuItem>
-              <MenuItem onClick={() => {}}>Export GIF</MenuItem>
+              <MenuItem onClick={() => {}}>Export GIF</MenuItem> */}
             </MenuItems>
           </MenuWrapper>
           <MenuWrapper>
             <MenuButton>Position</MenuButton>
             <MenuItems>
-              <MenuItem onClick={() => setEditMode((cur) => !cur)}>Edit Board</MenuItem>
-              <MenuItem onClick={() => {}}>Play vs. Computer</MenuItem>
+              <MenuItem onClick={() => setEditMode(true)}>Edit Board</MenuItem>
+              {/* <MenuItem onClick={() => {}}>Play vs. Computer</MenuItem>
               <MenuItem onClick={() => {}}>Play vs. a Friend</MenuItem>
-              <MenuItem onClick={() => {}}>Copy FEN</MenuItem>
+              <MenuItem onClick={() => {}}>Copy FEN</MenuItem> */}
               <MenuItem onClick={flipBoard}>Flip Board</MenuItem>
             </MenuItems>
           </MenuWrapper>

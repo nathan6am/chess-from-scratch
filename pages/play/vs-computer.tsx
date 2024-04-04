@@ -1,33 +1,21 @@
 import React from "react";
 import { NextPage, NextPageContext } from "next";
 import type { GetServerSideProps } from "next";
-import NonSSRWrapper from "@/components/NonSSRWrapper";
+import { NextPageWithLayout } from "../_app";
 import EngineGame from "@/components/game/EngineGame";
 import { SkillPreset } from "@/hooks/useEngineGame";
 import { TimeControl } from "@/lib/chess";
 import { removeUndefinedFields } from "@/util/misc";
+import Dashboard from "@/components/layout/Dashboard";
 interface Props {
   skillLevel: SkillPreset;
   fromPosition?: string;
   playerColor: "w" | "b";
   timeControl?: TimeControl;
 }
-const Page: NextPage<Props> = ({ skillLevel, fromPosition, playerColor, timeControl }: Props) => {
+const Page: NextPageWithLayout<Props> = ({ skillLevel, fromPosition, playerColor, timeControl }: Props) => {
   return (
-    <div className=" min-h-screen lg:h-screen  w-full  justify-center items-center flex bg-elevation-0">
-      <main className="flex justify-center items-center w-full h-full">
-        <div className="h-full w-full w-full flex justify-center items-center  ">
-          <NonSSRWrapper>
-            <EngineGame
-              preset={skillLevel}
-              startPosition={fromPosition}
-              playerColor={playerColor}
-              timeControl={timeControl}
-            />
-          </NonSSRWrapper>
-        </div>
-      </main>
-    </div>
+    <EngineGame preset={skillLevel} startPosition={fromPosition} playerColor={playerColor} timeControl={timeControl} />
   );
 };
 
@@ -38,6 +26,10 @@ function parseTimeControl(timeControl: string): TimeControl {
     incrementSeconds: parseInt(increment),
   };
 }
+
+Page.getLayout = function getLayout(page) {
+  return <Dashboard>{page}</Dashboard>;
+};
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const req = context.req;

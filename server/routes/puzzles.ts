@@ -63,10 +63,8 @@ router.post("/solve/:id", verifyUser, async (req, res) => {
   const userid = req.user?.id;
   const { id } = req.params;
   const { result, rated } = req.query;
-  if (typeof result !== "string" || !stringIsResult(result))
-    return res.status(400).end("Invalid result");
-  if (typeof rated !== "string" || !["true", "false"].includes(rated))
-    return res.status(400).end("Invalid rated");
+  if (typeof result !== "string" || !stringIsResult(result)) return res.status(400).end("Invalid result");
+  if (typeof rated !== "string" || !["true", "false"].includes(rated)) return res.status(400).end("Invalid rated");
   try {
     const solvedPuzzle = await User.solvePuzzle(userid, id, result, rated === "true");
     if (solvedPuzzle) {

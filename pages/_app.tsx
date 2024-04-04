@@ -17,11 +17,17 @@ import type { NextPage } from "next";
 import { useLocalStorage } from "usehooks-ts";
 import useProfile from "@/hooks/useProfile";
 import useAuth from "@/hooks/useAuth";
-import { Inter, Open_Sans } from "next/font/google";
+import { Inter, Open_Sans, Noto_Sans } from "next/font/google";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const noto_sans = Noto_Sans({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-noto-sans",
 });
 
 const open_sans = Open_Sans({
@@ -42,7 +48,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   return (
     <QueryClientProvider client={queryClient}>
       <Layout>
-        <main className={`${open_sans.variable} font-sans`}>{getLayout(<Component {...pageProps} />)}</main>
+        <main className={`${open_sans.variable} ${noto_sans.variable} font-sans`}>
+          {getLayout(<Component {...pageProps} />)}
+        </main>
       </Layout>
     </QueryClientProvider>
   );

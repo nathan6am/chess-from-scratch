@@ -70,6 +70,7 @@ function TagForm({ tags, setTags }: TagFormProps) {
   return (
     <div className="grow">
       <form onSubmit={handleSubmit(onSubmit)} className="py-4 px-6 bg-elevation-2">
+        <h2>PGN Tags</h2>
         <div className="flex flex-row items-end">
           <Input
             containerClassName="mb-2"
@@ -81,7 +82,7 @@ function TagForm({ tags, setTags }: TagFormProps) {
             {...register("white")}
           />
           <Input
-            label="Elo"
+            label="Rating"
             containerClassName="w-40 ml-4 mb-2"
             error={errors.eloWhite?.message || null}
             id="whiteElo"

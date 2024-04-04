@@ -17,26 +17,19 @@ router.get("/my-games", verifyUser, async (req: VerifiedRequest, res) => {
   const results = ["win", "loss", "draw"];
   const result =
     typeof req.query.result === "string"
-      ? (req.query.result.split(",").filter((val) => results.includes(val)) as Array<
-          "win" | "loss" | "draw"
-        >)
+      ? (req.query.result.split(",").filter((val) => results.includes(val)) as Array<"win" | "loss" | "draw">)
       : undefined;
-  const before: Date | undefined =
-    typeof req.query.before === "string" ? new Date(req.query.before) : undefined;
-  const after: Date | undefined =
-    typeof req.query.after === "string" ? new Date(req.query.after) : undefined;
+  const before: Date | undefined = typeof req.query.before === "string" ? new Date(req.query.before) : undefined;
+  const after: Date | undefined = typeof req.query.after === "string" ? new Date(req.query.after) : undefined;
   const asColor: "w" | "b" | undefined =
-    typeof req.query.asColor === "string" &&
-    (req.query.asColor === "w" || req.query.asColor === "b")
+    typeof req.query.asColor === "string" && (req.query.asColor === "w" || req.query.asColor === "b")
       ? (req.query.asColor as "w" | "b")
       : undefined;
   const page = typeof req.query.page === "string" ? parseInt(req.query.page) : 1;
   const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 12;
   const sortBy =
     typeof req.query.sortBy === "string" &&
-    (req.query.sortBy === "date" ||
-      req.query.sortBy === "rating" ||
-      req.query.sortBy === "opponentRating")
+    (req.query.sortBy === "date" || req.query.sortBy === "rating" || req.query.sortBy === "opponentRating")
       ? req.query.sortBy
       : "date";
   const sortDirection =
@@ -82,5 +75,11 @@ router.get("/pgn/:id", async (req: Request<{ id: string }>, res) => {
   if (!game) return res.status(404).json({ error: "Game not found" });
   return res.status(200).json(game.pgn);
 });
+
+/**
+ * Save a game vs the computer or local multiplayer
+ */
+
+router.post("/save", verifyUser, async (req: VerifiedRequest, res) => {});
 
 export default router;

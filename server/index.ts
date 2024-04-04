@@ -165,9 +165,6 @@ nextApp.prepare().then(async () => {
 
   io.on("connection", (socket: Socket) => {
     MainHandler(io, socket, redisClient);
-    socket.on("disconnect", () => {
-      console.log("client disconnected");
-    });
   });
 
   app.all("*", (req: any, res: any) => nextHandler(req, res));

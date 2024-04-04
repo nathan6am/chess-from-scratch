@@ -4,12 +4,7 @@ import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { ScrollContainer } from "../layout/GameLayout";
 import PuzzleFilters from "./PuzzleFilters";
-import {
-  GameContainer,
-  BoardColumn,
-  BoardContainer,
-  PanelContainer,
-} from "../layout/templates/GameLayout";
+import { GameContainer, BoardColumn, BoardContainer, PanelContainer } from "../layout/templates/GameLayout";
 import Board from "../board/Board";
 import { IoExtensionPuzzle } from "react-icons/io5";
 import BoardControls from "../game/BoardControls";
@@ -25,7 +20,7 @@ export default function PuzzleSolver() {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(100);
   const [maxRating, setMaxRating] = useState(3500);
-  const { puzzle, history, next } = usePuzzleQueue({
+  const { puzzle, history, next, streak } = usePuzzleQueue({
     themes: filterByTheme ? selectedThemes : null,
     minRating,
     maxRating,
@@ -65,7 +60,7 @@ export default function PuzzleSolver() {
               animationSpeed={settings.display.animationSpeed}
               lastMove={currentGame.lastMove}
               activeColor={currentGame.activeColor}
-              moveable={puzzle.puzzle?.playerColor || "none"}
+              moveable={(puzzle.moveable && puzzle.puzzle?.playerColor) || "none"}
               preMoveable={false}
               autoQueen={settings.gameBehavior.autoQueen}
               onMove={puzzle.onMove}
@@ -77,6 +72,9 @@ export default function PuzzleSolver() {
           <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
             <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
           </h2>
+          <div className="p-4 bg-elevation-2">
+            <p className="text-light-100 ">{`Current Streak: ${streak}`}</p>
+          </div>
           <p>Rating Range</p>
           <RangeSlider
             minLabel={`${minRating}`}
@@ -90,13 +88,10 @@ export default function PuzzleSolver() {
               setMaxRating(max);
             }}
           />
-          <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} />
+          <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
           <div className="h-full w-full bg-elevation-2 grow relative">
             <ScrollContainer>
-              <PuzzleFilters
-                selectedThemes={selectedThemes}
-                setSelectedThemes={setSelectedThemes}
-              />
+              <PuzzleFilters selectedThemes={selectedThemes} setSelectedThemes={setSelectedThemes} />
             </ScrollContainer>
           </div>
           <PuzzleControls
@@ -105,7 +100,7 @@ export default function PuzzleSolver() {
             retry={puzzle.retry}
             next={next}
             showSolution={puzzle.showSolution}
-            getHint={() => {}}
+            getHint={puzzle.getHint}
           />
           <div className="w-full">
             <PuzzlePrompt
@@ -143,9 +138,7 @@ function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
       )}
       {!loading && prompt === "start" && (
         <>
-          <div
-            className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}
-          ></div>{" "}
+          <div className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
@@ -180,14 +173,7 @@ interface PuzzleControlsProps {
   prompt?: string;
   solveState: string;
 }
-function PuzzleControls({
-  prompt,
-  solveState,
-  retry,
-  next,
-  showSolution,
-  getHint,
-}: PuzzleControlsProps) {
+function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint }: PuzzleControlsProps) {
   const buttonsToShow = useMemo(() => {
     if (prompt === "solved") return ["analysis", "next"];
     if (prompt === "failed") return ["retry", "showSolution"];
@@ -197,7 +183,10 @@ function PuzzleControls({
   return (
     <div className="flex flex-row items-center bg-[#181818] justify-around divide-x">
       {buttonsToShow.includes("getHint") && (
-        <button className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full">
+        <button
+          onClick={getHint}
+          className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
+        >
           <p>Get a Hint</p>
           <FaLightbulb className="ml-2" />
         </button>

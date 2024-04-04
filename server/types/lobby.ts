@@ -23,6 +23,7 @@ export interface Clock {
 }
 export interface Player extends SessionUser {
   rating?: number;
+  country?: string;
 }
 export interface Connection {
   id: string;
@@ -138,6 +139,8 @@ export interface LobbyClientToServerEvents<isServer extends boolean = false, isS
   "game:accept-draw": (lobbyid: string, accepted: boolean) => void;
 
   "game:resign": (lobbyid: string) => void;
+
+  "game:abort": (lobbyid: string) => void;
 
   "test:timeout": () => void;
 

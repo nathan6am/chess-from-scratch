@@ -6,6 +6,7 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-open-sans)"],
         mono: ["var(--font-roboto-mono)"],
+        inter: ["var(--font-noto-sans)"],
       },
       colors: {
         google: {

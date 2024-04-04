@@ -8,7 +8,6 @@ import { Button } from "../base";
 import { useRouter } from "next/router";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { useState } from "react";
-import { set } from "lodash";
 interface Props {
   gameControls: IGameControls;
   flipBoard: () => void;
@@ -19,7 +18,7 @@ export default function GameControls({}: Props) {
   const { onlineGame } = useContext(GameContext);
   const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus } = onlineGame;
   return (
-    <div className="grid grid-cols-2 w-full p-4 gap-4 bg-elevation-2">
+    <div className="grid grid-cols-2 w-full px-4 gap-x-4 bg-elevation-2 py-2">
       {gameStatus === "complete" ? (
         <>
           <PostGameControls />
@@ -34,8 +33,7 @@ export default function GameControls({}: Props) {
 function PostGameControls() {
   const router = useRouter();
   const { onlineGame } = useContext(GameContext);
-  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } =
-    onlineGame;
+  const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } = onlineGame;
   const gameid = currentGame?.id;
   const [declined, setDeclined] = useState(false);
   return (
@@ -74,21 +72,27 @@ function PostGameControls() {
             onClick={() => {
               router.push(`/study/analyze?${gameid}&sourceType=nextChess`);
             }}
-            label="Analysis"
+            label="Analyze Game"
             icon={MdClose}
             iconClassName="mr-1"
-            size="lg"
           ></Button>
-          <Button
-            variant="neutral"
-            onClick={() => {
-              gameControls.requestRematch();
-            }}
-            label="Rematch"
-            icon={FaCheck}
-            iconClassName="mr-1"
-            size="lg"
-          ></Button>
+          {rematchOffer === "offered" ? (
+            <div className="h-full w-full flex justify-center items-center text-center">
+              <p className="text-sm text-light-300">
+                <em>Rematch offer sent</em>
+              </p>
+            </div>
+          ) : (
+            <Button
+              variant="neutral"
+              onClick={() => {
+                gameControls.requestRematch();
+              }}
+              label="Rematch"
+              icon={FaCheck}
+              iconClassName="mr-1"
+            ></Button>
+          )}
         </>
       )}
     </>

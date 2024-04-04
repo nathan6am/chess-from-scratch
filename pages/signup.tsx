@@ -5,11 +5,8 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 
 //Layouts
-import Background from "@/components/layout/Background";
-import AuthLayout from "@/components/layout/AuthLayout";
 
-//UI Components
-import LoginForm from "@/components/UI/forms/LoginForm";
+import AuthLayout, { Background } from "@/components/layout/AuthLayout";
 
 //Icons
 import { FaGithub } from "react-icons/fa";

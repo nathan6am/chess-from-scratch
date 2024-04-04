@@ -43,7 +43,7 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
   );
   const [autoSync, setAutoSync] = useState<boolean>(true);
   const queryClient = useQueryClient();
-  const { data, error, isLoading, isRefetching } = useQuery({
+  const { data, error, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["analysis", id],
     queryFn: () => fetcher(id),
     keepPreviousData: false,
@@ -134,5 +134,6 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
     syncStatus,
     autoSync,
     setAutoSync,
+    sync: refetch,
   };
 }

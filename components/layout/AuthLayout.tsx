@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: Props) {
   );
 }
 
-function Background({ children }: Props) {
+export function Background({ children }: Props) {
   return (
     <div
       style={{

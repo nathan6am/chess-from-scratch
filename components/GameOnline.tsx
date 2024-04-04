@@ -15,13 +15,7 @@ import { SettingsContext } from "@/context/settings";
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
 import { ChatMessage, Connection, Player } from "@/server/types/lobby";
-import {
-  BoardColumn,
-  InfoRow,
-  GameContainer,
-  PanelContainer,
-  BoardContainer,
-} from "./layout/templates/GameLayout";
+import { BoardColumn, InfoRow, GameContainer, PanelContainer, BoardContainer } from "./layout/templates/GameLayout";
 import { DurationObjectUnits, Info } from "luxon";
 import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
@@ -43,7 +37,15 @@ export const GameContext = React.createContext<{
 }>({} as any);
 
 export default function GameOnline({ lobbyid }: Props) {
-  const onlineGame = useChessOnline(lobbyid);
+  const onlineGame = useChessOnline({
+    lobbyId: lobbyid,
+    onConnectionError: () => {
+      alert("Unable to connect to the server. The lobby code may be invalid or the server may be down.");
+    },
+    onResult: () => {
+      setShowResult(true);
+    },
+  });
   const [showResult, setShowResult] = useState(true);
   const {
     chat,
@@ -120,10 +122,8 @@ export default function GameOnline({ lobbyid }: Props) {
             "flex-col-reverse": orientation === "b",
           })}
         >
-          <InfoRow>
-            <div className="shrink-0 grow">
-              {players.b && <PlayerCard connection={players.b} />}
-            </div>
+          <InfoRow className="md:py-2">
+            <div className="shrink-0 grow">{players.b && <PlayerCard connection={players.b} />}</div>
             <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
           </InfoRow>
           {/* 
@@ -167,10 +167,8 @@ export default function GameOnline({ lobbyid }: Props) {
                   <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
                 </div>
               </div> */}
-          <InfoRow>
-            <div className="shrink-0 grow">
-              {players.w && <PlayerCard connection={players.w} />}
-            </div>
+          <InfoRow className="md:py-2">
+            <div className="shrink-0 grow">{players.w && <PlayerCard connection={players.w} />}</div>
             <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
           </InfoRow>
           {/* <div className="min-h-[120px] w-full block lg:hidden">
@@ -224,14 +222,7 @@ interface PanelProps {
   chat: ChatMessage[];
   sendMessage: (message: string) => void;
 }
-function PanelOnline({
-  gameDetails,
-  boardControls,
-  gameControls,
-  moveHistory,
-  flipBoard,
-  currentOffset,
-}: PanelProps) {
+function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, flipBoard, currentOffset }: PanelProps) {
   const { onlineGame } = useContext(GameContext);
   const { currentGame } = onlineGame;
   const players = gameDetails.players;
@@ -241,14 +232,12 @@ function PanelOnline({
     <PanelContainer>
       {currentGame ? (
         <>
-          <div className="w-full p-4 bg-elevation-2 hidden md:block">
+          <div className="w-full p-4 bg-elevation-3 hidden md:block">
             <p>
-              {`${rated ? "Rated" : "Unrated"} ${gameDetails.ratingCategory} game`}
+              {`${rated ? "Rated" : "Unrated"} • ${gameDetails.ratingCategory} • `}
               <span className="text-light-300">
                 {gameDetails.timeControl
-                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${
-                      gameDetails.timeControl.incrementSeconds
-                    })`
+                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
                   : ""}
               </span>
             </p>
@@ -259,9 +248,7 @@ function PanelOnline({
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${
-                  opening?.eco ? ` (${opening.eco})` : ""
-                }`}</span>
+                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
               </p>
             }
           </div>
@@ -279,5 +266,15 @@ function PanelOnline({
       <GameControls gameControls={gameControls} flipBoard={flipBoard} size="lg" />
       <LiveChat></LiveChat>
     </PanelContainer>
+  );
+}
+
+function ColorIcon({ color }: { color: Chess.Color }) {
+  if (color === "w")
+    return (
+      <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
+    );
+  return (
+    <span className="mt-[2px] inline-block h-[0.8em] w-[0.8em] border border-white/[0.3] rounded-sm bg-white mr-1 " />
   );
 }

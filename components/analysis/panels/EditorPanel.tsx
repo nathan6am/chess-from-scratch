@@ -168,7 +168,7 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
               }
             }}
           ></Button>
-          <Button
+          {/* <Button
             disabled={boardEditor.isValid !== true}
             variant="neutral"
             label="Practice vs Computer"
@@ -185,7 +185,7 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
               if (boardEditor.isValid === true) {
               }
             }}
-          ></Button>
+          ></Button> */}
         </div>
       </div>
     </div>

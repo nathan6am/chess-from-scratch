@@ -5,7 +5,7 @@ import classnames from "classnames";
 import { ColorEnum } from "./BoardArrows";
 import { ArrowColor } from "@/lib/types";
 import { BiSquareRounded } from "react-icons/bi";
-import { on } from "events";
+
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -148,7 +148,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
       code: 1,
       description: "Good Move",
       unicode: "\u0021",
-      className: "bg-green-500",
+      className: "bg-green-600",
     },
     {
       code: 2,
@@ -160,35 +160,35 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
       code: 3,
       description: "Brilliant Move",
       unicode: "\u203C",
-      className: "bg-teal-500",
+      className: "bg-teal-600",
     },
     {
       code: 4,
       description: "Blunder",
       unicode: "\u2047",
-      className: "bg-red-500",
+      className: "bg-red-600",
     },
     {
       code: 5,
       description: "Interesting Move",
       unicode: "\u2049",
-      className: "bg-purple-500",
+      className: "bg-purple-600",
     },
     {
       code: 6,
       description: "Dubious Move",
       unicode: "\u2048",
-      className: "bg-yellow-500",
+      className: "bg-yellow-600",
     },
     {
       code: "puzzle-failed",
-      description: "Dubious Move",
+      description: "Puzzle Failed",
       unicode: "\u2716",
-      className: "bg-red-500",
+      className: "bg-red-600",
     },
     {
       code: "puzzle-solved",
-      description: "Dubious Move",
+      description: "Puzzle Solved",
       unicode: "\u2713",
       className: "bg-green-600",
     },
@@ -201,7 +201,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
     return (
       <span
         className={classnames(
-          "absolute rounded-full shadow-md z-[20] flex items-center justify-center",
+          "absolute rounded-full shadow-md z-[20] flex items-center justify-center ",
           details.className,
           {
             "h-[24px] w-[24px] top-[-8px] right-[-8px]": size === "sm",
@@ -210,7 +210,7 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
         )}
       >
         <div
-          className={classnames("select-none font-semibold text-center ", {
+          className={classnames("select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]", {
             "text-xl mb-[1px] ": size === "sm",
             "text-2xl mb-[2px]": size === "lg",
           })}
