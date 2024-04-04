@@ -3,7 +3,7 @@ import cn from "@/util/cn";
 interface Props {
   children?: JSX.Element | JSX.Element[];
   className?: string;
-  size: "sm" | "md" | "lg";
+  size: "sm" | "md" | "lg" | "half";
   height: "fit-content" | "full";
 }
 
@@ -14,6 +14,7 @@ export default function Panel({ children, className, size = "sm", height }: Prop
         "w-full bg-elevation-2 shadow-md rounded-sm",
         {
           "col-span-12 lg:col-span-6 xl:col-span-4": size === "sm",
+          "col-span-12 lg:col-span-6 xl:col-span-6": size === "half",
           "col-span-12 lg:col-span-6 xl:col-span-8": size === "md",
           "col-span-12": size === "lg",
           "h-full": height === "full",

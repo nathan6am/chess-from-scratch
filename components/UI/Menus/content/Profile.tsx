@@ -1,17 +1,25 @@
 import React from "react";
 import GameSearch from "@/components/menu/GameSearch";
-import GameList from "@/components/menu/GameList";
 import { Tab } from "@headlessui/react";
 import classNames from "classnames";
+import useProfile from "@/hooks/useProfile";
+import { Label } from "@/components/base/Typography";
 export default function Profile() {
+  const { user, updateProfile } = useProfile();
   return (
     <div className="w-full h-full flex flex-col">
       <div className="w-full p-8 bg-elevation-1">
         <h3 className="w-fit text-lg">Profile Placeholder</h3>
+        <Label>Username</Label>
+        <p>{user?.username}</p>
+        <Label>Country</Label>
+        <p>{user?.profile.country}</p>
+        <Label>Bio</Label>
+        <p>{user?.profile.bio}</p>
       </div>
       <Tab.Group>
         <div className="w-full flex flex-row items-center justify-start bg-elevation-1">
-          <StyledTab>Game Archive</StyledTab>
+          <StyledTab>My Games</StyledTab>
           <StyledTab>Stats</StyledTab>
           <StyledTab>Insights</StyledTab>
         </div>
@@ -21,7 +29,6 @@ export default function Profile() {
         <Tab.Panel className="w-full grow flex flex-col">Stats coming soon</Tab.Panel>
         <Tab.Panel className="w-full grow flex flex-col">Insights coming soon</Tab.Panel>
       </Tab.Group>
-      <div className="w-full grow"></div>
     </div>
   );
 }

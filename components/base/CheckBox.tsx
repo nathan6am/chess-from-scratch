@@ -1,10 +1,12 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Switch } from "@headlessui/react";
 import { MdCheckBoxOutlineBlank, MdCheckBox, MdIndeterminateCheckBox } from "react-icons/md";
-
+import cn from "@/util/cn";
 interface Props {
+  size?: "sm" | "md" | "lg";
   onChange: (enabled: boolean) => any;
   label?: string;
+  customLabel?: React.FC<any>;
   checked?: boolean;
   indeterminate?: boolean;
   srLabel?: string;
@@ -21,12 +23,13 @@ export default function CheckBox({
   className,
   indeterminate,
   disabled,
+  customLabel: CustomLabel,
 }: Props) {
   return (
     <div className={className}>
       <Switch checked={checked} onChange={onChange} disabled={disabled}>
         {({ checked }) => (
-          <div className={`flex flex-row items-center cursor-pointer`}>
+          <div className={cn(`flex flex-row items-center cursor-pointer`, className)}>
             <span
               className={
                 disabled ? "text-elevation-6" : `${checked || indeterminate ? "text-gold-300" : "text-white/[0.5]"}`
@@ -34,10 +37,18 @@ export default function CheckBox({
             >
               <CheckBoxIcon checked={checked} indeterminate={indeterminate} disabled={disabled} />
             </span>
-            {label && (
-              <label className={` ${disabled ? "text-elevation-6" : ""} ${labelClasses} ml-2 mb-[1px] cursor-pointer`}>
-                {label}
-              </label>
+            {CustomLabel ? (
+              <CustomLabel />
+            ) : (
+              <>
+                {label && (
+                  <label
+                    className={` ${disabled ? "text-elevation-6" : ""} ${labelClasses} ml-2 mb-[1px] cursor-pointer`}
+                  >
+                    {label}
+                  </label>
+                )}
+              </>
             )}
           </div>
         )}

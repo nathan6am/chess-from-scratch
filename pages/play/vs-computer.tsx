@@ -1,4 +1,5 @@
 import React from "react";
+import Head from "next/head";
 import { NextPage, NextPageContext } from "next";
 import type { GetServerSideProps } from "next";
 import { NextPageWithLayout } from "../_app";
@@ -15,7 +16,19 @@ interface Props {
 }
 const Page: NextPageWithLayout<Props> = ({ skillLevel, fromPosition, playerColor, timeControl }: Props) => {
   return (
-    <EngineGame preset={skillLevel} startPosition={fromPosition} playerColor={playerColor} timeControl={timeControl} />
+    <>
+      <Head>
+        <title>Next-Chess | Play Chess</title>
+        <meta name="description" content="Play Chess with Next-Chess" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <EngineGame
+        preset={skillLevel}
+        startPosition={fromPosition}
+        playerColor={playerColor}
+        timeControl={timeControl}
+      />
+    </>
   );
 };
 

@@ -9,6 +9,7 @@ import { FiRepeat } from "react-icons/fi";
 import { Select, Toggle, Input, Button, NumericInput } from "@/components/base";
 import { WhiteIcon, BlackIcon } from "@/components/icons";
 import { RiErrorWarningFill } from "react-icons/ri";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 interface EditorProps {
   boardEditor: BoardEditorHook;
   boardRef: React.RefObject<BoardHandle>;
@@ -17,10 +18,34 @@ interface EditorProps {
   onPlayFriend: (fen: string) => void;
   flipBoard: () => void;
   setEditMode?: (value: boolean) => void;
+  showOverwriteWarning?: boolean;
 }
-export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditMode, flipBoard }: EditorProps) {
+export default function EditorPanel({
+  boardEditor,
+  boardRef,
+  onAnalyze,
+  setEditMode,
+  flipBoard,
+  showOverwriteWarning,
+}: EditorProps) {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
   return (
     <div className="flex flex-col h-full">
+      <ConfirmationDialog
+        title="Load Position"
+        message="Editing the live position will overwrite the exsiting move tree. Are you sure you want to continue?"
+        onConfirm={() => {
+          setDialogOpen(false);
+          onAnalyze(boardEditor.fen);
+        }}
+        onCancel={() => {
+          setDialogOpen(false);
+        }}
+        isOpen={dialogOpen}
+        closeModal={() => setDialogOpen(false)}
+        confirmText="Continue"
+        cancelText="Cancel"
+      />
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
         <div className="absolute left-0 top-0 bottom-0 flex flex-row items-center gap-x-2 px-4">
           {setEditMode !== undefined && (
@@ -62,7 +87,7 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
           >
             <span className="flex flex-row items-center ">
               <BiReset className="inline mr-2 text-lg" />
-              Start Position
+              Reset
             </span>
           </button>
         </div>
@@ -160,11 +185,16 @@ export default function EditorPanel({ boardEditor, boardRef, onAnalyze, setEditM
         <div className="w-full gap-y-4 flex flex-col">
           <Button
             disabled={boardEditor.isValid !== true}
-            variant="neutral"
-            label="Analyze"
+            variant="primary"
+            width="full"
+            label="Load Position"
             onClick={() => {
               if (boardEditor.isValid === true) {
-                onAnalyze(boardEditor.fen);
+                if (showOverwriteWarning) {
+                  setDialogOpen(true);
+                } else {
+                  onAnalyze(boardEditor.fen);
+                }
               }
             }}
           ></Button>

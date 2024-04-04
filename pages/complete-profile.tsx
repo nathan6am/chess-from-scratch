@@ -26,7 +26,7 @@ const SignUp: NextPageWithLayout = () => {
       <>
         <Head>
           <title>NextChess | Account Setup</title>
-          <meta name="Account Setup" content="Sign In to Continue to NextChess" />
+          <meta name="Account Setup" content="Complete your Profile" />
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <div className="w-full h-full flex flex-col justify-center items-center">

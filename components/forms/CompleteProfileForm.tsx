@@ -2,25 +2,26 @@
 import React, { useState, useContext, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Image from "next/image";
 //UI Components
-import { Input, ButtonSocial } from "@/components/base";
+import { Input, Button } from "@/components/base";
 import { RadioGroup } from "@headlessui/react";
 //Context
 import { UserContext } from "@/context/user";
 
 //Util
 import axios from "axios";
-import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import _ from "lodash";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import YupPassword from "yup-password";
-YupPassword(yup);
+
 import User from "@/lib/db/entities/User";
-import CountrySelect from "../UI/CountrySelect";
-import { removeUndefinedFields } from "@/util/misc";
+import CountrySelect from "@/components/base/CountrySelect";
+import { RadioButton, CheckBox } from "@/components/base/";
+import { Label } from "@/components/base/Typography";
 //ValidationSchemas
+YupPassword(yup);
 const schema = yup.object({
   username: yup.string().min(3, "Username must be at least 3 characters").max(20),
 });
@@ -64,6 +65,7 @@ export default function SignUpForm({ profile }: Props) {
   const [verifying, setVerifying] = useState(false);
   const [country, setCountry] = useState<string | null>(null);
   const [rating, setRating] = useState(800);
+  const [antiCheat, setAntiCheat] = useState(false);
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     if (data.username && !usernameValid) {
       setError("username", { message: "Username is already in use" });
@@ -99,7 +101,7 @@ export default function SignUpForm({ profile }: Props) {
   return (
     <div className="flex flex-col items-center justify-center px-6 lg:px-10 xl:px-10 col-span-5 lg:col-span-2 min-h-[90%]  w-full my-4 mx-auto">
       <div className="flex flex-col max-w-[500px]  w-full items-center justify-center ">
-        <h2 className=" text-xl lg:text-2xl text-white mb-6 py-2 border-b-4 border-sepia/[0.7] px-2">
+        <h2 className=" text-xl lg:text-2xl text-white mb-6 py-2 border-b-4 border-gold-200 px-2">
           Complete Your Profile
         </h2>
 
@@ -159,13 +161,30 @@ export default function SignUpForm({ profile }: Props) {
               setRating(skill.rating);
             }}
           />
-          <button
+          <CheckBox
+            className="items-start mb-2"
+            labelClasses="text-left text-sm mt-[-3x]"
+            customLabel={() => {
+              return (
+                <p className="text-sm text-light-200 text-left mt-[-2px] ml-2">
+                  By Checking this box, I agree to the Next-Chess{" "}
+                  <Link href="/terms-of-service" className="underline hover:text-gold-200">
+                    Terms of Service
+                  </Link>{" "}
+                  and Anti-Cheating policy
+                </p>
+              );
+            }}
+            checked={antiCheat}
+            onChange={setAntiCheat}
+          />
+          <Button
             type="submit"
-            disabled={false}
-            className={`text-md ${"bg-[#b99873] hover:bg-[#a58058]"}  text-white py-2 px-6 rounded-md w-full my-2`}
-          >
-            Continue
-          </button>
+            variant="primary"
+            disabled={!usernameValid || !rating || !antiCheat}
+            label="Continue"
+            width="full"
+          />
         </form>
       </div>
     </div>
@@ -193,6 +212,7 @@ function SkillSelect({ onChange }: SkillProps) {
   return (
     <div className="w-full py-8">
       <div className="mx-auto w-full">
+        <Label>Estimated Skill Level</Label>
         <RadioGroup
           value={selected}
           onChange={(val: SkillLevel) => {
@@ -200,58 +220,9 @@ function SkillSelect({ onChange }: SkillProps) {
             setSelected(val);
           }}
         >
-          <label className="block text-white/[0.6] text-md font-semibold mb-2" htmlFor={"country"}>
-            Estimated Skill Level
-          </label>
-          <div className="space-y-3">
-            {skillOptions.map((option) => (
-              <RadioGroup.Option
-                key={option.name}
-                value={option}
-                className={({ active, checked }) =>
-                  `${active ? "ring-2 ring-white ring-opacity-60 " : ""}
-                  ${checked ? "bg-sepia/[0.4] bg-opacity-75 text-white" : "bg-[#202020]"}
-                    relative flex cursor-pointer rounded-lg px-3 py-2 shadow-md focus:outline-none`
-                }
-              >
-                {({ active, checked }) => (
-                  <>
-                    <div className="flex w-full items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex flex-row items-center">
-                          <Image
-                            src={option.iconPath}
-                            width={24}
-                            height={20}
-                            alt=""
-                            className="mr-3 opacity-50"
-                            style={{ filter: "invert(1)" }}
-                          />
-                          <RadioGroup.Label
-                            as="p"
-                            className={`font-semibold  ${checked ? "text-white" : "text-white/[0.8]"}`}
-                          >
-                            {option.name}
-                          </RadioGroup.Label>
-                          <RadioGroup.Description
-                            as="span"
-                            className={`inline ${checked ? "text-white/[0.7]" : "text-sepia/[0.7]"} ml-3 text-sm`}
-                          >
-                            <span>{option.description}</span>{" "}
-                          </RadioGroup.Description>
-                        </div>
-                      </div>
-                      {checked && (
-                        <div className="shrink-0 text-white">
-                          <CheckIcon className="h-4 w-4" />
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </RadioGroup.Option>
-            ))}
-          </div>
+          <RadioButton value={skillOptions[0]} label={`Beginner (0 - 1000)`} />
+          <RadioButton value={skillOptions[1]} label={`Intermediate (1000 - 1600)`} />
+          <RadioButton value={skillOptions[2]} label={`Advanced (1600+)`} />
         </RadioGroup>
       </div>
     </div>

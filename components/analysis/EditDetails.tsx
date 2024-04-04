@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { Button, Input, Select } from "@/components/base";
 import { Label } from "@/components/base/Typography";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { IoMdPricetags } from "react-icons/io";
 import type { PGNTagData } from "@/lib/types";
 export default function EditDetails() {
   const { analysis, saveManager } = useContext(AnalysisContext);
@@ -70,7 +71,10 @@ function TagForm({ tags, setTags }: TagFormProps) {
   return (
     <div className="grow">
       <form onSubmit={handleSubmit(onSubmit)} className="py-4 px-6 bg-elevation-2">
-        <h2>PGN Tags</h2>
+        <h2 className="mb-2 font-semibold text-gold-200">
+          <IoMdPricetags className="inline mr-2" />
+          Edit PGN Tags
+        </h2>
         <div className="flex flex-row items-end">
           <Input
             containerClassName="mb-2"

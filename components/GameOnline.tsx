@@ -1,26 +1,38 @@
 import React, { useEffect, useState, useMemo, useContext } from "react";
-import Board from "@/components/board/Board";
-import * as Chess from "@/lib/chess";
-import _ from "lodash";
-import Result from "@/components/dialogs/Result";
-import MenuBar from "./layout/MenuBar";
-import useChessOnline, {
+
+//Type Definitions
+import type {
   BoardControls as IBoardControls,
   GameControls as IGameControls,
   OnlineGame,
 } from "@/hooks/useChessOnline";
-import BoardControls from "./game/BoardControls";
+import type { ChatMessage, Connection } from "@/server/types/lobby";
+import type { DurationObjectUnits } from "luxon";
+
+//Components
 import Waiting from "./game/Waiting";
-import { SettingsContext } from "@/context/settings";
+import Board from "@/components/board/Board";
+import BoardControls from "./game/BoardControls";
 import Clock from "./game/Clock";
 import PlayerCard from "./game/PlayerCard";
-import { ChatMessage, Connection, Player } from "@/server/types/lobby";
-import { BoardColumn, InfoRow, GameContainer, PanelContainer, BoardContainer } from "./layout/templates/GameLayout";
-import { DurationObjectUnits, Info } from "luxon";
 import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
 import LiveChat from "./game/LiveChat";
+import Result from "@/components/dialogs/Result";
+import { BoardColumn, InfoRow, GameContainer, PanelContainer, BoardContainer } from "./layout/templates/GameLayout";
+
+//Hooks
+import useChessOnline from "@/hooks/useChessOnline";
+import useSettings from "@/hooks/useSettings";
+import { useRouter } from "next/router";
+import useGameCache from "@/hooks/useGameCache";
+
+//Util
+import * as Chess from "@/lib/chess";
+import _ from "lodash";
 import cn from "@/util/cn";
+import { encodeGameToPgn } from "@/util/parsers/pgnParser";
+
 interface Props {
   lobbyid: string;
 }
@@ -37,6 +49,8 @@ export const GameContext = React.createContext<{
 }>({} as any);
 
 export default function GameOnline({ lobbyid }: Props) {
+  const router = useRouter();
+  const { cacheGame } = useGameCache();
   const onlineGame = useChessOnline({
     lobbyId: lobbyid,
     onConnectionError: () => {
@@ -63,11 +77,13 @@ export default function GameOnline({ lobbyid }: Props) {
     availablePremoves,
     premoveQueue,
   } = onlineGame;
-  const { settings } = useContext(SettingsContext);
+
+  const settings = useSettings();
   const timeControl = currentGame?.data.config.timeControl;
   const ratingCategory = currentGame?.ratingCategory;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
 
+  //Parse player information from the lobby
   const players = useMemo(() => {
     let result: Record<Chess.Color, Connection | undefined> = {
       w: undefined,
@@ -76,14 +92,16 @@ export default function GameOnline({ lobbyid }: Props) {
     if (!lobby || !currentGame) return result;
     result.w = lobby.connections.find((player) => player.id === currentGame.players.w.id);
     result.b = lobby.connections.find((player) => player.id === currentGame.players.b.id);
-
     return result;
   }, [lobby, currentGame]);
+
+  //Establish game details
   const gameDetails: GameDetails = {
     players: players,
     timeControl: timeControl,
     ratingCategory: ratingCategory,
   };
+
   //Set the board orientation if the player color changes
   useEffect(() => {
     if (playerColor) setOrientation(playerColor);
@@ -93,8 +111,9 @@ export default function GameOnline({ lobbyid }: Props) {
     if (!currentGame) return Chess.createGame({});
     return currentGame.data;
   }, [currentGame]);
+
   if (!onlineGame.connectionStatus.lobby) {
-    return <div>Connecting...</div>;
+    return <div className="w-full h-full flex flex-1 justify-center items-center">Connecting...</div>;
   }
   //TODO: Add connecting component
 
@@ -110,6 +129,14 @@ export default function GameOnline({ lobbyid }: Props) {
           />
         </div>
         <Result
+          onRematch={() => {
+            gameControls.requestRematch();
+          }}
+          onAnalyze={() => {
+            if (!currentGame) return;
+            cacheGame(encodeGameToPgn(currentGame), lobbyid);
+            router.push(`/study/analyze?sourceType=last`);
+          }}
           outcome={gameData.outcome}
           isOpen={(gameData.outcome && showResult) || false}
           close={() => {

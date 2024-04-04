@@ -1,8 +1,9 @@
 import { Dialog, Transition } from "@headlessui/react";
-
+import { FaWrench } from "react-icons/fa";
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
 import { PreferencesTabs } from "../menu/options/Options";
+import { PanelHeader } from "../base/Typography";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
@@ -36,8 +37,13 @@ export default function OptionsOverlay({ isOpen, closeModal }: Props) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full h-[80vh] max-w-[1200px] mx-10  px-4 sm:px-8 transform overflow-show rounded-2xl bg-[#181818] py-10 text-left align-middle shadow-lg transition-all">
-                  <Dialog.Title>Preferences</Dialog.Title>
+                <Dialog.Panel className="w-full h-[80vh] max-w-[1200px] mx-4  px-4 sm:px-4 transform overflow-show rounded-2xl bg-[#181818] py-4 text-left align-middle shadow-lg transition-all">
+                  <Dialog.Title>
+                    <PanelHeader>
+                      <FaWrench className="inline mr-2" />
+                      User Preferences
+                    </PanelHeader>
+                  </Dialog.Title>
                   <PreferencesTabs />
                 </Dialog.Panel>
               </Transition.Child>

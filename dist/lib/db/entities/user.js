@@ -65,6 +65,7 @@ const defaultRatings = {
 let User = User_1 = class User extends typeorm_1.BaseEntity {
     id;
     name;
+    bio;
     username;
     ratings;
     notifications;
@@ -162,12 +163,45 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             },
         });
         if (user) {
+            console.log(user.credentials);
             const { id, username, type } = user;
+            console.log(id, username, type);
             return { id, username, type };
         }
         const newUser = new User_1();
         const credentials = new Credential();
         credentials.facebookId = profile.facebookId;
+        Object.assign(newUser, {
+            name: profile.name,
+        });
+        newUser.credentials = credentials;
+        await newUser.save();
+        return {
+            id: newUser.id,
+            username: null,
+            type: newUser.type,
+        };
+    }
+    static async loginWithGoogle(profile) {
+        const user = await this.findOne({
+            relations: {
+                credentials: true,
+            },
+            where: {
+                credentials: {
+                    googleId: profile.googleId,
+                },
+            },
+        });
+        if (user) {
+            console.log(user.credentials);
+            const { id, username, type } = user;
+            console.log(id, username, type);
+            return { id, username, type };
+        }
+        const newUser = new User_1();
+        const credentials = new Credential();
+        credentials.googleId = profile.googleId;
         Object.assign(newUser, {
             name: profile.name,
         });
@@ -344,6 +378,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "bio", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true, unique: true }),
     __metadata("design:type", String)

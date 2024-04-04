@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import useCurrentOpening from "./useCurrentOpening";
 import useSound from "use-sound";
 import useSettings from "@/hooks/useSettings";
+export type SkillPreset = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 import { notEmpty } from "@/util/misc";
 
 import * as Chess from "@/lib/chess";
 interface Options {
-  timeControl?: Chess.TimeControl;
+  autoFlip?: boolean;
+  invertPieces?: boolean;
   gameConfig: Partial<Chess.GameConfig>;
-  allowTakeback?: boolean;
 }
-import { Message, Response, EngineGameConfig } from "@/lib/stockfish/stockfishWorker";
 import useChessClock from "./useChessClock";
 import _ from "lodash";
 import { removeUndefinedFields } from "@/util/misc";
@@ -18,8 +19,7 @@ const defaultGameConfig: Chess.GameConfig = {
   timeControl: null,
 };
 
-export const useLocalGame = (options: Options) => {
-  //Get settings from context
+export const useEngineGame = (options: Options) => {
   const settings = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {
@@ -34,25 +34,29 @@ export const useLocalGame = (options: Options) => {
   const [currentGame, setCurrentGame] = useState<Chess.Game>(() => {
     return Chess.createGame(gameConfig);
   });
-  const currentFen = useMemo(() => currentGame.fen, [currentGame]);
+  const { opening, reset } = useCurrentOpening(currentGame);
 
   //Use the chess clock if a time control is provided
-  const useClock = useMemo(() => options.timeControl !== undefined, [options.timeControl]);
+  const useClock = useMemo(() => !!gameConfig.timeControl, [gameConfig.timeControl]);
   const clock = useChessClock({
-    timeControl: options.timeControl || { timeSeconds: 0, incrementSeconds: 0 },
+    timeControl: gameConfig.timeControl || { timeSeconds: 0, incrementSeconds: 0 },
   });
 
-  //Hande moves
+  //Hande player moves
   const onMove = useCallback(
     (move: Chess.Move) => {
       const legalMove = currentGame.legalMoves.find((m) => _.isEqual(m, move));
       if (!legalMove) return;
       const newGame = Chess.move(currentGame, legalMove);
-      clock.press(currentGame.activeColor);
+      if (useClock) {
+        clock.press(currentGame.activeColor);
+      }
+
       setCurrentGame(newGame);
     },
     [currentGame, useClock, clock]
   );
+
   //Flattened move history
   const moveHistoryFlat = useMemo(() => {
     if (!currentGame) return [];
@@ -90,12 +94,6 @@ export const useLocalGame = (options: Options) => {
     }
     return moveHistoryFlat[moveHistoryFlat.length - (livePositionOffset + 1)].move || null;
   }, [livePositionOffset, moveHistoryFlat, currentGame]);
-
-  //Premoves
-  const availablePremoves = useMemo(() => {
-    if (!currentGame) return [];
-    return Chess.getPremoves(currentGame);
-  }, [currentGame]);
 
   //Move sounds
   const moveVolume = useMemo(() => {
@@ -162,6 +160,7 @@ export const useLocalGame = (options: Options) => {
     moveable,
     onMove,
     clock,
+    opening,
     boardControls: {
       stepBackward,
       stepForward,

@@ -5,6 +5,7 @@ import passport from "passport";
 import passportCustom from "passport-custom";
 import * as passportLocal from "passport-local";
 import * as passportFacebook from "passport-facebook";
+import * as paasportGoogle from "passport-google-oauth20";
 
 //Utilities
 import { v4 as uuidv4 } from "uuid";
@@ -19,6 +20,10 @@ const nanoid = customAlphabet("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "/api/auth/facebook/callback";
+
+const googleClientID = process.env.GOOGLE_CLIENT_ID || "";
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+const googleCallbackURL = process.env.BASE_URL + "/api/auth/google/callback";
 
 //Local Strategy
 passport.use(
@@ -40,11 +45,32 @@ passport.use(
       clientSecret: facebookClientSecret,
       callbackURL: facebookCallbackURL,
     },
-    async function (accessToken, refreshToken, profile, done) {
-      const user = User.loginWithFacebook({
+    async function (_accessToken, _refreshToken, profile, done) {
+      const user = await User.loginWithFacebook({
         name: profile.displayName,
         facebookId: profile.id,
       });
+      if (user) {
+        console.log(user);
+        return done(null, user);
+      } else {
+        return done(new Error("Unable to create User"));
+      }
+    }
+  )
+);
+
+//Google Strategy
+passport.use(
+  new paasportGoogle.Strategy(
+    {
+      clientID: googleClientID,
+      clientSecret: googleClientSecret,
+      callbackURL: googleCallbackURL,
+    },
+    async function (_accessToken, _refreshToken, profile, done) {
+      const googleId = profile.id;
+      const user = await User.loginWithGoogle({ googleId, name: profile.displayName });
       if (user) {
         return done(null, user);
       } else {
@@ -95,17 +121,19 @@ router.get(
   "/facebook/callback",
   passport.authenticate("facebook", {
     successReturnToOrRedirect: "/",
-    failureRedirect: "/failure",
+    failureRedirect: "/login",
   })
 );
 
+router.get("/google", passport.authenticate("google", { scope: ["profile"] }));
 router.get(
-  "/guest",
-  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
-  (req, res) => {
-    res.redirect("/");
-  }
+  "/google/callback",
+  passport.authenticate("google", { successReturnToOrRedirect: "/", failureRedirect: "/login" })
 );
+
+router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+  res.redirect("/");
+});
 
 router.get("/user", async function (req, res, next) {
   console.log("user", req.user);
@@ -170,27 +198,24 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-router.post(
-  "/change-password",
-  async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
-    const sessionUser = req.user;
-    if (!sessionUser || sessionUser.type === "guest") {
-      res.status(401).end();
-      return;
-    }
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      res.status(400).end();
-      return;
-    }
-    const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
-
-    if (updated) return res.status(200).json({ updated: true });
-    else {
-      res.status(401).end();
-    }
+router.post("/change-password", async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
+  const sessionUser = req.user;
+  if (!sessionUser || sessionUser.type === "guest") {
+    res.status(401).end();
+    return;
   }
-);
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).end();
+    return;
+  }
+  const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
+
+  if (updated) return res.status(200).json({ updated: true });
+  else {
+    res.status(401).end();
+  }
+});
 
 router.get("/logout", function (req, res, next) {
   console.log("logging out");

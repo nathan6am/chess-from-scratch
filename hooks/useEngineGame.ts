@@ -35,9 +35,10 @@ interface Options {
 }
 import { Message, Response, EngineGameConfig } from "@/lib/stockfish/stockfishWorker";
 import useChessClock from "./useChessClock";
-import _ from "lodash";
+import _, { set } from "lodash";
 import { removeUndefinedFields } from "@/util/misc";
 import { config } from "process";
+import { use } from "passport";
 const defaultGameConfig: Chess.GameConfig = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   timeControl: null,
@@ -46,6 +47,7 @@ const defaultGameConfig: Chess.GameConfig = {
 export const useEngineGame = (options: Options) => {
   const settings = useSettings();
 
+  const [isThinking, setIsThinking] = useState(false);
   const gameConfig = useMemo<Chess.GameConfig>(() => {
     const configOptions = removeUndefinedFields(options.gameConfig);
     return {
@@ -66,6 +68,9 @@ export const useEngineGame = (options: Options) => {
   const useClock = useMemo(() => options.timeControl !== undefined, [options.timeControl]);
   const clock = useChessClock({
     timeControl: options.timeControl || { timeSeconds: 0, incrementSeconds: 0 },
+    onTimeExpired: (color) => {
+      alert(`Time expired for ${color}`);
+    },
   });
 
   //Config for the stockfish engine
@@ -86,7 +91,7 @@ export const useEngineGame = (options: Options) => {
   useEffect(() => {
     const handler = (e: MessageEvent<Response>) => {
       const response = e.data;
-      console.log(response);
+      // console.log(response);
       if (response.type === "ready") {
         setReady(true);
       }
@@ -117,6 +122,7 @@ export const useEngineGame = (options: Options) => {
   const restartGame = useCallback(() => {
     setCurrentGame(Chess.createGame(gameConfig));
     setLivePositionOffset(0);
+    clock.reset();
     reset();
     startGame();
   }, [gameConfig, startGame]);
@@ -136,6 +142,7 @@ export const useEngineGame = (options: Options) => {
         fen: newGame.fen,
         timeRemaining: useClock ? clock.timeRemainingMs : undefined,
       });
+      setIsThinking(true);
     },
     [options.playerColor, currentGame, useClock, clock, workerRef]
   );
@@ -149,6 +156,7 @@ export const useEngineGame = (options: Options) => {
         return move.start === m.start && move.end === m.end && move.promotion === m.promotion;
       });
       if (!legalMove) return;
+      setIsThinking(false);
       const newGame = Chess.move(currentGame, legalMove);
       clock.press(currentGame.activeColor);
       setCurrentGame(newGame);
@@ -159,7 +167,6 @@ export const useEngineGame = (options: Options) => {
   const onMessage = useCallback(
     (e: MessageEvent<any>) => {
       const response = e.data;
-      console;
       if (response.type === "move") {
         const move = response.move;
         if (!move) return;
@@ -315,6 +322,7 @@ export const useEngineGame = (options: Options) => {
     livePositionOffset,
     lastMove,
     moveable,
+    isThinking,
     onMove,
     availablePremoves,
     premoveQueue,

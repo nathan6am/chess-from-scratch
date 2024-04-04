@@ -4,9 +4,12 @@ import { useRouter } from "next/router";
 import * as Chess from "@/lib/chess";
 import { MdArrowDropUp, MdOutlineRestartAlt, MdAnalytics, MdExitToApp } from "react-icons/md";
 import { Modal } from "@/components/base";
+import { Button } from "@/components/base";
 interface Props {
   outcome: Chess.Outcome;
   isOpen: boolean;
+  onRematch: () => void;
+  onAnalyze: () => void;
   close: () => void;
 }
 
@@ -22,7 +25,7 @@ enum MessageEnum {
   "resignation" = "by resignation",
   "insufficient" = "by insufficient mating material",
 }
-export default function Result({ outcome, isOpen, close }: Props) {
+export default function Result({ outcome, isOpen, close, onAnalyze, onRematch }: Props) {
   const title = useMemo(() => {
     switch (outcome?.result) {
       case "w":
@@ -72,7 +75,7 @@ export default function Result({ outcome, isOpen, close }: Props) {
                   <div className="mt-1 font-medium text-md text-center text-white/[0.7]">
                     {outcome && `${MessageEnum[outcome.by]}`}
                   </div>
-                  <div className="text-center w-fit text-lg text-white my-8 py-4 px-6 bg-green-200/[0.25] border-2 border-green-300/[0.8] rounded-md mx-auto">
+                  {/* <div className="text-center w-fit text-lg text-white my-8 py-4 px-6 bg-green-200/[0.25] border-2 border-green-300/[0.8] rounded-md mx-auto">
                     <p>
                       infundibulus (1520)
                       <span className="inline items-center text-green-400">
@@ -80,34 +83,31 @@ export default function Result({ outcome, isOpen, close }: Props) {
                         12
                       </span>
                     </p>
-                  </div>
-                  <div className="mt-10 flex flex-col space-y-3 px-8">
-                    <button
+                  </div> */}
+                  <div className="mt-2 flex flex-col px-8">
+                    <Button
                       type="button"
-                      className="inline-flex justify-center items-center rounded-md border border-transparent bg-green-500/[0.5] px-4 py-2 font-medium text-white hover:bg-green-600/[0.5] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                      onClick={closeModal}
-                    >
-                      Rematch
-                      <MdOutlineRestartAlt className="inline text-xl ml-1" />
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex justify-center items-center rounded-md border border-transparent bg-sepia/[0.6] px-4 py-2 font-medium text-white hover:bg-sepia/[0.5] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                      onClick={closeModal}
-                    >
-                      Analyze Game
-                      <MdAnalytics className="inline text-xl ml-1" />
-                    </button>
-                    <button
+                      variant="neutral"
+                      width="full"
+                      label="Rematch"
                       onClick={() => {
-                        router.push("/play");
+                        onRematch && onRematch();
+                        closeModal();
                       }}
-                      type="button"
-                      className="inline-flex justify-center items-center rounded-md border border-transparent bg-red-400/[0.6] px-4 py-2 font-medium text-white hover:bg-red-500/[0.5] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    >
-                      Exit to Menu
-                      <MdExitToApp className="inline text-xl ml-1" />
-                    </button>
+                      icon={MdOutlineRestartAlt}
+                    ></Button>
+                    <Button
+                      label="Open in Analysis Board"
+                      onClick={() => {
+                        onAnalyze && onAnalyze();
+                      }}
+                      icon={MdAnalytics}
+                      iconPosition="right"
+                      iconClassName="ml-1"
+                      variant="neutral"
+                      width="full"
+                    ></Button>
+                    <Button label="Dismiss" onClick={closeModal} variant="neutral" width="full"></Button>
                   </div>
                 </Dialog.Panel>
               </Transition.Child>

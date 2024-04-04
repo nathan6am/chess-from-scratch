@@ -53,7 +53,7 @@ function CountrySelect({ onChange }: Props) {
               if (selectedCountry === null) {
               }
             }}
-            className="w-full appearance-none border-white/[0.3] border-2 focus:border-white/[0.8] border-box rounded-md w-full py-2 px-3 text-md bg-black/[0.3] text-sepia placeholder:text-gray-300 leading-tight focus:outline-none"
+            className="w-full appearance-none border-white/[0.3] border-2 focus:border-white/[0.8] border-box rounded-md w-full py-2 px-3 text-md bg-black/[0.3] text-gold-200 placeholder:text-gray-300 leading-tight focus:outline-none"
             displayValue={(option: { id: string; name: string } | null) => option?.name || ""}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -118,7 +118,7 @@ function VirtualizedList({ items }: { items: ListItem[] }) {
             }}
             className={({ active }) =>
               `relative cursor-default select-none py-2 pl-4 pr-4 ${
-                active ? "bg-sepia/[0.5] text-white" : "text-white/[0.5]"
+                active ? "bg-elevation-4 text-white" : "text-white/[0.5]"
               }`
             }
             value={items?.[virtualRow.index]}

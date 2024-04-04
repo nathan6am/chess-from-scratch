@@ -6,7 +6,7 @@ import useCollections from "@/hooks/useCollections";
 import type Collection from "@/lib/db/entities/Collection";
 import type Analysis from "@/lib/db/entities/Analysis";
 import { Disclosure } from "@headlessui/react";
-import { MdExpandMore } from "react-icons/md";
+import { MdExpandMore, MdSearch } from "react-icons/md";
 import { AiFillFile } from "react-icons/ai";
 
 import { BsFillCollectionFill, BsFillShareFill } from "react-icons/bs";
@@ -23,6 +23,7 @@ import RenameDialog from "../../dialogs/RenameDialog";
 import CollectionsDialog from "../../dialogs/CollectionsDialog";
 import { HiSortDescending, HiSortAscending } from "react-icons/hi";
 import Loading from "../../base/Loading";
+import cn from "@/util/cn";
 const Portal = ({ children }: { children: JSX.Element | string | Array<JSX.Element | string> }) => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
@@ -121,13 +122,7 @@ export function FileMenu({ showDialog, fileManager }: FileMenuProps) {
     </Menu>
   );
 }
-function RenderCollection({
-  collection,
-  refetch,
-}: {
-  collection: Collection;
-  refetch: () => void;
-}) {
+function RenderCollection({ collection, refetch }: { collection: Collection; refetch: () => void }) {
   return (
     <StyledDiclosure label={collection.title} size={collection.analyses.length}>
       <AnalysisList analyses={collection.analyses} refetch={refetch} hideLastUpdate />
@@ -321,13 +316,7 @@ interface AnalysisProps {
   setSelected: (analysisId: string) => void;
   hideLastUpdate?: boolean;
 }
-function RenderAnalysis({
-  analysis,
-  onContextMenu,
-  setSelected,
-  selected,
-  hideLastUpdate,
-}: AnalysisProps) {
+function RenderAnalysis({ analysis, onContextMenu, setSelected, selected, hideLastUpdate }: AnalysisProps) {
   const router = useRouter();
   const onDoubleClick = () => {
     router.push(`/study/analyze?id=${analysis.id}`);
@@ -379,11 +368,7 @@ function RenderAnalysis({
 export default function FileBrowser() {
   const [queryStr, setQueryStr] = useState("");
   const debouncedQueryStr = useDebounce(queryStr, 500);
-  const {
-    collections,
-    refetch: refetchCollections,
-    isLoading: collectionsLoading,
-  } = useCollections();
+  const { collections, refetch: refetchCollections, isLoading: collectionsLoading } = useCollections();
   const [sort, setSort] = useState<{ key: "lastUpdate" | "title"; direction: "ASC" | "DESC" }>({
     key: "lastUpdate",
     direction: "DESC",
@@ -430,25 +415,36 @@ export default function FileBrowser() {
             <>{!collections.length && collectionsLoading ? <Loading /> : <></>}</>
             <>
               {collections.map((collection) => {
-                return (
-                  <RenderCollection
-                    key={collection.id}
-                    collection={collection}
-                    refetch={refetchAll}
-                  />
-                );
+                return <RenderCollection key={collection.id} collection={collection} refetch={refetchAll} />;
               })}
             </>
           </ScrollContainer>
         </Tab.Panel>
         <Tab.Panel as="table" className="w-full grow flex flex-col">
-          <div>
-            <input
-              value={queryStr}
-              placeholder="Search analyses"
-              onChange={(e) => setQueryStr(e.target.value)}
-              className="display-none bg-elevation-2 rounded-md m-2 border border-light-400 pl-8 py-1.5 px-4"
-            ></input>
+          <div className="w-full p-2">
+            <div className="w-full relative">
+              <span className="absolute left-0 top-0 bottom-0 pl-2 flex items-center">
+                <MdSearch className="text-xl text-light-400" />
+              </span>
+              <span className="absolute right-0 top-0 bottom-0 pr-3 flex items-center">
+                <button
+                  onClick={() => {
+                    setQueryStr("");
+                  }}
+                  className={cn("text-light-300 text-sm hover:text-light-100", {
+                    hidden: queryStr.length === 0,
+                  })}
+                >
+                  Clear
+                </button>
+              </span>
+              <input
+                value={queryStr}
+                placeholder="Search analyses"
+                onChange={(e) => setQueryStr(e.target.value)}
+                className="display-none bg-elevation-3 rounded-md w-full shadow pl-8 py-1.5 px-4  focus:outline-none focus-visible:ring-transparent text-light-300"
+              ></input>
+            </div>
           </div>
           <thead>
             <tr className="flex flex-row items-center justify-between py-1 px-4 border-b border-light-400 text-sm pr-2 text-light-300">
@@ -483,8 +479,7 @@ export default function FileBrowser() {
                   onClick={() => {
                     setSort({
                       key: "lastUpdate",
-                      direction:
-                        sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
+                      direction: sort.key === "lastUpdate" && sort.direction === "DESC" ? "ASC" : "DESC",
                     });
                   }}
                   className={classNames("p-1 px-2 rounded-md", {
@@ -563,12 +558,9 @@ function StyledDiclosure({ children, label, size = 0 }: StyledDisclosureProps) {
             )}
           >
             <div
-              className={classNames(
-                " text-light-200 flex flex-row items-center group-hover:text-light-100",
-                {
-                  "text-light-100": open,
-                }
-              )}
+              className={classNames(" text-light-200 flex flex-row items-center group-hover:text-light-100", {
+                "text-light-100": open,
+              })}
             >
               <BsFillCollectionFill className="mr-2 inline text-gold-200" />
               {label}

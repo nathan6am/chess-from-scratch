@@ -5,7 +5,7 @@ import { NextPageContext } from "next";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "@/pages/_app";
 import Dashboard from "@/components/layout/Dashboard";
-import Profile from "@/components/UI/Menus/content/Profile";
+import Profile from "@/components/menu/profile/Profile";
 const Page: NextPageWithLayout = () => {
   return (
     <>
@@ -28,6 +28,12 @@ export async function getServerSideProps(context: NextPageContext) {
   const res = context.res;
   if (!res) return { props: {} };
   if (!req?.user) {
+    res.setHeader("location", "/login");
+    res.statusCode = 302;
+    res.end();
+    return { props: {} };
+  }
+  if (req.user.type === "guest") {
     res.setHeader("location", "/login");
     res.statusCode = 302;
     res.end();

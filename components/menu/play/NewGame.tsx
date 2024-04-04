@@ -141,9 +141,9 @@ function Computer() {
           { label: "Level 4", value: 4 },
           { label: "Level 5", value: 5 },
           { label: "Level 6", value: 6 },
-          { label: "level 7", value: 7 },
-          { label: "level 8", value: 8 },
-          { label: "level 9", value: 9 },
+          { label: "Level 7", value: 7 },
+          { label: "Level 8", value: 8 },
+          { label: "Level 9", value: 9 },
           { label: "Level 10 (Full strength)", value: 10 },
         ]}
         value={level}
@@ -152,6 +152,7 @@ function Computer() {
       <Button
         onClick={onStart}
         className="w-full mt-8"
+        width="full"
         size="lg"
         icon={IoMdPlay}
         variant="neutral"

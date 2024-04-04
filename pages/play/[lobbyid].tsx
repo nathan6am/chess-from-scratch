@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react";
+import Head from "next/head";
 import { NextPageWithLayout } from "@/pages/_app";
 import { NextPage, NextPageContext } from "next";
 import Dashboard from "@/components/layout/Dashboard";
@@ -9,7 +10,16 @@ interface Props {
 }
 
 const Lobby: NextPageWithLayout<Props> = ({ lobbyid }) => {
-  return <GameOnline lobbyid={lobbyid} />;
+  return (
+    <>
+      <Head>
+        <title>Next-Chess | Play Chess</title>
+        <meta name="description" content="Play Chess with Next-Chess" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <GameOnline lobbyid={lobbyid} />
+    </>
+  );
 };
 
 Lobby.getLayout = function getLayout(page: ReactElement) {

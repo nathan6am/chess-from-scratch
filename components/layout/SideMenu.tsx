@@ -61,13 +61,10 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
         <div className="flex flex-row h-16 items-center pl-3 pr-0 border-light-500 justify-between">
           <Logo />
           <span className="w-[60px] h-full flex items-center justify-center">
-            <IconButton
-              iconSize="1.5em"
-              icon={collapse ? BsArrowBarRight : BsArrowBarLeft}
-              onClick={toggle}
-            />
+            <IconButton iconSize="1.5em" icon={collapse ? BsArrowBarRight : BsArrowBarLeft} onClick={toggle} />
           </span>
         </div>
+
         <ul className="">
           <MenuItem
             icon={IoMdPlay}
@@ -115,6 +112,13 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
           />
         </ul>
         <div
+          className={cn({
+            hidden: collapse,
+          })}
+        >
+          <p className="text-sm text-light-300 p-4 text-center">{`Signed in as: ${user?.username}`}</p>
+        </div>
+        <div
           className={cn("px-4", {
             hidden: collapse || !user || user.type !== "guest",
           })}
@@ -139,6 +143,7 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
           />
         </div>
       </nav>
+
       <div
         className={cn("w-full flex", {
           "justify-end": collapse,
@@ -146,17 +151,24 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
         })}
       >
         <div
-          className={cn(
-            "flex items-center justify-between mb-4  rounded-md shadow bg-elevation-3",
-            {
-              "flex-col mr-0 w-[44px] px-auto py-2 gap-y-2 mr-[8px]": collapse,
-              "flex-row mx-4 px-4 p-2 w-full ": !collapse,
-            }
-          )}
+          className={cn("flex items-center justify-between mb-4  rounded-md shadow bg-elevation-3", {
+            "flex-col mr-0 w-[44px] px-auto py-2 gap-y-2 mr-[8px]": collapse,
+            "flex-row mx-4 px-4 p-2 w-full ": !collapse,
+          })}
         >
-          <IconButton icon={MdOutlineHelpOutline} />
+          <IconButton
+            data-tooltip-content="Help"
+            data-tooltip-delay-show={300}
+            data-tooltip-place={collapse ? "right" : "top"}
+            data-tooltip-id="my-tooltip"
+            icon={MdOutlineHelpOutline}
+          />
 
           <IconButton
+            data-tooltip-content="User Preferences"
+            data-tooltip-delay-show={300}
+            data-tooltip-place={collapse ? "right" : "top"}
+            data-tooltip-id="my-tooltip"
             icon={MdSettings}
             onClick={() => {
               setShowOptions(true);
@@ -189,33 +201,21 @@ interface MenuItemProps {
   iconSize?: number;
 }
 
-const MenuItem = ({
-  icon: Icon,
-  pageKey,
-  activeKey,
-  label,
-  href,
-  collapse,
-  iconSize,
-}: MenuItemProps) => {
+const MenuItem = ({ icon: Icon, pageKey, activeKey, label, href, collapse, iconSize }: MenuItemProps) => {
   const active = activeKey === pageKey;
   return (
     <Link href={href}>
       <li
-        className={cn(
-          "cursor-pointer py-3 px-8 flex flex-row group border-l-4 border-transparent",
-          {
-            "bg-elevation-4 text-light-200 border-gold-200": active,
-            "hover:bg-elevation-3 text-light-200 hover:text-light-200": !active,
-          }
-        )}
+        className={cn("cursor-pointer py-3 px-8 flex flex-row group border-l-4 border-transparent", {
+          "bg-elevation-4 text-light-200 border-gold-200": active,
+          "hover:bg-elevation-3 text-light-200 hover:text-light-200": !active,
+        })}
       >
         <span className="w-8 mr-6 flex flex-row justify-center items-center">
           <Icon
             className={cn({
               "fill-gold-200 text-gold-200": active,
-              "fill-light-300 text-light-300 group-hover:fill-gold-200 group-hover:text-gold-200":
-                !active,
+              "fill-light-300 text-light-300 group-hover:fill-gold-200 group-hover:text-gold-200": !active,
               "sm:mr-0 sm:translate-x-[160px]": collapse,
             })}
             size={iconSize || 20}

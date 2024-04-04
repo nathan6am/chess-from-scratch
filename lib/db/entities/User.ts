@@ -82,6 +82,9 @@ export default class User extends BaseEntity {
   @Column({ nullable: true })
   name: string;
 
+  @Column({ nullable: true })
+  bio: string;
+
   @Column({ nullable: true, unique: true })
   username: string;
 
@@ -201,12 +204,46 @@ export default class User extends BaseEntity {
       },
     });
     if (user) {
+      console.log(user.credentials);
       const { id, username, type } = user;
+      console.log(id, username, type);
       return { id, username, type };
     }
     const newUser = new User();
     const credentials = new Credential();
     credentials.facebookId = profile.facebookId;
+    Object.assign(newUser, {
+      name: profile.name,
+    });
+    newUser.credentials = credentials;
+    await newUser.save();
+    return {
+      id: newUser.id,
+      username: null,
+      type: newUser.type,
+    };
+  }
+
+  static async loginWithGoogle(profile: { googleId: string; name: string }): Promise<SessionUser> {
+    const user = await this.findOne({
+      relations: {
+        credentials: true,
+      },
+      where: {
+        credentials: {
+          googleId: profile.googleId,
+        },
+      },
+    });
+    if (user) {
+      console.log(user.credentials);
+      const { id, username, type } = user;
+      console.log(id, username, type);
+      return { id, username, type };
+    }
+    const newUser = new User();
+    const credentials = new Credential();
+    credentials.googleId = profile.googleId;
     Object.assign(newUser, {
       name: profile.name,
     });

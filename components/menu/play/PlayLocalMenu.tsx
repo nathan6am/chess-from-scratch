@@ -12,13 +12,7 @@ export default function PlayLocalMenu() {
   const [timeControl, setTimeControl] = useState<Chess.TimeControl | undefined>();
   return (
     <div className="w-full max-w-md">
-      <Toggle
-        label="Flip Board on Turn"
-        className="my-2 w-fit"
-        checked={autoFlip}
-        onChange={setAutoFlip}
-        reverse
-      />
+      <Toggle label="Flip Board on Turn" className="my-2 w-fit" checked={autoFlip} onChange={setAutoFlip} reverse />
       <Toggle
         label="Invert Opposing Pieces"
         className="my-2 w-fit"
@@ -26,26 +20,19 @@ export default function PlayLocalMenu() {
         onChange={setInvertPieces}
         reverse
       />
-      <Toggle
-        label="Timed Game"
-        className="my-2 w-fit"
-        checked={timed}
-        onChange={setTimed}
-        reverse
-      />
+      <Toggle label="Timed Game" className="my-2 w-fit" checked={timed} onChange={setTimed} reverse />
       {timed && <TimeControlSelect setTimeControl={setTimeControl} />}
       <Button
         onClick={() => {
           router.push(
             `/play/local?${invertPieces ? "invertPieces=true" : "invertPieces=false"}${
-              timed && timeControl
-                ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}`
-                : ""
+              timed && timeControl ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}` : ""
             }`
           );
         }}
         className="w-full mt-8"
         size="lg"
+        width="full"
         icon={IoMdPlay}
         variant="neutral"
         label="Create Game"

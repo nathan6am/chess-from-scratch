@@ -32,6 +32,7 @@ const passport_1 = __importDefault(require("passport"));
 const passport_custom_1 = __importDefault(require("passport-custom"));
 const passportLocal = __importStar(require("passport-local"));
 const passportFacebook = __importStar(require("passport-facebook"));
+const paasportGoogle = __importStar(require("passport-google-oauth20"));
 //Utilities
 const uuid_1 = require("uuid");
 const nanoid_1 = require("nanoid");
@@ -42,6 +43,9 @@ const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
 const facebookCallbackURL = process.env.BASE_URL + "/api/auth/facebook/callback";
+const googleClientID = process.env.GOOGLE_CLIENT_ID || "";
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+const googleCallbackURL = process.env.BASE_URL + "/api/auth/google/callback";
 //Local Strategy
 passport_1.default.use(new passportLocal.Strategy(async function (username, password, done) {
     const user = await User_1.default.login({ username, password });
@@ -57,11 +61,27 @@ passport_1.default.use(new passportFacebook.Strategy({
     clientID: facebookClientID,
     clientSecret: facebookClientSecret,
     callbackURL: facebookCallbackURL,
-}, async function (accessToken, refreshToken, profile, done) {
-    const user = User_1.default.loginWithFacebook({
+}, async function (_accessToken, _refreshToken, profile, done) {
+    const user = await User_1.default.loginWithFacebook({
         name: profile.displayName,
         facebookId: profile.id,
     });
+    if (user) {
+        console.log(user);
+        return done(null, user);
+    }
+    else {
+        return done(new Error("Unable to create User"));
+    }
+}));
+//Google Strategy
+passport_1.default.use(new paasportGoogle.Strategy({
+    clientID: googleClientID,
+    clientSecret: googleClientSecret,
+    callbackURL: googleCallbackURL,
+}, async function (_accessToken, _refreshToken, profile, done) {
+    const googleId = profile.id;
+    const user = await User_1.default.loginWithGoogle({ googleId, name: profile.displayName });
     if (user) {
         return done(null, user);
     }
@@ -103,8 +123,10 @@ const router = express_1.default.Router();
 router.get("/facebook", passport_1.default.authenticate("facebook"));
 router.get("/facebook/callback", passport_1.default.authenticate("facebook", {
     successReturnToOrRedirect: "/",
-    failureRedirect: "/failure",
+    failureRedirect: "/login",
 }));
+router.get("/google", passport_1.default.authenticate("google", { scope: ["profile"] }));
+router.get("/google/callback", passport_1.default.authenticate("google", { successReturnToOrRedirect: "/", failureRedirect: "/login" }));
 router.get("/guest", passport_1.default.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
     res.redirect("/");
 });

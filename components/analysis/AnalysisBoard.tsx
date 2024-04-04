@@ -1,17 +1,16 @@
-import React, { useState, useRef, Fragment, useContext, useMemo, useEffect } from "react";
+import React, { useState, useRef, useContext, useMemo, useEffect } from "react";
 import PlayerDetails from "./PlayerDetails";
 import {
   BoardWithPanelContainer,
   BoardContainer,
   BoardRow,
   PanelContainer,
-} from "../layout/templates/AnalysisBoardLayout";
+} from "@/components/layout/templates/AnalysisBoardLayout";
 // Components
 import Board from "../board/Board";
 import EvalBar from "./EvalBar";
 import BoardControls from "../game/BoardControls";
 import OptionsOverlay from "../dialogs/OptionsOverlay";
-import cn from "@/util/cn";
 import PopupPlayer from "./PopupPlayer";
 import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
 import AnalysisPanel from "./panels/AnalysisPanel";
@@ -37,7 +36,7 @@ import ExportPGNDialog from "../dialogs/ExportPGNDialog";
 import useGameCache from "@/hooks/useGameCache";
 import { parsePuzzleEntity } from "@/util/parsers/puzzleParser";
 import { treeFromLine } from "@/util/parsers/pgnParser";
-
+import { EditorPanel } from "./panels";
 interface Props {
   initialId?: string | null;
   sourceGameId?: string | null;
@@ -392,27 +391,47 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
                 />
               ) : (
                 <>
-                  <div className="w-full md:hidden">
-                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                  </div>
-                  <AnalysisPanel
-                    modalControls={{
-                      showPlayer: () => {
-                        setPopupPlayerShown(true);
-                      },
-                      showSave: () => {
-                        setSaveModalShown(true);
-                      },
-                      showLoadGame: () => {},
-                      showEditDetails: () => {},
-                      showOpenFile: () => {},
-                      showShare: () => {},
-                      showExport: () => {},
-                    }}
-                  />
-                  <div className="w-full hidden md:block">
-                    <BoardControls controls={boardControls} flipBoard={flipBoard} />
-                  </div>
+                  {editMode ? (
+                    <>
+                      <EditorPanel
+                        showOverwriteWarning={!analysis.isNew}
+                        boardEditor={editor}
+                        boardRef={boardRef}
+                        onAnalyze={(fen: string) => {
+                          analysis.loadFen(fen);
+                          setEditMode(false);
+                        }}
+                        onPlayComputer={() => {}}
+                        onPlayFriend={() => {}}
+                        setEditMode={setEditMode}
+                        flipBoard={flipBoard}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-full md:hidden">
+                        <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                      </div>
+                      <AnalysisPanel
+                        modalControls={{
+                          showPlayer: () => {
+                            setPopupPlayerShown(true);
+                          },
+                          showSave: () => {
+                            setSaveModalShown(true);
+                          },
+                          showLoadGame: () => {},
+                          showEditDetails: () => {},
+                          showOpenFile: () => {},
+                          showShare: () => {},
+                          showExport: () => {},
+                        }}
+                      />
+                      <div className="w-full hidden md:block">
+                        <BoardControls controls={boardControls} flipBoard={flipBoard} />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </>
