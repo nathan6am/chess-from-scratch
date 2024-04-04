@@ -29,13 +29,13 @@ export default function CheckBox({
           <div className={`flex flex-row items-center cursor-pointer`}>
             <span
               className={
-                disabled ? "text-[#8c8c8c]" : `${checked || indeterminate ? "text-gold-300" : "text-white/[0.5]"}`
+                disabled ? "text-elevation-6" : `${checked || indeterminate ? "text-gold-300" : "text-white/[0.5]"}`
               }
             >
               <CheckBoxIcon checked={checked} indeterminate={indeterminate} disabled={disabled} />
             </span>
             {label && (
-              <label className={` ${disabled ? "text-[#7c7c7c]" : ""} ${labelClasses} ml-2 mb-[1px] cursor-pointer`}>
+              <label className={` ${disabled ? "text-elevation-6" : ""} ${labelClasses} ml-2 mb-[1px] cursor-pointer`}>
                 {label}
               </label>
             )}
@@ -60,7 +60,7 @@ function CheckBoxIcon({
       <div className="h-[20px] w-[20px] relative">
         <div
           className={`absolute top-[0.2em] left-[0.2em] right-[0.2em] bottom-[0.2em] ${
-            disabled ? "bg-white/[0.8]" : "bg-white"
+            disabled ? "bg-light-300" : "bg-white"
           } z-0`}
         ></div>
         <MdIndeterminateCheckBox className="z-[10] absolute top-0 left-0 right-0 bottom-0 text-xl" />
@@ -72,7 +72,7 @@ function CheckBoxIcon({
         <div className="h-[20px] w-[20px] relative">
           <div
             className={`absolute top-[0.2em] left-[0.2em] right-[0.2em] bottom-[0.2em] ${
-              disabled ? "bg-white/[0.8]" : "bg-white"
+              disabled ? "bg-light-300" : "bg-white"
             } z-0`}
           ></div>
           <MdCheckBox className="z-[10] absolute top-0 left-0 right-0 bottom-0 text-xl" />

@@ -4,12 +4,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const nanoid_1 = require("nanoid");
+//DB Entities
 const Game_1 = __importDefault(require("../../lib/db/entities/Game"));
-const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
 const User_Game_1 = __importDefault(require("../../lib/db/entities/User_Game"));
-const nanoid = (0, nanoid_1.customRandom)(nanoid_1.urlAlphabet, 10, nanoid_1.random);
+//Middleware
+const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
 const router = express_1.default.Router();
+/**
+ * Query games for the authenticated user
+ */
 router.get("/my-games", verifyUser_1.default, async (req, res) => {
     const user = req.verifiedUser;
     const results = ["win", "loss", "draw"];
@@ -49,6 +52,9 @@ router.get("/my-games", verifyUser_1.default, async (req, res) => {
     else
         res.status(400).end();
 });
+/**
+ * Retrieves a game by ID
+ */
 router.get("/:id", async (req, res) => {
     const id = req.params.id;
     if (!id)
@@ -58,6 +64,9 @@ router.get("/:id", async (req, res) => {
         return res.status(404).json({ error: "Game not found" });
     return res.status(200).json(game);
 });
+/**
+ * Retrieves the PGN of a game by ID
+ */
 router.get("/pgn/:id", async (req, res) => {
     const id = req.params.id;
     if (!id)
@@ -67,4 +76,8 @@ router.get("/pgn/:id", async (req, res) => {
         return res.status(404).json({ error: "Game not found" });
     return res.status(200).json(game.pgn);
 });
+/**
+ * Save a game vs the computer or local multiplayer
+ */
+router.post("/save", verifyUser_1.default, async (req, res) => { });
 exports.default = router;

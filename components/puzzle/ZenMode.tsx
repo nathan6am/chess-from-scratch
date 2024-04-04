@@ -15,11 +15,13 @@ import { MdRestartAlt } from "react-icons/md";
 import { IoCaretForwardSharp } from "react-icons/io5";
 import { ClipLoader } from "react-spinners";
 import { Toggle, RangeSlider } from "@/components/base";
+import { Label } from "../base/Typography";
+import { FaFire } from "react-icons/fa";
 export default function PuzzleSolver() {
   const [filterByTheme, setFilterByTheme] = useState(false);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const [minRating, setMinRating] = useState(100);
-  const [maxRating, setMaxRating] = useState(3500);
+  const [minRating, setMinRating] = useState(500);
+  const [maxRating, setMaxRating] = useState(3000);
   const { puzzle, history, next, streak } = usePuzzleQueue({
     themes: filterByTheme ? selectedThemes : null,
     minRating,
@@ -72,26 +74,44 @@ export default function PuzzleSolver() {
           <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
             <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
           </h2>
-          <div className="p-4 bg-elevation-2">
-            <p className="text-light-100 ">{`Current Streak: ${streak}`}</p>
+          <div className="p-4 bg-elevation-4">
+            <p className="text-light-100">
+              <span>
+                <FaFire className="text-orange-300 text-xl inline mb-1 mr-1" />
+              </span>
+              {`Current Streak: `}
+              <span className="font-semibold">{streak}</span>
+            </p>
           </div>
-          <p>Rating Range</p>
-          <RangeSlider
-            minLabel={`${minRating}`}
-            maxLabel={`${maxRating === 3500 ? `\u221E` : maxRating}`}
-            value={[minRating, maxRating]}
-            min={100}
-            max={3500}
-            step={100}
-            onChange={([min, max]) => {
-              setMinRating(min);
-              setMaxRating(max);
-            }}
-          />
-          <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
+          <div className="w-full px-4 py-2">
+            <h2 className="mb-2 font-semibold text-lg text-gold-200">Filter Options</h2>
+            <div className="mb-4">
+              <Label>Rating Range</Label>
+              <RangeSlider
+                minLabel={`${minRating}`}
+                maxLabel={`${maxRating === 3000 ? `3000+` : maxRating}`}
+                value={[minRating, maxRating]}
+                min={500}
+                max={3000}
+                step={100}
+                onChange={([min, max]) => {
+                  setMinRating(min);
+                  setMaxRating(max);
+                }}
+              />
+            </div>
+            <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
+          </div>
+          <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
+            <p className="text-gold-200">Puzzle Themes</p>
+          </div>
           <div className="h-full w-full bg-elevation-2 grow relative">
             <ScrollContainer>
-              <PuzzleFilters selectedThemes={selectedThemes} setSelectedThemes={setSelectedThemes} />
+              <PuzzleFilters
+                selectedThemes={selectedThemes}
+                setSelectedThemes={setSelectedThemes}
+                disabled={!filterByTheme}
+              />
             </ScrollContainer>
           </div>
           <PuzzleControls
@@ -144,7 +164,7 @@ function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
       )}
       {prompt === "continue" && (
         <>
-          <BsCheckLg className="text-green-500 mr-2" />
+          <BsCheckLg className="text-green-400 mr-2" />
           <p>Best Move! Keep Going...</p>
         </>
       )}
@@ -201,13 +221,14 @@ function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint
         </button>
       )}
       {buttonsToShow.includes("analysis") && (
-        <button
-          onClick={retry}
+        <a
+          href="study/analyze"
+          target="_blank"
           className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
           <p>Analyze</p>
           <BiAnalyse className="ml-2" />
-        </button>
+        </a>
       )}
       {buttonsToShow.includes("retry") && (
         <button

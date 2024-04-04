@@ -142,9 +142,6 @@ nextApp.prepare().then(async () => {
     });
     io.on("connection", (socket) => {
         (0, MainHandler_1.default)(io, socket, redisClient);
-        socket.on("disconnect", () => {
-            console.log("client disconnected");
-        });
     });
     app.all("*", (req, res) => nextHandler(req, res));
     server.listen(port, () => {

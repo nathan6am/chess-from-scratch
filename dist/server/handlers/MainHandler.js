@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const nanoid_1 = require("nanoid");
 const redisClientWrapper_1 = require("../util/redisClientWrapper");
+//Utils
+const nanoid_1 = require("nanoid");
 function default_1(io, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     socket.on("authenticate", async (ack) => {
@@ -21,7 +22,6 @@ function default_1(io, socket, redisClient) {
         ack(true);
     });
     socket.on("lobby:create", async (options, ack) => {
-        console.log(socket.data);
         const userid = socket.data.userid;
         if (!userid) {
             console.log("unauthenticated");

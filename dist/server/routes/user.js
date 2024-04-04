@@ -4,11 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const nanoid_1 = require("nanoid");
+//DB Entities
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+//Middleware
 const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
-const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 const router = express_1.default.Router();
+/**
+ * Get the profile of the authenticated user
+ */
 router.get("/profile", async function (req, res) {
     const id = req.user?.id;
     if (!id)
@@ -25,6 +28,9 @@ router.get("/profile", async function (req, res) {
         return;
     }
 });
+/**
+ * Complete the profile of the authenticated user
+ */
 router.post("/complete-profile", async (req, res) => {
     const id = req.user?.id;
     if (!id)
@@ -89,7 +95,9 @@ router.post("/complete-profile", async (req, res) => {
         return res.status(400).end();
     }
 });
-//Check if a username is available
+/**
+ * Check if a username is available
+ */
 router.get("/checkusername", async function (req, res) {
     const username = req.query.username;
     if (!username || typeof username !== "string") {

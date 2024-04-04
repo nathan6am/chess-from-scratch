@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 import { NextPageContext } from "next";
 import useAuth from "@/hooks/useAuth";
+import AuthLayout, { Background } from "@/components/layout/AuthLayout";
 //UI Components
 
 //Icons
@@ -14,7 +15,6 @@ import { SessionUser } from "@/lib/db/entities/User";
 interface Props {
   profile?: User;
 }
-import Background from "@/components/layout/Background";
 const SignUp: NextPageWithLayout = () => {
   useEffect(() => {
     refetch();

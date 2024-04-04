@@ -3,11 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Puzzle_1 = __importDefault(require("../../lib/db/entities/Puzzle"));
 const express_1 = __importDefault(require("express"));
+//DB Entities
+const Puzzle_1 = __importDefault(require("../../lib/db/entities/Puzzle"));
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+//Middleware
 const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
 const router = express_1.default.Router({ mergeParams: true });
+/**
+ * Query puzzles
+ */
 router.get("/", async (req, res) => {
     const minRating = parseInt(req.query.minRating || "0");
     const maxRating = parseInt(req.query.maxRating || "4000");
@@ -26,6 +31,9 @@ router.get("/", async (req, res) => {
         res.status(500).end();
     }
 });
+/**
+ * Get a single puzzle
+ */
 router.get("/puzzle/:id", async (req, res) => {
     const { id } = req.params;
     const puzzle = await Puzzle_1.default.findOne({ where: { id } });
@@ -39,6 +47,9 @@ router.get("/puzzle/:id", async (req, res) => {
 function stringIsResult(s) {
     return ["solved", "solved-w-hint", "failed"].includes(s);
 }
+/**
+ * Solve a puzzle for the authenticated user
+ */
 router.post("/solve/:id", verifyUser_1.default, async (req, res) => {
     const userid = req.user?.id;
     const { id } = req.params;

@@ -12,8 +12,7 @@ const CATEGORIES = [
       {
         value: "advancedPawn",
         label: "Advanced pawn",
-        description:
-          "One of your pawns is deep into the opponent position, maybe threatening to promote.",
+        description: "One of your pawns is deep into the opponent position, maybe threatening to promote.",
       },
       {
         value: "attraction",
@@ -30,8 +29,7 @@ const CATEGORIES = [
       {
         value: "clearance",
         label: "Clearance",
-        description:
-          "A move, often with tempo, that clears a square, file or diagonal for a follow-up tactical idea.",
+        description: "A move, often with tempo, that clears a square, file or diagonal for a follow-up tactical idea.",
       },
       {
         value: "deflection",
@@ -54,8 +52,7 @@ const CATEGORIES = [
       {
         value: "exposedKing",
         label: "Exposed king",
-        description:
-          "A tactic involving a king with few defenders around it, often leading to checkmate.",
+        description: "A tactic involving a king with few defenders around it, often leading to checkmate.",
       },
       {
         value: "fork",
@@ -100,8 +97,7 @@ const CATEGORIES = [
       {
         value: "zugzwang",
         label: "Zugzwang",
-        description:
-          "The opponent is limited in the moves they can make, and all moves worsen their position.",
+        description: "The opponent is limited in the moves they can make, and all moves worsen their position.",
       },
     ],
   },
@@ -112,8 +108,7 @@ const CATEGORIES = [
       {
         value: "equality",
         label: "Equality",
-        description:
-          "Come back from a losing position, and secure a draw or a balanced position. (eval ≤ 200cp)",
+        description: "Come back from a losing position, and secure a draw or a balanced position. (eval ≤ 200cp)",
       },
       {
         value: "advantage",
@@ -192,14 +187,12 @@ const CATEGORIES = [
       {
         value: "arabianMate",
         label: "Arabian mate",
-        description:
-          "A knight and a rook team up to trap the opposing king on a corner of the board.",
+        description: "A knight and a rook team up to trap the opposing king on a corner of the board.",
       },
       {
         value: "backRankMate",
         label: "Back rank mate",
-        description:
-          "Checkmate the king on the home rank, when it is trapped there by its own pieces.",
+        description: "Checkmate the king on the home rank, when it is trapped there by its own pieces.",
       },
       {
         value: "bodenMate",
@@ -370,8 +363,9 @@ const CATEGORIES = [
 interface Props {
   selectedThemes: string[];
   setSelectedThemes: React.Dispatch<React.SetStateAction<string[]>>;
+  disabled?: boolean;
 }
-export default function PuzzleFilters({ selectedThemes, setSelectedThemes }: Props) {
+export default function PuzzleFilters({ selectedThemes, setSelectedThemes, disabled }: Props) {
   const addThemes = (themes: string[]) => {
     setSelectedThemes((current) => {
       return Array.from(new Set([...current, ...themes]).values());
@@ -384,9 +378,10 @@ export default function PuzzleFilters({ selectedThemes, setSelectedThemes }: Pro
     });
   };
   return (
-    <div>
+    <div className="px-2">
       {CATEGORIES.map((category) => (
         <RenderCategory
+          disabled={disabled}
           addThemes={addThemes}
           removeThemes={removeThemes}
           category={category}
@@ -399,19 +394,17 @@ export default function PuzzleFilters({ selectedThemes, setSelectedThemes }: Pro
 }
 
 interface CategoryProps {
+  disabled?: boolean;
   selectedThemes: string[];
   category: ThemeCategory;
   addThemes: (themes: string[]) => void;
   removeThemes: (themes: string[]) => void;
 }
-function RenderCategory({ selectedThemes, category, addThemes, removeThemes }: CategoryProps) {
+function RenderCategory({ selectedThemes, category, addThemes, removeThemes, disabled }: CategoryProps) {
   const values = useMemo(() => {
     return category.themes.map((theme) => theme.value);
   }, [category]);
-  const allSelected = useMemo(
-    () => values.every((value) => selectedThemes.includes(value)),
-    [selectedThemes, values]
-  );
+  const allSelected = useMemo(() => values.every((value) => selectedThemes.includes(value)), [selectedThemes, values]);
   const indeterminate = useMemo(
     () => !allSelected && values.some((theme) => selectedThemes.includes(theme)),
     [allSelected, selectedThemes, values]
@@ -427,6 +420,7 @@ function RenderCategory({ selectedThemes, category, addThemes, removeThemes }: C
   return (
     <div className="my-2">
       <CheckBox
+        disabled={disabled}
         className="my-1"
         label={category.label}
         checked={allSelected}
@@ -443,6 +437,7 @@ function RenderCategory({ selectedThemes, category, addThemes, removeThemes }: C
         {category.themes.map((theme) => {
           return (
             <RenderTheme
+              disabled={disabled}
               key={theme.value}
               theme={theme}
               selectedThemes={selectedThemes}
@@ -462,20 +457,18 @@ function RenderTheme({
   selectedThemes,
   onChange,
   theme,
+  disabled,
 }: {
   selectedThemes: string[];
   onChange: (enabled: boolean) => void;
   theme: Theme;
+  disabled?: boolean;
 }) {
   const selected = useMemo(() => selectedThemes.includes(theme.value), [selectedThemes, theme]);
   return (
     <div className="flex flex-row items-center my-1">
-      <CheckBox label={theme.label} onChange={onChange} checked={selected} />
-      <a
-        data-tooltip-id="my-tooltip"
-        data-tooltip-content={theme.description}
-        className="opacity-50"
-      >
+      <CheckBox label={theme.label} onChange={onChange} checked={selected} disabled={disabled} />
+      <a data-tooltip-id="my-tooltip" data-tooltip-content={theme.description} className="opacity-50">
         <BsInfoCircle className="text-sm ml-1" />
       </a>
     </div>

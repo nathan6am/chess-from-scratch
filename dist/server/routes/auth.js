@@ -26,18 +26,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const passport_1 = __importDefault(require("passport"));
-const passportFacebook = __importStar(require("passport-facebook"));
 const express_1 = __importDefault(require("express"));
+//Auth Libraries
+const passport_1 = __importDefault(require("passport"));
 const passport_custom_1 = __importDefault(require("passport-custom"));
+const passportLocal = __importStar(require("passport-local"));
+const passportFacebook = __importStar(require("passport-facebook"));
+//Utilities
 const uuid_1 = require("uuid");
 const nanoid_1 = require("nanoid");
-const passportLocal = __importStar(require("passport-local"));
+//Entities
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
+//Environment Variables
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
 const facebookClientSecret = process.env.FACEBOOK_APP_SECRET || "";
-const facebookCallbackURL = process.env.BASE_URL + "api/auth/facebook/callback";
+const facebookCallbackURL = process.env.BASE_URL + "/api/auth/facebook/callback";
+//Local Strategy
 passport_1.default.use(new passportLocal.Strategy(async function (username, password, done) {
     const user = await User_1.default.login({ username, password });
     if (user) {
@@ -47,6 +52,7 @@ passport_1.default.use(new passportLocal.Strategy(async function (username, pass
         return done(null, false, { message: "Invalid username or password" });
     }
 }));
+//Facebook Strategy
 passport_1.default.use(new passportFacebook.Strategy({
     clientID: facebookClientID,
     clientSecret: facebookClientSecret,
@@ -63,6 +69,7 @@ passport_1.default.use(new passportFacebook.Strategy({
         return done(new Error("Unable to create User"));
     }
 }));
+//Guest Strategy
 passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, done) => {
     const uid = (0, uuid_1.v4)();
     const user = {
@@ -72,6 +79,7 @@ passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, do
     };
     return done(null, user);
 }));
+//Serialize and Deserialize
 passport_1.default.serializeUser((user, done) => {
     done(null, JSON.stringify(user));
 });

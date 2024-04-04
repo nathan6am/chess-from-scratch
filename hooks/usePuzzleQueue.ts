@@ -26,8 +26,8 @@ interface SolvedPuzzle {
 }
 
 const defaultOptions = {
-  minRating: 0,
-  maxRating: 4000,
+  minRating: 500,
+  maxRating: 3000,
   themes: null,
   showTimer: true,
   allowHints: false,
@@ -277,7 +277,6 @@ function usePuzzle({ puzzle, onSolve, onFail }: PuzzleOptions) {
   const jumpForward = useCallback(() => {
     setCurrentKey(visibleNodes[visibleNodes.length - 1].key);
   }, [visibleNodes]);
-
   const showSolution = useCallback(() => {
     setSolveState("failed");
     setTouchedKeys(mainLine.map((node) => node.key));
@@ -316,7 +315,10 @@ function usePuzzle({ puzzle, onSolve, onFail }: PuzzleOptions) {
   useEffect(() => {
     if (solveState !== prevSolveState.current) {
       prevSolveState.current = solveState;
-      if (solveState === "solved") playSuccess();
+      if (solveState === "solved") {
+        if (onSolve) onSolve();
+        playSuccess();
+      }
     }
   }, [solveState, playSuccess]);
 

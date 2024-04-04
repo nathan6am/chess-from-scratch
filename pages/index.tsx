@@ -1,5 +1,4 @@
 import Head from "next/head";
-import MainMenu from "@/components/UI/Menus/MainMenu";
 import { NextPageContext } from "next";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";

@@ -26,15 +26,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const redisClientWrapper_1 = require("../util/redisClientWrapper");
-const Game_1 = __importDefault(require("../../lib/db/entities/Game"));
-const Chess = __importStar(require("../../lib/chess"));
-const clockFunctions_1 = require("../util/clockFunctions");
-const luxon_1 = require("luxon");
-const misc_1 = require("../../util/misc");
+//DB Entities
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+const Game_1 = __importDefault(require("../../lib/db/entities/Game"));
+const redisClientWrapper_1 = require("../util/redisClientWrapper");
+//Utilities
 const glicko_1 = require("../util/glicko");
 const pgnParser_1 = require("../../util/parsers/pgnParser");
+const misc_1 = require("../../util/misc");
+const luxon_1 = require("luxon");
+const clockFunctions_1 = require("../util/clockFunctions");
+const Chess = __importStar(require("../../lib/chess"));
 function LobbyHandler(io, nsp, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     //UTILITY FUNCTIONS
@@ -66,6 +68,8 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         const lobby = await cache.getLobbyById(lobbyid);
         if (!lobby)
             throw new Error("Lobby does not exist");
+        lobby.rematchRequested = { w: null, b: null };
+        await cache.updateLobby(lobbyid, lobby);
         const game = await cache.newGame(lobbyid);
         if (!game)
             throw new Error("Unable to start game");
@@ -82,6 +86,14 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         requestMoveWithTimeout(whiteSocket, game.clock.timeRemainingMs.w, game, lobbyid);
         console.log("starting game");
         nsp.to(lobbyid).emit("game:new", game);
+    }
+    //Abort game
+    async function abortGame(lobbyid) {
+        const lobby = await cache.getLobbyById(lobbyid);
+        if (!lobby || !lobby.currentGame)
+            return;
+        await cache.deleteLobby(lobbyid);
+        nsp.to(lobbyid).emit("game:aborted");
     }
     //Handle game result
     async function handleGameResult(lobbyid, game) {
@@ -171,14 +183,12 @@ function LobbyHandler(io, nsp, socket, redisClient) {
             w: connections.w.player,
             b: connections.b.player,
         };
-        nsp.to(lobbyid).emit("game:outcome", updated);
+        nsp.to(lobbyid).emit("game:outcome", updated, ratingDeltas);
         nsp.to(lobbyid).emit("lobby:update", { connections: lobby.connections });
         //Save the game to db if any user is not a guest
         if (lobby.connections.some((connection) => connection.player.type !== "guest")) {
-            //console.log(game.id);
             const pgn = (0, pgnParser_1.encodeGameToPgn)(updated);
             const saved = await Game_1.default.saveGame(players, outcome, data, timeControl, pgn, game.id);
-            //console.log(saved);
         }
     }
     socket.on("lobby:connect", async (lobbyid, ack) => {
@@ -198,18 +208,17 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 let connection;
                 if (type !== "guest") {
                     //Get the user's current rating if the user is not a guest
-                    const user = await User_1.default.findById(id);
-                    //console.log(id);
+                    const user = await User_1.default.getProfile(id);
                     if (!user)
                         throw new Error("Unauthenticated");
                     const timeControl = lobby.options.gameConfig.timeControl;
                     const ratingCategory = Chess.inferRatingCategeory(timeControl || null);
-                    //console.log(user);
                     connection = {
                         id,
                         player: {
                             ...sessionUser,
                             rating: user.ratings[ratingCategory].rating,
+                            country: user.profile?.country,
                         },
                         score: 0,
                         lastClientSocketId: socket.id,
@@ -255,7 +264,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                         const activeColor = game.data.activeColor;
                         const clock = game.clock;
                         //Correct the time remaining if both player have played a move
-                        if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length > 2 && clock.lastMoveTimeISO !== null) {
+                        if (game.data.moveHistory.flat().filter(misc_1.notEmpty).length >= 2 && clock.lastMoveTimeISO !== null) {
                             clock.timeRemainingMs[activeColor] = (0, clockFunctions_1.currentTimeRemaining)(clock.lastMoveTimeISO, clock.timeRemainingMs[activeColor]);
                             if (game.players[activeColor].id !== id) {
                                 //Ack if the connected player is not the current turn
@@ -353,9 +362,12 @@ function LobbyHandler(io, nsp, socket, redisClient) {
         }
     });
     socket.on("disconnect", async () => {
+        console.log("Player disconnected");
+        console.log(`Socket data: ${socket.data.userid}`);
         if (!socket.data.userid)
             return;
         const lobbies = Array.from(socket.rooms).filter((room) => room !== socket.id);
+        console.log(lobbies);
         for (const lobbyid of lobbies) {
             const lobby = await cache.getLobbyById(lobbyid);
             if (!lobby)
@@ -434,6 +446,12 @@ function LobbyHandler(io, nsp, socket, redisClient) {
                 //return if moves have been played since the initial request
                 if (lobby.currentGame.data.moveHistory.flat().length !== game.data.moveHistory.flat().length)
                     return;
+                //Abort the game if both players have not yet made a move
+                if (lobby.currentGame.data.moveHistory.flat().length < 2) {
+                    await cache.updateGame(lobbyid, lobby.currentGame);
+                    await handleGameResult(lobbyid, lobby.currentGame);
+                    return;
+                }
                 //Set outcome by timeout and emit
                 const board = lobby.currentGame.data.board;
                 const pieces = {
@@ -623,7 +641,7 @@ function LobbyHandler(io, nsp, socket, redisClient) {
     socket.on("lobby:chat", async ({ message, lobbyid }, ack) => {
         const user = socket.data.sessionUser;
         const lobby = await cache.getLobbyById(lobbyid);
-        if (!lobby || !lobby.currentGame || lobby.currentGame.data.outcome || !user)
+        if (!lobby || !user)
             return;
         if (!lobby.connections.some((player) => player.id === user.id))
             return;

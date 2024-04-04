@@ -4,12 +4,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const nanoid_1 = require("nanoid");
+//DB Entities
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
 const Collection_1 = __importDefault(require("../../lib/db/entities/Collection"));
+//Middleware
 const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
-const nanoid = (0, nanoid_1.customRandom)(nanoid_1.urlAlphabet, 10, nanoid_1.random);
 const router = express_1.default.Router();
+/**
+ * Retrieves all collections for the authenticated user
+ */
 router.get("/my-collections", verifyUser_1.default, async (req, res) => {
     const user = req.verifiedUser;
     if (!user)
@@ -20,6 +23,9 @@ router.get("/my-collections", verifyUser_1.default, async (req, res) => {
     else
         res.status(400).end();
 });
+/**
+ * Creates a new collection for the authenticated user
+ */
 router.post("/create", verifyUser_1.default, async (req, res) => {
     const { title } = req.body;
     const user = req.verifiedUser;
@@ -33,6 +39,9 @@ router.post("/create", verifyUser_1.default, async (req, res) => {
     else
         res.status(400).end();
 });
+/**
+ * Updates the title of a collection
+ */
 router.put("/:id", verifyUser_1.default, async (req, res) => {
     const { id } = req.params;
     const { title } = req.body;
@@ -55,6 +64,9 @@ router.put("/:id", verifyUser_1.default, async (req, res) => {
     const updated = await collection.save();
     return res.status(200).json({ updated });
 });
+/**
+ * Deletes a collection
+ */
 router.delete("/:id", verifyUser_1.default, async (req, res) => {
     const { id } = req.params;
     const user = req.verifiedUser;

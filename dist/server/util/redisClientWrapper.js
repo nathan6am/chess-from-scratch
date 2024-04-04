@@ -121,6 +121,12 @@ class Redis {
             throw new Error("Error creating lobby");
         return lobby;
     };
+    //Deletes a lobby by id
+    deleteLobby = async (id) => {
+        const deleted = await this.client.del(`lobby:${id}`);
+        if (!deleted)
+            throw new Error("Error deleting lobby");
+    };
     //Generates a new game based on the lobby configuration
     newGame = async (lobbyid) => {
         const lobby = await this.getLobbyById(lobbyid);

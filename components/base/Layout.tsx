@@ -35,6 +35,8 @@ export const ScrollContainer = React.forwardRef<HTMLDivElement, ScrollContainerP
   }
 );
 
+ScrollContainer.displayName = "ScrollContainer";
+
 export const Row = ({ children, className }: LayoutComponentProps) => {
   return <div className={cn("flex flex-row, items-center", className)}>{children}</div>;
 };

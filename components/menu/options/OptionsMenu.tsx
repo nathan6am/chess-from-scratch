@@ -68,19 +68,16 @@ function OptionsMenu() {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [visibility, setVisibility] = useState<string>("private");
   const tabList = [
-    { label: "Profile", value: 0 },
+    // { label: "Profile", value: 0 },
     { label: "Display", value: 1 },
     { label: "Theme", value: 2 },
     { label: "Game Behavior", value: 3 },
     { label: "Sound", value: 4 },
-    { label: "Puzzles", value: 5 },
-    { label: "Change Password", value: 6 },
-    { label: "Close Account", value: 7 },
+    // { label: "Puzzles", value: 5 },
+    // { label: "Change Password", value: 6 },
+    { label: "Account", value: 7 },
   ];
-  const currentTab = useMemo(
-    () => tabList.find((tab) => tab.value === selectedIndex),
-    [selectedIndex]
-  );
+  const currentTab = useMemo(() => tabList.find((tab) => tab.value === selectedIndex), [selectedIndex]);
   return (
     <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex} vertical>
       {isMobile && (
@@ -94,14 +91,14 @@ function OptionsMenu() {
             }}
           />
           <Tab.List className="hidden flex-col">
-            <MenuTab>Profile</MenuTab>
+            {/* <MenuTab>Profile</MenuTab> */}
             <MenuTab>Display</MenuTab>
             <MenuTab>Theme</MenuTab>
             <MenuTab>Game Behavior</MenuTab>
             <MenuTab>Sound</MenuTab>
-            <MenuTab>Puzzles</MenuTab>
-            <MenuTab>Change Password</MenuTab>
-            <MenuTab>Close Account</MenuTab>
+            {/* <MenuTab>Puzzles</MenuTab>
+            <MenuTab>Change Password</MenuTab> */}
+            <MenuTab>Account</MenuTab>
           </Tab.List>
         </>
       )}
@@ -115,14 +112,14 @@ function OptionsMenu() {
               className="col-span-3 sm:col-span-6 lg:col-span-3 xl:col-span-3 h-0 sm:h-fit"
             >
               <Tab.List className="hidden sm:flex flex-col">
-                <MenuTab>Profile</MenuTab>
+                {/* <MenuTab>Profile</MenuTab> */}
                 <MenuTab>Display</MenuTab>
                 <MenuTab>Theme</MenuTab>
                 <MenuTab>Game Behavior</MenuTab>
                 <MenuTab>Sound</MenuTab>
-                <MenuTab>Puzzles</MenuTab>
-                <MenuTab>Change Password</MenuTab>
-                <MenuTab>Close Account</MenuTab>
+                {/* <MenuTab>Puzzles</MenuTab>
+                <MenuTab>Change Password</MenuTab> */}
+                <MenuTab> Account</MenuTab>
               </Tab.List>
             </Panel>
           )}
@@ -130,14 +127,14 @@ function OptionsMenu() {
         <div className="relative col-span-12 sm:col-span-6 lg:col-span-9 xl:col-span-9 w-full h-full">
           <ScrollContainer auto>
             <Tab.Panels className="px-10 py-4 bg-elevation-2 rounded-sm shadow-lg w-full h-fit">
-              <Tab.Panel>
+              {/* <Tab.Panel>
                 <RadioGroup value={visibility} onChange={setVisibility}>
                   <RadioGroup.Label>Visibility</RadioGroup.Label>
                   <RadioButton value="private" label="Private" />
                   <RadioButton value="unlisted" label="Unlisted" />
                   <RadioButton value="public" label="Public" />
                 </RadioGroup>
-              </Tab.Panel>
+              </Tab.Panel> */}
               <Tab.Panel as={Fragment}>
                 <DisplayPanel />
               </Tab.Panel>
@@ -150,10 +147,11 @@ function OptionsMenu() {
               <Tab.Panel>
                 <SoundPanel />
               </Tab.Panel>
-              <Tab.Panel>Content 5</Tab.Panel>
+              <Tab.Panel>Account Settings</Tab.Panel>
+              {/*              
               <Tab.Panel>
                 <ChangePasswordForm />
-              </Tab.Panel>
+              </Tab.Panel> */}
             </Tab.Panels>
           </ScrollContainer>
         </div>
@@ -395,17 +393,6 @@ function SoundPanel() {
           value={[0, settings.sound.volume]}
         />
       </div>
-      <VolumeSlider
-        value={settings.sound.volume}
-        onChange={(value) => {
-          updateSettings({
-            sound: {
-              ...settings.sound,
-              volume: value,
-            },
-          });
-        }}
-      />
       <Toggle
         className="my-2"
         labelClasses="ml-2 "
