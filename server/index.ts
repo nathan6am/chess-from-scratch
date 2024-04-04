@@ -77,8 +77,8 @@ nextApp.prepare().then(async () => {
     saveUninitialized: true,
     cookie: {
       httpOnly: true,
-      secure: dev ? false : "auto",
-      sameSite: dev ? "lax" : "strict",
+      secure: dev ? false : true,
+      sameSite: dev ? "lax" : "none",
       maxAge: 1000 * 60 * 60 * 24 * 365,
     },
   });

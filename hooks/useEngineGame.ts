@@ -69,7 +69,9 @@ export const useEngineGame = (options: Options) => {
   const clock = useChessClock({
     timeControl: options.timeControl || { timeSeconds: 0, incrementSeconds: 0 },
     onTimeExpired: (color) => {
-      alert(`Time expired for ${color}`);
+      if (useClock) {
+        alert(`Time expired for ${color === "w" ? "White" : "Black"}`);
+      }
     },
   });
 

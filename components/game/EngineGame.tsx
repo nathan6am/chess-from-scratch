@@ -62,7 +62,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
       >
         <InfoRow className="py-2">
           <div className="bg-elevation-3 py-1.5 px-4 rounded-md max-w-[16em] w-full flex flex-row">
-            <p>Stockfish Level 10</p>
+            <p>Stockfish Level {currentPreset}</p>
             <>
               <span className="inline h-0 ml-3">
                 {isThinking && <RingLoader size="20px" className="inline mt-0.5" color="#FFD77D" />}
