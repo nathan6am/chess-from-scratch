@@ -96,20 +96,31 @@ passport.use(
 
 //Serialize and Deserialize
 passport.serializeUser((user, done) => {
+  console.log("serializing", user);
   done(null, JSON.stringify(user));
 });
 
 passport.deserializeUser((req: any, id: string, done: any) => {
   const sessionUser: SessionUser = JSON.parse(id);
   if (sessionUser.type === "guest" || sessionUser.type === "user") {
+    console.log("deserializing", sessionUser);
     done(null, sessionUser);
   } else {
-    User.findOneBy({ id: sessionUser.id }).then((user) => {
-      if (!user) {
-        req.logout();
-        done("account does not exist", null);
-      } else done(null, { id: user.id, username: user.username, type: user.type });
-    });
+    try {
+      User.findOneBy({ id: sessionUser.id }).then((user) => {
+        if (!user) {
+          console.log("here");
+          req.logout();
+          done("account does not exist", null);
+        } else {
+          console.log("user found", user);
+          done(null, { id: user.id, username: user.username, type: user.type });
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      done(null, sessionUser);
+    }
   }
 });
 
@@ -136,7 +147,7 @@ router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login",
 });
 
 router.get("/user", async function (req, res, next) {
-  console.log("user", req.user);
+  // console.log("user", req.user);
   if (!req.user) {
     res.status(401).send("Unauthorized");
   } else {

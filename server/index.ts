@@ -74,12 +74,13 @@ nextApp.prepare().then(async () => {
     secret: process.env.SESSION_SECRET || "keyboard cat",
     store: new RedisStore({ client: sessionClient }),
     resave: false,
+    proxy: true,
     saveUninitialized: true,
     cookie: {
       httpOnly: true,
       secure: dev ? false : true,
       sameSite: dev ? "lax" : "none",
-      maxAge: 1000 * 60 * 60 * 24 * 365,
+      maxAge: 1000 * 60 * 60 * 24 * 5,
     },
   });
 

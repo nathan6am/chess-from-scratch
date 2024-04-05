@@ -211,8 +211,8 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
       >
         <div
           className={classnames("select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]", {
-            "text-xl mb-[1px] ": size === "sm",
-            "text-2xl mb-[2px]": size === "lg",
+            "text-md mb-[1px] ": size === "sm",
+            "text-xl mb-[2px]": size === "lg",
           })}
         >
           {details.unicode}
