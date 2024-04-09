@@ -99,7 +99,7 @@ nextApp.prepare().then(async () => {
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
-  app.use(passport.authenticate("session"));
+  // app.use(passport.authenticate("session"));
 
   app.use("/api/auth", authRouter);
   app.use("/api/user", userRouter);

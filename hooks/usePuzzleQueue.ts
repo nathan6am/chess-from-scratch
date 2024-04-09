@@ -277,14 +277,19 @@ function usePuzzle({ puzzle, onSolve, onFail }: PuzzleOptions) {
   const jumpForward = useCallback(() => {
     setCurrentKey(visibleNodes[visibleNodes.length - 1].key);
   }, [visibleNodes]);
+
   const showSolution = useCallback(() => {
+    const lastKey = visibleNodes[visibleNodes.length - 1].key;
+    // console.log(lastKey);
+    // console.log(visibleNodes);
     setSolveState("failed");
     setTouchedKeys(mainLine.map((node) => node.key));
     if (!isMainline) {
       setCurrentKey(currentNode?.parentKey || null);
     }
-    tree.stepForward();
-  }, [currentKey, tree, isMainline, mainLine]);
+    const idx = mainLine.findIndex((node) => node.key === lastKey);
+    setCurrentKey(mainLine[idx + 1]?.key || null);
+  }, [currentKey, tree, isMainline, mainLine, visibleNodes]);
 
   const getHint = useCallback(() => {
     if (!puzzle) return;

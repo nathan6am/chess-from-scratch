@@ -105,7 +105,7 @@ export default function PuzzleSolver() {
           <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
             <p className="text-gold-200">Puzzle Themes</p>
           </div>
-          <div className="h-full w-full bg-elevation-2 grow relative">
+          <div className="h-full w-full bg-elevation-2 grow relative min-h-[28em] md:min-h-0">
             <ScrollContainer>
               <PuzzleFilters
                 selectedThemes={selectedThemes}
@@ -121,6 +121,7 @@ export default function PuzzleSolver() {
             next={next}
             showSolution={puzzle.showSolution}
             getHint={puzzle.getHint}
+            currentPuzzleId={puzzle.puzzle?.id}
           />
           <div className="w-full">
             <PuzzlePrompt
@@ -189,11 +190,19 @@ interface PuzzleControlsProps {
   next: () => void;
   showSolution: () => void;
   getHint: () => void;
-
+  currentPuzzleId?: string | null;
   prompt?: string;
   solveState: string;
 }
-function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint }: PuzzleControlsProps) {
+function PuzzleControls({
+  prompt,
+  solveState,
+  retry,
+  next,
+  showSolution,
+  getHint,
+  currentPuzzleId,
+}: PuzzleControlsProps) {
   const buttonsToShow = useMemo(() => {
     if (prompt === "solved") return ["analysis", "next"];
     if (prompt === "failed") return ["retry", "showSolution"];
@@ -222,7 +231,7 @@ function PuzzleControls({ prompt, solveState, retry, next, showSolution, getHint
       )}
       {buttonsToShow.includes("analysis") && (
         <a
-          href="study/analyze"
+          href={`/study/analyze?gameId=${currentPuzzleId}&sourceType=puzzle`}
           target="_blank"
           className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >

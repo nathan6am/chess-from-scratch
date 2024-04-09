@@ -1,5 +1,5 @@
 import { Tooltip } from "react-tooltip";
-import { SocketContext, socket } from "@/context/socket";
+
 import { UserContext } from "@/context/user";
 import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
 
@@ -33,22 +33,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SettingsContext.Provider value={{ settings, updateSettings }}>
       <UserContext.Provider value={{ user, refresh: refetch }}>
-        <SocketContext.Provider value={socket}>
-          <Tooltip
-            id="my-tooltip"
-            style={{
-              backgroundColor: "#161616",
-              color: "#dddddd",
-              opacity: "96%",
-              padding: "0.25em 0.5em",
-              zIndex: 300,
-              backdropFilter: "blur(10px)",
-              borderRadius: "0.25em",
-              maxWidth: "30em",
-            }}
-          ></Tooltip>
-          {children}
-        </SocketContext.Provider>
+        <Tooltip
+          id="my-tooltip"
+          style={{
+            backgroundColor: "#161616",
+            color: "#dddddd",
+            opacity: "96%",
+            padding: "0.25em 0.5em",
+            zIndex: 300,
+            backdropFilter: "blur(10px)",
+            borderRadius: "0.25em",
+            maxWidth: "30em",
+          }}
+        ></Tooltip>
+        {children}
       </UserContext.Provider>
     </SettingsContext.Provider>
   );

@@ -102,24 +102,24 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser((req: any, id: string, done: any) => {
   const sessionUser: SessionUser = JSON.parse(id);
-  if (sessionUser.type === "guest" || sessionUser.type === "user") {
-    console.log("deserializing", sessionUser);
-    done(null, sessionUser);
+  if (sessionUser.type !== "incomplete" && sessionUser.username) {
+    // console.log("deserializing", sessionUser);
+    return done(null, sessionUser);
   } else {
     try {
       User.findOneBy({ id: sessionUser.id }).then((user) => {
         if (!user) {
           console.log("here");
           req.logout();
-          done("account does not exist", null);
+          return done("account does not exist", null);
         } else {
           console.log("user found", user);
-          done(null, { id: user.id, username: user.username, type: user.type });
+          return done(null, { id: user.id, username: user.username, type: user.type });
         }
       });
     } catch (e) {
       console.error(e);
-      done(null, sessionUser);
+      return done(null, sessionUser);
     }
   }
 });

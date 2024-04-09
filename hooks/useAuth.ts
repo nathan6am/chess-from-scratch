@@ -1,11 +1,4 @@
-type AuthStatus =
-  | "guest"
-  | "unverified"
-  | "user"
-  | "admin"
-  | "unauthenticated"
-  | "incomplete"
-  | "loading";
+type AuthStatus = "guest" | "unverified" | "user" | "admin" | "unauthenticated" | "incomplete" | "loading";
 import { useRouter } from "next/router";
 import type { SessionUser } from "@/lib/db/entities/User";
 import { useQuery } from "@tanstack/react-query";
@@ -30,6 +23,8 @@ export default function useAuth() {
         return undefined;
       }
     },
+    //Prevent refetching on every remount
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: profile } = useQuery({

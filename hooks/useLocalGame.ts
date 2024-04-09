@@ -51,7 +51,6 @@ export const useEngineGame = (options: Options) => {
       if (useClock) {
         clock.press(currentGame.activeColor);
       }
-
       setCurrentGame(newGame);
     },
     [currentGame, useClock, clock]

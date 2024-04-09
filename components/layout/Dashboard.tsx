@@ -4,6 +4,7 @@ import SideMenu from "./SideMenu";
 import { useMediaQuery } from "@react-hook/media-query";
 import { useState, useEffect } from "react";
 import cn from "@/util/cn";
+import { SocketContext, socket } from "@/context/socket";
 import { GiHamburgerMenu } from "react-icons/gi";
 import IconButton from "../base/IconButton";
 import NonSSRWrapper from "../NonSSRWrapper";
@@ -25,39 +26,38 @@ export default function Dashboard({ children, className }: Props) {
 
   return (
     <>
-      <div
-        className={`text-white z-[90] fixed top-0 left-0 right-0 px-2 flex flex-row items-center bg-elevation-2 sm:hidden h-12 flex flex-row `}
-      >
-        <IconButton
-          className={`${sidebarCollapsed ? "sm:hidden" : "hidden"}`}
-          icon={GiHamburgerMenu}
-          onClick={toggleSidebar}
+      <SocketContext.Provider value={socket}>
+        <div
+          className={`text-white z-[90] fixed top-0 left-0 right-0 px-2 flex flex-row items-center bg-elevation-2 sm:hidden h-12 flex flex-row `}
+        >
+          <IconButton
+            className={`${sidebarCollapsed ? "sm:hidden" : "hidden"}`}
+            icon={GiHamburgerMenu}
+            onClick={toggleSidebar}
+          />
+        </div>
+        <SideMenu
+          collapse={sidebarCollapsed}
+          toggle={toggleSidebar}
+          pages={[
+            { label: "Play", key: "play", href: "/play" },
+            { label: "Puzzles", key: "puzzles", href: "/puzzles" },
+            { label: "Study", key: "study", href: "/study" },
+            { label: "Profile", key: "profile", href: "/profile" },
+            { label: "Options", key: "options", href: "/options" },
+          ]}
         />
-      </div>
-      <SideMenu
-        collapse={sidebarCollapsed}
-        toggle={toggleSidebar}
-        pages={[
-          { label: "Play", key: "play", href: "/play" },
-          { label: "Puzzles", key: "puzzles", href: "/puzzles" },
-          { label: "Study", key: "study", href: "/study" },
-          { label: "Profile", key: "profile", href: "/profile" },
-          { label: "Options", key: "options", href: "/options" },
-        ]}
-      />
-      <div
-        className={cn(
-          "w-full bg-elevation-1 trasition ease-in-out duration-500 min-h-screen flex max-w-screen",
-          {
+        <div
+          className={cn("w-full bg-elevation-1 trasition ease-in-out duration-500 min-h-screen flex max-w-screen", {
             "pl-0 sm:pl-[60px]": sidebarCollapsed,
             "sm:pl-[60px] lg:pl-[240px]": !sidebarCollapsed,
-          }
-        )}
-      >
-        <NonSSRWrapper>
-          <main className={cn("flex-1 pt-12 sm:pt-0 flex flex-col", className)}>{children}</main>
-        </NonSSRWrapper>
-      </div>
+          })}
+        >
+          <NonSSRWrapper>
+            <main className={cn("flex-1 pt-12 sm:pt-0 flex flex-col", className)}>{children}</main>
+          </NonSSRWrapper>
+        </div>
+      </SocketContext.Provider>
     </>
   );
 }

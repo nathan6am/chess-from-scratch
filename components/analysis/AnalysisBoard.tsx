@@ -1,21 +1,22 @@
 import React, { useState, useRef, useContext, useMemo, useEffect } from "react";
+
+// Components
+import Board, { BoardHandle } from "@/components/board/Board";
+import EvalBar from "./EvalBar";
+import BoardControls from "@/components/game/BoardControls";
+import OptionsOverlay from "@/components/dialogs/OptionsOverlay";
+import PopupPlayer from "./PopupPlayer";
+import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
+import AnalysisPanel from "./panels/AnalysisPanel";
 import PlayerDetails from "./PlayerDetails";
+
 import {
   BoardWithPanelContainer,
   BoardContainer,
   BoardRow,
   PanelContainer,
 } from "@/components/layout/templates/AnalysisBoardLayout";
-// Components
-import Board from "../board/Board";
-import EvalBar from "./EvalBar";
-import BoardControls from "../game/BoardControls";
-import OptionsOverlay from "../dialogs/OptionsOverlay";
-import PopupPlayer from "./PopupPlayer";
-import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
-import AnalysisPanel from "./panels/AnalysisPanel";
 
-import { BoardHandle } from "../board/Board";
 import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
 
