@@ -62,12 +62,8 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
   const router = useRouter();
   const onAnalyze = useCallback(() => {
     const pgn = gameDataToPgn(currentGame, {
-      white: `${
-        playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
-      }`,
-      black: `${
-        playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
-      }`,
+      white: `${playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
+      black: `${playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
       event: "Engine Game",
       site: "next-chess.dev",
       date: new Date().toISOString().split("T")[0],
@@ -140,9 +136,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${
-                  opening?.eco ? ` (${opening.eco})` : ""
-                }`}</span>
+                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
               </p>
             }
           </div>
@@ -159,16 +153,12 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
             }}
           />
           <div className="grid grid-cols-3 w-full px-4 gap-x-2 bg-elevation-2 py-2">
-            <Button
-              label="Resign"
-              icon={FiFlag}
-              iconClassName="mr-1"
-              variant="danger"
-              size="lg"
-            ></Button>
+            {!currentGame.outcome && (
+              <Button label="Resign" icon={FiFlag} iconClassName="mr-1" variant="danger" size="lg"></Button>
+            )}
             <Button
               onClick={restartGame}
-              label="Restart"
+              label={currentGame.outcome ? "Play Again" : "Restart"}
               icon={MdRestartAlt}
               iconClassName="mr-1 text-lg"
               variant="neutral"

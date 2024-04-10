@@ -16,6 +16,10 @@ export default class Puzzle extends BaseEntity {
   fen: string;
   @Column()
   moves: string;
+  @Column({ nullable: true, type: "text", array: true })
+  alternateMoves: string[];
+  @Column({ nullable: true })
+  pgn: string;
   @Column()
   rating: number;
   @Column()

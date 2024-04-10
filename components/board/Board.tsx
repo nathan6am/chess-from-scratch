@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useState,
-  useEffect,
-  useRef,
-  useImperativeHandle,
-  useMemo,
-} from "react";
+import React, { useCallback, useState, useEffect, useRef, useImperativeHandle, useMemo } from "react";
 import styles from "@/styles/Board.module.scss";
 
 //Types
@@ -146,9 +139,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
       if (!selectedPiece) return [];
       if (premoveQueue?.length) return [];
       const [square, _piece] = selectedPiece;
-      return legalPremoves
-        .filter((premove) => premove.start === square)
-        .map((premove) => premove.end);
+      return legalPremoves.filter((premove) => premove.start === square).map((premove) => premove.end);
     }, [selectedPiece, legalPremoves, premoveQueue]);
     //Show Promotion Menu
     const [promotionMove, setPromotionMove] = useState<{
@@ -186,9 +177,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
       //Queue premove if the piece isn't of the active turn color and do not continue
       if (piece.color !== activeColor && preMoveable) {
         if (!legalPremoves?.length) return;
-        const premove = legalPremoves.find(
-          (premove) => premove.start === square && premove.end === currentSquare
-        );
+        const premove = legalPremoves.find((premove) => premove.start === square && premove.end === currentSquare);
         if (premove) onPremove(premove);
       }
 
@@ -241,9 +230,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
 
         //Queue premove if the piece isn't of the active turn color and do not continue
         if (piece.color !== activeColor && preMoveable) {
-          const premove = legalPremoves?.find(
-            (premove) => premove.start === square && premove.end === targetSquare
-          );
+          const premove = legalPremoves?.find((premove) => premove.start === square && premove.end === targetSquare);
           if (premove) onPremove(premove);
         }
         if (piece.color !== activeColor) return;
@@ -275,8 +262,12 @@ const Board = React.forwardRef<BoardHandle, Props>(
     }, [premoveQueue]);
 
     useEffect(() => {
-      setSelectedPiece(null);
-    }, [lastMove]);
+      //setSelectedPiece(null);
+    }, [lastMove, pieces]);
+
+    useEffect(() => {
+      if (moveable === "none") setSelectedPiece(null);
+    }, [moveable]);
     const clearSelection = () => {
       setSelectedPiece(null);
     };
@@ -365,9 +356,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                 if (!promotionMove) return;
                 const move = legalMoves.find(
                   (move) =>
-                    move.start === promotionMove.start &&
-                    move.end === promotionMove.end &&
-                    move.promotion === type
+                    move.start === promotionMove.start && move.end === promotionMove.end && move.promotion === type
                 );
                 if (move) {
                   setPromotionMove(null);
@@ -400,9 +389,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
                       false
                     }
                     isPremoved={nextPremove?.start === square || nextPremove?.end === square}
-                    isSelected={
-                      (!editMode && selectedPiece && selectedPiece[0] === square) || false
-                    }
+                    isSelected={(!editMode && selectedPiece && selectedPiece[0] === square) || false}
                     square={square}
                     color={Chess.getSquareColor(square)}
                     onSelectTarget={() => {

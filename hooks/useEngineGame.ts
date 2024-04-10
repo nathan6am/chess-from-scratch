@@ -32,6 +32,7 @@ interface Options {
   gameConfig: Partial<Chess.GameConfig>;
   allowTakeback?: boolean;
   playerColor?: Chess.Color;
+  onOutcome?: (outcome: Chess.Outcome) => void;
 }
 import { Message, Response, EngineGameConfig } from "@/lib/stockfish/stockfishWorker";
 import useChessClock from "./useChessClock";
@@ -138,6 +139,10 @@ export const useEngineGame = (options: Options) => {
       if (!legalMove) return;
       const newGame = Chess.move(currentGame, legalMove);
       clock.press(currentGame.activeColor);
+      if (newGame.outcome) {
+        options.onOutcome?.(newGame.outcome);
+        clock.pause();
+      }
       setCurrentGame(newGame);
       stockfish?.postMessage({
         type: "move",
@@ -237,6 +242,7 @@ export const useEngineGame = (options: Options) => {
   const clearPremoveQueue = () => {
     setPremoveQueue([]);
   };
+
   //Move sounds
   const moveVolume = useMemo(() => {
     if (!settings.sound.moveSounds) return 0;

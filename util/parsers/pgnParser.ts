@@ -27,9 +27,7 @@ interface pgnCommand {
 
 function extractCommands(comment: string) {
   const knownTypes: Array<"%csl" | "%cal" | "%clk"> = ["%csl", "%cal", "%clk"];
-  const commandsRaw = comment
-    .match(commandDelimited)
-    ?.map((str) => str.replace(bracketsExpr, "$1"));
+  const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
   const remainingComment = comment.replace(commandDelimited, "").trim();
   let commands: pgnCommand[] = [];
   if (commandsRaw && commandsRaw.length) {
@@ -111,9 +109,7 @@ export function encodeCommentFromNodeData(
       .join(",")}] `;
   }
   if (data.arrows && data.arrows.length && includeArrows) {
-    commentString += `[%cal ${data.arrows
-      .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
-      .join(",")}] `;
+    commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
   }
   if (data.comment && includeComments) {
     commentString += data.comment;
@@ -216,10 +212,7 @@ export function tagDataToPGNString(data: PGNTagData): string {
   return tagsString;
 }
 //console.log(pgnToJson(sampleData));
-function buildTreeArray<T>(
-  map: Map<string, TreeNode<T>>,
-  parentKey: string | null = null
-): TreeNode<T>[] {
+function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -312,7 +305,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
   var lastIndex = stream.lastIndexOf(" ");
 
   stream = stream.substring(0, lastIndex);
-  console.log(stream);
+  //console.log(stream);
   const initialGame = Chess.createGame({ startPosition: startPosition });
   //let currentGame = initialGame;
   let reading = "unknown";
@@ -354,7 +347,28 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
     const currentGame = getCurrentGame();
     //Verify the move text is a valid/legal move
     let move = currentGame.legalMoves.find((move) => move.PGN === pgn.replace("#", "+"));
-
+    if (!move) {
+      const withoutExtraChars = currentGame.legalMoves.find(
+        (move) => move.PGN.replace(/[#+x]/g, "") === pgn.replace(/[#+x]/g, "")
+      );
+      if (withoutExtraChars) {
+        move = withoutExtraChars;
+      } else {
+        const cleaned = pgn.replace(/[#+x]/g, "");
+        const altPattern = /^[a-h]{2}$/;
+        const isAlternatePawnCapture = altPattern.test(cleaned);
+        if (isAlternatePawnCapture) {
+          const startFile = cleaned.charAt(0);
+          const endFile = cleaned.charAt(1);
+          const pattern = `^${startFile}x?${endFile}[1-8]$`;
+          const expr = new RegExp(pattern);
+          const correctMove = currentGame.legalMoves.find((move) => expr.test(move.PGN));
+          if (correctMove) {
+            move = correctMove;
+          }
+        }
+      }
+    }
     if (!move) {
       console.log(pgn);
       console.log(currentGame.legalMoves);
@@ -396,8 +410,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       throw new Error("Invalid pgn");
     } else if (reading === "annotation") {
       if (char === " ") {
-        if (!annotation.length)
-          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (!annotation.length) throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
         if (currentData.annotations) {
           currentData.annotations.push(parseInt(annotation));
         } else {
@@ -439,10 +452,7 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       }
     } else if (char === "$") {
       reading = "annotation";
-    } else if (
-      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
-      isDigit(char)
-    ) {
+    } else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
       reading = "move-count";
       moveCount = char;
       if (currentData.pgn) postCurrentData();
@@ -505,8 +515,7 @@ export function encodeGameToPgn(game: Game): string {
     tagData.termination = termination;
   }
   const tagSection = tagDataToPGNString(tagData);
-  const movetext =
-    moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
   return tagSection + "\r\n" + movetext;
 }
 
