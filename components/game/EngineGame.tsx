@@ -2,8 +2,11 @@ import Board from "../board/Board";
 import { useEngineGame } from "@/hooks/useEngineGame";
 import * as Chess from "@/lib/chess";
 import { SettingsContext } from "@/context/settings";
-import { useContext, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { Button } from "@/components/base";
+import { useRouter } from "next/router";
+import useGameCache from "@/hooks/useGameCache";
+import { encodeGameToPgn, gameDataToPgn } from "@/util/parsers/pgnParser";
 import {
   GameContainer,
   BoardContainer,
@@ -26,10 +29,13 @@ interface Props {
 
 import Clock from "./Clock";
 import cn from "@/util/cn";
+import useAuth from "@/hooks/useAuth";
 export default function EngineGame({ startPosition, preset, playerColor, timeControl }: Props) {
+  const { user } = useAuth();
   const [currentPreset, setCurrentPreset] = useState(preset || 10);
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
   const { settings } = useContext(SettingsContext);
+  const { cacheGame } = useGameCache();
   const {
     currentGame,
     ready,
@@ -53,6 +59,25 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
     playerColor,
     timeControl,
   });
+  const router = useRouter();
+  const onAnalyze = useCallback(() => {
+    const pgn = gameDataToPgn(currentGame, {
+      white: `${
+        playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
+      }`,
+      black: `${
+        playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
+      }`,
+      event: "Engine Game",
+      site: "next-chess.dev",
+      date: new Date().toISOString().split("T")[0],
+      result: "*",
+      eco: opening?.eco,
+      opening: opening?.name,
+    });
+    cacheGame(pgn, "1");
+    router.push("/study/analyze?gameId=1&sourceType=last");
+  }, [router, currentGame, playerColor, currentPreset, user, opening, cacheGame]);
   return (
     <GameContainer>
       <BoardColumn
@@ -115,7 +140,9 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+                <span className="inline text-light-300">{`${
+                  opening?.eco ? ` (${opening.eco})` : ""
+                }`}</span>
               </p>
             }
           </div>
@@ -132,7 +159,13 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
             }}
           />
           <div className="grid grid-cols-3 w-full px-4 gap-x-2 bg-elevation-2 py-2">
-            <Button label="Resign" icon={FiFlag} iconClassName="mr-1" variant="danger" size="lg"></Button>
+            <Button
+              label="Resign"
+              icon={FiFlag}
+              iconClassName="mr-1"
+              variant="danger"
+              size="lg"
+            ></Button>
             <Button
               onClick={restartGame}
               label="Restart"
@@ -141,7 +174,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
               variant="neutral"
               size="lg"
             ></Button>
-            <Button label="Analyze" variant="neutral" size="lg"></Button>
+            <Button label="Analyze" variant="neutral" size="lg" onClick={onAnalyze}></Button>
           </div>
         </>
       </PanelContainer>

@@ -5,7 +5,7 @@ import classnames from "classnames";
 import { ColorEnum } from "./BoardArrows";
 import { ArrowColor } from "@/lib/types";
 import { BiSquareRounded } from "react-icons/bi";
-
+import { BounceLoader } from "react-spinners";
 interface SquareProps {
   annotation?: number | string;
   id: string;
@@ -24,6 +24,7 @@ interface SquareProps {
   hovered: boolean;
   showTargets: boolean;
   showHighlights: boolean;
+  isHint?: boolean;
   clearSelection: () => void;
   orientation: Chess.Color;
   showCoordinates: "hidden" | "inside" | "outside";
@@ -41,6 +42,7 @@ export default function Square({
   isLastMove,
   isPremoved,
   activeColor,
+  isHint,
   piece,
   color,
   onSelectTarget,
@@ -55,11 +57,15 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -94,20 +100,33 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
+          } ${textSize}`}
+        >
           {rank}
         </span>
       )}
       {showFile && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
+          } ${textSize}`}
+        >
           {file}
         </span>
       )}
       {annotation && <Annotation squareSize={squareSize} code={annotation} />}
+      {isHint && (
+        <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center z-[101] opacity-50 pointer-none">
+          <BounceLoader color="#ff0000" size={squareSize} speedMultiplier={0.7} />
+        </div>
+      )}
       <div
-        className={`${styles.contents} ${isSelected && styles.selected} ${isPremoved && styles.selected}  ${
-          isLastMove && showHighlights && styles.lastmove
-        }`}
+        className={`${styles.contents} ${isSelected && styles.selected} ${
+          isPremoved && styles.selected
+        }  ${isLastMove && showHighlights && styles.lastmove}`}
       >
         {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
@@ -210,10 +229,13 @@ function Annotation({ code, squareSize }: { code: number | string; squareSize: n
         )}
       >
         <div
-          className={classnames("select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]", {
-            "text-md mb-[1px] ": size === "sm",
-            "text-xl mb-[2px]": size === "lg",
-          })}
+          className={classnames(
+            "select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]",
+            {
+              "text-md mb-[1px] ": size === "sm",
+              "text-xl mb-[2px]": size === "lg",
+            }
+          )}
         >
           {details.unicode}
         </div>

@@ -27,7 +27,9 @@ interface pgnCommand {
 
 function extractCommands(comment: string) {
   const knownTypes: Array<"%csl" | "%cal" | "%clk"> = ["%csl", "%cal", "%clk"];
-  const commandsRaw = comment.match(commandDelimited)?.map((str) => str.replace(bracketsExpr, "$1"));
+  const commandsRaw = comment
+    .match(commandDelimited)
+    ?.map((str) => str.replace(bracketsExpr, "$1"));
   const remainingComment = comment.replace(commandDelimited, "").trim();
   let commands: pgnCommand[] = [];
   if (commandsRaw && commandsRaw.length) {
@@ -109,7 +111,9 @@ export function encodeCommentFromNodeData(
       .join(",")}] `;
   }
   if (data.arrows && data.arrows.length && includeArrows) {
-    commentString += `[%cal ${data.arrows.map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`).join(",")}] `;
+    commentString += `[%cal ${data.arrows
+      .map((arrow) => `${arrow.color}${arrow.start}${arrow.end}`)
+      .join(",")}] `;
   }
   if (data.comment && includeComments) {
     commentString += data.comment;
@@ -212,7 +216,10 @@ export function tagDataToPGNString(data: PGNTagData): string {
   return tagsString;
 }
 //console.log(pgnToJson(sampleData));
-function buildTreeArray<T>(map: Map<string, TreeNode<T>>, parentKey: string | null = null): TreeNode<T>[] {
+function buildTreeArray<T>(
+  map: Map<string, TreeNode<T>>,
+  parentKey: string | null = null
+): TreeNode<T>[] {
   if (parentKey === null) {
     return Array.from(map.values()).filter((node) => !node.parentKey);
   }
@@ -389,7 +396,8 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       throw new Error("Invalid pgn");
     } else if (reading === "annotation") {
       if (char === " ") {
-        if (!annotation.length) throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
+        if (!annotation.length)
+          throw new Error("Invalid PGN; annotaion flag `$` not followed by valid NAG");
         if (currentData.annotations) {
           currentData.annotations.push(parseInt(annotation));
         } else {
@@ -431,7 +439,10 @@ export function parseMoveText(movetext: string, startPosition?: string): Node[] 
       }
     } else if (char === "$") {
       reading = "annotation";
-    } else if ((prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") && isDigit(char)) {
+    } else if (
+      (prevChar === " " || prevChar === ")" || prevChar === "}" || prevChar === "(") &&
+      isDigit(char)
+    ) {
       reading = "move-count";
       moveCount = char;
       if (currentData.pgn) postCurrentData();
@@ -494,7 +505,19 @@ export function encodeGameToPgn(game: Game): string {
     tagData.termination = termination;
   }
   const tagSection = tagDataToPGNString(tagData);
-  const movetext = moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  const movetext =
+    moveHistoryToMoveText(game.data.moveHistory) + ` ${encodeOutcome(game.data.outcome)}`;
+  return tagSection + "\r\n" + movetext;
+}
+
+export function gameDataToPgn(game: Chess.Game, tags: PGNTagData): string {
+  let tagData = tags;
+  const termination = encodeTermination(game.outcome);
+  if (game.outcome && termination) {
+    tagData.termination = termination;
+  }
+  const tagSection = tagDataToPGNString(tagData);
+  const movetext = moveHistoryToMoveText(game.moveHistory) + ` ${encodeOutcome(game.outcome)}`;
   return tagSection + "\r\n" + movetext;
 }
 
@@ -545,4 +568,3 @@ const encodeTermination = (outcome: Chess.Outcome) => {
   else if (by === "50-move-rule") termination += " by 50 move rule";
   else if (by === "abandonment") termination += " by abandonment";
 };
-
