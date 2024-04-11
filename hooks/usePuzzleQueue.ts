@@ -49,6 +49,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   const [history, setHistory] = useState<SolvedPuzzle[]>([]);
   const [queue, setQueue] = useState<Puzzle[]>([]);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
+  const [loading, setLoading] = useState(false);
   const filters = useMemo(() => {
     return {
       minRating: options.minRating,
@@ -89,13 +90,11 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   const puzzle = usePuzzle({
     puzzle: currentPuzzle,
     onSolve: () => {
-      if (currentPuzzle)
-        setHistory((cur) => [...cur, { solved: true, puzzle: currentPuzzle, hintUsed: false }]);
+      if (currentPuzzle) setHistory((cur) => [...cur, { solved: true, puzzle: currentPuzzle, hintUsed: false }]);
       setStreak((cur) => cur + 1);
     },
     onFail: () => {
-      if (currentPuzzle)
-        setHistory((cur) => [...cur, { solved: false, puzzle: currentPuzzle, hintUsed: false }]);
+      if (currentPuzzle) setHistory((cur) => [...cur, { solved: false, puzzle: currentPuzzle, hintUsed: false }]);
       setStreak(0);
     },
   });
@@ -106,14 +105,18 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
     if (!queue.length) return;
     if (!currentPuzzle) {
       let nextPuzzle = queue[0];
+      if (!nextPuzzle) {
+        setLoading(true);
+        return;
+      }
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     } else {
-      setHistory((cur) => [
-        ...cur,
-        { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false },
-      ]);
+      setHistory((cur) => [...cur, { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false }]);
       let nextPuzzle = queue[0];
+      if (!nextPuzzle) {
+        setLoading(true);
+      }
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     }
@@ -122,6 +125,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   useEffect(() => {
     //Automatically load the next puzzle if current puzzle is null
     if (!currentPuzzle && queue.length) {
+      setLoading(false);
       next();
     }
     //Fetch new puzzles when the queue length is below minimum threshold
@@ -131,6 +135,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   }, [queue, currentPuzzle, next]);
   return {
     streak,
+    loading,
     next,
     puzzle,
     history,
@@ -149,8 +154,7 @@ function usePuzzle({ puzzle, onSolve, onFail }: PuzzleOptions) {
   const tree = useVariationTree();
   //Reset on puzzle change
 
-  const { currentNode, path, continuation, currentKey, mainLine, setCurrentKey, stepBackward } =
-    tree;
+  const { currentNode, path, continuation, currentKey, mainLine, setCurrentKey, stepBackward } = tree;
   const currentGame = useMemo(() => {
     if (!puzzle) return Chess.createGame({});
     if (currentNode)
@@ -208,8 +212,7 @@ function usePuzzle({ puzzle, onSolve, onFail }: PuzzleOptions) {
   }, [mainLine, currentKey, puzzle]);
 
   const prompt = useMemo(() => {
-    if (mainLine.length && mainLine.every((node) => touchedKeys.includes(node.key)))
-      return "solved";
+    if (mainLine.length && mainLine.every((node) => touchedKeys.includes(node.key))) return "solved";
     if (currentNode && !isMainline) return "failed";
     if (visibleNodes.length <= 1) return "start";
     if (continuation.length > 0) return "continue";

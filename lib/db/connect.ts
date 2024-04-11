@@ -28,4 +28,13 @@ export async function initialize() {
     poolSize: 10,
   });
   await datasource.initialize();
+  return datasource;
 }
+
+export const conObject = {
+  user: username,
+  password,
+  host,
+  database,
+  port,
+};

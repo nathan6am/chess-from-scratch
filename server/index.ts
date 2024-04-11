@@ -6,8 +6,7 @@ loadEnvConfig("./", process.env.NODE_ENV !== "production");
 import * as http from "http";
 import next, { NextApiHandler } from "next";
 import * as socketio from "socket.io";
-import connectRedis from "connect-redis";
-let RedisStore = connectRedis(session);
+import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import authRouter from "./routes/auth";
 import MainHandler from "./handlers/MainHandler";
@@ -35,8 +34,8 @@ import {
 } from "./types/lobby";
 
 const redisClient = createClient();
-const sessionClient = createClient({ legacyMode: true });
-
+// const sessionClient = createClient({ legacyMode: true });
+const pgSession = connectPgSimple(session);
 export type RedisClient = typeof redisClient;
 import cors from "cors";
 import LobbyHandler from "./handlers/LobbyHandler";
@@ -63,16 +62,19 @@ const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(async () => {
   const app: Express = express();
   const server: http.Server = http.createServer(app);
-  await sessionClient.connect();
-  console.log("Connected to session client");
+  // await sessionClient.connect();
+  // console.log("Connected to session client");
   await redisClient.connect();
   console.log("Connected to redis client");
-  await db.initialize();
+  const datasource = await db.initialize();
   console.log("Connected to database");
 
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || "keyboard cat",
-    store: new RedisStore({ client: sessionClient }),
+    store: new pgSession({
+      conObject: db.conObject,
+      tableName: "session",
+    }),
     resave: false,
     proxy: true,
     saveUninitialized: true,
