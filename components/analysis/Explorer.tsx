@@ -113,7 +113,7 @@ export default function Explorer({ explorer, onMove, showPlayer }: Props) {
           </div>
           <div className="text-xs pl-1">Result: (White | Draw | Black)</div>
         </div>
-        <div className="w-full grow relative">
+        <div className="w-full grow min-h-[10em] md:min-h-0 relative">
           <ScrollContainer>
             <>
               {(error || (!data && !isLoading)) && <p>Unable to reach database</p>}
@@ -258,7 +258,7 @@ function TopGames({
     [gameList, topGames, recentGames]
   );
   return (
-    <div className="w-full grow overflow-hidden flex flex-col min-height-[250px]">
+    <div className="w-full grow overflow-hidden flex flex-col min-h-[250px]">
       <div className="w-full text-sm bg-elevation-2 text-gold-100 py-1 px-3 shadow flex flex-row justify-start">
         <button
           onClick={() => setGameList("top")}

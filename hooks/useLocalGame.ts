@@ -18,8 +18,7 @@ const defaultGameConfig: Chess.GameConfig = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   timeControl: null,
 };
-
-export const useEngineGame = (options: Options) => {
+const useLocalGame = (options: Options) => {
   const settings = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {
@@ -169,3 +168,5 @@ export const useEngineGame = (options: Options) => {
     },
   };
 };
+
+export default useLocalGame;

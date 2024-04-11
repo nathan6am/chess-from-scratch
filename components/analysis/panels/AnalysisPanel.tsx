@@ -30,6 +30,7 @@ import { Tab } from "@headlessui/react";
 import useFileManager from "@/hooks/useFileManager";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
+import { useMediaQuery } from "@react-hook/media-query";
 
 interface Props {
   modalControls: {
@@ -48,6 +49,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
   const { analysis, saveManager } = useContext(AnalysisContext);
   const [expanded, setExpanded] = useState(true);
   const { onMove, currentNode, commentControls, setMoveQueue } = analysis;
+  const isVerticalLayout = useMediaQuery("screen and (max-width: 768px)");
   const fileManager = useFileManager({
     onRenamed: () => {
       setRenameDialogOpen(false);
@@ -101,7 +103,8 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes{" "}
+                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
@@ -143,15 +146,19 @@ export default function AnalysisPanel({ modalControls }: Props) {
               )}
             </div>
 
-            <div className="w-full grow relative bg-elevation-1">
+            <div className="w-full grow relative bg-elevation-1 min-h-[6em] md:min-h-0">
               <ScrollContainer>
-                <VarationTree />
+                <VarationTree inlineView={isVerticalLayout} />
               </ScrollContainer>
             </div>
           </>
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
+          <Explorer
+            explorer={analysis.explorer}
+            onMove={onMove}
+            showPlayer={modalControls.showPlayer}
+          />
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
           <>
@@ -175,7 +182,8 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes{" "}
+                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
@@ -252,7 +260,11 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
+              <Comments
+                key={currentNode?.key || "none"}
+                node={currentNode}
+                controls={commentControls}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -294,7 +306,9 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-sm text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected
+            ? "bg-[#202020]"
+            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

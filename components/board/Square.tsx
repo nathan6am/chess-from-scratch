@@ -57,11 +57,15 @@ export default function Square({
 }: SquareProps) {
   const coordinates = useMemo(() => Chess.squareToCoordinates(square), [square]);
   const showRank = useMemo(
-    () => (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[0] === 0 : coordinates[0] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const showFile = useMemo(
-    () => (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) && showCoordinates !== "hidden",
+    () =>
+      (orientation === "w" ? coordinates[1] === 0 : coordinates[1] === 7) &&
+      showCoordinates !== "hidden",
     [orientation, coordinates, showCoordinates]
   );
   const [file, rank] = square.split("");
@@ -96,12 +100,20 @@ export default function Square({
       }`}
     >
       {showRank && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.rank : outsideClasses.rank
+          } ${textSize}`}
+        >
           {rank}
         </span>
       )}
       {showFile && (
-        <span className={`${showCoordinates === "inside" ? insideClasses.file : outsideClasses.file} ${textSize}`}>
+        <span
+          className={`${
+            showCoordinates === "inside" ? insideClasses.file : outsideClasses.file
+          } ${textSize}`}
+        >
           {file}
         </span>
       )}
@@ -114,13 +126,13 @@ export default function Square({
       )}
       {isHint && (
         <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center z-[101] opacity-50 pointer-none">
-          <BounceLoader color="#ff0000" size={squareSize} speedMultiplier={0.7} />
+          <BounceLoader color="#22c55e" size={squareSize} speedMultiplier={0.7} />
         </div>
       )}
       <div
-        className={`${styles.contents} ${isSelected && styles.selected} ${isPremoved && styles.selected}  ${
-          isLastMove && showHighlights && styles.lastmove
-        }`}
+        className={`${styles.contents} ${isSelected && styles.selected} ${
+          isPremoved && styles.selected
+        }  ${isLastMove && showHighlights && styles.lastmove}`}
       >
         {isTarget && showTargets && <div className={piece ? styles.ring : styles.dot} />}
       </div>
@@ -151,7 +163,15 @@ export default function Square({
   );
 }
 
-function Annotation({ code, squareSize, isEdge }: { code: number | string; squareSize: number; isEdge?: boolean }) {
+function Annotation({
+  code,
+  squareSize,
+  isEdge,
+}: {
+  code: number | string;
+  squareSize: number;
+  isEdge?: boolean;
+}) {
   const size = useMemo(() => {
     if (squareSize < 80) return "sm";
     return "lg";
@@ -226,10 +246,13 @@ function Annotation({ code, squareSize, isEdge }: { code: number | string; squar
         )}
       >
         <div
-          className={classnames("select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]", {
-            "text-sm mb-[1px] ": size === "sm",
-            "text-lg mb-[2px]": size === "lg",
-          })}
+          className={classnames(
+            "select-none font-semibold text-center noto-sans-font mt-[3px] ml-[0.5px]",
+            {
+              "text-sm mb-[1px] ": size === "sm",
+              "text-lg mb-[2px]": size === "lg",
+            }
+          )}
         >
           {details.unicode}
         </div>

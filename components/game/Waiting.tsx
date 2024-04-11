@@ -30,7 +30,7 @@ export default function Waiting({ lobbyUrl }: Props) {
         }}
       ></Tooltip>
       <div className="w-full flex flex-col items-center justify-center ">
-        <h2 className="w-full py-8 text-md text-center flex flex-row items-baseline justify-center bg-elevation-4 ">
+        <h2 className="w-full py-4 md:py-8 text-md text-center flex flex-row items-baseline justify-center bg-elevation-4 ">
           Waiting for opponent to join <BeatLoader className="inline ml-1" size={5} color="white" />
         </h2>
         <LobbyLink lobbyUrl={lobbyUrl} />

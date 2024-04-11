@@ -163,7 +163,10 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
       return mastersFilters;
     }
   }, [database, lichessFilters, mastersFilters]);
-  const queryParams = useMemo(() => ({ fen, play, currentFen, ...filters }), [fen, play, currentFen, filters]);
+  const queryParams = useMemo(
+    () => ({ fen, play, currentFen, ...filters }),
+    [fen, play, currentFen, filters]
+  );
   const params = useDebounce(queryParams, 500);
   //Ref to set loading state when currentGame changes before debounced game upates
   const debounceSyncRef = useRef<boolean>(false);
@@ -188,10 +191,13 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     queryFn: async () => {
       if (!gameId) return null;
       if (database === "lichess") {
-        const response = await axios.get(`https://lichess.org/game/export/${gameId}`, {});
+        const response = await axios.get(
+          `https://lichess.org/game/export/${gameId}?pgnInJson=true`,
+          {}
+        );
         console.log(response);
-        if (response && response.data) {
-          const pgn = response.data as string;
+        if (response && response.data?.pgn) {
+          const pgn = response.data?.pgn as string;
           return {
             pgn,
             id: gameId,
@@ -213,10 +219,16 @@ export default function useOpeningExplorer(currentGame: Chess.Game): ExplorerHoo
     },
   });
 
-  const fetchGameAsync = async (gameid: string, gameType: "lichess" | "masters"): Promise<string | undefined> => {
+  const fetchGameAsync = async (
+    gameid: string,
+    gameType: "lichess" | "masters"
+  ): Promise<string | undefined> => {
     if (gameType === "lichess") {
-      const response = await axios.get(`https://lichess.org/game/export/${gameid}`, {});
-      if (response && response.data) return response.data as string;
+      const response = await axios.get(
+        `https://lichess.org/game/export/${gameid}?pgnInJson=true`,
+        {}
+      );
+      if (response && response.data?.pgn) return response.data.pgn as string;
     } else if (gameType === "masters") {
       const response = await axios.get(`https://explorer.lichess.ovh/masters/pgn/${gameid}`);
       if (response && response.data) return response.data as string;

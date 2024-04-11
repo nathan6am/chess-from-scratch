@@ -71,7 +71,34 @@ export const useEngineGame = (options: Options) => {
     timeControl: options.timeControl || { timeSeconds: 0, incrementSeconds: 0 },
     onTimeExpired: (color) => {
       if (useClock) {
-        alert(`Time expired for ${color === "w" ? "White" : "Black"}`);
+        setCurrentGame((game) => {
+          const board = game.board;
+          const pieces: Record<Chess.Color, Chess.Piece[]> = {
+            w: board
+              .filter(([square, piece]) => piece.color === "w")
+              .map(([square, piece]) => piece),
+            b: board
+              .filter(([square, piece]) => piece.color === "b")
+              .map(([square, piece]) => piece),
+          };
+          const nextColor = game.activeColor === "w" ? "b" : "w";
+          let outcome: Chess.Outcome;
+          if (Chess.isSufficientMaterial(pieces[nextColor])) {
+            outcome = {
+              result: nextColor,
+              by: "timeout",
+            };
+          } else {
+            outcome = {
+              result: "d",
+              by: "timeout-w-insufficient",
+            };
+          }
+          return {
+            ...game,
+            outcome,
+          };
+        });
       }
     },
   });
@@ -130,6 +157,19 @@ export const useEngineGame = (options: Options) => {
     startGame();
   }, [gameConfig, startGame]);
 
+  const resign = useCallback(() => {
+    const outcome: Chess.Outcome = {
+      result: options.playerColor === "w" ? "b" : "w",
+      by: "resignation",
+    };
+    setCurrentGame((game) => {
+      return {
+        ...game,
+        outcome,
+      };
+    });
+    clock.pause();
+  }, [options.playerColor, clock]);
   //Hande player moves
   const onMove = useCallback(
     (move: Chess.Move) => {
@@ -338,6 +378,7 @@ export const useEngineGame = (options: Options) => {
     ready,
     opening,
     restartGame,
+    resign,
     boardControls: {
       stepBackward,
       stepForward,

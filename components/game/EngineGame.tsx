@@ -2,11 +2,12 @@ import Board from "../board/Board";
 import { useEngineGame } from "@/hooks/useEngineGame";
 import * as Chess from "@/lib/chess";
 import { SettingsContext } from "@/context/settings";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Button } from "@/components/base";
 import { useRouter } from "next/router";
 import useGameCache from "@/hooks/useGameCache";
 import { encodeGameToPgn, gameDataToPgn } from "@/util/parsers/pgnParser";
+import Result from "../dialogs/Result";
 import {
   GameContainer,
   BoardContainer,
@@ -49,6 +50,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
     lastMove,
     availablePremoves,
     clearPremoveQueue,
+    resign,
     premoveQueue,
     onPremove,
     opening,
@@ -62,8 +64,12 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
   const router = useRouter();
   const onAnalyze = useCallback(() => {
     const pgn = gameDataToPgn(currentGame, {
-      white: `${playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
-      black: `${playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
+      white: `${
+        playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
+      }`,
+      black: `${
+        playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
+      }`,
       event: "Engine Game",
       site: "next-chess.dev",
       date: new Date().toISOString().split("T")[0],
@@ -74,8 +80,28 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
     cacheGame(pgn, "1");
     router.push("/study/analyze?gameId=1&sourceType=last");
   }, [router, currentGame, playerColor, currentPreset, user, opening, cacheGame]);
+
+  const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    if (currentGame.outcome) {
+      setShowResult(true);
+    }
+  }, [currentGame.outcome]);
   return (
     <GameContainer>
+      <Result
+        isOpen={!!currentGame.outcome && showResult}
+        outcome={currentGame.outcome}
+        onRematch={() => {
+          restartGame();
+          setShowResult(false);
+        }}
+        onAnalyze={onAnalyze}
+        close={() => {
+          setShowResult(false);
+        }}
+      />
       <BoardColumn
         className={cn("items-center relative", {
           "flex-col-reverse": orientation === "b",
@@ -136,7 +162,9 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+                <span className="inline text-light-300">{`${
+                  opening?.eco ? ` (${opening.eco})` : ""
+                }`}</span>
               </p>
             }
           </div>
@@ -154,7 +182,14 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
           />
           <div className="grid grid-cols-3 w-full px-4 gap-x-2 bg-elevation-2 py-2">
             {!currentGame.outcome && (
-              <Button label="Resign" icon={FiFlag} iconClassName="mr-1" variant="danger" size="lg"></Button>
+              <Button
+                onClick={resign}
+                label="Resign"
+                icon={FiFlag}
+                iconClassName="mr-1"
+                variant="danger"
+                size="lg"
+              ></Button>
             )}
             <Button
               onClick={restartGame}

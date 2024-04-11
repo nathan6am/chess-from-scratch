@@ -19,7 +19,13 @@ import GameControls from "./game/GameControls";
 import MoveHistory, { MoveTape } from "./game/MoveHistory";
 import LiveChat from "./game/LiveChat";
 import Result from "@/components/dialogs/Result";
-import { BoardColumn, InfoRow, GameContainer, PanelContainer, BoardContainer } from "./layout/templates/GameLayout";
+import {
+  BoardColumn,
+  InfoRow,
+  GameContainer,
+  PanelContainer,
+  BoardContainer,
+} from "./layout/templates/GameLayout";
 
 //Hooks
 import useChessOnline from "@/hooks/useChessOnline";
@@ -54,13 +60,12 @@ export default function GameOnline({ lobbyid }: Props) {
   const onlineGame = useChessOnline({
     lobbyId: lobbyid,
     onConnectionError: () => {
-      alert("Unable to connect to the server. The lobby code may be invalid or the server may be down.");
-    },
-    onResult: () => {
-      setShowResult(true);
+      alert(
+        "Unable to connect to the server. The lobby code may be invalid or the server may be down."
+      );
     },
   });
-  const [showResult, setShowResult] = useState(true);
+  const [showResult, setShowResult] = useState(false);
   const {
     chat,
     sendMessage,
@@ -82,6 +87,12 @@ export default function GameOnline({ lobbyid }: Props) {
   const timeControl = currentGame?.data.config.timeControl;
   const ratingCategory = currentGame?.ratingCategory;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");
+
+  useEffect(() => {
+    if (currentGame?.data.outcome) {
+      setShowResult(true);
+    }
+  }, [currentGame?.data.outcome]);
 
   //Parse player information from the lobby
   const players = useMemo(() => {
@@ -113,7 +124,9 @@ export default function GameOnline({ lobbyid }: Props) {
   }, [currentGame]);
 
   if (!onlineGame.connectionStatus.lobby) {
-    return <div className="w-full h-full flex flex-1 justify-center items-center">Connecting...</div>;
+    return (
+      <div className="w-full h-full flex flex-1 justify-center items-center">Connecting...</div>
+    );
   }
   //TODO: Add connecting component
 
@@ -150,7 +163,9 @@ export default function GameOnline({ lobbyid }: Props) {
           })}
         >
           <InfoRow className="md:py-2">
-            <div className="shrink-0 grow">{players.b && <PlayerCard connection={players.b} />}</div>
+            <div className="shrink-0 grow">
+              {players.b && <PlayerCard connection={players.b} />}
+            </div>
             <Clock timeRemaining={timeRemaining.b} color="b" size="sm" />
           </InfoRow>
           {/* 
@@ -195,7 +210,9 @@ export default function GameOnline({ lobbyid }: Props) {
                 </div>
               </div> */}
           <InfoRow className="md:py-2">
-            <div className="shrink-0 grow">{players.w && <PlayerCard connection={players.w} />}</div>
+            <div className="shrink-0 grow">
+              {players.w && <PlayerCard connection={players.w} />}
+            </div>
             <Clock timeRemaining={timeRemaining.w} color="w" size="sm" />
           </InfoRow>
           {/* <div className="min-h-[120px] w-full block lg:hidden">
@@ -249,7 +266,14 @@ interface PanelProps {
   chat: ChatMessage[];
   sendMessage: (message: string) => void;
 }
-function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, flipBoard, currentOffset }: PanelProps) {
+function PanelOnline({
+  gameDetails,
+  boardControls,
+  gameControls,
+  moveHistory,
+  flipBoard,
+  currentOffset,
+}: PanelProps) {
   const { onlineGame } = useContext(GameContext);
   const { currentGame } = onlineGame;
   const players = gameDetails.players;
@@ -264,7 +288,9 @@ function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, fl
               {`${rated ? "Rated" : "Unrated"} • ${gameDetails.ratingCategory} • `}
               <span className="text-light-300">
                 {gameDetails.timeControl
-                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${gameDetails.timeControl.incrementSeconds})`
+                  ? ` (${gameDetails.timeControl.timeSeconds / 60} + ${
+                      gameDetails.timeControl.incrementSeconds
+                    })`
                   : ""}
               </span>
             </p>
@@ -275,7 +301,9 @@ function PanelOnline({ gameDetails, boardControls, gameControls, moveHistory, fl
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
+                <span className="inline text-light-300">{`${
+                  opening?.eco ? ` (${opening.eco})` : ""
+                }`}</span>
               </p>
             }
           </div>
