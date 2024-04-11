@@ -4,12 +4,7 @@ import usePuzzleQueue from "@/hooks/usePuzzleQueue";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { ScrollContainer } from "../layout/GameLayout";
 import PuzzleFilters from "./PuzzleFilters";
-import {
-  GameContainer,
-  BoardColumn,
-  BoardContainer,
-  PanelContainer,
-} from "../layout/templates/GameLayout";
+import { GameContainer, BoardColumn, BoardContainer, PanelContainer } from "../layout/templates/GameLayout";
 import Board from "../board/Board";
 import { IoExtensionPuzzle } from "react-icons/io5";
 import BoardControls from "../game/BoardControls";
@@ -106,12 +101,7 @@ export default function PuzzleSolver() {
                 }}
               />
             </div>
-            <Toggle
-              label="Filter by Theme"
-              checked={filterByTheme}
-              onChange={setFilterByTheme}
-              reverse
-            />
+            <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
           </div>
           <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
             <p className="text-gold-200">Puzzle Themes</p>
@@ -170,9 +160,7 @@ function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
       )}
       {!loading && prompt === "start" && (
         <>
-          <div
-            className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}
-          ></div>{" "}
+          <div className={`h-4 w-4 rounded-sm mr-2 ${playerColor === "w" ? "bg-white" : "bg-black"}`}></div>{" "}
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
@@ -246,6 +234,7 @@ function PuzzleControls({
         <a
           href={`/study/analyze?gameId=${currentPuzzleId}&sourceType=puzzle`}
           target="_blank"
+          rel="noreferrer"
           className="flex flex-row items-center justify-center p-3 text-white/[0.7] hover:text-white hover:bg-white/[0.1] grow w-full"
         >
           <p>Analyze</p>
