@@ -131,10 +131,11 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           if (!res.data) return;
           try {
             const puzzle = parsePuzzleEntity(res.data.puzzle);
-            const puzzleTree = treeFromLine(puzzle.solution);
+            if (!puzzle) throw new Error("Failed to parse puzzle");
+            const puzzleTree = treeFromLine(puzzle?.solution);
             analysis.setOptions((current) => ({
               ...current,
-              startPosition: puzzle.game.fen,
+              startPosition: puzzle?.game.fen,
             }));
             analysis.tree.loadNewTree(puzzleTree);
           } catch (e) {

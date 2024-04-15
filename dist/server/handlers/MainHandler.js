@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redisClientWrapper_1 = require("../util/redisClientWrapper");
 //Utils
 const nanoid_1 = require("nanoid");
+const nanoid = (0, nanoid_1.customAlphabet)("abcdefghijklmnopqrstuvwxyz", 7);
 function default_1(io, socket, redisClient) {
     const cache = (0, redisClientWrapper_1.wrapClient)(redisClient);
     socket.on("authenticate", async (ack) => {
@@ -29,7 +30,7 @@ function default_1(io, socket, redisClient) {
             return;
         }
         const lobby = {
-            id: (0, nanoid_1.nanoid)(10),
+            id: nanoid(7),
             creatorId: userid,
             reservedConnections: [userid],
             currentGame: null,

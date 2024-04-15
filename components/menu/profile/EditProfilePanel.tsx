@@ -16,19 +16,27 @@ export default function EditProfilePanel() {
           <Label className="mr-2">Username:</Label>
           <p className="text-gold-200 mb-0.5">{user?.username}</p>
         </div>
+        <div className="flex flex-col p-2">
+          <Label className="mr-2">Name:</Label>
+          <p className="text-gold-200 mb-0.5">{user?.name}</p>
+        </div>
 
         <div className="flex  flex-col p-2">
           <Label className="mr-2">Country:</Label>
-          <p className="text-gold-200 mb-0.5">
-            <span className="w-6 inline mr-2">
-              <img
-                src={`/assets/flags/${user?.profile.country?.toLowerCase()}.svg`}
-                className="w-6 inline"
-                height="auto"
-              ></img>
-            </span>
-            {user?.profile?.country}
-          </p>
+          {user?.profile.country ? (
+            <p className="text-gold-200 mb-0.5">
+              <span className="w-6 inline mr-2">
+                <img
+                  src={`/assets/flags/${user?.profile.country?.toLowerCase()}.svg`}
+                  className="w-6 inline"
+                  height="auto"
+                ></img>
+              </span>
+              {user?.profile.country}
+            </p>
+          ) : (
+            <p className="text-light-400"></p>
+          )}
         </div>
         <div className="flex flex-col  p-2">
           <Label className="w-full text-left">Bio:</Label>

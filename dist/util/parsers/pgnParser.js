@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveHistoryToMoveText = exports.encodeGameToPgn = exports.parseMoveText = exports.parsePgn = exports.treeFromLine = exports.mainLineFromTreeArray = exports.tagDataToPGNString = exports.pgnToJson = exports.encodeCommentFromNodeData = void 0;
+exports.moveHistoryToMoveText = exports.gameDataToPgn = exports.encodeGameToPgn = exports.parseMoveText = exports.parsePgn = exports.treeFromLine = exports.mainLineFromTreeArray = exports.tagDataToPGNString = exports.pgnToJson = exports.encodeCommentFromNodeData = void 0;
 const Chess = __importStar(require("../../lib/chess"));
 const uuid_1 = require("uuid");
 const misc_1 = require("../misc");
@@ -321,7 +321,7 @@ function parseMoveText(movetext, startPosition) {
     let stream = movetext.replace(/(\r\n|\n|\r)/gm, "").trim();
     var lastIndex = stream.lastIndexOf(" ");
     stream = stream.substring(0, lastIndex);
-    console.log(stream);
+    //console.log(stream);
     const initialGame = Chess.createGame({ startPosition: startPosition });
     //let currentGame = initialGame;
     let reading = "unknown";
@@ -359,6 +359,27 @@ function parseMoveText(movetext, startPosition) {
         const currentGame = getCurrentGame();
         //Verify the move text is a valid/legal move
         let move = currentGame.legalMoves.find((move) => move.PGN === pgn.replace("#", "+"));
+        if (!move) {
+            const withoutExtraChars = currentGame.legalMoves.find((move) => move.PGN.replace(/[#+x]/g, "") === pgn.replace(/[#+x]/g, ""));
+            if (withoutExtraChars) {
+                move = withoutExtraChars;
+            }
+            else {
+                const cleaned = pgn.replace(/[#+x]/g, "");
+                const altPattern = /^[a-h]{2}$/;
+                const isAlternatePawnCapture = altPattern.test(cleaned);
+                if (isAlternatePawnCapture) {
+                    const startFile = cleaned.charAt(0);
+                    const endFile = cleaned.charAt(1);
+                    const pattern = `^${startFile}x?${endFile}[1-8]$`;
+                    const expr = new RegExp(pattern);
+                    const correctMove = currentGame.legalMoves.find((move) => expr.test(move.PGN));
+                    if (correctMove) {
+                        move = correctMove;
+                    }
+                }
+            }
+        }
         if (!move) {
             console.log(pgn);
             console.log(currentGame.legalMoves);
@@ -542,6 +563,17 @@ function encodeGameToPgn(game) {
     return tagSection + "\r\n" + movetext;
 }
 exports.encodeGameToPgn = encodeGameToPgn;
+function gameDataToPgn(game, tags) {
+    let tagData = tags;
+    const termination = encodeTermination(game.outcome);
+    if (game.outcome && termination) {
+        tagData.termination = termination;
+    }
+    const tagSection = tagDataToPGNString(tagData);
+    const movetext = moveHistoryToMoveText(game.moveHistory) + ` ${encodeOutcome(game.outcome)}`;
+    return tagSection + "\r\n" + movetext;
+}
+exports.gameDataToPgn = gameDataToPgn;
 function moveHistoryToMoveText(moveHistory) {
     let moveText = "";
     moveHistory.forEach((fullmove, idx) => {

@@ -15,6 +15,8 @@ let Puzzle = Puzzle_1 = class Puzzle extends typeorm_1.BaseEntity {
     id;
     fen;
     moves;
+    alternateMoves;
+    pgn;
     rating;
     ratingDeviation;
     popularity;
@@ -58,6 +60,14 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Puzzle.prototype, "moves", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: "text", array: true }),
+    __metadata("design:type", Array)
+], Puzzle.prototype, "alternateMoves", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Puzzle.prototype, "pgn", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)

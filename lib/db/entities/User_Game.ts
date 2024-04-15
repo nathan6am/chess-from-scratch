@@ -72,7 +72,7 @@ export default class User_Game extends BaseEntity {
       query.andWhere("user_game.result = ANY(:result)", { result: searchOptions.result });
     }
     if (searchOptions.ratingCategory) {
-      query.andWhere("user_game.rating_category = ANY(:ratingCategory)", {
+      query.andWhere("user_game.ratingCategory = ANY(:ratingCategory)", {
         ratingCategory: searchOptions.ratingCategory,
       });
     }
@@ -89,14 +89,16 @@ export default class User_Game extends BaseEntity {
     return games;
   }
 
-  static async getRatingHistory(userid: string, ratingCategory: RatingCategory, from: Date) {
-    const query = this.createQueryBuilder("user_game")
+  static async getRatingHistory(userid: string, ratingCategory: RatingCategory, from?: Date) {
+    let query = this.createQueryBuilder("user_game")
       .select(["user_game.rating", "game.date"])
       .leftJoin("user_game.game", "game")
       .where("user_game.user_id = :userid", { userid })
-      .andWhere("user_game.rating_category = :ratingCategory", { ratingCategory })
-      .andWhere("game.date > :from", { from })
-      .orderBy("game.date", "ASC");
+      .andWhere("user_game.ratingCategory = :ratingCategory", { ratingCategory });
+    if (from) {
+      query = query.andWhere("game.date > :from", { from });
+    }
+    query = query.orderBy("game.date", "ASC");
     const games = await query.getMany();
     return games.map((g) => ({ rating: g.rating, date: g.game.date }));
   }

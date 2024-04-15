@@ -6,6 +6,7 @@ import User_Game, { GameSearchOptions } from "../../lib/db/entities/User_Game";
 
 //Middleware
 import verifyUser, { VerifiedRequest } from "../middleware/verifyUser";
+import { RatingCategory } from "@/lib/chess";
 
 const router = express.Router();
 
@@ -21,12 +22,20 @@ router.get("/my-games", verifyUser, async (req: VerifiedRequest, res) => {
       : undefined;
   const before: Date | undefined = typeof req.query.before === "string" ? new Date(req.query.before) : undefined;
   const after: Date | undefined = typeof req.query.after === "string" ? new Date(req.query.after) : undefined;
+  const ratingCategory =
+    typeof req.query.ratingCategory === "string"
+      ? (req.query.ratingCategory
+          .split(",")
+          .filter(
+            (val) => val === "bullet" || val === "blitz" || val === "rapid" || val === "classical"
+          ) as RatingCategory[])
+      : undefined;
   const asColor: "w" | "b" | undefined =
     typeof req.query.asColor === "string" && (req.query.asColor === "w" || req.query.asColor === "b")
       ? (req.query.asColor as "w" | "b")
       : undefined;
   const page = typeof req.query.page === "string" ? parseInt(req.query.page) : 1;
-  const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 12;
+  const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 15;
   const sortBy =
     typeof req.query.sortBy === "string" &&
     (req.query.sortBy === "date" || req.query.sortBy === "rating" || req.query.sortBy === "opponentRating")
@@ -42,6 +51,7 @@ router.get("/my-games", verifyUser, async (req: VerifiedRequest, res) => {
     before,
     after,
     asColor,
+    ratingCategory,
     page,
     pageSize,
     sortBy,

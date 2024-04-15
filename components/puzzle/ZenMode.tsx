@@ -22,7 +22,7 @@ export default function PuzzleSolver() {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(500);
   const [maxRating, setMaxRating] = useState(3000);
-  const { puzzle, history, next, streak } = usePuzzleQueue({
+  const { puzzle, history, next, streak, loading } = usePuzzleQueue({
     themes: filterByTheme ? selectedThemes : null,
     minRating,
     maxRating,
@@ -30,7 +30,6 @@ export default function PuzzleSolver() {
 
   const { settings } = useContext(SettingsContext);
   const currentGame = puzzle.currentGame;
-  const [checked, setChecked] = useState(true);
   const hidePiecesRef = React.useRef<boolean>(true);
   useEffect(() => {
     hidePiecesRef.current = true;
@@ -72,69 +71,74 @@ export default function PuzzleSolver() {
           </BoardContainer>
         </BoardColumn>
         <PanelContainer>
-          <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">
+          <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3 hidden md:block">
             <IoExtensionPuzzle className="inline mr-1 mb-1" /> Solve Puzzles
           </h2>
-          <div className="p-4 bg-elevation-4">
-            <p className="text-light-100">
-              <span>
-                <FaFire className="text-orange-300 text-xl inline mb-1 mr-1" />
-              </span>
-              {`Current Streak: `}
-              <span className="font-semibold">{streak}</span>
-            </p>
-          </div>
-          <div className="w-full px-4 py-2">
-            <h2 className="mb-2 font-semibold text-lg text-gold-200">Filter Options</h2>
-            <div className="mb-4">
-              <Label>Rating Range</Label>
-              <RangeSlider
-                minLabel={`${minRating}`}
-                maxLabel={`${maxRating === 3000 ? `3000+` : maxRating}`}
-                value={[minRating, maxRating]}
-                min={500}
-                max={3000}
-                step={100}
-                onChange={([min, max]) => {
-                  setMinRating(min);
-                  setMaxRating(max);
-                }}
-              />
+          <div className="w-full h-full flex flex-1 flex-col-reverse md:flex-col">
+            <div className="w-full h-full flex flex-1 flex-col">
+              <div className="p-4 bg-elevation-4">
+                <p className="text-light-100">
+                  <span>
+                    <FaFire className="text-orange-300 text-xl inline mb-1 mr-1" />
+                  </span>
+                  {`Current Streak: `}
+                  <span className="font-semibold">{streak}</span>
+                </p>
+              </div>
+              <div className="w-full px-4 py-2">
+                <h2 className="mb-2 font-semibold text-lg text-gold-200">Filter Options</h2>
+                <div className="mb-4">
+                  <Label>Rating Range</Label>
+                  <RangeSlider
+                    minLabel={`${minRating}`}
+                    maxLabel={`${maxRating === 3000 ? `3000+` : maxRating}`}
+                    value={[minRating, maxRating]}
+                    min={500}
+                    max={3000}
+                    step={100}
+                    onChange={([min, max]) => {
+                      setMinRating(min);
+                      setMaxRating(max);
+                    }}
+                  />
+                </div>
+                <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
+              </div>
+              <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
+                <p className="text-gold-200">Puzzle Themes</p>
+              </div>
+              <div className="h-full w-full bg-elevation-2 grow relative min-h-[28em] md:min-h-0">
+                <ScrollContainer>
+                  <PuzzleFilters
+                    selectedThemes={selectedThemes}
+                    setSelectedThemes={setSelectedThemes}
+                    disabled={!filterByTheme}
+                  />
+                </ScrollContainer>
+              </div>
             </div>
-            <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
-          </div>
-          <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
-            <p className="text-gold-200">Puzzle Themes</p>
-          </div>
-          <div className="h-full w-full bg-elevation-2 grow relative min-h-[28em] md:min-h-0">
-            <ScrollContainer>
-              <PuzzleFilters
-                selectedThemes={selectedThemes}
-                setSelectedThemes={setSelectedThemes}
-                disabled={!filterByTheme}
+            <div className="w-full">
+              <PuzzleControls
+                prompt={puzzle.prompt}
+                solveState={puzzle.solveState}
+                retry={puzzle.retry}
+                next={next}
+                showSolution={puzzle.showSolution}
+                getHint={puzzle.getHint}
+                currentPuzzleId={puzzle.puzzle?.id}
               />
-            </ScrollContainer>
+
+              <PuzzlePrompt
+                playerColor={puzzle.puzzle?.playerColor || "w"}
+                prompt={puzzle.prompt}
+                retry={puzzle.retry}
+                next={next}
+                loading={!puzzle.puzzle || loading}
+              />
+
+              <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
+            </div>
           </div>
-          <PuzzleControls
-            prompt={puzzle.prompt}
-            solveState={puzzle.solveState}
-            retry={puzzle.retry}
-            next={next}
-            showSolution={puzzle.showSolution}
-            getHint={puzzle.getHint}
-            currentPuzzleId={puzzle.puzzle?.id}
-          />
-          <div className="w-full">
-            <PuzzlePrompt
-              playerColor={puzzle.puzzle?.playerColor || "w"}
-              prompt={puzzle.prompt}
-              retry={puzzle.retry}
-              next={next}
-              loading={!puzzle.puzzle}
-            />
-          </div>
-          <div className="w-full flex flex-row"></div>
-          <BoardControls controls={puzzle.controls} flipBoard={puzzle.flipBoard} />
         </PanelContainer>
       </GameContainer>
     </>
@@ -164,19 +168,19 @@ function PuzzlePrompt({ prompt, playerColor, loading }: PromptProps) {
           <p>{`Find the best move for ${playerColor === "w" ? "white" : "black"}.`}</p>
         </>
       )}
-      {prompt === "continue" && (
+      {!loading && prompt === "continue" && (
         <>
           <BsCheckLg className="text-green-400 mr-2" />
           <p>Best Move! Keep Going...</p>
         </>
       )}
-      {prompt === "failed" && (
+      {!loading && prompt === "failed" && (
         <>
           <BsFillXSquareFill className="text-red-500 mr-2" />
           <p>{`That's not it`}</p>
         </>
       )}
-      {prompt === "solved" && (
+      {!loading && prompt === "solved" && (
         <>
           <BsCheckLg className="text-green-500 mr-2" />
           <p>{`Puzzle Solved`}</p>

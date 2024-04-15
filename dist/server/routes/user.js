@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
 //Middleware
 const verifyUser_1 = __importDefault(require("../middleware/verifyUser"));
+const User_Game_1 = __importDefault(require("../../lib/db/entities/User_Game"));
 const router = express_1.default.Router();
 /**
  * Get the profile of the authenticated user
@@ -27,6 +28,21 @@ router.get("/profile", async function (req, res) {
         res.status(200).json(profile);
         return;
     }
+});
+/**
+ * Update the profile of the authenticated user
+ */
+router.patch("/profile", async function (req, res) {
+    const user = req.user;
+    if (!user)
+        return res.status(401);
+    if (user.type === "guest")
+        return res.status(401);
+    const profile = req.body;
+    const updated = await User_1.default.updateProfile(user.id, profile);
+    if (!updated)
+        return res.status(404);
+    res.status(200).json(updated);
 });
 /**
  * Complete the profile of the authenticated user
@@ -127,6 +143,16 @@ router.get("/ratings", verifyUser_1.default, async function (req, res) {
         return res.status(404);
     const ratings = userDoc.ratings;
     res.status(200).json(ratings);
+});
+router.get("/rating-history", verifyUser_1.default, async function (req, res) {
+    const user = req.user;
+    const { from, ratingCategory } = req.query;
+    if (!user)
+        return res.status(401);
+    if (user.type === "guest")
+        return res.status(401);
+    const ratingHistory = await User_Game_1.default.getRatingHistory(user.id, "rapid");
+    res.status(200).json(ratingHistory);
 });
 const userRouter = router;
 exports.default = userRouter;

@@ -1,12 +1,14 @@
 type AuthStatus = "guest" | "unverified" | "user" | "admin" | "unauthenticated" | "incomplete" | "loading";
 import { useRouter } from "next/router";
 import type { SessionUser } from "@/lib/db/entities/User";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useMemo } from "react";
 import type User from "@/lib/db/entities/User";
+import type { Profile } from "@/lib/db/entities/User";
 
 export default function useAuth() {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const {
     data: user,
@@ -45,7 +47,16 @@ export default function useAuth() {
     router.push("/api/auth/logout");
   }
 
-  function updateProfile() {}
+  const updateProfile = useMutation({
+    mutationKey: ["updateProfile"],
+    mutationFn: async (data: Partial<Omit<Profile, "id">>) => {
+      const res = await axios.patch("/api/user/profile", data);
+      return res.data;
+    },
+    onSuccess(data, variables, context) {
+      queryClient.setQueryData(["userProfile", user?.id], data);
+    },
+  });
   return {
     signOut,
     refetch,
@@ -53,6 +64,7 @@ export default function useAuth() {
     isLoading,
     user,
     profile,
+    updateProfile,
     authStatus,
   };
 }

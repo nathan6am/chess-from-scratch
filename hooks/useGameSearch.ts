@@ -7,7 +7,7 @@ export default function useGameSearch(searchOptions: GameSearchOptions) {
     ["games", searchOptions],
     {
       queryFn: async ({ pageParam }) => {
-        console.log(searchOptions, pageParam);
+        // console.log(searchOptions, pageParam);
         const { data } = await axios.get(`/api/game/my-games`, {
           params: {
             before: searchOptions.before || undefined,

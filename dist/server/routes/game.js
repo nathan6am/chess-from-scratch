@@ -21,11 +21,16 @@ router.get("/my-games", verifyUser_1.default, async (req, res) => {
         : undefined;
     const before = typeof req.query.before === "string" ? new Date(req.query.before) : undefined;
     const after = typeof req.query.after === "string" ? new Date(req.query.after) : undefined;
+    const ratingCategory = typeof req.query.ratingCategory === "string"
+        ? req.query.ratingCategory
+            .split(",")
+            .filter((val) => val === "bullet" || val === "blitz" || val === "rapid" || val === "classical")
+        : undefined;
     const asColor = typeof req.query.asColor === "string" && (req.query.asColor === "w" || req.query.asColor === "b")
         ? req.query.asColor
         : undefined;
     const page = typeof req.query.page === "string" ? parseInt(req.query.page) : 1;
-    const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 12;
+    const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 15;
     const sortBy = typeof req.query.sortBy === "string" &&
         (req.query.sortBy === "date" || req.query.sortBy === "rating" || req.query.sortBy === "opponentRating")
         ? req.query.sortBy
@@ -39,6 +44,7 @@ router.get("/my-games", verifyUser_1.default, async (req, res) => {
         before,
         after,
         asColor,
+        ratingCategory,
         page,
         pageSize,
         sortBy,

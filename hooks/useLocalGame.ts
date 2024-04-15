@@ -150,6 +150,25 @@ const useLocalGame = (options: Options) => {
     [moveHistoryFlat]
   );
 
+  const restartGame = () => {
+    if (useClock) {
+      clock.reset();
+    }
+    reset();
+    setCurrentGame(Chess.createGame(gameConfig));
+  };
+
+  const resign = () => {
+    setCurrentGame((current) => {
+      return {
+        ...current,
+        outcome: {
+          result: current.activeColor === "w" ? "b" : "w",
+          by: "resignation",
+        },
+      };
+    });
+  };
   return {
     currentGame,
     currentBoard,
@@ -159,6 +178,8 @@ const useLocalGame = (options: Options) => {
     onMove,
     clock,
     opening,
+    restartGame,
+    resign,
     boardControls: {
       stepBackward,
       stepForward,

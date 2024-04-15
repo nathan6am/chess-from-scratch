@@ -1,8 +1,13 @@
 import { ClipLoader } from "react-spinners";
+import cn from "@/util/cn";
 
-export default function Loading() {
+interface Props {
+  className?: string;
+  label?: string;
+}
+export default function Loading({ className }: Props) {
   return (
-    <div className="py-10 w-full flex justify-center items-center">
+    <div className={cn("py-10 w-full flex justify-center items-center", className)}>
       <ClipLoader color="#DCB96A" size={20} />
     </div>
   );

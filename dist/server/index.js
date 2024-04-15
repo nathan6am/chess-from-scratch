@@ -34,8 +34,7 @@ const env_1 = require("@next/env");
 const http = __importStar(require("http"));
 const next_1 = __importDefault(require("next"));
 const socketio = __importStar(require("socket.io"));
-const connect_redis_1 = __importDefault(require("connect-redis"));
-let RedisStore = (0, connect_redis_1.default)(express_session_1.default);
+const connect_pg_simple_1 = __importDefault(require("connect-pg-simple"));
 const passport_1 = __importDefault(require("passport"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const MainHandler_1 = __importDefault(require("./handlers/MainHandler"));
@@ -46,7 +45,8 @@ const collections_1 = __importDefault(require("./routes/collections"));
 const puzzles_1 = __importDefault(require("./routes/puzzles"));
 const game_1 = __importDefault(require("./routes/game"));
 const redisClient = (0, redis_1.createClient)();
-const sessionClient = (0, redis_1.createClient)({ legacyMode: true });
+// const sessionClient = createClient({ legacyMode: true });
+const pgSession = (0, connect_pg_simple_1.default)(express_session_1.default);
 const cors_1 = __importDefault(require("cors"));
 const LobbyHandler_1 = __importDefault(require("./handlers/LobbyHandler"));
 const hostname = process.env.HOSTNAME || "localhost";
@@ -58,22 +58,26 @@ const nextHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(async () => {
     const app = (0, express_1.default)();
     const server = http.createServer(app);
-    await sessionClient.connect();
-    console.log("Connected to session client");
+    // await sessionClient.connect();
+    // console.log("Connected to session client");
     await redisClient.connect();
     console.log("Connected to redis client");
-    await db.initialize();
+    const datasource = await db.initialize();
     console.log("Connected to database");
     const sessionMiddleware = (0, express_session_1.default)({
         secret: process.env.SESSION_SECRET || "keyboard cat",
-        store: new RedisStore({ client: sessionClient }),
+        store: new pgSession({
+            conObject: db.conObject,
+            tableName: "session",
+        }),
         resave: false,
+        proxy: true,
         saveUninitialized: true,
         cookie: {
             httpOnly: true,
-            secure: dev ? false : "auto",
-            sameSite: dev ? "lax" : "strict",
-            maxAge: 1000 * 60 * 60 * 24 * 365,
+            secure: dev ? false : true,
+            sameSite: dev ? "lax" : "none",
+            maxAge: 1000 * 60 * 60 * 24 * 5,
         },
     });
     //Cross origin isolate for shared-array-buffer
@@ -91,7 +95,7 @@ nextApp.prepare().then(async () => {
     app.use(sessionMiddleware);
     app.use(passport_1.default.initialize());
     app.use(passport_1.default.session());
-    app.use(passport_1.default.authenticate("session"));
+    // app.use(passport.authenticate("session"));
     app.use("/api/auth", auth_1.default);
     app.use("/api/user", user_1.default);
     app.use("/api/analysis", analysis_1.default);

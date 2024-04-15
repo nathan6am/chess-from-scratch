@@ -507,8 +507,8 @@ export default function FileBrowser() {
               <>{!analyses.length && analysesLoading ? <Loading /> : <></>}</>
               <>
                 {analyses && <AnalysisList analyses={analyses} refetch={refetchAll} />}
-                <tr ref={ref} className="min-h-[1em]">
-                  {isLoadingMore && "Loading more..."}
+                <tr ref={ref} className="w-full min-h-1">
+                  {isLoadingMore && <Loading className="py-1" />}
                 </tr>
               </>
             </ScrollContainer>

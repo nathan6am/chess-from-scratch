@@ -7,7 +7,8 @@ import { RedisClient } from "../index";
 import { wrapClient } from "../util/redisClientWrapper";
 
 //Utils
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
+const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz", 7);
 
 export default function (io: Server, socket: Socket, redisClient: RedisClient): void {
   const cache = wrapClient(redisClient);
@@ -36,7 +37,7 @@ export default function (io: Server, socket: Socket, redisClient: RedisClient): 
       return;
     }
     const lobby: Lobby = {
-      id: nanoid(10),
+      id: nanoid(7),
       creatorId: userid,
       reservedConnections: [userid],
       currentGame: null,

@@ -8,7 +8,9 @@ import * as Chess from "@/lib/chess";
 import { ScrollContainer } from "../layout/GameLayout";
 import { useRouter } from "next/router";
 import { createPortal } from "react-dom";
-
+import { useEffect } from "react";
+import { useInView } from "react-intersection-observer";
+import Loading from "@/components/base/Loading";
 //Context menu portal
 const Portal = ({ children }: { children: JSX.Element | string | Array<JSX.Element | string> }) => {
   const [mounted, setMounted] = React.useState(false);
@@ -29,7 +31,19 @@ interface Player {
   isComputer?: boolean;
 }
 
-export default function GameList({ usergames }: { usergames: User_Game[] }) {
+export default function GameList({
+  usergames,
+  hasMore,
+  loadMore,
+  isLoading,
+  isLoadingMore,
+}: {
+  usergames: User_Game[];
+  hasMore?: boolean;
+  loadMore?: () => void;
+  isLoading?: boolean;
+  isLoadingMore?: boolean;
+}) {
   const { show } = useContextMenu({
     id: "game-context-menu",
   });
@@ -37,15 +51,29 @@ export default function GameList({ usergames }: { usergames: User_Game[] }) {
     e.preventDefault();
     show({ event: e, props: { usergame } });
   };
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const { ref, inView } = useInView({
+    threshold: 0,
+    root: containerRef.current,
+  });
+
+  useEffect(() => {
+    if (inView && hasMore && loadMore) {
+      loadMore();
+    }
+  }, [inView, loadMore, hasMore]);
   return (
     <>
       <div className="w-full h-full grow relative">
         <Portal>
           <GameContextMenu />
         </Portal>
-        <ScrollContainer>
+        <>{isLoading && !usergames.length && <Loading />}</>
+
+        <ScrollContainer ref={containerRef}>
           <table className="w-full">
-            <thead className="top-0 sticky border-b bg-elevation-3 border-light-400/[0.1]">
+            <thead className="top-0 sticky border-b bg-elevation-3 border-light-400/[0.1] z-[20]">
               <tr>
                 <th className="w-[1rem]"></th>
                 <th className="text-xs text-left text-light-400 w-20 pl-0 py-1">Players</th>
@@ -58,6 +86,15 @@ export default function GameList({ usergames }: { usergames: User_Game[] }) {
               </tr>
             </thead>
             <tbody>
+              <>
+                {!isLoading && !usergames.length && (
+                  <tr>
+                    <td colSpan={6} className="text-center text-light-300 py-4">
+                      <em>No games found.</em>
+                    </td>
+                  </tr>
+                )}
+              </>
               {usergames &&
                 usergames.map((game) => {
                   return (
@@ -73,6 +110,10 @@ export default function GameList({ usergames }: { usergames: User_Game[] }) {
                 })}
             </tbody>
           </table>
+          <div ref={ref} className="w-full h-1">
+            {isLoadingMore && <Loading className="py-1" />}
+          </div>
+          <div className="h-12"></div>
         </ScrollContainer>
       </div>
     </>

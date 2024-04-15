@@ -74,12 +74,8 @@ export const useEngineGame = (options: Options) => {
         setCurrentGame((game) => {
           const board = game.board;
           const pieces: Record<Chess.Color, Chess.Piece[]> = {
-            w: board
-              .filter(([square, piece]) => piece.color === "w")
-              .map(([square, piece]) => piece),
-            b: board
-              .filter(([square, piece]) => piece.color === "b")
-              .map(([square, piece]) => piece),
+            w: board.filter(([square, piece]) => piece.color === "w").map(([square, piece]) => piece),
+            b: board.filter(([square, piece]) => piece.color === "b").map(([square, piece]) => piece),
           };
           const nextColor = game.activeColor === "w" ? "b" : "w";
           let outcome: Chess.Outcome;

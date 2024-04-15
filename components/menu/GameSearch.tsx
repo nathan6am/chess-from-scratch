@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { GameSearchOptions } from "@/lib/db/entities/User_Game";
 import { MultiSelect, Select, Input, Button } from "@/components/base";
 import { Label } from "@/components/base/Typography";
+import { useInView } from "react-intersection-observer";
 
 import useGameSearch from "@/hooks/useGameSearch";
 import GameList from "./GameList";
@@ -17,15 +18,23 @@ export default function GameSearch() {
     control,
   } = useForm<GameSearchOptions>();
   const values = watch();
-  const { games, isLoading, error, loadMore } = useGameSearch(filters);
+  const { games, isLoading, error, loadMore, hasMore, isLoadingMore } = useGameSearch(filters);
   const onSubmit: SubmitHandler<GameSearchOptions> = (data: GameSearchOptions) => setFilters(data);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const { ref, inView } = useInView({
+    threshold: 0,
+    root: containerRef.current,
+  });
 
+  useEffect(() => {
+    if (inView && hasMore) {
+      loadMore();
+    }
+  }, [inView, loadMore, hasMore]);
   return (
     <div className="flex flex-col w-full h-full">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <h3 className="text-lg font-semibold text-gold-200 bg-elevation-2 w-full pt-3 px-4">
-          Filter Games
-        </h3>
+        <h3 className="text-lg font-semibold text-gold-200 bg-elevation-2 w-full pt-3 px-4">Filter Games</h3>
         <div className="flex flex-wrap flex-row items-end bg-elevation-2 space-x-2 p-2 pl-3 pb-4 space-y-2">
           <Controller
             control={control}
@@ -120,13 +129,7 @@ export default function GameSearch() {
               );
             }}
           />
-          <Input
-            containerClassName="w-48"
-            type="date"
-            {...register("after")}
-            label="From"
-            showErrorMessages={false}
-          />
+          <Input containerClassName="w-48" type="date" {...register("after")} label="From" showErrorMessages={false} />
           <Input
             containerClassName="w-48"
             className="py-2"
@@ -135,16 +138,16 @@ export default function GameSearch() {
             label="Until"
             showErrorMessages={false}
           />
-          <Button
-            type="submit"
-            variant="neutral"
-            label="Update Search"
-            width="fit"
-            className="mt-2"
-          ></Button>
+          <Button type="submit" variant="neutral" label="Update Search" width="fit" className="mt-2"></Button>
         </div>
       </form>
-      <GameList usergames={games} />
+      <GameList
+        usergames={games}
+        hasMore={hasMore}
+        loadMore={loadMore}
+        isLoadingMore={isLoadingMore}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

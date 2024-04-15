@@ -101,22 +101,33 @@ passport_1.default.use("guest", new passport_custom_1.default.Strategy((_req, do
 }));
 //Serialize and Deserialize
 passport_1.default.serializeUser((user, done) => {
+    console.log("serializing", user);
     done(null, JSON.stringify(user));
 });
 passport_1.default.deserializeUser((req, id, done) => {
     const sessionUser = JSON.parse(id);
-    if (sessionUser.type === "guest" || sessionUser.type === "user") {
-        done(null, sessionUser);
+    if (sessionUser.type !== "incomplete" && sessionUser.username) {
+        // console.log("deserializing", sessionUser);
+        return done(null, sessionUser);
     }
     else {
-        User_1.default.findOneBy({ id: sessionUser.id }).then((user) => {
-            if (!user) {
-                req.logout();
-                done("account does not exist", null);
-            }
-            else
-                done(null, { id: user.id, username: user.username, type: user.type });
-        });
+        try {
+            User_1.default.findOneBy({ id: sessionUser.id }).then((user) => {
+                if (!user) {
+                    console.log("here");
+                    req.logout();
+                    return done("account does not exist", null);
+                }
+                else {
+                    console.log("user found", user);
+                    return done(null, { id: user.id, username: user.username, type: user.type });
+                }
+            });
+        }
+        catch (e) {
+            console.error(e);
+            return done(null, sessionUser);
+        }
     }
 });
 const router = express_1.default.Router();
@@ -131,7 +142,7 @@ router.get("/guest", passport_1.default.authenticate("guest", { failureRedirect:
     res.redirect("/");
 });
 router.get("/user", async function (req, res, next) {
-    console.log("user", req.user);
+    // console.log("user", req.user);
     if (!req.user) {
         res.status(401).send("Unauthorized");
     }

@@ -14,7 +14,7 @@ export default function RecentGames() {
   const { user } = useAuth();
   const { games: usergames } = useGameSearch({});
   return (
-    <div className="max-h-[70vh] min-h-[30em] px-0 h-full">
+    <div className=" min-h-[30em] px-0 h-full overflow-hidden">
       <div className="p-3 w-full px-6 flex flex-row justify-between">
         <PanelHeader className="text-left">Recent Games</PanelHeader>
         <button className="flex flex-row items-center gap-x-1 text-sm text-light-300 hover:text-gold-100">

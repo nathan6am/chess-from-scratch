@@ -26,7 +26,7 @@ export default function Tools() {
         iconClassName="mr-2 mt-0.5 text-xl"
         onClick={() => router.push("/study/analyze")}
       />
-
+      {/* 
       <Button
         className="w-full mt-4"
         size="lg"
@@ -35,7 +35,7 @@ export default function Tools() {
         label="Opening Explorer"
         iconPosition="left"
         iconClassName="mr-2 mt-0.5 text-xl"
-      />
+      /> */}
 
       <Button
         disabled

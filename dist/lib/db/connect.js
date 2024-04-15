@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initialize = void 0;
+exports.conObject = exports.initialize = void 0;
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
 const User_1 = __importStar(require("./entities/User"));
@@ -56,5 +56,13 @@ async function initialize() {
         poolSize: 10,
     });
     await datasource.initialize();
+    return datasource;
 }
 exports.initialize = initialize;
+exports.conObject = {
+    user: username,
+    password,
+    host,
+    database,
+    port,
+};

@@ -5,6 +5,7 @@ import User, { SessionUser } from "../../lib/db/entities/User";
 
 //Middleware
 import verifyUser from "../middleware/verifyUser";
+import User_Game from "../../lib/db/entities/User_Game";
 
 const router = express.Router();
 
@@ -25,6 +26,19 @@ router.get("/profile", async function (req, res) {
     res.status(200).json(profile);
     return;
   }
+});
+
+/**
+ * Update the profile of the authenticated user
+ */
+router.patch("/profile", async function (req, res) {
+  const user: SessionUser | undefined = req.user;
+  if (!user) return res.status(401);
+  if (user.type === "guest") return res.status(401);
+  const profile = req.body;
+  const updated = await User.updateProfile(user.id, profile);
+  if (!updated) return res.status(404);
+  res.status(200).json(updated);
 });
 
 /**
@@ -118,6 +132,15 @@ router.get("/ratings", verifyUser, async function (req, res) {
   if (!userDoc) return res.status(404);
   const ratings = userDoc.ratings;
   res.status(200).json(ratings);
+});
+
+router.get("/rating-history", verifyUser, async function (req, res) {
+  const user: SessionUser | undefined = req.user;
+  const { from, ratingCategory } = req.query;
+  if (!user) return res.status(401);
+  if (user.type === "guest") return res.status(401);
+  const ratingHistory = await User_Game.getRatingHistory(user.id, "rapid");
+  res.status(200).json(ratingHistory);
 });
 
 const userRouter = router;

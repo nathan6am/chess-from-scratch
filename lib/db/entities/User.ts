@@ -201,12 +201,13 @@ export default class User extends BaseEntity {
       },
     });
     if (user) {
-      console.log(user.credentials);
+      // console.log(user.credentials);
       const { id, username, type } = user;
-      console.log(id, username, type);
+      // console.log(id, username, type);
       return { id, username, type };
     }
     const newUser = new User();
+    newUser.emailVerified = true;
     const credentials = new Credential();
     credentials.facebookId = profile.facebookId;
     Object.assign(newUser, {
@@ -244,6 +245,7 @@ export default class User extends BaseEntity {
     Object.assign(newUser, {
       name: profile.name,
     });
+    newUser.emailVerified = true;
     newUser.credentials = credentials;
     await newUser.save();
     return {
@@ -356,6 +358,15 @@ export default class User extends BaseEntity {
     user.profile = profile;
     await user.save();
   }
+
+  static async updateProfile(id: string, profileData: Partial<Omit<Profile, "id">>) {
+    const user = await this.findOne({ where: { id }, relations: { profile: true } });
+    if (!user) throw new Error("User does not exist");
+    Object.assign(user.profile, profileData);
+    const updated = await user.save();
+    return updated.profile;
+  }
+
   static async getGames(id: string) {
     const user = await this.findOne({
       where: { id: id },

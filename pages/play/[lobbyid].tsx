@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react";
 import Head from "next/head";
+import { authRedirect } from "@/util/auth-middleware";
 import { NextPageWithLayout } from "@/pages/_app";
 import { NextPage, NextPageContext } from "next";
 import Dashboard from "@/components/layout/Dashboard";
 import GameOnline from "@/components/GameOnline";
-import NonSSRWrapper from "@/components/NonSSRWrapper";
 interface Props {
   lobbyid: string;
 }

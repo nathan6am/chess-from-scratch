@@ -65,7 +65,6 @@ const defaultRatings = {
 let User = User_1 = class User extends typeorm_1.BaseEntity {
     id;
     name;
-    bio;
     username;
     ratings;
     notifications;
@@ -163,12 +162,13 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             },
         });
         if (user) {
-            console.log(user.credentials);
+            // console.log(user.credentials);
             const { id, username, type } = user;
-            console.log(id, username, type);
+            // console.log(id, username, type);
             return { id, username, type };
         }
         const newUser = new User_1();
+        newUser.emailVerified = true;
         const credentials = new Credential();
         credentials.facebookId = profile.facebookId;
         Object.assign(newUser, {
@@ -205,6 +205,7 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         Object.assign(newUser, {
             name: profile.name,
         });
+        newUser.emailVerified = true;
         newUser.credentials = credentials;
         await newUser.save();
         return {
@@ -312,6 +313,14 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         user.profile = profile;
         await user.save();
     }
+    static async updateProfile(id, profileData) {
+        const user = await this.findOne({ where: { id }, relations: { profile: true } });
+        if (!user)
+            throw new Error("User does not exist");
+        Object.assign(user.profile, profileData);
+        const updated = await user.save();
+        return updated.profile;
+    }
     static async getGames(id) {
         const user = await this.findOne({
             where: { id: id },
@@ -378,10 +387,6 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "name", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "bio", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true, unique: true }),
     __metadata("design:type", String)

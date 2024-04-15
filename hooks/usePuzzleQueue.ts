@@ -34,6 +34,7 @@ const defaultOptions = {
 };
 import useDebounce from "./useDebounce";
 import s from "connect-redis";
+import { notEmpty } from "@/util/misc";
 export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {}) {
   const options = useMemo(
     () => ({
@@ -43,7 +44,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
     [_options]
   );
   //Debounce query options to prevent spamming the server
-  const debouncedOptions = useDebounce(options, 500);
+  const debouncedOptions = useDebounce(options, 1000);
   // let [rated, setRated] = useState(true);
   const [streak, setStreak] = useState(0);
   const [history, setHistory] = useState<SolvedPuzzle[]>([]);
@@ -52,11 +53,11 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   const [loading, setLoading] = useState(false);
   const filters = useMemo(() => {
     return {
-      minRating: options.minRating,
-      maxRating: options.maxRating,
-      themes: options.themes,
+      minRating: debouncedOptions.minRating,
+      maxRating: debouncedOptions.maxRating,
+      themes: debouncedOptions.themes,
     };
-  }, [options]);
+  }, [debouncedOptions]);
 
   //Reset the queue when filters change
   useEffect(() => {
@@ -78,7 +79,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
     },
     onSuccess(data) {
       try {
-        const puzzles = data.map((entity) => parsePuzzleEntity(entity));
+        const puzzles = data.map((entity) => parsePuzzleEntity(entity)).filter(notEmpty);
         //Push the puzzles to the queue on success
         setQueue((queue) => [...queue, ...puzzles]);
       } catch (e) {
@@ -102,21 +103,18 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
   //Load the next puzzle
   const next = useCallback(() => {
     if (currentPuzzle && puzzle.solveState === "pending") return;
-    if (!queue.length) return;
+    if (queue.length <= 1) {
+      setLoading(true);
+      setQueue((current) => current.slice(1));
+      return;
+    }
     if (!currentPuzzle) {
       let nextPuzzle = queue[0];
-      if (!nextPuzzle) {
-        setLoading(true);
-        return;
-      }
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     } else {
       setHistory((cur) => [...cur, { solved: puzzle.solveState === "solved", puzzle: currentPuzzle, hintUsed: false }]);
       let nextPuzzle = queue[0];
-      if (!nextPuzzle) {
-        setLoading(true);
-      }
       setQueue((current) => current.slice(1));
       setCurrentPuzzle(nextPuzzle);
     }
@@ -124,15 +122,16 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
 
   useEffect(() => {
     //Automatically load the next puzzle if current puzzle is null
-    if (!currentPuzzle && queue.length) {
+    if ((!currentPuzzle || loading) && queue.length) {
       setLoading(false);
       next();
     }
+
     //Fetch new puzzles when the queue length is below minimum threshold
-    if (queue.length < 5) {
+    if (queue.length < 5 && !isLoading) {
       refetch();
     }
-  }, [queue, currentPuzzle, next]);
+  }, [queue, currentPuzzle, next, isLoading, loading]);
   return {
     streak,
     loading,

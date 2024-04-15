@@ -25,7 +25,9 @@ export default function PlayLocalMenu() {
       <Button
         onClick={() => {
           router.push(
-            `/play/local?${invertPieces ? "invertPieces=true" : "invertPieces=false"}${
+            `/play/local?${invertPieces ? "invertOpposingPieces=true" : "invertOpposingPieces=false"}&autoFlip=${
+              autoFlip ? "true" : "false"
+            }${
               timed && timeControl ? `&timeControl=${timeControl.timeSeconds / 60}+${timeControl.incrementSeconds}` : ""
             }`
           );

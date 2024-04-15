@@ -12,7 +12,7 @@ export default function PlayMenu() {
         <Panel size="sm" height="fit-content">
           <NewGame />
         </Panel>
-        <Panel size="md" height="full" className="max-h-[70vh]">
+        <Panel size="md" height="full">
           <RecentGames />
         </Panel>
       </DashboardGrid>
