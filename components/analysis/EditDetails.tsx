@@ -6,7 +6,7 @@ import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { IoMdPricetags } from "react-icons/io";
 import type { PGNTagData } from "@/lib/types";
 export default function EditDetails() {
-  const { analysis, saveManager } = useContext(AnalysisContext);
+  const { analysis } = useContext(AnalysisContext);
 
   return <TagForm tags={analysis.tagData} setTags={analysis.setTagData} />;
 }
@@ -49,7 +49,7 @@ function TagForm({ tags, setTags }: TagFormProps) {
   const [loading, setLoading] = useState(false);
 
   //Watch all fields to trigger isDirty ?
-  const fields = watch();
+  watch();
 
   const onSubmit: SubmitHandler<FormValues> = (data: FormValues) => {
     setLoading(true);

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import CheckBox from "../base/CheckBox";
-import useSet, { SetHook } from "@/hooks/useSet";
+import useSet, { SetHook } from "@/hooks/utils/useSet";
 import * as categories from "./themeCategories.json";
 import { ThemeCategory, Theme } from "./themes";
 import { BsInfoCircle } from "react-icons/bs";

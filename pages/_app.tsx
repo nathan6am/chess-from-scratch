@@ -3,20 +3,16 @@ import "../styles/previews.css";
 import "react-tooltip/dist/react-tooltip.css";
 import "react-contexify/dist/ReactContexify.css";
 import "react-range-slider-input/dist/style.css";
-import { Tooltip } from "react-tooltip";
+
 import type { AppProps } from "next/app";
-import { SocketContext, socket } from "../context/socket";
-import { UserContext } from "@/context/user";
-import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
+
 import Layout from "@/components/layout/Layout";
-import { useRouter } from "next/router";
-import React, { useEffect, useState, useRef } from "react";
+
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
-import { useLocalStorage } from "usehooks-ts";
-import useProfile from "@/hooks/useProfile";
-import useAuth from "@/hooks/useAuth";
+
 import { Open_Sans } from "next/font/google";
 
 // const inter = Inter({

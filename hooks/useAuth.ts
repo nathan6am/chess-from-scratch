@@ -36,6 +36,8 @@ export default function useAuth() {
       return res.data as User;
     },
     enabled: user ? true : false,
+    //Prevent refetching on every remount
+    staleTime: 1000 * 60 * 10,
   });
 
   const authStatus: AuthStatus = useMemo(() => {

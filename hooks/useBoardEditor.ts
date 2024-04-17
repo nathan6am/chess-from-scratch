@@ -1,7 +1,6 @@
 import * as Chess from "@/lib/chess";
-import s from "connect-redis";
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 
 export interface BoardEditorHook {
   board: Chess.Board;

@@ -32,7 +32,7 @@ const defaultOptions = {
   showTimer: true,
   allowHints: false,
 };
-import useDebounce from "./useDebounce";
+import useDebounce from "./utils/useDebounce";
 import s from "connect-redis";
 import { notEmpty } from "@/util/misc";
 export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {}) {

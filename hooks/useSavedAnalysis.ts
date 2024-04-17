@@ -7,7 +7,8 @@ import Collection from "@/lib/db/entities/Collection";
 import { SavedAnalysis, PGNTagData, AnalysisData } from "@/lib/types";
 import { useRouter } from "next/router";
 import _ from "lodash";
-import useDebounce from "./useDebounce";
+import useDebounce from "./utils/useDebounce";
+import { read } from "fs";
 const fetcher = async (id: string | null) => {
   if (!id) return null;
   const res = await axios.get<{ analysis: Analysis; readonly: boolean }>(`/api/analysis/${id}`);
@@ -79,6 +80,11 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
       setIsSyncing(false);
     },
   });
+
+  const readonly = useMemo(() => {
+    return data?.readonly || false;
+  }, [data]);
+
   useEffect(() => {
     if (!data || !pgn || !tags || !data.analysis || isSyncing || !shouldSync || saveInProgress || saveError) return;
     //Don't save if the analysis id isn't the same as the current id
@@ -111,6 +117,7 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
   });
 
   const unLink = () => {
+    queryClient;
     load(null);
   };
   const { mutate: fork } = useMutation({
@@ -126,6 +133,7 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
 
   return {
     data,
+    readonly,
     error,
     isLoading,
     save,

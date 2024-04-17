@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { BsFillCheckCircleFill } from "react-icons/bs";
 import { TbSelector } from "react-icons/tb";
@@ -10,17 +10,8 @@ interface Props<T> {
   className?: string;
   optionsClassName?: string;
 }
-export default function Select({
-  value,
-  onChange,
-  options,
-  className,
-  optionsClassName,
-}: Props<any>) {
-  const selected = useMemo(
-    () => options.find((option) => option.value === value),
-    [value, options]
-  );
+export default function Select({ value, onChange, options, className, optionsClassName }: Props<any>) {
+  const selected = useMemo(() => options.find((option) => option.value === value), [value, options]);
   const Icon = selected?.icon;
   return (
     <div className={className}>
@@ -40,12 +31,7 @@ export default function Select({
               <TbSelector className="text-xl text-gold-100 opacity-70 cursor-pointer hover:opacity-90" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options
               className={twMerge(
                 "z-[50] absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-elevation-3 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none  scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y",
@@ -117,17 +103,11 @@ export function SelectOption({ label, value, children, icon: Icon, iconClassName
           <div className="flex flex-row items-center justify-start px-4 py-2 ">
             {children}
             {Icon && (
-              <span
-                className={`inline mt-1 mr-2 text-lg  ${
-                  selected ? "text-ligh-200" : "text-light-300"
-                }`}
-              >
+              <span className={`inline mt-1 mr-2 text-lg  ${selected ? "text-ligh-200" : "text-light-300"}`}>
                 <Icon className={iconClassName} />
               </span>
             )}
-            <span className={`block truncate ${selected ? "text-light-100" : "text-light-200"}`}>
-              {label}
-            </span>
+            <span className={`block truncate ${selected ? "text-light-100" : "text-light-200"}`}>{label}</span>
           </div>
           {selected ? (
             <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-gold-200">

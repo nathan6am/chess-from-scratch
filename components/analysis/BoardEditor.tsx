@@ -1,6 +1,9 @@
 import React from "react";
+
+//Components
 import Board, { BoardHandle } from "../board/Board";
 import { BoardRow, BoardColumn, PanelColumnLg } from "../layout/GameLayout";
+
 import useBoardEditor from "@/hooks/useBoardEditor";
 import { SettingsContext } from "@/context/settings";
 import { useContext } from "react";

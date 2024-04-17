@@ -1,36 +1,18 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DateTime, Duration } from "luxon";
-function useInterval(callback: (...args: any[]) => void, delay: number | null) {
-  const callbackRef = useRef<(...args: any[]) => void>();
-
-  // Remember the latest callback.
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
-
-  // Set up the interval.
-  useEffect(() => {
-    function tick() {
-      if (callbackRef.current) {
-        callbackRef.current();
-      }
-    }
-    if (delay !== null) {
-      let id = setInterval(tick, delay);
-      return () => clearInterval(id);
-    }
-  }, [delay]);
-}
+import useInterval from "./useInterval";
 
 interface Options {
-  autoStart: boolean;
-  resolution: "s" | "ds" | "cs" | "ms";
-  onTimeExpired?: () => void;
+  autoStart: boolean; // Whether the timer should start automatically
+  resolution: "s" | "ds" | "cs" | "ms"; // Precision of the timer
+  onTimeExpired?: () => void; // Callback to run when the timer expires
 }
+
 const defaultOptions: Options = {
   autoStart: false,
   resolution: "cs",
 };
+
 export function useTimer(initialRemainingMs: number, initialOptions?: Partial<Options>) {
   const [options, setOptions] = useState<Options>(() => ({
     ...defaultOptions,

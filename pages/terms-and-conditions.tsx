@@ -10,7 +10,7 @@ import AuthLayout from "@/components/layout/AuthLayout";
 //Icons
 import { ScrollContainer } from "@/components/layout/GameLayout";
 
-import Privacy from "@/components/content/Privacy";
+import Terms from "@/components/content/Terms";
 
 const Login: NextPageWithLayout = () => {
   return (
@@ -22,7 +22,7 @@ const Login: NextPageWithLayout = () => {
       </Head>
       <div className="w-full h-full relative grow">
         <ScrollContainer>
-          <Privacy />
+          <Terms />
         </ScrollContainer>
       </div>
     </>

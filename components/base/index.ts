@@ -12,5 +12,5 @@ export { default as RadioButton } from "./RadioButton";
 export { default as Toggle } from "./Toggle";
 export { default as Modal } from "./Modal";
 export { default as CheckBox } from "./CheckBox";
-
+export { default as Loading } from "./Loading";
 export * as Typography from "./Typography";

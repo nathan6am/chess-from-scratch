@@ -1,13 +1,19 @@
-import React, { useCallback } from "react";
-import html2canvas from "html2canvas";
+import React, { useCallback, useContext } from "react";
+
+//Icons
 import { MdContentCopy, MdImage } from "react-icons/md";
 import { FaFileExport, FaLink } from "react-icons/fa";
 
+//Context
 import { AnalysisContext } from "./AnalysisBoard";
-import { useContext } from "react";
-import { toPng } from "html-to-image";
+
+//Components
 import { Tooltip } from "react-tooltip";
 import { Button } from "@/components/base";
+
+//Util
+import { toPng } from "html-to-image";
+
 export default function Share() {
   const { analysis, showModal } = useContext(AnalysisContext);
   const { pgn, currentGame } = analysis;

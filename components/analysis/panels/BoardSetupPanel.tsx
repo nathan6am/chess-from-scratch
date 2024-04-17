@@ -1,13 +1,28 @@
 import { useCallback, useMemo } from "react";
+
+//Types
 import { BoardHandle } from "@/components/board/Board";
-import * as Chess from "@/lib/chess";
-import classNames from "classnames";
-import _ from "lodash";
-import { BsFillHandIndexFill, BsFillEraserFill } from "react-icons/bs";
 import { BoardEditorHook } from "@/hooks/useBoardEditor";
 
+//Icons
+import { BsFillHandIndexFill, BsFillEraserFill } from "react-icons/bs";
+
+//Util
+import * as Chess from "@/lib/chess";
+import cn from "@/util/cn";
+import _ from "lodash";
+
+/**
+ * Board Setup Panel for setting up a custom board position
+ */
 interface SetupPanelProps {
+  /**
+   * Reference to the board handle (for imperatively controlling the board)
+   */
   boardHandle: React.RefObject<BoardHandle>;
+  /**
+   * Hook for editing the board state
+   */
   boardEditor: BoardEditorHook;
 }
 
@@ -26,13 +41,12 @@ export default function BoardSetupPanel({ boardHandle, boardEditor }: SetupPanel
   );
 }
 
+const PIECE_TYPES: Chess.PieceType[] = ["p", "n", "b", "r", "q", "k"];
 function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boardEditor: BoardEditorHook }) {
-  const types: Chess.PieceType[] = ["p", "n", "b", "r", "q", "k"];
-  const colors: Chess.Color[] = ["w", "b"];
   return (
     <div className="grid grid-cols-7 gap-2">
       <>
-        {types.map((type) => {
+        {PIECE_TYPES.map((type) => {
           const color = "w";
           return (
             <PieceButton
@@ -48,14 +62,14 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
           onClick={() => {
             boardEditor.setPieceCursor(null);
           }}
-          className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
+          className={cn("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
             "bg-white/[0.1] border-gold-100": !boardEditor.pieceCursor,
             "border-transparent": boardEditor.pieceCursor,
           })}
         >
           <div className="aspect-square flex justify-center items-center">
             <BsFillHandIndexFill
-              className={classNames("text-4xl mt-1.5 mr-1.5", {
+              className={cn("text-4xl mt-1.5 mr-1.5", {
                 "text-success-500": !boardEditor.pieceCursor,
                 "text-light-300": boardEditor.pieceCursor,
               })}
@@ -64,7 +78,7 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
         </button>
       </>
       <>
-        {types.map((type) => {
+        {PIECE_TYPES.map((type) => {
           const color = "b";
           return (
             <PieceButton
@@ -80,14 +94,14 @@ function PieceSelect({ spawnDraggable, boardEditor }: { spawnDraggable: any; boa
           onClick={() => {
             boardEditor.setPieceCursor((cur) => (cur === "remove" ? null : "remove"));
           }}
-          className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
+          className={cn("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
             "bg-white/[0.1] border-gold-100": boardEditor.pieceCursor === "remove",
             "border-transparent": boardEditor.pieceCursor !== "remove",
           })}
         >
           <div className="aspect-square flex justify-center items-center">
             <BsFillEraserFill
-              className={classNames("text-4xl mt-1.5 mr-1", {
+              className={cn("text-4xl mt-1.5 mr-1", {
                 "text-red-400": boardEditor.pieceCursor === "remove",
                 "text-light-300": boardEditor.pieceCursor !== "remove",
               })}
@@ -113,7 +127,7 @@ function PieceButton({ piece, spawnDraggable, pieceCursor, setPieceCursor }: Pie
   }, [pieceCursor, piece]);
   return (
     <button
-      className={classNames("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
+      className={cn("rounded-lg relative aspect-square w-full pb-2 px-1 border-2", {
         "bg-white/[0.1] border-gold-100": selected,
         "border-transparent": !selected,
       })}
@@ -128,13 +142,7 @@ function PieceButton({ piece, spawnDraggable, pieceCursor, setPieceCursor }: Pie
       }}
     >
       {/* {selected && <div className="absolute top-[-4px] left-[-4px] w-8 h-8 bg-white/[0.1]"></div>} */}
-      <div
-        className={classNames(
-          "bg-cover bg-center bg-no-repeat aspect-square w-full",
-          `${piece.color}${piece.type}`,
-          {}
-        )}
-      />
+      <div className={cn("bg-cover bg-center bg-no-repeat aspect-square w-full", `${piece.color}${piece.type}`, {})} />
     </button>
   );
 }

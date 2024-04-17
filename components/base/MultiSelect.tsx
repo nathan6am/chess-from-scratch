@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { TbSelector } from "react-icons/tb";
@@ -35,10 +35,7 @@ export default function MultiSelect({
   const allowAny = () => {
     onChange([]);
   };
-  const allSelected = useMemo(
-    () => options.every((option) => value.includes(option.value)),
-    [value, options]
-  );
+  const allSelected = useMemo(() => options.every((option) => value.includes(option.value)), [value, options]);
   const selectAll = () => {
     if (allSelected) {
       onChange([]);
@@ -61,9 +58,7 @@ export default function MultiSelect({
                 {value.length ? (
                   `${value.length} Selected`
                 ) : (
-                  <span className="text-light-300 pr-1">
-                    {showAllowAny ? <em>Any</em> : "None Selected"}
-                  </span>
+                  <span className="text-light-300 pr-1">{showAllowAny ? <em>Any</em> : "None Selected"}</span>
                 )}
               </span>
             </div>
@@ -72,12 +67,7 @@ export default function MultiSelect({
               <TbSelector className="text-xl text-gold-100 opacity-70 cursor-pointer hover:opacity-90" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options
               className={twMerge(
                 "z-[50] absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-elevation-3 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none  scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y divide-light-400",
@@ -162,14 +152,7 @@ interface OptionProps {
   iconClassName?: string;
   disabled?: boolean;
 }
-export function SelectOption({
-  label,
-  value,
-  children,
-  icon: Icon,
-  iconClassName,
-  disabled,
-}: OptionProps) {
+export function SelectOption({ label, value, children, icon: Icon, iconClassName, disabled }: OptionProps) {
   return (
     <Listbox.Option
       disabled={disabled}
@@ -196,11 +179,7 @@ export function SelectOption({
               {label}
             </span>
             {Icon && (
-              <span
-                className={`inline mt-1 ml-2 text-lg  ${
-                  selected ? "text-ligh-200" : "text-light-300"
-                }`}
-              >
+              <span className={`inline mt-1 ml-2 text-lg  ${selected ? "text-ligh-200" : "text-light-300"}`}>
                 <Icon className={iconClassName} />
               </span>
             )}
@@ -212,11 +191,7 @@ export function SelectOption({
               "text-light-400": disabled,
             })}
           >
-            {selected ? (
-              <MdCheckBox className=" text-lg" />
-            ) : (
-              <MdCheckBoxOutlineBlank className=" text-lg" />
-            )}
+            {selected ? <MdCheckBox className=" text-lg" /> : <MdCheckBoxOutlineBlank className=" text-lg" />}
           </span>
         </>
       )}

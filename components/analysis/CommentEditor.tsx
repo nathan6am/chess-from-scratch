@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef } from "react";
 import { TreeNode } from "@/lib/types";
 import * as Chess from "@/lib/chess";
-import { MdEdit, MdSave, MdOutlineSaveAlt, MdDelete } from "react-icons/md";
+import { MdEdit, MdOutlineSaveAlt, MdDelete } from "react-icons/md";
 
 interface Props {
   node: TreeNode<Chess.NodeData> | null;
@@ -11,9 +11,10 @@ interface Props {
   };
 }
 
-export default function Comments({ node, controls }: Props) {
+export default function CommentEditor({ node, controls }: Props) {
   const [commentInput, setCommentInput] = useState<string>(node?.data.comment || "");
-  const edited = useMemo(() => {
+  const [editing, setEditing] = useState<boolean>(false);
+  const touched = useMemo(() => {
     if (!node?.data.comment) {
       return commentInput !== "";
     } else {
@@ -24,7 +25,6 @@ export default function Comments({ node, controls }: Props) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [editing, setEditing] = useState(false);
   return (
     <div className="w-full h-fit flex flex-col bg-[#202020] pb-1">
       {/* <div className=" w-full py-2 px-4">Comment</div> */}
@@ -62,7 +62,7 @@ export default function Comments({ node, controls }: Props) {
               setEditing(true);
             }}
             onBlur={() => {
-              if (!edited) setEditing(false);
+              if (!touched) setEditing(false);
             }}
             onChange={(e) => {
               const value = e.target.value.replace(/[\r\n\v]+/g, "");
@@ -79,8 +79,7 @@ export default function Comments({ node, controls }: Props) {
                 inputRef.current?.focus();
               }}
             >
-              <MdEdit className="inline mb-[2px]" />{" "}
-              <p className="inline group-hover:underline">Edit</p>
+              <MdEdit className="inline mb-[2px]" /> <p className="inline group-hover:underline">Edit</p>
             </button>
           )}
           {editing && (
@@ -96,11 +95,8 @@ export default function Comments({ node, controls }: Props) {
               <p className="inline group-hover:underline">Cancel</p>
             </button>
           )}
-          {editing && edited && (
-            <button
-              className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2"
-              type="submit"
-            >
+          {editing && touched && (
+            <button className="bg-green-600 hover:bg-green-700 px-3 rounded-sm my-1 py-1 mr-2" type="submit">
               <MdOutlineSaveAlt className="inline mr-1 mb-[2px] text-lg" />
               Save
             </button>

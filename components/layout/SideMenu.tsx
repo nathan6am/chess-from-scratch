@@ -37,7 +37,7 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
   return (
     <div
       className={cn(
-        "h-screen z-[100] w-[240px] h-full flex flex-col fixed justify-between overflow-y-auto",
+        "h-screen z-[100] w-[240px] h-full flex flex-col fixed justify-between overflow-y-auto overflow-x-hidden",
         "border-r border-elevation-4 bg-elevation-2",
         "trasition ease-in-out duration-500",
         {
@@ -102,14 +102,16 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
             label="Options"
             collapse={collapse}
           />
-          <MenuItem
-            icon={FaUser}
-            activeKey={activeKey}
-            pageKey="profile"
-            href="/profile"
-            label="My Profile"
-            collapse={collapse}
-          />
+          {user?.type !== "guest" && (
+            <MenuItem
+              icon={FaUser}
+              activeKey={activeKey}
+              pageKey="profile"
+              href="/profile"
+              label="My Profile"
+              collapse={collapse}
+            />
+          )}
         </ul>
         <div
           className={cn({

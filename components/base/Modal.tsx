@@ -1,6 +1,5 @@
 import React, { Fragment } from "react";
 import { Transition, Dialog } from "@headlessui/react";
-import classNames from "classnames";
 import { twMerge } from "tailwind-merge";
 interface Props {
   children: JSX.Element | string | Array<JSX.Element | string>;

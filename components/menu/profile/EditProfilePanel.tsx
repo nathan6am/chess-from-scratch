@@ -1,4 +1,3 @@
-import useProfile from "@/hooks/useProfile";
 import { PanelHeader } from "@/components/base/Typography";
 import { MdEdit } from "react-icons/md";
 import React from "react";
@@ -6,8 +5,9 @@ import { Input } from "@/components/base";
 import { Label } from "@/components/base/Typography";
 import { GiBulletBill, GiRabbit, GiTurtle } from "react-icons/gi";
 import { FaFire } from "react-icons/fa";
+import useAuth from "@/hooks/useAuth";
 export default function EditProfilePanel() {
-  const { user, updateProfile } = useProfile();
+  const { user: sessionUser, profile: user } = useAuth();
   return (
     <div className="flex flex-col w-full h-full">
       <PanelHeader className="px-4 py-2 bg-elevation-3"> Profile</PanelHeader>

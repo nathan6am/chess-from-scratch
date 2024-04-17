@@ -4,7 +4,7 @@ import { SettingsContext } from "@/context/settings";
 import { Toggle, RadioButton } from "@/components/base";
 
 import ChangePasswordForm from "../../forms/ChangePasswordForm";
-import VolumeSlider from "./VolumeSlider";
+import RangeSlider from "@/components/base/RangeSlider";
 import { ScrollContainer } from "@/components/layout/GameLayout";
 import BoardSelect from "./BoardSelect";
 import PieceSetSelect from "./PieceSetSelect";
@@ -318,17 +318,24 @@ function SoundPanel() {
         <BsVolumeUpFill className="inline mr-1 mb-0.5" /> Sound Settings
       </h2>
       <p>Volume</p>
-      <VolumeSlider
-        value={settings.sound.volume}
-        onChange={(value) => {
-          updateSettings({
-            sound: {
-              ...settings.sound,
-              volume: value,
-            },
-          });
-        }}
-      />
+      <div className="max-w-xs ml-[-8px]">
+        <RangeSlider
+          min={0}
+          max={100}
+          step={5}
+          minThumbClassName="hidden"
+          lock={new Set(["min"])}
+          onChange={([_min, max]) => {
+            updateSettings({
+              sound: {
+                ...settings.sound,
+                volume: max,
+              },
+            });
+          }}
+          value={[0, settings.sound.volume]}
+        />
+      </div>
       <Toggle
         className="my-2"
         labelClasses="ml-2 "

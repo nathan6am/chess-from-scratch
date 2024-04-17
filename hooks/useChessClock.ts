@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useTimer from "./useTimer";
+import useTimer from "./utils/useTimer";
 import { DurationObjectUnits } from "luxon";
 import type { TimeControl } from "@/lib/chess";
 import * as Chess from "@/lib/chess";

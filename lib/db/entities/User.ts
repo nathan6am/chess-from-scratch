@@ -330,16 +330,12 @@ export default class User extends BaseEntity {
       },
       relations: {
         profile: true,
-        games: {
-          game: {
-            players: {
-              user: true,
-            },
-          },
-        },
+        credentials: true,
       },
     });
-    return user;
+    if (!user) return null;
+    const filteredUser = { ...user, credentials: undefined, type: user.type, hasCredentials: user.hasCredentials };
+    return filteredUser;
   }
 
   static async findById(id: string) {

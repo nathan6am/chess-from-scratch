@@ -23,18 +23,4 @@ Page.getLayout = function getLayout(page: ReactElement) {
   return <Dashboard>{page}</Dashboard>;
 };
 
-export async function getServerSideProps(context: NextPageContext) {
-  const req = context.req;
-  const res = context.res;
-  if (!res) return { props: {} };
-  if (!req?.user) {
-    res.setHeader("location", "/login");
-    res.statusCode = 302;
-    res.end();
-    return { props: {} };
-  }
-  console.log(req?.user);
-  return { props: { user: req?.user } };
-}
-
 export default Page;

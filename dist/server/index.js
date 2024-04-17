@@ -26,6 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.redisClient = void 0;
 const express_1 = __importDefault(require("express"));
 const express_session_1 = __importDefault(require("express-session"));
 const db = __importStar(require("../lib/db/connect"));
@@ -44,7 +45,7 @@ const analysis_1 = __importDefault(require("./routes/analysis"));
 const collections_1 = __importDefault(require("./routes/collections"));
 const puzzles_1 = __importDefault(require("./routes/puzzles"));
 const game_1 = __importDefault(require("./routes/game"));
-const redisClient = (0, redis_1.createClient)();
+exports.redisClient = (0, redis_1.createClient)();
 // const sessionClient = createClient({ legacyMode: true });
 const pgSession = (0, connect_pg_simple_1.default)(express_session_1.default);
 const cors_1 = __importDefault(require("cors"));
@@ -58,9 +59,7 @@ const nextHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(async () => {
     const app = (0, express_1.default)();
     const server = http.createServer(app);
-    // await sessionClient.connect();
-    // console.log("Connected to session client");
-    await redisClient.connect();
+    await exports.redisClient.connect();
     console.log("Connected to redis client");
     const datasource = await db.initialize();
     console.log("Connected to database");
@@ -95,7 +94,18 @@ nextApp.prepare().then(async () => {
     app.use(sessionMiddleware);
     app.use(passport_1.default.initialize());
     app.use(passport_1.default.session());
-    // app.use(passport.authenticate("session"));
+    //Proxy headers
+    app.use((req, res, next) => {
+        if (req.user) {
+            req.headers["x-user-authenticated"] = "true";
+            req.headers["x-user-id"] = req.user.id;
+            req.headers["x-user-data"] = req.user.type;
+        }
+        else {
+            req.headers["x-user-authenticated"] = "false";
+        }
+        next();
+    });
     app.use("/api/auth", auth_1.default);
     app.use("/api/user", user_1.default);
     app.use("/api/analysis", analysis_1.default);
@@ -142,10 +152,10 @@ nextApp.prepare().then(async () => {
         next();
     });
     lobbyNsp.on("connection", (socket) => {
-        (0, LobbyHandler_1.default)(io, lobbyNsp, socket, redisClient);
+        (0, LobbyHandler_1.default)(io, lobbyNsp, socket, exports.redisClient);
     });
     io.on("connection", (socket) => {
-        (0, MainHandler_1.default)(io, socket, redisClient);
+        (0, MainHandler_1.default)(io, socket, exports.redisClient);
     });
     app.all("*", (req, res) => nextHandler(req, res));
     server.listen(port, () => {

@@ -20,7 +20,7 @@ import { Button } from "../base";
 import { useRouter } from "next/router";
 import { gameDataToPgn } from "@/util/parsers/pgnParser";
 import Clock from "./Clock";
-import useGameCache from "@/hooks/useGameCache";
+import useGameCache from "@/hooks/cache/useGameCache";
 interface Props {
   fromPosition?: string;
   autoFlip?: boolean;

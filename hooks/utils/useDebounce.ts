@@ -1,4 +1,12 @@
 import { useState, useEffect } from "react";
+
+/**
+ * Hook to debounce a value
+ * @param value The value to debounce
+ * @param delay How long to wait before updating the debounced value
+ * @returns The debounced value
+ */
+
 export default function useDebounce<T>(value: T, delay: number): T {
   // State and setters for debounced value
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -10,9 +18,11 @@ export default function useDebounce<T>(value: T, delay: number): T {
         setDebouncedValue(value);
       }, delay);
 
-      // Cancel the timeout if value changes (also on delay change or unmount)
-      // This is how we prevent debounced value from updating if value is changed ...
-      // .. within the delay period. Timeout gets cleared and restarted.
+      /**
+       * Cancel the timeout if value changes (also on delay change or unmount)
+       * This is how we prevent debounced value from updating if value is changed
+       * within the delay period. Timeout gets cleared and restarted.
+       */
       return () => {
         clearTimeout(handler);
       };

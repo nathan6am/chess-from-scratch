@@ -1,15 +1,22 @@
-import React from "react";
-import { RiArrowGoBackFill } from "react-icons/ri";
-import { BoardEditorHook } from "@/hooks/useBoardEditor";
+import React, { useState } from "react";
+
+//Types
 import { BoardHandle } from "@/components/board/Board";
+import { BoardEditorHook } from "@/hooks/useBoardEditor";
+
+//Components
+import { Select, Toggle, Button, NumericInput } from "@/components/base";
 import BoardSetupPanel from "./BoardSetupPanel";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+
+//Icons
+import { RiArrowGoBackFill } from "react-icons/ri";
 import { MdDelete } from "react-icons/md";
 import { BiReset } from "react-icons/bi";
 import { FiRepeat } from "react-icons/fi";
-import { Select, Toggle, Input, Button, NumericInput } from "@/components/base";
 import { WhiteIcon, BlackIcon } from "@/components/icons";
 import { RiErrorWarningFill } from "react-icons/ri";
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+
 interface EditorProps {
   boardEditor: BoardEditorHook;
   boardRef: React.RefObject<BoardHandle>;
@@ -28,7 +35,7 @@ export default function EditorPanel({
   flipBoard,
   showOverwriteWarning,
 }: EditorProps) {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   return (
     <div className="flex flex-col h-full">
       <ConfirmationDialog
@@ -48,7 +55,7 @@ export default function EditorPanel({
       />
       <div className="bg-white/[0.1] p-4 flex flex-row shadow-lg relative">
         <div className="absolute left-0 top-0 bottom-0 flex flex-row items-center gap-x-2 px-4">
-          {setEditMode !== undefined && (
+          {setEditMode && (
             <button
               className="flex flex-row items-center mr-4 text-white/[0.8] hover:text-white text-xl"
               onClick={() => {
@@ -56,7 +63,6 @@ export default function EditorPanel({
               }}
             >
               <RiArrowGoBackFill className="mr-2" />
-              {/* <span className="text-sm">Back</span> */}
             </button>
           )}
         </div>

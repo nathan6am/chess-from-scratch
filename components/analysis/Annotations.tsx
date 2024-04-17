@@ -9,7 +9,6 @@ import { Listbox, Transition, RadioGroup } from "@headlessui/react";
 
 //Icons
 import { MdCheck, MdEditNote } from "react-icons/md";
-import { CgRemoveR } from "react-icons/cg";
 import { FaRegTrashAlt } from "react-icons/fa";
 import * as Chess from "@/lib/chess";
 
@@ -115,7 +114,7 @@ function TimeRemainingInput({ reset }: { reset: () => void }) {
           onClick={onEnter}
           disabled={!touched}
           className="ml-2 flex-1"
-          label="Save Changes"
+          label="Save "
           variant="success"
         />
         <Button size="sm" disabled={!touched} onClick={reset} className="ml-2 flex-1" label="Reset" variant="neutral" />
@@ -123,60 +122,6 @@ function TimeRemainingInput({ reset }: { reset: () => void }) {
     </>
   );
 }
-
-// function TimeInput() {
-//   const [value, setValue] = useState("00:00:01");
-//   const inputRef = useRef<HTMLInputElement>(null);
-//   const selectionStartRef = useRef<number>(0);
-//   const selectionEndRef = useRef<number>(0);
-//   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-//     const input = inputRef.current;
-//     if (!input) return;
-//     const position = input.selectionStart;
-//     console.log(position);
-//     if (e.key.match(/[0-9]/)) {
-//       if (position === 8) {
-//         setValue((value) => {
-//           const [hh, mm, ss] = value.split(":");
-//           const digits = `${hh}${mm}${ss}`;
-//           //Push the new digit to the end of the string and remove the first digit
-//           const newDigits = digits.slice(1) + e.key;
-//           const newHH = newDigits.slice(0, 2);
-//           const newMM = newDigits.slice(2, 4);
-//           const newSS = newDigits.slice(4, 6);
-//           return `${newHH}:${newMM}:${newSS}`;
-//         });
-//         selectionStartRef.current = 8;
-//       } else if (position !== null) {
-//         //replace the digit at the current position
-//         setValue((value) => {
-//           const [hh, mm, ss] = value.split(":");
-//           const digits = `${hh}${mm}${ss}`;
-//           const newDigits = digits.slice(0, position) + e.key + digits.slice(position + 1);
-//           const newHH = newDigits.slice(0, 2);
-//           const newMM = newDigits.slice(2, 4);
-//           const newSS = newDigits.slice(4, 6);
-//           return `${newHH}:${newMM}:${newSS}`;
-//         });
-//         if (position < 2 || (position <= 3 && position < 5) || (position <= 6 && position < 8)) {
-//           selectionStartRef.current = position + 1;
-//         } else {
-//           selectionStartRef.current = position + 2;
-//         }
-//       }
-//     }
-//   };
-//   useEffect(() => {
-//     if (!inputRef.current) return;
-//     // Synchronize the cursor position after the value is updated
-//     inputRef.current.selectionStart = selectionStartRef.current;
-//     inputRef.current.selectionEnd = selectionStartRef.current;
-//   }, [value, selectionStartRef.current]);
-
-//   return (
-//     <input type="text" value={value} ref={inputRef} onKeyDown={handleKeyDown} placeholder="--:--:--" maxLength={8} />
-//   );
-// }
 
 interface SelectProps {
   selected: number[];

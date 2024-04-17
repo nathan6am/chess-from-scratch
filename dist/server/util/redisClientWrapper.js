@@ -77,17 +77,32 @@ class Redis {
         return updatedLobby;
     };
     generateVerificationToken = async (id) => {
-        const token = await this.client.set(`token:${id}`, (0, nanoid_1.nanoid)(), {
+        const token = (0, nanoid_1.nanoid)();
+        await this.client.set(`token:${token}`, id, {
             EX: 3600 * 24,
         });
         return token;
     };
-    validateVerificationToken = async (id, token) => {
-        const val = await this.client.get(`token:${id}`);
+    validateVerificationToken = async (token) => {
+        const userid = await this.client.get(`token:${token}`);
+        if (!userid)
+            return false;
+        this.client.del(`token:${token}`);
+        return userid;
+    };
+    generateResetToken = async (id) => {
+        const token = await this.client.set(`reset:${id}`, (0, nanoid_1.nanoid)(), {
+            EX: 3600,
+        });
+        return token;
+    };
+    validateResetToken = async (id, token) => {
+        const val = await this.client.get(`reset:${id}`);
         if (!val)
             return false;
         if (val === token) {
-            this.client.del(`token:${id}`);
+            this.client.del(`reset:${id}`);
+            return true;
         }
         return false;
     };

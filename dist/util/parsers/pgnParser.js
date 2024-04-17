@@ -578,13 +578,13 @@ function moveHistoryToMoveText(moveHistory) {
     let moveText = "";
     moveHistory.forEach((fullmove, idx) => {
         moveText += `${idx + 1}. ${fullmove[0].PGN} `;
-        if (fullmove[0].timeRemaining !== undefined)
+        if (fullmove[0].timeRemaining !== undefined && fullmove[0].timeRemaining !== null)
             moveText += `{ [%clk ${luxon_1.Duration.fromMillis(fullmove[0].timeRemaining).toISOTime()}] } `;
         if (fullmove[1]) {
-            if (fullmove[0].timeRemaining !== undefined)
+            if (fullmove[0].timeRemaining !== undefined && fullmove[0].timeRemaining !== null)
                 moveText += `${idx + 1}... `;
             moveText += `${fullmove[1].PGN} `;
-            if (fullmove[1].timeRemaining !== undefined)
+            if (fullmove[1].timeRemaining !== undefined && fullmove[1].timeRemaining !== null)
                 moveText += `{ [%clk ${luxon_1.Duration.fromMillis(fullmove[1].timeRemaining).toISOTime()}] } `;
         }
     });

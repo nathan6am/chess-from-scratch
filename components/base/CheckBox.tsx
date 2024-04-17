@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React from "react";
 import { Switch } from "@headlessui/react";
 import { MdCheckBoxOutlineBlank, MdCheckBox, MdIndeterminateCheckBox } from "react-icons/md";
 import cn from "@/util/cn";
+
 interface Props {
   size?: "sm" | "md" | "lg";
   onChange: (enabled: boolean) => any;

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, MouseEventHandler } from "react";
+import { useState, useMemo, useEffect, MouseEventHandler } from "react";
 import { ArrowColor, MarkedSquare, Arrow } from "@/lib/types";
 import * as Chess from "@/lib/chess";
 

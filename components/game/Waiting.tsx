@@ -6,7 +6,7 @@ import { MdContentCopy, MdCancel } from "react-icons/md";
 import { useRouter } from "next/router";
 import { Button } from "../base";
 import { Tooltip } from "react-tooltip";
-import useDebounce from "@/hooks/useDebounce";
+import useDebounce from "@/hooks/utils/useDebounce";
 interface Props {
   lobbyUrl: string;
   onLeave?: () => void;

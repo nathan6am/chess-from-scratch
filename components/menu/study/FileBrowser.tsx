@@ -13,7 +13,7 @@ import { BsFillCollectionFill, BsFillShareFill } from "react-icons/bs";
 import { IoMdMore } from "react-icons/io";
 import { useRouter } from "next/router";
 import { ScrollContainer } from "../../layout/GameLayout";
-import useDebounce from "@/hooks/useDebounce";
+import useDebounce from "@/hooks/utils/useDebounce";
 import useAnalysisSearch from "@/hooks/useAnalysisSearch";
 import { useInView } from "react-intersection-observer";
 import { useContextMenu, Item, ItemParams, Menu } from "react-contexify";

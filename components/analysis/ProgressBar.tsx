@@ -1,4 +1,4 @@
-import useThrottle from "@/hooks/useThrottle";
+import useThrottle from "@/hooks/utils/useThrottle";
 import React, { useEffect } from "react";
 
 export default function ProgressBar({ progress: progressRaw }: { progress: number }) {

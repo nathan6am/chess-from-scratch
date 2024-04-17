@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, useRef, useContext } from "react";
 import { SettingsContext } from "@/context/settings";
 import useSound from "use-sound";
-import useVariationTree, { VariationTree } from "./useVariationTree";
+import useVariationTree, { VariationTree } from "../useVariationTree";
 import useEvaler, { Evaler } from "./useEvaler";
-
-import useOpeningExplorer, { ExplorerHook } from "./useOpeningExplorer";
+import useOpeningExplorer, { ExplorerHook } from "../useOpeningExplorer";
 import * as Chess from "@/lib/chess";
 import _, { set } from "lodash";
 

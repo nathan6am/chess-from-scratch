@@ -1,17 +1,12 @@
 //Framework
-import React, { useState, useContext, useCallback } from "react";
-import { useRouter } from "next/router";
-import Link from "next/link";
+import React, { useState } from "react";
 
 //UI Components
-import { Input, ButtonSocial } from "@/components/base";
-
-//Context
-import { UserContext } from "@/context/user";
+import { Input } from "@/components/base";
 
 //Util
 import axios from "axios";
-import { FieldValues, useForm, SubmitHandler, set } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import _ from "lodash";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";

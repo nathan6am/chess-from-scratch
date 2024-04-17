@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as Chess from "@/lib/chess";
-import useThrottle from "@/hooks/useThrottle";
+import useThrottle from "@/hooks/utils/useThrottle";
+
 interface Props {
   orientation: Chess.Color;
   scoreType: "cp" | "mate";
@@ -13,6 +14,7 @@ export default function EvalBar({ orientation, scoreType, value, scale }: Props)
   useEffect(() => {
     transitionRef.current = true;
   }, [transitionRef]);
+
   //Throttle value for smoother animation/fewer jumps
   const throttledValue = useThrottle(value, 600);
 

@@ -9,50 +9,54 @@ import PopupPlayer from "./PopupPlayer";
 import SaveAnalysis from "@/components/dialogs/SaveAnalysis";
 import AnalysisPanel from "./panels/AnalysisPanel";
 import PlayerDetails from "./PlayerDetails";
-
 import {
   BoardWithPanelContainer,
   BoardContainer,
   BoardRow,
   PanelContainer,
 } from "@/components/layout/templates/AnalysisBoardLayout";
-
 import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
+import { EditorPanel } from "./panels";
+import ReadOnlyNotification from "./ReadOnlyNotification";
 
+// Icons
 import { MdOutlineEditOff, MdCancel } from "react-icons/md";
 import { TbGitFork } from "react-icons/tb";
 
 // Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
-import useAnalysisBoard, { AnalysisHook } from "@/hooks/useAnalysisBoard";
+import useAnalysisBoard, { AnalysisHook } from "@/hooks/analysis/useAnalysisBoard";
 import { useRouter } from "next/router";
 import useBoardEditor from "@/hooks/useBoardEditor";
+
 // Context
 import { SettingsContext } from "@/context/settings";
 
 // Utils
 import * as Chess from "@/lib/chess";
-import axios from "axios";
 import NewAnalysisPanel from "./panels/NewAnalysisPanel";
 import OpenAnalysisDialog from "../dialogs/OpenAnalysisDialog";
 import ExportPGNDialog from "../dialogs/ExportPGNDialog";
-import useGameCache from "@/hooks/useGameCache";
-import { parsePuzzleEntity } from "@/util/parsers/puzzleParser";
-import { treeFromLine } from "@/util/parsers/pgnParser";
-import { EditorPanel } from "./panels";
-import toast, { Toaster, ToastBar } from "react-hot-toast";
-import ReadOnlyNotification from "./ReadOnlyNotification";
 
-const notify = () =>
-  toast("This analysis is in readonly mode.", {
-    icon: <MdOutlineEditOff />,
-  });
+import { useLoadFromSource } from "@/hooks/analysis";
 
 interface Props {
+  /**
+   * Initial analysis id to load (from url)
+   */
   initialId?: string | null;
+  /**
+   * Id of the game to load (from url)
+   */
   sourceGameId?: string | null;
+  /**
+   * Type of the source game
+   */
   sourceGameType?: "masters" | "lichess" | "nextchess" | "last" | "puzzle" | null;
+  /**
+   * FEN to load
+   */
   fromFen?: string;
 }
 
@@ -67,6 +71,12 @@ interface Context {
 export const AnalysisContext = React.createContext<Context>(null!);
 
 export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType }: Props) {
+  const router = useRouter();
+  const id = router.query.id as string | undefined;
+
+  /**
+   * Initialize analysis board and board editor
+   */
   const analysis = useAnalysisBoard({
     isNew: initialId || sourceGameId ? false : true,
   });
@@ -75,7 +85,6 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     onMove,
     evaler,
     evalEnabled,
-    setEvalEnabled,
     boardControls,
     moveText,
     explorer,
@@ -85,15 +94,20 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     tagData,
   } = analysis;
   const boardRef = useRef<BoardHandle>(null);
-  const { settings } = useContext(SettingsContext);
-  const router = useRouter();
-  const [editMode, setEditMode] = useState(false);
   const editor = useBoardEditor(currentGame.fen);
-  // Handle id changes/initial load
-  const id = router.query.id as string | undefined;
+
+  /**
+   * Load settings from context
+   */
+  const { settings } = useContext(SettingsContext);
+
+  //Internal State
+  const [editMode, setEditMode] = useState(false);
   const currentIdRef = useRef<string | null | undefined>(undefined);
   const initialLoad = useRef(initialId || sourceGameId ? false : true);
   const [preSave, setPreSave] = useState(false);
+
+  // Save manager
   const saveManager = useSavedAnalysis({
     pgn,
     tags: tagData,
@@ -107,87 +121,41 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
       analysis.tree.setTreeId(data.id);
     },
   });
+  const { readonly } = saveManager;
 
-  const readonly = saveManager.data?.readonly;
-
-  // Display state
-  const [orientation, setOrientation] = useState<Chess.Color>("w");
-  const flipBoard = () => {
-    setOrientation((cur) => (cur === "w" ? "b" : "w"));
-  };
   const [saveModalShown, setSaveModalShown] = useState(false);
   const [openModalShown, setOpenModalShown] = useState(false);
   const [popupPlayerShown, setPopupPlayerShown] = useState(false);
   const [optionsOverlayShown, setOptionsOverlayShown] = useState(false);
   const [exportModalShown, setExportModalShown] = useState(false);
-  const lastMoveAnnotation = useMemo(() => {
-    return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
-  }, [currentNode, currentNode?.data.annotations]);
-  const { cachedGame } = useGameCache();
-  // Fetch source game on initial load
-  useEffect(() => {
-    if (id) return;
-    if (!sourceGameId) return;
-    if (initialLoad.current) return;
-    if (!sourceGameType) {
-      initialLoad.current = true;
-      return;
-    }
-    switch (sourceGameType) {
-      case "last":
-        if (!cachedGame) return;
-        initialLoad.current = true;
-        analysis.loadPgn(cachedGame.pgn);
-        break;
-      case "puzzle":
-        axios.get(`/api/puzzles/puzzle/${sourceGameId}`).then((res) => {
-          initialLoad.current = true;
-          if (!res.data) return;
-          try {
-            const puzzle = parsePuzzleEntity(res.data.puzzle);
-            if (!puzzle) throw new Error("Failed to parse puzzle");
-            const puzzleTree = treeFromLine(puzzle?.solution);
-            analysis.setOptions((current) => ({
-              ...current,
-              startPosition: puzzle?.game.fen,
-            }));
-            analysis.tree.loadNewTree(puzzleTree);
-          } catch (e) {
-            console.error(e);
-          }
-        });
-        break;
-      case "nextchess":
-        axios.get(`/api/game/pgn/${sourceGameId}`).then((res) => {
-          initialLoad.current = true;
-          if (!res.data) return;
-          analysis.loadPgn(res.data);
-        });
-        break;
-      default:
-        /**
-         * Fetch game from lichess api
-         */
-        analysis.explorer
-          .fetchGameAsync(sourceGameId, sourceGameType)
-          .then((game) => {
-            initialLoad.current = true;
-            if (!game) return;
-            analysis.loadPgn(game);
-          })
-          .catch((e) => {
-            initialLoad.current = true;
-            console.error(e);
-          });
-    }
-  }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
-  const [readonlyVisible, setReadonlyVisible] = useState(saveManager.data?.readonly);
 
+  // Load from source
+  useLoadFromSource({
+    id,
+    sourceGameId,
+    sourceGameType,
+    initialLoad,
+    analysis,
+  });
+
+  //Readonly banner notification
+  const [readonlyVisible, setReadonlyVisible] = useState(readonly);
   useEffect(() => {
-    if (saveManager.data?.readonly) {
+    if (readonly) {
       setReadonlyVisible(true);
     }
-  }, [saveManager.data?.readonly]);
+  }, [readonly]);
+
+  //Last move annotation to display
+  const lastMoveAnnotation = useMemo(() => {
+    return currentNode?.data.annotations.find((code) => code >= 1 && code <= 7);
+  }, [currentNode?.data.annotations]);
+
+  //Board orientation
+  const [orientation, setOrientation] = useState<Chess.Color>("w");
+  const flipBoard = () => {
+    setOrientation((cur) => (cur === "w" ? "b" : "w"));
+  };
 
   // Load saved analysis on initial load and id change
   useEffect(() => {

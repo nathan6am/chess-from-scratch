@@ -24,6 +24,7 @@ const Solved_Puzzle_1 = __importDefault(require("./Solved_Puzzle"));
 const Collection_1 = __importDefault(require("./Collection"));
 const Analysis_1 = __importDefault(require("./Analysis"));
 const glicko_1 = require("../../../server/util/glicko");
+const normalize_email_1 = __importDefault(require("normalize-email"));
 const defaultRatings = {
     bullet: {
         rating: 1500,
@@ -79,6 +80,9 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         if (!this.emailVerified)
             return "unverified";
         return "user";
+    }
+    get hasCredentials() {
+        return !!this.credentials.email && !!this.credentials.hashedPassword;
     }
     emailVerified;
     profile;
@@ -215,10 +219,11 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
         };
     }
     static async createAccountWithCredentials(account) {
-        const { email, username, password } = account;
+        const { email: _email, username, password } = account;
+        const email = (0, normalize_email_1.default)(_email);
         const exists = await this.createQueryBuilder("user")
             .leftJoinAndSelect("user.credentials", "credentials")
-            .where("credentials.email = :email", { email: account.email })
+            .where("credentials.email = :email", { email: email })
             .orWhere("LOWER(user.username) = LOWER(:username)", {
             username: account.username,
         })
@@ -278,16 +283,13 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             },
             relations: {
                 profile: true,
-                games: {
-                    game: {
-                        players: {
-                            user: true,
-                        },
-                    },
-                },
+                credentials: true,
             },
         });
-        return user;
+        if (!user)
+            return null;
+        const filteredUser = { ...user, credentials: undefined, type: user.type, hasCredentials: user.hasCredentials };
+        return filteredUser;
     }
     static async findById(id) {
         const user = await this.findOneBy({ id });

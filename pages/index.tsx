@@ -1,8 +1,6 @@
 import Head from "next/head";
 import { NextPageContext } from "next";
-import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
-import AppLayout from "@/components/layout/AppLayout";
 const Home: NextPageWithLayout = () => {
   return (
     <>
@@ -13,10 +11,6 @@ const Home: NextPageWithLayout = () => {
       </Head>
     </>
   );
-};
-
-Home.getLayout = function getLayout(page: ReactElement) {
-  return <AppLayout>{page}</AppLayout>;
 };
 
 export async function getServerSideProps(context: NextPageContext) {

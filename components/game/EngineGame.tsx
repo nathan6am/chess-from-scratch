@@ -5,7 +5,7 @@ import { SettingsContext } from "@/context/settings";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { Button } from "@/components/base";
 import { useRouter } from "next/router";
-import useGameCache from "@/hooks/useGameCache";
+import useGameCache from "@/hooks/cache/useGameCache";
 import { encodeGameToPgn, gameDataToPgn } from "@/util/parsers/pgnParser";
 import Result from "../dialogs/Result";
 import {
@@ -64,12 +64,8 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
   const router = useRouter();
   const onAnalyze = useCallback(() => {
     const pgn = gameDataToPgn(currentGame, {
-      white: `${
-        playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
-      }`,
-      black: `${
-        playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`
-      }`,
+      white: `${playerColor === "w" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
+      black: `${playerColor === "b" ? user?.username || "You" : `Stockfish Level ${currentPreset}`}`,
       event: "Engine Game",
       site: "next-chess.dev",
       date: new Date().toISOString().split("T")[0],
@@ -162,9 +158,7 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
               <p className="text-light-200">
                 <span className="text-gold-100">{`Opening: `}</span>
                 {`${opening?.name || ""}`}
-                <span className="inline text-light-300">{`${
-                  opening?.eco ? ` (${opening.eco})` : ""
-                }`}</span>
+                <span className="inline text-light-300">{`${opening?.eco ? ` (${opening.eco})` : ""}`}</span>
               </p>
             }
           </div>

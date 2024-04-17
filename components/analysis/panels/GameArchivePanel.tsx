@@ -14,7 +14,6 @@ export default function GameArchivePanel({ onBack }: Props) {
             onClick={onBack}
           >
             <RiArrowGoBackFill className="mr-2" />
-            {/* <span className="text-sm">Back</span> */}
           </button>
         </div>
         <h2 className="text-lg font-semibold text-white text-center w-full">Game Archive</h2>

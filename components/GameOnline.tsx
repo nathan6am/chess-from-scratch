@@ -25,7 +25,7 @@ import { BoardColumn, InfoRow, GameContainer, PanelContainer, BoardContainer } f
 import useChessOnline from "@/hooks/useChessOnline";
 import useSettings from "@/hooks/useSettings";
 import { useRouter } from "next/router";
-import useGameCache from "@/hooks/useGameCache";
+import useGameCache from "@/hooks/cache/useGameCache";
 
 //Util
 import * as Chess from "@/lib/chess";

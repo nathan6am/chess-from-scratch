@@ -11,7 +11,7 @@ import { MdDriveFileRenameOutline, MdOutlineEditOff } from "react-icons/md";
 import { HiSave } from "react-icons/hi";
 
 //content components
-import Comments from "@/components/analysis/Comments";
+import Comments from "@/components/analysis/CommentEditor";
 import Annotations from "@/components/analysis/Annotations";
 import Share from "@/components/analysis/Share";
 import Explorer from "@/components/analysis/Explorer";

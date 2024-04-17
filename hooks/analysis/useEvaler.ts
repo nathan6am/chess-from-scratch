@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import _ from "lodash";
 import { EvalOptions, EvalScore } from "@/lib/stockfish/utils";
-import useDebounce from "./useDebounce";
-import useDebouncedCallback from "./useDebouncedCallback";
+import useDebounce from "../utils/useDebounce";
 
 import { MessageResponse, Variation } from "@/lib/stockfish/evalWorker";
-import useThrottle from "./useThrottle";
+import useThrottle from "../utils/useThrottle";
 import { notEmpty } from "@/util/misc";
 export interface Evaler {
   currentScore: EvalScore;
@@ -42,7 +41,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   });
   const workerRef = useRef<Worker | null>(null);
   useEffect(() => {
-    workerRef.current = new Worker(new URL("../lib/stockfish/evalWorker.ts", import.meta.url));
+    workerRef.current = new Worker(new URL("../../lib/stockfish/evalWorker.ts", import.meta.url));
     return () => {
       workerRef.current?.terminate();
     };

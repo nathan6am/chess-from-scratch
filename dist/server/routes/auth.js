@@ -38,6 +38,10 @@ const uuid_1 = require("uuid");
 const nanoid_1 = require("nanoid");
 //Entities
 const User_1 = __importDefault(require("../../lib/db/entities/User"));
+//RedisLayer
+const index_1 = require("../index");
+const redisClientWrapper_1 = require("../util/redisClientWrapper");
+const mail_handler_1 = require("../mail-handler");
 const nanoid = (0, nanoid_1.customAlphabet)("1234567890", 10);
 //Environment Variables
 const facebookClientID = process.env.FACEBOOK_APP_ID || "";
@@ -192,6 +196,67 @@ router.post("/signup", async function (req, res, next) {
     }
     else {
         res.status(200).json(result);
+    }
+});
+router.get("/verify-email", async function (req, res) {
+    const redisLayer = (0, redisClientWrapper_1.wrapClient)(index_1.redisClient);
+    const token = req.query.token;
+    if (!token || typeof token !== "string") {
+        console.log("token is required");
+        res.status(400).end();
+        return;
+    }
+    const userid = await redisLayer.validateVerificationToken(token);
+    if (!userid) {
+        console.log(`token: ${token} not found`);
+        res.status(400).end();
+        return;
+    }
+    const user = await User_1.default.findOneBy({ id: userid });
+    if (!user) {
+        console.log("user not found");
+        res.status(400).end();
+        return;
+    }
+    user.emailVerified = true;
+    await user.save();
+    res.status(200).end();
+});
+router.post("/resend-verification-email", async function (req, res) {
+    const redisLayer = (0, redisClientWrapper_1.wrapClient)(index_1.redisClient);
+    if (!req.user) {
+        res.status(401).end();
+        return;
+    }
+    const sessionUser = req.user;
+    if (sessionUser.type === "guest") {
+        res.status(400).end();
+        return;
+    }
+    const userid = sessionUser.id;
+    const user = await User_1.default.findOne({
+        relations: {
+            credentials: true,
+        },
+        where: {
+            id: userid,
+        },
+    });
+    if (!user) {
+        res.status(400).end();
+        return;
+    }
+    if (user.emailVerified) {
+        res.status(400).end();
+        return;
+    }
+    const token = await redisLayer.generateVerificationToken(user.id);
+    const sent = await (0, mail_handler_1.sendVerificationEmail)({ email: user.credentials.email, name: user.name || "", token });
+    if (sent) {
+        res.status(200).end();
+    }
+    else {
+        res.status(500).end();
     }
 });
 router.get("/checkusername", async function (req, res) {

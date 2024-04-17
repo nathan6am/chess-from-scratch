@@ -1,8 +1,9 @@
 import { useState, useMemo, Fragment, useRef } from "react";
-import { Combobox, Transition, RadioGroup } from "@headlessui/react";
+import { Combobox, Transition } from "@headlessui/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import countries from "@/lib/data/countries";
 import { BsChevronExpand } from "react-icons/bs";
+
 interface ListItem {
   id: string;
   name: string;

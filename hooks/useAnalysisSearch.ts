@@ -1,9 +1,8 @@
-import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 import axios from "axios";
 import type Analysis from "@/lib/db/entities/Analysis";
-import { PGNTagData } from "@/lib/types";
-import Collection from "@/lib/db/entities/Collection";
+
 interface SearchParams {
   query?: string;
   sortBy?: "title" | "lastUpdate";

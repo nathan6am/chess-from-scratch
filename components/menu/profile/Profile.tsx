@@ -5,10 +5,8 @@ import { DashboardGrid, Panel } from "@/components/dashboard";
 import { Tab } from "@headlessui/react";
 import cn from "@/util/cn";
 import GameSearch from "../GameSearch";
-import useProfile from "@/hooks/useProfile";
 import EditProfilePanel from "./EditProfilePanel";
 export default function Profile() {
-  const { user, updateProfile } = useProfile();
   return (
     <PageContainer>
       <PageTitle>My Profile</PageTitle>

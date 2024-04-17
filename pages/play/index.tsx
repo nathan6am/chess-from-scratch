@@ -23,6 +23,4 @@ Play.getLayout = function getLayout(page: ReactElement) {
   return <Dashboard>{page}</Dashboard>;
 };
 
-export const getServerSideProps = authRedirect;
-
 export default Play;

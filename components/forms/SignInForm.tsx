@@ -102,8 +102,13 @@ export default function SignInForm() {
         </Link>
         <p className="text-white/[0.25] text-center px-4 mb-4 text-xs">
           By continuing or signing in, you agree to our{" "}
-          <a className="hover:text-white/[0.5] underline">Terms and Conditions</a> and{" "}
-          <a className="hover:text-white/[0.5]  underline">Privacy Policy</a>
+          <Link href="/terms-and-conditions" className="hover:text-white/[0.5] underline">
+            Terms and Conditions
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="hover:text-white/[0.5]  underline">
+            Privacy Policy
+          </Link>
         </p>
         <span className="flex flex-row justify-between px-2">
           <h3 className="text-white/[0.25] mr-2">{`Don't have an account?`}</h3>

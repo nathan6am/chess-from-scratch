@@ -62,8 +62,6 @@ const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(async () => {
   const app: Express = express();
   const server: http.Server = http.createServer(app);
-  // await sessionClient.connect();
-  // console.log("Connected to session client");
   await redisClient.connect();
   console.log("Connected to redis client");
   const datasource = await db.initialize();
@@ -101,7 +99,17 @@ nextApp.prepare().then(async () => {
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
-  // app.use(passport.authenticate("session"));
+  //Proxy headers
+  app.use((req, res, next) => {
+    if (req.user) {
+      req.headers["x-user-authenticated"] = "true";
+      req.headers["x-user-id"] = req.user.id;
+      req.headers["x-user-data"] = req.user.type;
+    } else {
+      req.headers["x-user-authenticated"] = "false";
+    }
+    next();
+  });
 
   app.use("/api/auth", authRouter);
   app.use("/api/user", userRouter);

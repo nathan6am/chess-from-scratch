@@ -71,10 +71,7 @@ export default function NumericInput({
           value={value}
           pattern="\d*"
           placeholder="0"
-          className={cn(
-            "py-1.5 px-2 shadow bg-elevation-1 rounded-md focus:outline-none",
-            inputClassName
-          )}
+          className={cn("py-1.5 px-2 shadow bg-elevation-1 rounded-md focus:outline-none", inputClassName)}
         ></input>
       </div>
     </div>

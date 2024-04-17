@@ -16,7 +16,7 @@ import * as Chess from "@/lib/chess";
 import { DateTime, DurationObjectUnits } from "luxon";
 import { notEmpty } from "@/util/misc";
 import _ from "lodash";
-import useTimer from "./useTimer";
+import useTimer from "./utils/useTimer";
 import useSound from "use-sound";
 import useOpeningExplorer from "./useOpeningExplorer";
 //Context

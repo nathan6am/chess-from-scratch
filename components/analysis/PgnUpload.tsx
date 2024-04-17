@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { parsePgn } from "@/util/parsers/pgnParser";
 import { AiFillFileAdd, AiFillFile } from "react-icons/ai";
 import { BsFileEarmarkCheckFill, BsFileEarmarkXFill } from "react-icons/bs";
-import useDebounce from "@/hooks/useDebounce";
+import useDebounce from "@/hooks/utils/useDebounce";
 import Loading from "../base/Loading";
 export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void }) {
   const [fileName, setFileName] = useState<string | null>(null);

@@ -26,7 +26,6 @@ Page.getLayout = function getLayout(page) {
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const req = context.req;
   const id = context.query.id;
   const game = context.query.gameId;
   const sourceType = context.query.sourceType;

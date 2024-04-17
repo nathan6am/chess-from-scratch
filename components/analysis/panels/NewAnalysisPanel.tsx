@@ -1,31 +1,69 @@
-import { AnalysisHook } from "@/hooks/useAnalysisBoard";
-import React from "react";
-import { FaChessBoard, FaArchive, FaPaste } from "react-icons/fa";
-import { ImFolderUpload, ImFolder } from "react-icons/im";
-import { Disclosure, Transition } from "@headlessui/react";
-import { MdExpandMore, MdDelete } from "react-icons/md";
+import React, { useState } from "react";
+
+//Types
+import { BoardHandle } from "@/components/board/Board";
+import { AnalysisHook } from "@/hooks/analysis/useAnalysisBoard";
 import { BoardEditorHook } from "@/hooks/useBoardEditor";
 
+//Icons
+import { MdExpandMore } from "react-icons/md";
 import { IoMdAdd } from "react-icons/io";
-import { BoardHandle } from "@/components/board/Board";
-import PgnUpload from "@/components/analysis/PgnUpload";
-import { useState } from "react";
-import { Input } from "@/components/base";
+import { FaChessBoard, FaArchive, FaPaste } from "react-icons/fa";
+import { ImFolderUpload, ImFolder } from "react-icons/im";
 
+//Components
+import PgnUpload from "@/components/analysis/PgnUpload";
 import FenInput from "@/components/analysis/FenInput";
 import EditorPanel from "./EditorPanel";
 import FileBrowserPanel from "./FileBrowserPanel";
 import GameArchivePanel from "./GameArchivePanel";
+import { Disclosure, Transition } from "@headlessui/react";
+
+//Hooks
+import useAnalysisCache from "@/hooks/cache/useAnalysisCache";
+
+/**
+ * Panel content to display when creating a new analysis
+ */
 interface Props {
+  /**
+   * Analysis hook - TODO: Remove this and use the context
+   */
   analysis: AnalysisHook;
+  /**
+   * Reference to the board component
+   */
   boardRef: React.RefObject<BoardHandle>;
+  /**
+   * Board editor hook
+   */
   boardEditor: BoardEditorHook;
+  /**
+   * Whether edit mode is active
+   */
   editMode: boolean;
+  /**
+   * Set edit mode
+   */
   setEditMode: (value: boolean) => void;
+  /**
+   * Callback to flip the board
+   */
   flipBoard: () => void;
 }
+
 export default function NewAnalysisPanel({ analysis, boardRef, boardEditor, editMode, setEditMode, flipBoard }: Props) {
+  /**
+   * Panel state
+   */
   const [panel, setPanel] = useState<"main" | "open" | "games">("main");
+
+  /**
+   * Get the cached analysis (use to load previous unsaved analysis)
+   * TODO: Implement UI to load cached analysis
+   */
+  const { cachedAnalysis } = useAnalysisCache();
+
   return (
     <div className="bg-elevation-2 w-full h-full">
       {editMode ? (
@@ -136,11 +174,6 @@ export default function NewAnalysisPanel({ analysis, boardRef, boardEditor, edit
       )}
     </div>
   );
-}
-
-function PasteFen() {
-  const [fen, setFen] = useState("");
-  return <Input label="Paste or input FEN" />;
 }
 
 interface StyledDisclosureProps {

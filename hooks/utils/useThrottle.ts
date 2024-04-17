@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/**
+ * Hook to throttle the update of a value to a certain limit
+ * @param value The value to throttle
+ * @param limit How frequently to update the throttled value (in milliseconds)
+ * @returns The throttled value
+ */
+
 function useThrottle<T>(value: T, limit: number) {
   const [throttledValue, setThrottledValue] = useState(value);
   const lastRan = useRef(Date.now());

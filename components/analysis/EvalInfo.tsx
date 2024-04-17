@@ -3,7 +3,7 @@ import React, { useMemo, useState, useContext } from "react";
 import { AnalysisContext } from "./AnalysisBoard";
 
 //Components
-import { Evaler } from "@/hooks/useEvaler";
+import { Evaler } from "@/hooks/analysis/useEvaler";
 import { Popover } from "@headlessui/react";
 import ProgressBar from "./ProgressBar";
 import { Toggle, NumericInput } from "@/components/base";
