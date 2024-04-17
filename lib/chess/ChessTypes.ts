@@ -30,7 +30,7 @@ export type Position = Map<Square, Piece>;
 
 export interface HalfMove {
   move: Move;
-  timeRemaining?: number;
+  timeRemaining?: number | null;
   PGN: string;
   fen: string;
   board: Board;

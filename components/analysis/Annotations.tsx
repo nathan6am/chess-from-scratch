@@ -1,14 +1,5 @@
 //Framework
-import React, {
-  useState,
-  Fragment,
-  useMemo,
-  useCallback,
-  useRef,
-  ChangeEvent,
-  KeyboardEvent,
-  useEffect,
-} from "react";
+import React, { useState, Fragment, useMemo, useCallback, useContext, useReducer } from "react";
 
 //Types
 import { ArrowColor, TreeNode } from "@/lib/types";
@@ -19,12 +10,18 @@ import { Listbox, Transition, RadioGroup } from "@headlessui/react";
 //Icons
 import { MdCheck, MdEditNote } from "react-icons/md";
 import { CgRemoveR } from "react-icons/cg";
+import { FaRegTrashAlt } from "react-icons/fa";
 import * as Chess from "@/lib/chess";
 
 //Util
 import { ColorEnum } from "../board/BoardArrows";
 import classNames from "classnames";
 import { useColorOverride } from "@/hooks/useBoardMarkup";
+import { AnalysisContext } from "./AnalysisBoard";
+import TimeInput from "../base/TimeInput";
+import { Button } from "../base";
+import { Label } from "../base/Typography";
+
 //Numbered Annotation Glyphs
 export interface NAG {
   code: number;
@@ -62,98 +59,124 @@ export default function Annotations({ node, controls, markupControls }: Props) {
     [node, controls]
   );
 
+  const [key, setKey] = useState(1);
+  const forceUpdate = () => {
+    setKey((prev) => prev + 1);
+  };
   return (
     <div className="p-3 bg-[#202020]">
-      <MarkupControls
-        selectedColor={markupControls.color}
-        setSelectedColor={markupControls.setSelectedColor}
-        clear={markupControls.clear}
-        locked={markupControls.locked}
-        toggleLocked={markupControls.toggleLocked}
-      />
-      <div className="flex flex-row items-center">
-        <AnnotationSelect
-          updateAnnotations={updateAnnotations}
-          selected={selectedAnnotations}
-          disabled={!node}
+      <div className="flex flex-row items-end mb-3">
+        <MarkupControls
+          selectedColor={markupControls.color}
+          setSelectedColor={markupControls.setSelectedColor}
+          clear={markupControls.clear}
+          locked={markupControls.locked}
+          toggleLocked={markupControls.toggleLocked}
         />
-        <a
-          data-tooltip-id="my-tooltip"
-          data-tooltip-content="Clear all"
-          data-tooltip-place="right"
-          onClick={() => {
-            updateAnnotations([]);
-          }}
-          className="text-red-400 hover:text-red-500 cursor-pointer"
-        >
-          <CgRemoveR className="inline ml-1" />
-        </a>
+        <div className="flex flex-row items-center">
+          <AnnotationSelect updateAnnotations={updateAnnotations} selected={selectedAnnotations} disabled={!node} />
+          <a
+            data-tooltip-id="my-tooltip"
+            data-tooltip-content="Clear all"
+            data-tooltip-place="right"
+            onClick={() => {
+              updateAnnotations([]);
+            }}
+            className="text-red-400 hover:text-red-500 cursor-pointer mt-4"
+          >
+            <FaRegTrashAlt className="inline ml-1" />
+          </a>
+        </div>
       </div>
-      {/* <TimeInput /> */}
+      <Label>Time Remaining</Label>
+      <TimeRemainingInput key={key} reset={forceUpdate} />
     </div>
   );
 }
 
-function TimeInput() {
-  const [value, setValue] = useState("00:00:01");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const selectionStartRef = useRef<number>(0);
-  const selectionEndRef = useRef<number>(0);
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const input = inputRef.current;
-    if (!input) return;
-    const position = input.selectionStart;
-    console.log(position);
-    if (e.key.match(/[0-9]/)) {
-      if (position === 8) {
-        setValue((value) => {
-          const [hh, mm, ss] = value.split(":");
-          const digits = `${hh}${mm}${ss}`;
-          //Push the new digit to the end of the string and remove the first digit
-          const newDigits = digits.slice(1) + e.key;
-          const newHH = newDigits.slice(0, 2);
-          const newMM = newDigits.slice(2, 4);
-          const newSS = newDigits.slice(4, 6);
-          return `${newHH}:${newMM}:${newSS}`;
-        });
-        selectionStartRef.current = 8;
-      } else if (position !== null) {
-        //replace the digit at the current position
-        setValue((value) => {
-          const [hh, mm, ss] = value.split(":");
-          const digits = `${hh}${mm}${ss}`;
-          const newDigits = digits.slice(0, position) + e.key + digits.slice(position + 1);
-          const newHH = newDigits.slice(0, 2);
-          const newMM = newDigits.slice(2, 4);
-          const newSS = newDigits.slice(4, 6);
-          return `${newHH}:${newMM}:${newSS}`;
-        });
-        if (position < 2 || (position <= 3 && position < 5) || (position <= 6 && position < 8)) {
-          selectionStartRef.current = position + 1;
-        } else {
-          selectionStartRef.current = position + 2;
-        }
-      }
+function TimeRemainingInput({ reset }: { reset: () => void }) {
+  const { analysis } = useContext(AnalysisContext);
+  const timeRemaining: number | null = analysis.currentNode?.data.timeRemaining || null;
+  const [stagedTime, setStagedTime] = useState(timeRemaining);
+  const touched = timeRemaining !== stagedTime;
+  const onEnter = useCallback(() => {
+    if (analysis.currentNode) {
+      analysis.commentControls.updateTimeRemaining(analysis.currentNode.key, stagedTime);
     }
-  };
-  useEffect(() => {
-    if (!inputRef.current) return;
-    // Synchronize the cursor position after the value is updated
-    inputRef.current.selectionStart = selectionStartRef.current;
-    inputRef.current.selectionEnd = selectionStartRef.current;
-  }, [value, selectionStartRef.current]);
-
+  }, [analysis.currentNode, stagedTime]);
   return (
-    <input
-      type="text"
-      value={value}
-      ref={inputRef}
-      onKeyDown={handleKeyDown}
-      placeholder="--:--:--"
-      maxLength={8}
-    />
+    <>
+      <div className="flex flex-row items-center">
+        <div className="flex-3">
+          <TimeInput disabled={!analysis.currentNode} defaultValue={timeRemaining} onChange={setStagedTime} />
+        </div>
+        <Button
+          size="sm"
+          onClick={onEnter}
+          disabled={!touched}
+          className="ml-2 flex-1"
+          label="Save Changes"
+          variant="success"
+        />
+        <Button size="sm" disabled={!touched} onClick={reset} className="ml-2 flex-1" label="Reset" variant="neutral" />
+      </div>
+    </>
   );
 }
+
+// function TimeInput() {
+//   const [value, setValue] = useState("00:00:01");
+//   const inputRef = useRef<HTMLInputElement>(null);
+//   const selectionStartRef = useRef<number>(0);
+//   const selectionEndRef = useRef<number>(0);
+//   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+//     const input = inputRef.current;
+//     if (!input) return;
+//     const position = input.selectionStart;
+//     console.log(position);
+//     if (e.key.match(/[0-9]/)) {
+//       if (position === 8) {
+//         setValue((value) => {
+//           const [hh, mm, ss] = value.split(":");
+//           const digits = `${hh}${mm}${ss}`;
+//           //Push the new digit to the end of the string and remove the first digit
+//           const newDigits = digits.slice(1) + e.key;
+//           const newHH = newDigits.slice(0, 2);
+//           const newMM = newDigits.slice(2, 4);
+//           const newSS = newDigits.slice(4, 6);
+//           return `${newHH}:${newMM}:${newSS}`;
+//         });
+//         selectionStartRef.current = 8;
+//       } else if (position !== null) {
+//         //replace the digit at the current position
+//         setValue((value) => {
+//           const [hh, mm, ss] = value.split(":");
+//           const digits = `${hh}${mm}${ss}`;
+//           const newDigits = digits.slice(0, position) + e.key + digits.slice(position + 1);
+//           const newHH = newDigits.slice(0, 2);
+//           const newMM = newDigits.slice(2, 4);
+//           const newSS = newDigits.slice(4, 6);
+//           return `${newHH}:${newMM}:${newSS}`;
+//         });
+//         if (position < 2 || (position <= 3 && position < 5) || (position <= 6 && position < 8)) {
+//           selectionStartRef.current = position + 1;
+//         } else {
+//           selectionStartRef.current = position + 2;
+//         }
+//       }
+//     }
+//   };
+//   useEffect(() => {
+//     if (!inputRef.current) return;
+//     // Synchronize the cursor position after the value is updated
+//     inputRef.current.selectionStart = selectionStartRef.current;
+//     inputRef.current.selectionEnd = selectionStartRef.current;
+//   }, [value, selectionStartRef.current]);
+
+//   return (
+//     <input type="text" value={value} ref={inputRef} onKeyDown={handleKeyDown} placeholder="--:--:--" maxLength={8} />
+//   );
+// }
 
 interface SelectProps {
   selected: number[];
@@ -174,9 +197,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
           updateAnnotations(values);
         } else {
           const filterValues = category.options.map((option) => option.code);
-          updateAnnotations(
-            values.filter((value) => value === valueAdded || !filterValues.includes(value))
-          );
+          updateAnnotations(values.filter((value) => value === valueAdded || !filterValues.includes(value)));
         }
       }
     },
@@ -184,27 +205,21 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
   );
   return (
     <div className=" w-60">
+      <Label>Annotation Glyphs</Label>
       <Listbox value={selected} onChange={onChange} multiple>
         <div className="relative mt-1">
           <Listbox.Button className="text-white/[0.8] text-sm relative w-full cursor-pointer rounded-lg bg-white/[0.1] py-2 pl-3 pr-10 text-left shadow-md focus:outline-none hover:bg-white/[0.2] hover:text-white">
             Annotate With Glyphs
             <>
               {selected.length > 0 && (
-                <span className="inline px-2 text-sm bg-amber-600 ml-2 rounded-lg">
-                  {selected.length}
-                </span>
+                <span className="inline px-2 text-sm bg-gold-300-600 ml-2 rounded-lg">{selected.length}</span>
               )}
             </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
               <MdEditNote className="h-5 w-5" aria-hidden="true" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
@@ -222,12 +237,8 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
                       >
                         {({ selected }) => (
                           <>
-                            <span
-                              className={`block truncate ${
-                                selected ? "font-medium" : "font-normal"
-                              }`}
-                            >
-                              <span className="inline text-sepia mr-1">{option.unicode}</span>
+                            <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>
+                              <span className="inline text-gold-200 mr-1">{option.unicode}</span>
                               {option.description}
                             </span>
                             {selected ? (
@@ -256,18 +267,12 @@ interface MarkupControlProps {
   locked: boolean;
   toggleLocked: () => void;
 }
-function MarkupControls({
-  selectedColor,
-  setSelectedColor,
-  clear,
-  locked,
-  toggleLocked,
-}: MarkupControlProps) {
+function MarkupControls({ selectedColor, setSelectedColor, clear, locked, toggleLocked }: MarkupControlProps) {
   const colorOverride = useColorOverride();
   return (
     <div className="w-full">
       <RadioGroup value={selectedColor} onChange={setSelectedColor}>
-        <label className="text-sm opacity-60">Arrow Color</label>
+        <Label className="mb-1">Arrow Color</Label>
         <div className="flex flex-row w-fit bg-[#303030] shadow-md p-2 rounded-md">
           {Object.entries(ColorEnum).map(([key, value]) => (
             <RadioGroup.Option value={key} key={key}>

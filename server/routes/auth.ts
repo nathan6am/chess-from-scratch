@@ -10,9 +10,15 @@ import * as paasportGoogle from "passport-google-oauth20";
 //Utilities
 import { v4 as uuidv4 } from "uuid";
 import { customAlphabet } from "nanoid";
+import normalizeEmail from "normalize-email";
 
 //Entities
 import User, { SessionUser } from "../../lib/db/entities/User";
+
+//RedisLayer
+import { redisClient } from "../index";
+import { wrapClient } from "../util/redisClientWrapper";
+import { sendVerificationEmail } from "../mail-handler";
 
 const nanoid = customAlphabet("1234567890", 10);
 
@@ -142,13 +148,9 @@ router.get(
   passport.authenticate("google", { successReturnToOrRedirect: "/", failureRedirect: "/login" })
 );
 
-router.get(
-  "/guest",
-  passport.authenticate("guest", { failureRedirect: "/login", session: true }),
-  (req, res) => {
-    res.redirect("/");
-  }
-);
+router.get("/guest", passport.authenticate("guest", { failureRedirect: "/login", session: true }), (req, res) => {
+  res.redirect("/");
+});
 
 router.get("/user", async function (req, res, next) {
   // console.log("user", req.user);
@@ -202,6 +204,69 @@ router.post("/signup", async function (req, res, next) {
   }
 });
 
+router.get("/verify-email", async function (req, res) {
+  const redisLayer = wrapClient(redisClient);
+  const token = req.query.token;
+  if (!token || typeof token !== "string") {
+    console.log("token is required");
+    res.status(400).end();
+    return;
+  }
+  const userid = await redisLayer.validateVerificationToken(token);
+  if (!userid) {
+    console.log(`token: ${token} not found`);
+    res.status(400).end();
+    return;
+  }
+  const user = await User.findOneBy({ id: userid });
+  if (!user) {
+    console.log("user not found");
+    res.status(400).end();
+    return;
+  }
+  user.emailVerified = true;
+  await user.save();
+  res.status(200).end();
+});
+
+router.post("/resend-verification-email", async function (req, res) {
+  const redisLayer = wrapClient(redisClient);
+  if (!req.user) {
+    res.status(401).end();
+    return;
+  }
+  const sessionUser = req.user;
+  if (sessionUser.type === "guest") {
+    res.status(400).end();
+    return;
+  }
+  const userid = sessionUser.id;
+
+  const user = await User.findOne({
+    relations: {
+      credentials: true,
+    },
+    where: {
+      id: userid,
+    },
+  });
+  if (!user) {
+    res.status(400).end();
+    return;
+  }
+  if (user.emailVerified) {
+    res.status(400).end();
+    return;
+  }
+  const token = await redisLayer.generateVerificationToken(user.id);
+  const sent = await sendVerificationEmail({ email: user.credentials.email, name: user.name || "", token });
+  if (sent) {
+    res.status(200).end();
+  } else {
+    res.status(500).end();
+  }
+});
+
 router.get("/checkusername", async function (req, res) {
   console.log(req.query);
   const username = req.query.username;
@@ -213,27 +278,24 @@ router.get("/checkusername", async function (req, res) {
   res.status(200).json({ valid: !exists });
 });
 
-router.post(
-  "/change-password",
-  async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
-    const sessionUser = req.user;
-    if (!sessionUser || sessionUser.type === "guest") {
-      res.status(401).end();
-      return;
-    }
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      res.status(400).end();
-      return;
-    }
-    const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
-
-    if (updated) return res.status(200).json({ updated: true });
-    else {
-      res.status(401).end();
-    }
+router.post("/change-password", async function (req: Request<{ currentPassword: string; newPassword: string }>, res) {
+  const sessionUser = req.user;
+  if (!sessionUser || sessionUser.type === "guest") {
+    res.status(401).end();
+    return;
   }
-);
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    res.status(400).end();
+    return;
+  }
+  const updated = await User.updateCredentials(sessionUser.id, currentPassword, newPassword);
+
+  if (updated) return res.status(200).json({ updated: true });
+  else {
+    res.status(401).end();
+  }
+});
 
 router.get("/logout", function (req, res, next) {
   console.log("logging out");

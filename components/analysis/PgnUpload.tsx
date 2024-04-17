@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import { parsePgn } from "@/util/parsers/pgnParser";
 import { AiFillFileAdd, AiFillFile } from "react-icons/ai";
 import { BsFileEarmarkCheckFill, BsFileEarmarkXFill } from "react-icons/bs";
+import useDebounce from "@/hooks/useDebounce";
+import Loading from "../base/Loading";
 export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [pgnText, setPgnText] = useState<string | null>(null);
@@ -42,17 +44,18 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
       }
     }
   };
+
+  const debouncedPgnText = useDebounce(pgnText, 500);
   const parsedPgn = useMemo(() => {
-    if (pgnText) {
+    if (debouncedPgnText) {
       try {
-        return parsePgn(pgnText);
+        return parsePgn(debouncedPgnText);
       } catch (e) {
-        console.error(e);
         return null;
       }
     }
     return null;
-  }, [pgnText]);
+  }, [debouncedPgnText]);
 
   const validPgn = useMemo(() => parsedPgn !== null, [parsedPgn]);
 
@@ -76,52 +79,62 @@ export default function PgnUpload({ loadPgn }: { loadPgn: (pgn: string) => void 
     }
   };
 
+  const error = debouncedPgnText && !validPgn ? true : false;
+
   return (
     <div className="flex flex-col items-center">
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gold-100 rounded-lg"
+        className="flex flex-col items-center justify-center w-full h-60 rounded-md bg-elevation-3 shadow-md border border-elevation-6"
       >
-        {loading ? (
-          <>Uploading...</>
-        ) : (
-          <>
-            {fileName ? (
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex flex-row items-center mb-2">
-                  {pgnText && validPgn ? (
-                    <>
-                      <BsFileEarmarkCheckFill className="text-2xl text-green-300 inline mr-2" /> PGN Uploaded.{" "}
-                    </>
-                  ) : (
-                    <>
-                      <BsFileEarmarkXFill className="text-2xl text-red-400 inline mr-2" />
-                      Upload Failed
-                    </>
-                  )}
-                </div>
+        <textarea
+          value={pgnText || ""}
+          onChange={(e) => setPgnText(e.target.value)}
+          placeholder="Paste pgn here, or drag and drop a file to upload"
+          className="h-full w-full bg-transparent px-2 resize-none"
+        ></textarea>
+        <div className="w-full bg-elevation-4">
+          {loading ? (
+            <Loading className="py-2" />
+          ) : (
+            <>
+              {fileName ? (
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-row items-center mb-2">
+                    {pgnText && validPgn ? (
+                      <>
+                        <BsFileEarmarkCheckFill className="text-2xl text-green-300 inline mr-2" /> PGN Uploaded.{" "}
+                      </>
+                    ) : (
+                      <>
+                        <BsFileEarmarkXFill className="text-2xl text-red-400 inline mr-2" />
+                        Upload Failed
+                      </>
+                    )}
+                  </div>
 
-                <p className="flex flex-row items-center text-sm">
-                  <AiFillFile className="inline mr-1" />
-                  {fileName}
-                </p>
-              </div>
-            ) : (
-              <>
-                <label
-                  className="cursor-pointer inline text-lg text-gold-200 hover:text-gold-100 flex flex-col items-center group gap-y-2"
-                  htmlFor="pgnFile"
-                >
-                  <AiFillFileAdd className="inline text-white text-3xl opacity-50 group-hover:opacity-80" />
-                  <span>Select a PGN file to upload</span>
-                </label>{" "}
-                <span className="text-sm text-white/[0.5]">or drag and drop a file here</span>
-              </>
-            )}
-          </>
-        )}
+                  <p className="flex flex-row items-center text-sm">
+                    <AiFillFile className="inline mr-1" />
+                    {fileName}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <label
+                    className="w-full cursor-pointer p-4 inline text-md text-light-100 hover:text-gold-100 flex flex-row items-center group gap-y-2 focus:outline-none focus:ring-transparent appearance-none"
+                    htmlFor="pgnFile"
+                  >
+                    <AiFillFileAdd className="inline text-white text-lg mr-2 opacity-50 group-hover:opacity-80" />
+                    <span>Select a PGN file to upload</span>
+                  </label>{" "}
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
+
       <input type="file" name="pgnFile" id="pgnFile" onChange={handleFileInput} className="hidden" />
       {pgnText && validPgn && (
         <button

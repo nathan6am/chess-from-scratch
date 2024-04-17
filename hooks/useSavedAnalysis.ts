@@ -110,6 +110,9 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
     },
   });
 
+  const unLink = () => {
+    load(null);
+  };
   const { mutate: fork } = useMutation({
     mutationFn: async (data: { title: string; collectionIds: string[] }) => {
       const response = await axios.post<{ success: boolean; analysis: Analysis }>(`/api/analysis/${id}/fork`, data);
@@ -128,6 +131,7 @@ export default function useSavedAnalysis({ pgn: _pgn, tags, shouldSync, onSaveNe
     save,
     saveNew,
     fork,
+    unLink,
     load,
     id,
     synced,

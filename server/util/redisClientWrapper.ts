@@ -66,16 +66,32 @@ export class Redis implements Redis {
   };
 
   generateVerificationToken = async (id: string) => {
-    const token = await this.client.set(`token:${id}`, nanoid(), {
+    const token = nanoid();
+    await this.client.set(`token:${token}`, id, {
       EX: 3600 * 24,
     });
     return token;
   };
-  validateVerificationToken = async (id: string, token: string) => {
-    const val = await this.client.get(`token:${id}`);
+  validateVerificationToken = async (token: string) => {
+    const userid = await this.client.get(`token:${token}`);
+    if (!userid) return false;
+    this.client.del(`token:${token}`);
+    return userid;
+  };
+
+  generateResetToken = async (id: string) => {
+    const token = await this.client.set(`reset:${id}`, nanoid(), {
+      EX: 3600,
+    });
+    return token;
+  };
+
+  validateResetToken = async (id: string, token: string) => {
+    const val = await this.client.get(`reset:${id}`);
     if (!val) return false;
     if (val === token) {
-      this.client.del(`token:${id}`);
+      this.client.del(`reset:${id}`);
+      return true;
     }
     return false;
   };

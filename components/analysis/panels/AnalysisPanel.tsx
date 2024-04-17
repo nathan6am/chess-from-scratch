@@ -7,7 +7,7 @@ import { MdModeComment } from "react-icons/md";
 import { FaExclamationCircle } from "react-icons/fa";
 import { AiFillTag, AiFillCheckCircle } from "react-icons/ai";
 import { VscCollapseAll, VscExpandAll } from "react-icons/vsc";
-import { MdDriveFileRenameOutline } from "react-icons/md";
+import { MdDriveFileRenameOutline, MdOutlineEditOff } from "react-icons/md";
 import { HiSave } from "react-icons/hi";
 
 //content components
@@ -31,6 +31,7 @@ import useFileManager from "@/hooks/useFileManager";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
 import { useMediaQuery } from "@react-hook/media-query";
+import { TbGitFork } from "react-icons/tb";
 
 interface Props {
   modalControls: {
@@ -95,19 +96,34 @@ export default function AnalysisPanel({ modalControls }: Props) {
               {saveManager.id && saveManager.data ? (
                 <>
                   <p>{saveManager.data.analysis.title}</p>
-                  <span className="text-sm text-light-300 flex flex-row items-end">
-                    {saveManager.syncStatus === "synced" ? (
-                      <>
-                        <p>Saved</p>
-                        <AiFillCheckCircle className="text-success-400 ml-1 text-md mb-0.5" />
-                      </>
-                    ) : (
-                      <>
-                        Saving Changes{" "}
-                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
-                      </>
-                    )}
-                  </span>
+                  {saveManager.data.readonly ? (
+                    <div className="flex flex-row items-center">
+                      <p className="text-light-300 text-sm mr-1">
+                        <MdOutlineEditOff className="inline mr-1" />
+                        Readonly
+                      </p>
+                      <button
+                        onClick={saveManager.unLink}
+                        className="py-1 px-2 mx-1 rounded-md bg-elevation-5 hover:bg-elevation-6 shadow-sm text-light-100 hover:text-gold-200 text-sm"
+                      >
+                        <TbGitFork className="inline mr-0.5" />
+                        Fork Locally to Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-light-300 flex flex-row items-end">
+                      {saveManager.syncStatus === "synced" ? (
+                        <>
+                          <p>Saved</p>
+                          <AiFillCheckCircle className="text-success-400 ml-1 text-md mb-0.5" />
+                        </>
+                      ) : (
+                        <>
+                          Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        </>
+                      )}
+                    </span>
+                  )}
                 </>
               ) : (
                 <>
@@ -154,11 +170,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </>
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
-          <Explorer
-            explorer={analysis.explorer}
-            onMove={onMove}
-            showPlayer={modalControls.showPlayer}
-          />
+          <Explorer explorer={analysis.explorer} onMove={onMove} showPlayer={modalControls.showPlayer} />
         </Tab.Panel>
         <Tab.Panel as={Fragment}>
           <>
@@ -182,8 +194,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
                       </>
                     ) : (
                       <>
-                        Saving Changes{" "}
-                        <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
+                        Saving Changes <PulseLoader size={3} color="#959595" className="mb-[3px] ml-1" />
                       </>
                     )}
                   </span>
@@ -260,11 +271,7 @@ export default function AnalysisPanel({ modalControls }: Props) {
           </Tab.List>
           <Tab.Panels className={expanded ? "" : "hidden"}>
             <Tab.Panel>
-              <Comments
-                key={currentNode?.key || "none"}
-                node={currentNode}
-                controls={commentControls}
-              />
+              <Comments key={currentNode?.key || "none"} node={currentNode} controls={commentControls} />
             </Tab.Panel>
             <Tab.Panel>
               <Annotations
@@ -306,9 +313,7 @@ function StyledTab({ children, expand }: StyledTabProps) {
         classNames(
           "w-32 rounded-t-md py-1 text-sm text-white/[0.7] px-4",
           "focus:outline-none ",
-          selected
-            ? "bg-[#202020]"
-            : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
+          selected ? "bg-[#202020]" : "bg-[#181818] text-white/[0.5] hover:bg-[#202020] hover:text-white"
         )
       }
     >

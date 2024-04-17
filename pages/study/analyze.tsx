@@ -3,14 +3,23 @@ import type { NextPageWithLayout } from "@/pages/_app";
 import type { GetServerSideProps } from "next";
 import Dashboard from "@/components/layout/Dashboard";
 import AnalysisBoard from "@/components/analysis/AnalysisBoard";
-
+import Head from "next/head";
 interface Props {
   id: string | null;
   game: string | null;
   sourceType: "masters" | "lichess" | null;
 }
 const Page: NextPageWithLayout<Props> = ({ id, game, sourceType }: Props) => {
-  return <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />;
+  return (
+    <>
+      <Head>
+        <title>Next-Chess | Analysis Board</title>
+        <meta name="description" content="Analysis Board and PGN Editor" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <AnalysisBoard initialId={id} sourceGameId={game} sourceGameType={sourceType} />
+    </>
+  );
 };
 Page.getLayout = function getLayout(page) {
   return <Dashboard className="bg-elevation-0">{page}</Dashboard>;

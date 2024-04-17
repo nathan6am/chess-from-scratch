@@ -20,6 +20,9 @@ import {
 import MenuBar from "@/components/layout/MenuBar";
 import { MenuWrapper, MenuItems, MenuItem, MenuButton } from "../base/ToolMenu";
 
+import { MdOutlineEditOff, MdCancel } from "react-icons/md";
+import { TbGitFork } from "react-icons/tb";
+
 // Hooks
 import useSavedAnalysis from "@/hooks/useSavedAnalysis";
 import useAnalysisBoard, { AnalysisHook } from "@/hooks/useAnalysisBoard";
@@ -38,6 +41,14 @@ import useGameCache from "@/hooks/useGameCache";
 import { parsePuzzleEntity } from "@/util/parsers/puzzleParser";
 import { treeFromLine } from "@/util/parsers/pgnParser";
 import { EditorPanel } from "./panels";
+import toast, { Toaster, ToastBar } from "react-hot-toast";
+import ReadOnlyNotification from "./ReadOnlyNotification";
+
+const notify = () =>
+  toast("This analysis is in readonly mode.", {
+    icon: <MdOutlineEditOff />,
+  });
+
 interface Props {
   initialId?: string | null;
   sourceGameId?: string | null;
@@ -50,6 +61,7 @@ interface Context {
   boardRef: React.RefObject<BoardHandle>;
   boardEditor: ReturnType<typeof useBoardEditor>;
   saveManager: ReturnType<typeof useSavedAnalysis>;
+  showModal: (key: "save" | "export" | "open") => void;
 }
 
 export const AnalysisContext = React.createContext<Context>(null!);
@@ -95,6 +107,8 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
       analysis.tree.setTreeId(data.id);
     },
   });
+
+  const readonly = saveManager.data?.readonly;
 
   // Display state
   const [orientation, setOrientation] = useState<Chess.Color>("w");
@@ -167,6 +181,13 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           });
     }
   }, [sourceGameId, sourceGameType, initialLoad, analysis, id]);
+  const [readonlyVisible, setReadonlyVisible] = useState(saveManager.data?.readonly);
+
+  useEffect(() => {
+    if (saveManager.data?.readonly) {
+      setReadonlyVisible(true);
+    }
+  }, [saveManager.data?.readonly]);
 
   // Load saved analysis on initial load and id change
   useEffect(() => {
@@ -193,6 +214,21 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         boardRef,
         boardEditor: editor,
         saveManager,
+        showModal: (key) => {
+          switch (key) {
+            case "save":
+              setSaveModalShown(true);
+              break;
+            case "export":
+              setExportModalShown(true);
+              break;
+            case "open":
+              setOpenModalShown(true);
+              break;
+            default:
+              return;
+          }
+        },
       }}
     >
       <ExportPGNDialog
@@ -229,6 +265,36 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
         }}
       />
       <BoardWithPanelContainer>
+        <ReadOnlyNotification>
+          <>
+            {readonlyVisible && (
+              <div className="w-lg flex flex-row space-around items-center text-sm bg-[#3498db] p-3 max-w-[600px] pointer-events-auto">
+                <MdOutlineEditOff className="text-lg mr-1" />
+                {`This analysis is in readonly mode.`}
+                {
+                  <>
+                    <button
+                      onClick={saveManager.unLink}
+                      className="py-1 px-2 mx-1 rounded-md bg-[#2774a7] hover:bg-[#1b5074]"
+                    >
+                      <TbGitFork className="inline mr-0.5" />
+                      Fork Locally to Edit
+                    </button>
+                  </>
+                }
+
+                <button
+                  className="mx-2 text-white/[0.7] hover:text-white"
+                  onClick={() => {
+                    setReadonlyVisible(false);
+                  }}
+                >
+                  Dismiss <MdCancel className="inline ml-[2px]" />
+                </button>
+              </div>
+            )}
+          </>
+        </ReadOnlyNotification>
         <MenuBar>
           <MenuWrapper>
             <MenuButton>File</MenuButton>
@@ -351,7 +417,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               animationSpeed={settings.display.animationSpeed}
               lastMove={editMode ? null : currentGame.lastMove}
               activeColor={currentGame.activeColor}
-              moveable={"both"}
+              moveable={readonly ? "none" : "both"}
               preMoveable={false}
               autoQueen={settings.gameBehavior.autoQueen}
               onMove={onMove}

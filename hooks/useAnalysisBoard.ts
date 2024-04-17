@@ -55,6 +55,7 @@ export interface AnalysisHook {
   commentControls: {
     updateComment: (nodeId: string, comment: string) => void;
     updateAnnotations: (nodeId: string, annotations: number[]) => void;
+    updateTimeRemaining: (nodeId: string, timeRemaining: number | null) => void;
   };
   markupControls: {
     onArrow: (arrow: Arrow) => void;
@@ -351,6 +352,17 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     [variationTree.tree]
   );
 
+  const updateTimeRemaining = useCallback(
+    (nodeId: string, timeRemaining: number | null) => {
+      const node = variationTree.tree.getNode(nodeId);
+      if (!node) return;
+      variationTree.tree.updateNode(nodeId, {
+        timeRemaining: timeRemaining || undefined,
+      });
+    },
+    [variationTree.tree]
+  );
+
   const updateArrows = useCallback(
     (nodeId: string, arrows: Arrow[]) => {
       const node = variationTree.tree.getNode(nodeId);
@@ -504,6 +516,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     commentControls: {
       updateComment,
       updateAnnotations,
+      updateTimeRemaining,
     },
     markupControls: {
       onClear,

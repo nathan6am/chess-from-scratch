@@ -33,7 +33,7 @@ import {
   LobbyServer,
 } from "./types/lobby";
 
-const redisClient = createClient();
+export const redisClient = createClient();
 // const sessionClient = createClient({ legacyMode: true });
 const pgSession = connectPgSimple(session);
 export type RedisClient = typeof redisClient;

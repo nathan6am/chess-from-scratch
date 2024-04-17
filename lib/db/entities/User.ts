@@ -26,6 +26,7 @@ import Solved_Puzzle from "./Solved_Puzzle";
 import Collection from "./Collection";
 import Analysis from "./Analysis";
 import { updateRatings } from "../../../server/util/glicko";
+import normalizeEmail from "normalize-email";
 
 export type Ratings = Record<RatingCategory, Rating>;
 
@@ -110,6 +111,10 @@ export default class User extends BaseEntity {
     if (!this.complete) return "incomplete";
     if (!this.emailVerified) return "unverified";
     return "user";
+  }
+
+  get hasCredentials() {
+    return !!this.credentials.email && !!this.credentials.hashedPassword;
   }
 
   @Column({ default: false })
@@ -259,10 +264,11 @@ export default class User extends BaseEntity {
     created: Partial<User> | null;
     fieldErrors?: Array<{ field: string; message: string }>;
   }> {
-    const { email, username, password } = account;
+    const { email: _email, username, password } = account;
+    const email = normalizeEmail(_email);
     const exists = await this.createQueryBuilder("user")
       .leftJoinAndSelect("user.credentials", "credentials")
-      .where("credentials.email = :email", { email: account.email })
+      .where("credentials.email = :email", { email: email })
       .orWhere("LOWER(user.username) = LOWER(:username)", {
         username: account.username,
       })
