@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 
 //UI Components
-import { Input } from "@/components/base";
+import { Input, Button } from "@/components/base";
 
 //Util
 import axios from "axios";
@@ -11,6 +11,8 @@ import _ from "lodash";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import YupPassword from "yup-password";
+import { Panel } from "../dashboard";
+import { PanelHeader } from "../base/Typography";
 YupPassword(yup);
 
 //ValidationSchemas
@@ -54,8 +56,8 @@ export default function ChangePasswordForm() {
       });
   };
   return (
-    <div className="max-w-[30rem]">
-      <h2 className="text-xl mb-4">Change Password</h2>
+    <div className="max-w-md mb-8">
+      <PanelHeader className="mb-2 text-lg">Change Password</PanelHeader>
 
       <form className="w-full" onSubmit={handleSubmit(onSubmit)}>
         <Input
@@ -91,13 +93,7 @@ export default function ChangePasswordForm() {
           })}
         />
         {successMessage && <p>{successMessage}</p>}
-        <button
-          type="submit"
-          disabled={false}
-          className={`text-md ${"bg-[#b99873] hover:bg-[#a58058]"}  text-white py-2 px-6 rounded-md w-fit my-2`}
-        >
-          Change Password
-        </button>
+        <Button type="submit" disabled={false} label="Change Password"></Button>
       </form>
     </div>
   );

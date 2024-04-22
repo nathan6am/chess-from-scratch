@@ -151,8 +151,9 @@ export default function SignUpForm({ profile }: Props) {
             <p className="text-sm text-white/[0.3] font-medium ml-1 mt-[1px]">(optional)</p>
           </span>
           <CountrySelect
+            value={country}
             onChange={(val) => {
-              setCountry(val?.id || null);
+              setCountry(val);
             }}
           />
 

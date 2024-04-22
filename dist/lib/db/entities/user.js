@@ -154,6 +154,13 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             type: user.type,
         };
     }
+    static async deleteAccount(id) {
+        const user = await this.findOne({ where: { id } });
+        if (!user)
+            return false;
+        await user.remove();
+        return true;
+    }
     static async loginWithFacebook(profile) {
         const user = await this.findOne({
             relations: {
@@ -257,6 +264,18 @@ let User = User_1 = class User extends typeorm_1.BaseEntity {
             relations: { credentials: true },
         });
         if (user && bcrypt_1.default.compareSync(currentPassword, user.credentials.hashedPassword)) {
+            user.credentials.hashedPassword = bcrypt_1.default.hashSync(newPassword, 10);
+            await user.save();
+            return true;
+        }
+        return false;
+    }
+    static async resetPassword(userid, newPassword) {
+        const user = await this.findOne({
+            where: { id: userid },
+            relations: { credentials: true },
+        });
+        if (user) {
             user.credentials.hashedPassword = bcrypt_1.default.hashSync(newPassword, 10);
             await user.save();
             return true;
@@ -410,11 +429,11 @@ __decorate([
     __metadata("design:type", Object)
 ], User.prototype, "solvedPuzzles", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => Collection_1.default, (collection) => collection.user),
+    (0, typeorm_1.OneToMany)(() => Collection_1.default, (collection) => collection.user, { onDelete: "CASCADE" }),
     __metadata("design:type", Object)
 ], User.prototype, "collections", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => Analysis_1.default, (analysis) => analysis.author),
+    (0, typeorm_1.OneToMany)(() => Analysis_1.default, (analysis) => analysis.author, { onDelete: "CASCADE" }),
     __metadata("design:type", Object)
 ], User.prototype, "savedAnalyses", void 0);
 __decorate([

@@ -80,20 +80,17 @@ export class Redis implements Redis {
   };
 
   generateResetToken = async (id: string) => {
-    const token = await this.client.set(`reset:${id}`, nanoid(), {
-      EX: 3600,
+    const token = nanoid();
+    await this.client.set(`reset:${token}`, id, {
+      EX: 3600 * 24,
     });
     return token;
   };
 
-  validateResetToken = async (id: string, token: string) => {
-    const val = await this.client.get(`reset:${id}`);
-    if (!val) return false;
-    if (val === token) {
-      this.client.del(`reset:${id}`);
-      return true;
-    }
-    return false;
+  validateResetToken = async (token: string) => {
+    const userid = await this.client.get(`reset:${token}`);
+    if (!userid) return false;
+    return userid;
   };
 
   updateLobby = async (lobbyid: string, updates: Partial<Lobby>): Promise<Lobby> => {

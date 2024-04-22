@@ -6,8 +6,8 @@ import GameList from "../GameList";
 import Link from "next/link";
 
 //hooks
-import useAuth from "@/hooks/useAuth";
-import useGameSearch from "@/hooks/useGameSearch";
+import useAuth from "@/hooks/queries/useAuth";
+import useGameSearch from "@/hooks/queries/useGameSearch";
 import { PanelHeader } from "@/components/base/Typography";
 
 export default function RecentGames() {

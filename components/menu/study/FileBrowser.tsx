@@ -14,7 +14,7 @@ import { IoMdMore } from "react-icons/io";
 import { useRouter } from "next/router";
 import { ScrollContainer } from "../../layout/GameLayout";
 import useDebounce from "@/hooks/utils/useDebounce";
-import useAnalysisSearch from "@/hooks/useAnalysisSearch";
+import useAnalysisSearch from "@/hooks/queries/useAnalysisSearch";
 import { useInView } from "react-intersection-observer";
 import { useContextMenu, Item, ItemParams, Menu } from "react-contexify";
 import ConfirmationDialog from "../../dialogs/ConfirmationDialog";

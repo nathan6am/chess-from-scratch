@@ -19,7 +19,7 @@ const defaultGameConfig: Chess.GameConfig = {
   timeControl: null,
 };
 const useLocalGame = (options: Options) => {
-  const settings = useSettings();
+  const { settings } = useSettings();
 
   const gameConfig = useMemo<Chess.GameConfig>(() => {
     const configOptions = removeUndefinedFields(options.gameConfig);

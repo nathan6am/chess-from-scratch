@@ -2,8 +2,10 @@ import { Dialog, Transition } from "@headlessui/react";
 import { FaWrench } from "react-icons/fa";
 //Framework
 import React, { useState, useContext, useCallback, Fragment, useMemo } from "react";
-import { PreferencesTabs } from "../menu/options/Options";
+import { PreferencesTabs } from "../menu/options/OptionsMenu";
 import { PanelHeader } from "../base/Typography";
+import { IconButton } from "../base";
+import { MdClose } from "react-icons/md";
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
@@ -13,7 +15,7 @@ export default function OptionsOverlay({ isOpen, closeModal }: Props) {
   return (
     <>
       <Transition appear show={isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-20" onClose={closeModal} unmount={false}>
+        <Dialog as="div" className="relative z-[999]" onClose={closeModal} unmount={false}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -37,14 +39,17 @@ export default function OptionsOverlay({ isOpen, closeModal }: Props) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full h-[80vh] max-w-[1200px] mx-4  px-4 sm:px-4 transform overflow-show rounded-2xl bg-[#181818] py-4 text-left align-middle shadow-lg transition-all">
+                <Dialog.Panel className="w-full h-[80vh] max-w-[1200px] mx-4  px-4 sm:px-4 transform overflow-show rounded-sm bg-elevation-2 py-4 text-left align-middle shadow-lg transition-all">
                   <Dialog.Title>
-                    <PanelHeader>
+                    <PanelHeader className="mb-4">
                       <FaWrench className="inline mr-2" />
                       User Preferences
                     </PanelHeader>
                   </Dialog.Title>
-                  <PreferencesTabs />
+                  <IconButton className="absolute top-2 right-2" icon={MdClose} onClick={closeModal} />
+                  <div className="flex flex-1 h-full">
+                    <PreferencesTabs />
+                  </div>
                 </Dialog.Panel>
               </Transition.Child>
             </div>

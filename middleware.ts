@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SessionUser } from "./lib/db/entities/User";
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
@@ -19,7 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   //Redirect to verify page if user is not verified
-  if (status === "unverified" && !url.pathname.startsWith("/complete-profile")) {
+  if (status === "unverified" && !url.pathname.startsWith("/complete-profile") && !url.pathname.startsWith("/verify")) {
     //Redirect to verify page if user is not verified
     url.pathname = "/verify";
     return NextResponse.redirect(url);
@@ -47,5 +46,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|signup|privacy|terms-and-conditions|help|auth).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|login|signup|privacy|terms-and-conditions|help|auth|assets|stockfish|stockfishNNUE).*)",
+  ],
 };

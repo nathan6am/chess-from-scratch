@@ -46,7 +46,7 @@ const defaultGameConfig: Chess.GameConfig = {
 };
 
 export const useEngineGame = (options: Options) => {
-  const settings = useSettings();
+  const { settings } = useSettings();
 
   const [isThinking, setIsThinking] = useState(false);
   const gameConfig = useMemo<Chess.GameConfig>(() => {
@@ -180,12 +180,16 @@ export const useEngineGame = (options: Options) => {
         clock.pause();
       }
       setCurrentGame(newGame);
-      stockfish?.postMessage({
-        type: "move",
-        fen: newGame.fen,
-        timeRemaining: useClock ? clock.timeRemainingMs : undefined,
-      });
-      setIsThinking(true);
+      if (newGame.outcome) {
+        clock.pause();
+      } else {
+        stockfish?.postMessage({
+          type: "move",
+          fen: newGame.fen,
+          timeRemaining: useClock ? clock.timeRemainingMs : undefined,
+        });
+        setIsThinking(true);
+      }
     },
     [options.playerColor, currentGame, useClock, clock, workerRef]
   );
@@ -203,9 +207,12 @@ export const useEngineGame = (options: Options) => {
       const newGame = Chess.move(currentGame, legalMove);
       clock.press(currentGame.activeColor);
       setCurrentGame(newGame);
+      if (newGame.outcome) {
+        clock.pause();
+      }
       stockfish?.postMessage({ type: "move", fen: newGame.fen });
     },
-    [options.playerColor, currentGame, useClock, clock.press, workerRef]
+    [options.playerColor, currentGame, useClock, clock.press, clock.pause, workerRef]
   );
   const onMessage = useCallback(
     (e: MessageEvent<any>) => {

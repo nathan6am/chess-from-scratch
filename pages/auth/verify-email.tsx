@@ -1,6 +1,7 @@
 //Framework
 import React, { useState, useContext, useCallback } from "react";
 import Head from "next/head";
+import { Logo } from "@/components/base";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "../_app";
 import axios from "axios";
@@ -9,6 +10,7 @@ import AuthLayout from "@/components/layout/AuthLayout";
 
 //Icons
 import { NextPageContext } from "next";
+import Link from "next/link";
 
 interface PageProps {
   verified: boolean;
@@ -23,17 +25,23 @@ const Page: NextPageWithLayout<PageProps> = ({ verified }) => {
   return (
     <>
       <Head>
-        <title>NextChess | Sign In</title>
+        <title>NextChess | Email Verification</title>
         <meta name="Log In" content="Sign In to Continue to NextChess" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="w-full h-full">
         <div className="flex flex-col items-center justify-center h-full w-full">
-          <h1 className="text-3xl font-semibold text-light-100">Email Verification</h1>
-          <p className="text-light-200 text-center">
-            {verified ? "Email Verified! You can now sign in." : "Email Verification Failed!"}
-          </p>
-          <button onClick={onResend}>Resend verification email</button>
+          <h1 className="text-3xl font-semibold text-gold-200 my-4">Email Verification</h1>
+
+          {verified ? (
+            <></>
+          ) : (
+            <p>
+              {`Email Verification Failed! This link may have expired. Please `}
+              <Link href="/login">login</Link>
+              {` to request a new verification email`}
+            </p>
+          )}
         </div>
       </div>
     </>

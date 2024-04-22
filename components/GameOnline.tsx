@@ -76,7 +76,7 @@ export default function GameOnline({ lobbyid }: Props) {
     premoveQueue,
     opening,
   } = onlineGame;
-  const settings = useSettings();
+  const { settings } = useSettings();
   const timeControl = currentGame?.data.config.timeControl;
   const ratingCategory = currentGame?.ratingCategory;
   const [orientation, setOrientation] = useState<Chess.Color>(playerColor || "w");

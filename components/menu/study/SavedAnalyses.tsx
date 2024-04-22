@@ -2,7 +2,7 @@ import React from "react";
 import { IoSaveSharp } from "react-icons/io5";
 import FileBrowser from "./FileBrowser";
 import { PanelHeader } from "@/components/base/Typography";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 import Link from "next/link";
 export default function SavedAnalyses() {
   const { user } = useAuth();

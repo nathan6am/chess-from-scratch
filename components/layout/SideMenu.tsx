@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import OptionsOverlay from "../dialogs/OptionsOverlay";
 //icons
 import { BsArrowBarRight, BsArrowBarLeft } from "react-icons/bs";
 import { FaPuzzlePiece, FaUser } from "react-icons/fa";
 import { MdSchool, MdLogout, MdOutlineHelpOutline, MdSettings } from "react-icons/md";
-import { IoMdPlay } from "react-icons/io";
+import { IoMdPlay, IoMdOptions } from "react-icons/io";
 
 //hooks
 import { useRouter } from "next/router";
@@ -171,7 +171,7 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
             data-tooltip-delay-show={300}
             data-tooltip-place={collapse ? "right" : "top"}
             data-tooltip-id="my-tooltip"
-            icon={MdSettings}
+            icon={IoMdOptions}
             onClick={() => {
               setShowOptions(true);
             }}

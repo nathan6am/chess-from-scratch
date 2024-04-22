@@ -17,12 +17,14 @@ const options: ListItem[] = Object.entries(countries).map((entry) => {
 });
 
 interface Props {
-  onChange: (value: ListItem | null) => void;
+  onChange: (value: string) => void;
+  value: string | null;
 }
-function CountrySelect({ onChange }: Props) {
-  const [selectedCountry, setSelectedCountry] = useState<null | { id: string; name: string }>(null);
+function CountrySelect({ onChange, value }: Props) {
   const [query, setQuery] = useState("");
-
+  const selectedCountry = useMemo(() => {
+    return options.find((country) => country.id.toLowerCase() === value?.toLowerCase());
+  }, [value]);
   const filteredCountries = useMemo(() => {
     if (!query.length) {
       return options;
@@ -40,9 +42,8 @@ function CountrySelect({ onChange }: Props) {
   return (
     <Combobox
       value={selectedCountry}
-      onChange={(value) => {
-        onChange(value);
-        setSelectedCountry(value);
+      onChange={(val) => {
+        onChange(val?.id || "");
       }}
       nullable
     >
@@ -51,7 +52,7 @@ function CountrySelect({ onChange }: Props) {
           <Combobox.Input
             placeholder="Select a country"
             onFocus={() => {
-              if (selectedCountry === null) {
+              if (value === null) {
               }
             }}
             className="w-full appearance-none border-white/[0.3] border-2 focus:border-white/[0.8] border-box rounded-md w-full py-2 px-3 text-md bg-black/[0.3] text-gold-200 placeholder:text-gray-300 leading-tight focus:outline-none"

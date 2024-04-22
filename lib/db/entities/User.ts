@@ -27,6 +27,7 @@ import Collection from "./Collection";
 import Analysis from "./Analysis";
 import { updateRatings } from "../../../server/util/glicko";
 import normalizeEmail from "normalize-email";
+import { on } from "events";
 
 export type Ratings = Record<RatingCategory, Rating>;
 
@@ -98,10 +99,10 @@ export default class User extends BaseEntity {
   @OneToMany(() => Solved_Puzzle, (solvedPuzzle) => solvedPuzzle.user, { cascade: true })
   solvedPuzzles: Relation<Solved_Puzzle[]>;
 
-  @OneToMany(() => Collection, (collection) => collection.user)
+  @OneToMany(() => Collection, (collection) => collection.user, { onDelete: "CASCADE" })
   collections: Relation<Collection[]>;
 
-  @OneToMany(() => Analysis, (analysis) => analysis.author)
+  @OneToMany(() => Analysis, (analysis) => analysis.author, { onDelete: "CASCADE" })
   savedAnalyses: Relation<Analysis[]>;
 
   @Column({ default: false })
@@ -192,6 +193,13 @@ export default class User extends BaseEntity {
       username: user.username,
       type: user.type,
     };
+  }
+
+  static async deleteAccount(id: string) {
+    const user = await this.findOne({ where: { id } });
+    if (!user) return false;
+    await user.remove();
+    return true;
   }
 
   static async loginWithFacebook(profile: { facebookId: string; name: string }): Promise<SessionUser> {
@@ -309,6 +317,20 @@ export default class User extends BaseEntity {
     }
     return false;
   }
+
+  static async resetPassword(userid: string, newPassword: string) {
+    const user = await this.findOne({
+      where: { id: userid },
+      relations: { credentials: true },
+    });
+    if (user) {
+      user.credentials.hashedPassword = bcrypt.hashSync(newPassword, 10);
+      await user.save();
+      return true;
+    }
+    return false;
+  }
+
   static async getCollections(id: string): Promise<Collection[]> {
     const user = await this.findOne({
       where: { id: id },

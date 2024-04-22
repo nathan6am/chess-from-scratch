@@ -28,7 +28,7 @@ import { Tab } from "@headlessui/react";
 
 //hooks
 import useFileManager from "@/hooks/useFileManager";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 import Link from "next/link";
 import { useMediaQuery } from "@react-hook/media-query";
 import { TbGitFork } from "react-icons/tb";

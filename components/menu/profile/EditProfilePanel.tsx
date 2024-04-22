@@ -5,7 +5,7 @@ import { Input } from "@/components/base";
 import { Label } from "@/components/base/Typography";
 import { GiBulletBill, GiRabbit, GiTurtle } from "react-icons/gi";
 import { FaFire } from "react-icons/fa";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 export default function EditProfilePanel() {
   const { user: sessionUser, profile: user } = useAuth();
   return (

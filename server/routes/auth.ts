@@ -226,7 +226,97 @@ router.get("/verify-email", async function (req, res) {
   }
   user.emailVerified = true;
   await user.save();
+  // sign out the user upon verification
+  req.logout(function (err) {
+    if (err) {
+      console.log(err);
+    }
+  });
   res.status(200).end();
+});
+
+router.post("/forgot-password", async function (req, res) {
+  const _email = req.body.email;
+  if (!_email || typeof _email !== "string") {
+    res.status(400).end();
+    return;
+  }
+  const email = normalizeEmail(_email);
+  const user = await User.findOne({
+    relations: {
+      credentials: true,
+    },
+    where: {
+      credentials: {
+        email,
+      },
+    },
+  });
+  if (!user) {
+    //Don't reveal if the email exists
+    res.status(200).end();
+    return;
+  }
+  const redisLayer = wrapClient(redisClient);
+  const token = await redisLayer.generateResetToken(user.id);
+});
+
+router.post("/reset-password", async function (req, res) {
+  const { password, token } = req.body;
+  if (!password || !token) {
+    res.status(400).end();
+    return;
+  }
+  const redisLayer = wrapClient(redisClient);
+  const userid = await redisLayer.validateResetToken(token);
+  if (!userid) {
+    res.status(400).end();
+    return;
+  }
+  const success = await User.resetPassword(userid, password);
+  if (success) {
+    res.status(200).end();
+    return;
+  } else {
+    res.status(400).end();
+    return;
+  }
+});
+
+router.post("/send-verification-email", async function (req, res) {
+  if (!req.user) {
+    res.status(401).end();
+    return;
+  }
+  if (req.user.type === "guest") {
+    res.status(401).end();
+    return;
+  }
+  const user = await User.findOne({
+    relations: {
+      credentials: true,
+    },
+    where: {
+      id: req.user.id,
+    },
+  });
+  if (!user) {
+    res.status(400).end();
+    return;
+  }
+  if (user.emailVerified) {
+    res.status(400).end();
+    return;
+  }
+  const redisLayer = wrapClient(redisClient);
+  const token = await redisLayer.generateVerificationToken(user.id);
+  const sent = await sendVerificationEmail({ email: user.credentials.email, name: user.name || "", token });
+
+  if (sent) {
+    res.status(200).json({ sent: true, email: user.credentials.email });
+  } else {
+    res.status(500).end();
+  }
 });
 
 router.post("/resend-verification-email", async function (req, res) {

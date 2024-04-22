@@ -30,7 +30,7 @@ interface Props {
 
 import Clock from "./Clock";
 import cn from "@/util/cn";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 export default function EngineGame({ startPosition, preset, playerColor, timeControl }: Props) {
   const { user } = useAuth();
   const [currentPreset, setCurrentPreset] = useState(preset || 10);

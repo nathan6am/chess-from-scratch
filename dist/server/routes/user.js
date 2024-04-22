@@ -38,11 +38,22 @@ router.patch("/profile", async function (req, res) {
         return res.status(401);
     if (user.type === "guest")
         return res.status(401);
-    const profile = req.body;
+    const { name, ...profile } = req.body;
     const updated = await User_1.default.updateProfile(user.id, profile);
     if (!updated)
         return res.status(404);
-    res.status(200).json(updated);
+    const userDoc = await User_1.default.findOne({
+        relations: {
+            profile: true,
+        },
+        where: { id: user.id },
+    });
+    if (!userDoc)
+        return res.status(404);
+    if (name)
+        userDoc.name = name;
+    await userDoc.save();
+    res.status(200).json(userDoc);
 });
 /**
  * Complete the profile of the authenticated user
@@ -153,6 +164,24 @@ router.get("/rating-history", verifyUser_1.default, async function (req, res) {
         return res.status(401);
     const ratingHistory = await User_Game_1.default.getRatingHistory(user.id, "rapid");
     res.status(200).json(ratingHistory);
+});
+router.post("/delete-account", verifyUser_1.default, async function (req, res) {
+    const user = req.user;
+    if (!user)
+        return res.status(401);
+    if (user.type === "guest")
+        return res.status(401);
+    const deleted = await User_1.default.deleteAccount(user.id);
+    if (!deleted)
+        return res.status(404);
+    req.logOut((err) => {
+        if (err) {
+            console.error(err);
+        }
+        else {
+            res.status(200).json(deleted);
+        }
+    });
 });
 const userRouter = router;
 exports.default = userRouter;

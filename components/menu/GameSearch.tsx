@@ -5,7 +5,7 @@ import { MultiSelect, Select, Input, Button } from "@/components/base";
 import { Label } from "@/components/base/Typography";
 import { useInView } from "react-intersection-observer";
 
-import useGameSearch from "@/hooks/useGameSearch";
+import useGameSearch from "@/hooks/queries/useGameSearch";
 import GameList from "./GameList";
 export default function GameSearch() {
   const [filters, setFilters] = useState<GameSearchOptions>({});

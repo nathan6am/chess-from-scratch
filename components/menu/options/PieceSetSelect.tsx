@@ -52,12 +52,7 @@ export default function PieceSetSelect({ value, onChange }: Props) {
               <TbSelector className="text-xl opacity-70 cursor-pointer hover:opacity-90" />
             </span>
           </Listbox.Button>
-          <Transition
-            as={Fragment}
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
             <Listbox.Options className="absolute mt-1 max-h-[20em] w-full overflow-auto rounded-md bg-[#303030] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm scrollbar scrollbar-thumb-white/[0.2] scrollbar-rounded-sm scrollbar-thin scrollbar-track-[#161616] scrollbar-w-[8px] divide-y">
               {PIECESETS.map((theme, idx) => (
                 <Listbox.Option
@@ -73,15 +68,13 @@ export default function PieceSetSelect({ value, onChange }: Props) {
                     <>
                       <div className="flex flex-row items-center justify-start px-4 py-1 ">
                         <Preview className={theme.previewClass} />
-                        <span
-                          className={`block truncate ${selected ? "font-semibold" : "font-normal"}`}
-                        >
+                        <span className={`block truncate ${selected ? "font-semibold" : "font-normal"}`}>
                           {theme.label}
                         </span>
                       </div>
                       {selected ? (
                         <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-amber-600">
-                          <BsFillCheckCircleFill className="text-sepia text-lg" />
+                          <BsFillCheckCircleFill className="text-gold-200 text-lg" />
                         </span>
                       ) : null}
                     </>

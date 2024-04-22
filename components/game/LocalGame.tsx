@@ -28,7 +28,7 @@ interface Props {
   timeControl?: TimeControl;
 }
 export default function LocalGame({ autoFlip, fromPosition, timeControl, invertOpposingPieces }: Props) {
-  const settings = useSettings();
+  const { settings } = useSettings();
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const router = useRouter();
   const { cacheGame } = useGameCache();

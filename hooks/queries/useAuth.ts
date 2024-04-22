@@ -7,7 +7,10 @@ import { useMemo } from "react";
 import type User from "@/lib/db/entities/User";
 import type { Profile } from "@/lib/db/entities/User";
 
-export default function useAuth() {
+interface Params {
+  onProfileUpdate?: (profile: User) => void;
+}
+export default function useAuth(params?: Params) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const {
@@ -49,14 +52,15 @@ export default function useAuth() {
     router.push("/api/auth/logout");
   }
 
-  const updateProfile = useMutation({
+  const { mutate: updateProfile } = useMutation({
     mutationKey: ["updateProfile"],
     mutationFn: async (data: Partial<Omit<Profile, "id">>) => {
       const res = await axios.patch("/api/user/profile", data);
       return res.data;
     },
-    onSuccess(data, variables, context) {
+    onSuccess: (data) => {
       queryClient.setQueryData(["userProfile", user?.id], data);
+      if (params?.onProfileUpdate) params.onProfileUpdate(data);
     },
   });
   return {

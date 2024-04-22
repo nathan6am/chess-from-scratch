@@ -55,6 +55,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 "border-danger-400 focus:border-danger-400": status === "error" || error,
                 "border-success-400 focus:border-success-400": status === "success",
                 "bg-elevation-1 focus:bg-elevation-2": !disabled,
+                "bg-elevation-2 text-light-300": disabled,
                 "pr-10": type === "password",
               },
               className
@@ -71,6 +72,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {type === "password" && (
             <div className="absolute right-2 top-0 bottom-0 h-full w-fit flex flex-col justify-center">
               <button
+                type="button"
+                role="button"
                 onClick={() => {
                   setShowPassword(!showPassword);
                 }}

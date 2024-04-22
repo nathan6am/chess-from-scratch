@@ -7,7 +7,7 @@ import React from "react";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
 import { useLocalStorage } from "usehooks-ts";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 import { Inter, Open_Sans } from "next/font/google";
 
 const inter = Inter({

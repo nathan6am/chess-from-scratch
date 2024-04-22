@@ -5,7 +5,7 @@ import Head from "next/head";
 import type { ReactElement } from "react";
 import type { NextPageWithLayout } from "./_app";
 import { NextPageContext } from "next";
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/queries/useAuth";
 import AuthLayout, { Background } from "@/components/layout/AuthLayout";
 //UI Components
 

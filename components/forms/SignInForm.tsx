@@ -78,7 +78,9 @@ export default function SignInForm() {
               <div className="w-4 h-4 rounded-sm border border-white/[0.5] mr-1 my-auto"></div>
               <p>Remember Me</p>
             </div>
-            <a className="mr-4">Forgot password?</a>
+            <Link href="/auth/forgot-password" className="mr-4">
+              Forgot password?
+            </Link>
           </div>
           <Button
             type="submit"
