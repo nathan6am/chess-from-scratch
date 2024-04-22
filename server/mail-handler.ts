@@ -40,3 +40,26 @@ export async function sendVerificationEmail({ email, name, token }: { email: str
     return false;
   }
 }
+export async function sendPasswordResetEmail({ email, name, token }: { email: string; name: string; token: string }) {
+  try {
+    const res = await client.sendMail({
+      from: {
+        address: "noreply@next-chess.dev",
+        name: "noreply",
+      },
+      to: [
+        {
+          email_address: {
+            address: email,
+            name: name,
+          },
+        },
+      ],
+      subject: "Reset your password | Next-Chess",
+      htmlbody:
+        "<h1>Reset your password</h1><p>Click the link below to reset your password (or copy and paste it into your browser)</p><a href='https://next-chess.dev/auth/reset-password?token=" +
+        token +
+        "'>Reset Password</a><p>If you didn't request a password reset, please ignore this email</p><p>This link will expire in 24 hours</p>",
+    });
+  } catch (e) {}
+}

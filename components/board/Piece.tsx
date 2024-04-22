@@ -21,6 +21,7 @@ interface PieceProps {
   animationSpeed: number;
   constrainToBoard?: boolean;
   invert?: boolean;
+  onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
 export interface PieceHandle extends HTMLDivElement {
@@ -42,6 +43,7 @@ export default function Piece({
   hidden,
   disableTransition,
   premovedFrom,
+  onMouseDown,
   constrainToBoard = true,
   invert,
 }: PieceProps) {
@@ -149,6 +151,7 @@ export default function Piece({
       >
         <div
           onPointerDown={(e) => {
+            onMouseDown && onMouseDown(e);
             if (disabled) return;
             if (e.button === 2) return;
             if (draggable) {

@@ -453,6 +453,12 @@ const Board = React.forwardRef<BoardHandle, Props>(
                   setSelectedPiece={setSelectedPiece}
                   key={`${keyPrefix}${piece.key}${orientation}${premovedFrom}`}
                   piece={piece}
+                  onMouseDown={(e) => {
+                    if (e.button !== 2) {
+                      //Clear local arrows only on piece selection
+                      localArrows.clear();
+                    }
+                  }}
                   square={square}
                   movementType={movementType}
                   disabled={

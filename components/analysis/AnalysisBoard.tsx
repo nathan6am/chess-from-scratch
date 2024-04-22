@@ -143,6 +143,8 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
   useEffect(() => {
     if (readonly) {
       setReadonlyVisible(true);
+    } else {
+      setReadonlyVisible(false);
     }
   }, [readonly]);
 
