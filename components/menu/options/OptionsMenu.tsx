@@ -31,10 +31,10 @@ export function PreferencesTabs() {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const tabList = [
     // { label: "Profile", value: 0 },
-    { label: "Display", value: 1 },
-    { label: "Theme", value: 2 },
-    { label: "Game Behavior", value: 3 },
-    { label: "Sound", value: 4 },
+    { label: "Display", value: 0 },
+    { label: "Theme", value: 1 },
+    { label: "Game Behavior", value: 2 },
+    { label: "Sound", value: 3 },
   ];
 
   return (
@@ -50,13 +50,10 @@ export function PreferencesTabs() {
             }}
           />
           <Tab.List className="hidden flex-col">
-            {/* <MenuTab>Profile</MenuTab> */}
             <MenuTab>Display</MenuTab>
             <MenuTab>Board/Piece Theme</MenuTab>
             <MenuTab>Game Behavior</MenuTab>
             <MenuTab>Sound</MenuTab>
-            {/* <MenuTab>Puzzles</MenuTab>
-            <MenuTab>Change Password</MenuTab> */}
           </Tab.List>
         </>
       )}

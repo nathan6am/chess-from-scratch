@@ -34,7 +34,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   }, [lines]);
   const [options, setOptions] = useState<EvalOptions>({
     useCloudEval: true,
-    depth: 20,
+    depth: 18,
     useNNUE: true,
     multiPV: 3,
     showLinesAfterDepth: 10,

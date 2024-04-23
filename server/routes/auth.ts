@@ -18,7 +18,7 @@ import User, { SessionUser } from "../../lib/db/entities/User";
 //RedisLayer
 import { redisClient } from "../index";
 import { wrapClient } from "../util/redisClientWrapper";
-import { sendVerificationEmail } from "../mail-handler";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../mail-handler";
 
 const nanoid = customAlphabet("1234567890", 10);
 
@@ -259,6 +259,8 @@ router.post("/forgot-password", async function (req, res) {
   }
   const redisLayer = wrapClient(redisClient);
   const token = await redisLayer.generateResetToken(user.id);
+  await sendPasswordResetEmail({ email: user.credentials.email, name: user.name || "", token });
+  res.status(200).end();
 });
 
 router.post("/reset-password", async function (req, res) {
