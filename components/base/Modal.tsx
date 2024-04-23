@@ -26,7 +26,7 @@ export default function Modal({
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog
           as="div"
-          className="relative z-20"
+          className="relative z-[999]"
           onClose={dismissOnOverlayClick ? () => {} : onClose}
           unmount={false}
           initialFocus={initialFocus}
