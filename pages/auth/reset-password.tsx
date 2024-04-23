@@ -49,7 +49,7 @@ const Page: NextPageWithLayout<PageProps> = ({ token }) => {
     resolver: yupResolver(schema),
   });
   const [error, setError] = useState(false);
-  const [success, setSuccess] = useState(true);
+  const [success, setSuccess] = useState(false);
   const password = watch("password");
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {

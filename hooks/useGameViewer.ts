@@ -35,6 +35,11 @@ export interface ReplayHook {
 }
 import { parsePgn } from "@/util/parsers/pgnParser";
 
+interface Params {
+  pgn: string;
+  startFromEnd?: boolean;
+}
+
 export default function useGameViewer({ pgn }: { pgn: string }): ReplayHook {
   const { settings } = useContext(SettingsContext);
   const { tagData, tree } = useMemo(() => {

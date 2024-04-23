@@ -16,12 +16,6 @@ interface PageProps {
   verified: boolean;
 }
 const Page: NextPageWithLayout<PageProps> = ({ verified }) => {
-  const onResend = () => {
-    axios
-      .post("/api/auth/resend-verification-email")
-      .then((res) => {})
-      .catch((err) => {});
-  };
   return (
     <>
       <Head>
@@ -37,9 +31,9 @@ const Page: NextPageWithLayout<PageProps> = ({ verified }) => {
             <></>
           ) : (
             <p>
-              {`Email Verification Failed! This link may have expired. Please `}
+              {`Email Verification Failed! This link is invalid or may have expired. Please `}
               <Link href="/login">login</Link>
-              {` to request a new verification email`}
+              {` to request a new verification email.`}
             </p>
           )}
         </div>

@@ -1,6 +1,6 @@
 import React, { MouseEventHandler } from "react";
 import { FaGoogle, FaFacebook } from "react-icons/fa";
-import axios from "axios";
+
 type variant = "google" | "facebook" | "guest" | "discord";
 interface Props {
   variant?: variant;
