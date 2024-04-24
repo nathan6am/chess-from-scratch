@@ -37,6 +37,7 @@ interface Evaluation {
   lines: Array<{
     score: EvalScore;
     moves: string[];
+    move: UCIMove;
   }>;
   isCloudEval?: boolean;
 }
@@ -51,6 +52,7 @@ interface CloudEval {
 export interface Variation {
   score: EvalScore;
   moves: string[];
+  move: UCIMove;
 }
 
 const cache = new Map<string, Evaluation>();
@@ -167,6 +169,7 @@ const onStockfishMessage = (e: MessageEvent) => {
     if (info.depth >= options.showLinesAfterDepth) {
       const line = {
         score: info.score as EvalScore,
+        move: parseUciMove(info.pv[0]),
         moves: uciMovesToPgn(
           info.pv.map((move) => parseUciMove(move)),
           currentFen

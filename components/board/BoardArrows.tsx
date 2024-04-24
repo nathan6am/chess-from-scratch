@@ -16,6 +16,7 @@ interface Props {
   pendingArrow?: Arrow | null;
   squareIdPrefix?: string;
   squareSize: number;
+  bestMoveArrow?: Arrow | null;
 }
 
 const headShapeArrow1 = {
@@ -37,6 +38,7 @@ export default function BoardArrows({
   pendingArrow,
   squareIdPrefix,
   squareSize,
+  bestMoveArrow,
 }: Props) {
   const arrowSize = useMemo(() => {
     if (squareSize < 55) return "sm";
@@ -47,19 +49,11 @@ export default function BoardArrows({
     <Xwrapper>
       <>
         {arrows.map((arrow) => (
-          <RenderArrow
-            size={arrowSize}
-            idPrefix={squareIdPrefix}
-            arrow={arrow}
-            key={`${arrow.start}${arrow.end}`}
-          />
+          <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={arrow} key={`${arrow.start}${arrow.end}`} />
         ))}
       </>
-      <>
-        {pendingArrow && (
-          <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow} />
-        )}
-      </>
+      <>{pendingArrow && <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={pendingArrow} />}</>
+      <>{bestMoveArrow && <RenderArrow size={arrowSize} idPrefix={squareIdPrefix} arrow={bestMoveArrow} />}</>
       <>{children}</>
     </Xwrapper>
   );

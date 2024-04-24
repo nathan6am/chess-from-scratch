@@ -12,7 +12,7 @@ import useLocalGame from "@/hooks/useLocalGame";
 import Board from "@/components/board/Board";
 import useSettings from "@/hooks/useSettings";
 import type { TimeControl } from "@/lib/chess";
-import MoveHistory from "./MoveHistory";
+import MoveHistory, { MoveTape } from "./MoveHistory";
 import BoardControls from "./BoardControls";
 import { FiFlag } from "react-icons/fi";
 import { MdRestartAlt } from "react-icons/md";
@@ -21,6 +21,7 @@ import { useRouter } from "next/router";
 import { gameDataToPgn } from "@/util/parsers/pgnParser";
 import Clock from "./Clock";
 import useGameCache from "@/hooks/cache/useGameCache";
+import Result from "../dialogs/Result";
 interface Props {
   fromPosition?: string;
   autoFlip?: boolean;
@@ -29,6 +30,7 @@ interface Props {
 }
 export default function LocalGame({ autoFlip, fromPosition, timeControl, invertOpposingPieces }: Props) {
   const { settings } = useSettings();
+  const [showResult, setShowResult] = useState(false);
   const [orientation, setOrientation] = useState<Chess.Color>("w");
   const router = useRouter();
   const { cacheGame } = useGameCache();
@@ -62,12 +64,40 @@ export default function LocalGame({ autoFlip, fromPosition, timeControl, invertO
     cacheGame(pgn, "1");
     router.push("/study/analyze?gameId=1&sourceType=last");
   }, [router, currentGame, opening, cacheGame]);
+
   useEffect(() => {
     if (!autoFlip) return;
     setOrientation(currentGame.activeColor);
   }, [autoFlip, currentGame.activeColor]);
+
+  useEffect(() => {
+    if (currentGame.outcome) {
+      setShowResult(true);
+    }
+  }, [currentGame.outcome]);
+
   return (
     <GameContainer>
+      <div className="w-full md:hidden absolute top-0 right-0 left-0">
+        <MoveTape
+          moveHistory={currentGame.moveHistory}
+          jumpToOffset={boardControls.jumpToOffset}
+          currentOffset={livePositionOffset}
+          usePieceIcons={true}
+        />
+      </div>
+      <Result
+        outcome={currentGame.outcome}
+        isOpen={showResult}
+        close={() => {
+          setShowResult(false);
+        }}
+        onAnalyze={onAnalyze}
+        onRematch={() => {
+          restartGame();
+          setShowResult(false);
+        }}
+      />
       <BoardColumn>
         <InfoRow className="py-2">
           {invertOpposingPieces ? <></> : <div />}
@@ -116,7 +146,9 @@ export default function LocalGame({ autoFlip, fromPosition, timeControl, invertO
       </BoardColumn>
       <PanelContainer>
         <>
-          <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3">Play Chess</h2>
+          <h2 className="w-full text-gold-200 text-xl text-center font-bold py-4 bg-elevation-3 hidden md:block">
+            Play Chess
+          </h2>
           <div className="w-full p-2 px-3 text-sm bg-elevation-2 shadow-md hidden md:block">
             {
               <p className="text-light-200">

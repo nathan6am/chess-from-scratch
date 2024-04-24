@@ -34,6 +34,7 @@ export interface AnalysisHook {
   mainLine: Node[];
   rootNodes: Node[];
   currentGame: Chess.Game;
+  bestMove: Chess.Move | null;
   onMove: (move: Chess.Move) => void;
   evaler: Evaler;
   evalEnabled: boolean;
@@ -65,6 +66,7 @@ export interface AnalysisHook {
   };
   loadFen: (fen: string) => void;
   reset: (options: { pgn?: string | undefined }) => void;
+  options: AnalysisOptions;
   setOptions: React.Dispatch<React.SetStateAction<AnalysisOptions>>;
 }
 
@@ -76,11 +78,15 @@ interface AnalysisOptions {
   id?: string;
   readonly: boolean;
   isNew?: boolean;
+  showEvalBar?: boolean;
+  showBestMoveArrow?: boolean;
 }
 const defaultOptions = {
   startPosition: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   evalEnabled: true,
   readonly: false,
+  showEvalBar: true,
+  showBestMoveArrow: false,
 };
 
 import { parsePgn, tagDataToPGNString } from "@/util/parsers/pgnParser";
@@ -89,7 +95,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const [isNew, setIsNew] = useState(
     () => (!initialOptions?.id && !initialOptions?.pgnSource && initialOptions?.isNew) as boolean
   );
-  const [options, setOptions] = useState(() => {
+  const [options, setOptions] = useState<AnalysisOptions>(() => {
     return { ...defaultOptions, ...initialOptions };
   });
   const { settings } = useContext(SettingsContext);
@@ -307,6 +313,11 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
   const explorer = useOpeningExplorer(currentGame);
   const evaler = useEvaler(currentGame.fen, !evalEnabled);
 
+  const bestMove = useMemo(() => {
+    if (!evaler.bestMove) return null;
+    return currentGame.legalMoves.find((move) => move.PGN === evaler.bestMove) || null;
+  }, [currentGame.legalMoves, evaler.bestMove]);
+
   //Move sounds
   const moveVolume = useMemo(() => {
     if (!settings.sound.moveSounds) return 0;
@@ -501,6 +512,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     onMove,
     evaler,
     evalEnabled,
+    bestMove,
     setEvalEnabled,
     boardControls: { stepBackward, stepForward, jumpBackward, jumpForward },
     variations: variationTree.treeArray,
@@ -511,6 +523,7 @@ export default function useAnalysisBoard(initialOptions?: Partial<AnalysisOption
     currentKey,
     currentNode,
     explorer,
+    options,
     setOptions,
     commentControls: {
       updateComment,

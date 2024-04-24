@@ -153,11 +153,14 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
       <Label>Annotation Glyphs</Label>
       <Listbox value={selected} onChange={onChange} multiple>
         <div className="relative mt-1">
-          <Listbox.Button className="text-white/[0.8] text-sm relative w-full cursor-pointer rounded-lg bg-white/[0.1] py-2 pl-3 pr-10 text-left shadow-md focus:outline-none hover:bg-white/[0.2] hover:text-white">
+          <Listbox.Button
+            disabled={disabled}
+            className="text-white/[0.8] text-sm relative w-full cursor-pointer rounded-lg bg-white/[0.1] py-2 pl-3 pr-10 text-left shadow-md focus:outline-none hover:bg-white/[0.2] hover:text-white"
+          >
             Annotate With Glyphs
             <>
               {selected.length > 0 && (
-                <span className="inline px-2 text-sm bg-gold-300-600 ml-2 rounded-lg">{selected.length}</span>
+                <span className="inline px-2 text-sm bg-gold-400 py-0.5 ml-2 rounded-lg">{selected.length}</span>
               )}
             </>
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -165,7 +168,7 @@ function AnnotationSelect({ selected, updateAnnotations, disabled }: SelectProps
             </span>
           </Listbox.Button>
           <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
-            <Listbox.Options className="w-[25em] absolute mb-1  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+            <Listbox.Options className="max-w-md w-fit mb-1 absolute right-0  bottom-full max-h-[40em] w-full overflow-auto rounded-md bg-[#404040] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
               {annotationCategories.map((category, idx) => (
                 <div key={idx} className="border-b mb-2">
                   <p className="opacity-50 px-4 py-1">{category.name}</p>

@@ -497,7 +497,7 @@ function LichessFilters({ explorer }: { explorer: ExplorerHook }) {
     setLichessFilters({ ...lichessFilters, ratings: [minRating, maxRating] });
   };
   return (
-    <div className="w-[24rem] p-4 bg-elevation-2 border-elevation-5 border rounded-md shadow-lg">
+    <div className="w-[24rem] p-4 bg-elevation-3 border-elevation-5 border rounded-md shadow-lg">
       <div className="w-full ">
         <Label className="mb-1">Time Controls</Label>
         <MultiSelect
@@ -550,7 +550,7 @@ function MastersFilters({ explorer }: { explorer: ExplorerHook }) {
   const { mastersFilters, setMastersFilters } = explorer;
 
   return (
-    <div className="w-[24rem] p-4 bg-elevation-3 rounded-md shadow-lg">
+    <div className="w-[24rem] p-4 bg-elevation-3 border-elevation-5 border rounded-md shadow-lg">
       <div className="w-full mt-4  flex flex-row justify-between gap-x-4">
         <NumericInput
           label="Top Games"

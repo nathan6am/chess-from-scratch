@@ -7,6 +7,7 @@ import { MessageResponse, Variation } from "@/lib/stockfish/evalWorker";
 import useThrottle from "../utils/useThrottle";
 import { notEmpty } from "@/util/misc";
 export interface Evaler {
+  bestMove: string | null;
   currentScore: EvalScore;
   currentDepth: number;
   lines: Array<{ score: EvalScore; moves: string[] }>;
@@ -30,7 +31,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
   }, [currentLines]);
 
   const bestMove = useMemo(() => {
-    return lines[0]?.moves[0];
+    return lines[0]?.moves[0] || null;
   }, [lines]);
   const [options, setOptions] = useState<EvalOptions>({
     useCloudEval: true,
@@ -111,6 +112,7 @@ function useEvaler(fen: string, disabled?: boolean): Evaler {
     workerRef.current?.postMessage({ type: "setOptions", options });
   }, [options, disabled, workerRef, prevOptions]);
   return {
+    bestMove,
     currentScore,
     currentDepth,
     lines: lines.slice(0, options.multiPV),

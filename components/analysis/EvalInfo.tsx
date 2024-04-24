@@ -36,7 +36,7 @@ const parseScore = (score: Chess.EvalScore): string => {
 export default function EvalInfo() {
   const { analysis } = useContext(AnalysisContext);
   const { evaler, currentGame, setMoveQueue, evalEnabled: enabled, setEvalEnabled: setEnabled } = analysis;
-
+  const bestMove = evaler.bestMove;
   //Play out the engine line on the analysis board
   const attemptMoves = (moves: string[]) => {
     setMoveQueue(moves);
@@ -102,7 +102,7 @@ export default function EvalInfo() {
           </div>
 
           <Popover.Panel ref={setPopperElement} className="z-50" style={styles.popper} {...attributes.popper}>
-            <OptionsMenu evaler={evaler} />
+            <OptionsMenu />
           </Popover.Panel>
         </Popover>
       </div>
@@ -237,9 +237,29 @@ function RenderMove({ pgn, onClick, moveCount, idx }: MoveProps) {
   );
 }
 
-function OptionsMenu({ evaler }: { evaler: Evaler }) {
+function OptionsMenu() {
+  const { analysis } = useContext(AnalysisContext);
+  const { evaler, options, setOptions } = analysis;
   return (
     <div className="w-full p-4 bg-[#363636] rounded-md shadow-lg">
+      <Toggle
+        className="mb-3"
+        label="Show Eval Bar"
+        labelClasses="text-sm opacity-75"
+        checked={options.showEvalBar}
+        onChange={(enabled) => {
+          setOptions((cur) => ({ ...cur, showEvalBar: enabled }));
+        }}
+      />
+      <Toggle
+        className="mb-3"
+        label="Best Move Arrow"
+        labelClasses="text-sm opacity-75"
+        checked={options.showBestMoveArrow}
+        onChange={(enabled) => {
+          setOptions((cur) => ({ ...cur, showBestMoveArrow: enabled }));
+        }}
+      />
       <Toggle
         className="mb-3"
         label="NNUE"

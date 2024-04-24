@@ -124,7 +124,8 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
     //Automatically load the next puzzle if current puzzle is null
     if ((!currentPuzzle || loading) && queue.length) {
       setLoading(false);
-      next();
+      setCurrentPuzzle(queue[0]);
+      setQueue((current) => current.slice(1));
     }
 
     //Fetch new puzzles when the queue length is below minimum threshold

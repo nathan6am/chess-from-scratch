@@ -2,7 +2,7 @@ import { Tooltip } from "react-tooltip";
 
 import { UserContext } from "@/context/user";
 import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
-
+import useSyncSettings from "@/hooks/useSyncSettings";
 import React from "react";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
@@ -24,12 +24,8 @@ export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useLocalStorage("app-settings", defaultSettings);
-  const updateSettings = (settings: Partial<AppSettings>) => {
-    setSettings((currentSettings) => ({ ...currentSettings, ...settings }));
-  };
   const { user, refetch } = useAuth();
-
+  const { settings, updateSettings } = useSyncSettings();
   return (
     <SettingsContext.Provider value={{ settings, updateSettings }}>
       <UserContext.Provider value={{ user, refresh: refetch }}>

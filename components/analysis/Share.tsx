@@ -54,7 +54,7 @@ export default function Share() {
             size="sm"
             variant="neutral"
             iconClassName="mr-2"
-            label="Download Image"
+            label="Get Image"
             icon={MdImage}
             onClick={handleDownloadImage}
           />
@@ -82,7 +82,20 @@ export default function Share() {
           />
         </div>
         <div className="w-full px-2">
-          <p className="px-1 text-sm opacity-50">PGN:</p>
+          <div className="flex flex-row justify-between p-1 pb-0 items-center w-full rounded-t-md">
+            <p className="text-xs text-light-200">PGN:</p>
+            <button
+              data-tooltip-content="PGN copied to Clipboard!"
+              data-tooltip-id="copy-tooltip"
+              data-tooltip-delay-hide={1000}
+              onClick={(e) => {
+                navigator.clipboard.writeText(fen);
+              }}
+              className="p-2 text-light-200 hover:text-gold-200  "
+            >
+              <MdContentCopy />
+            </button>
+          </div>
           <textarea
             rows={3}
             className="w-full rounded-md border border-white/[0.2] bg-[#161616] px-2 py-1 text-sm text-white/[0.7]"
@@ -97,7 +110,7 @@ export default function Share() {
               <p className="truncate">{fen}</p>
             </div>
             <button
-              data-tooltip-content="Copied to Clipboard!"
+              data-tooltip-content="FEN copied to Clipboard!"
               data-tooltip-id="copy-tooltip"
               data-tooltip-delay-hide={1000}
               onClick={(e) => {

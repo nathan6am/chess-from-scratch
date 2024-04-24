@@ -15,7 +15,7 @@ import {
   InfoRow,
   BoardColumn,
 } from "@/components/layout/templates/GameLayout";
-import classNames from "classnames";
+import { MoveTape } from "./MoveHistory";
 import MoveHistory from "./MoveHistory";
 import BoardControls from "./BoardControls";
 import { FiRepeat, FiFlag } from "react-icons/fi";
@@ -86,6 +86,14 @@ export default function EngineGame({ startPosition, preset, playerColor, timeCon
   }, [currentGame.outcome]);
   return (
     <GameContainer>
+      <div className="w-full md:hidden absolute top-0 right-0 left-0">
+        <MoveTape
+          moveHistory={currentGame.moveHistory}
+          jumpToOffset={boardControls.jumpToOffset}
+          currentOffset={livePositionOffset}
+          usePieceIcons={true}
+        />
+      </div>
       <Result
         isOpen={!!currentGame.outcome && showResult}
         outcome={currentGame.outcome}

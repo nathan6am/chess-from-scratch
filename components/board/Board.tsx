@@ -59,6 +59,7 @@ interface Props {
   arrows?: Arrow[]; //Array of arrows to display on the board
   markedSquares?: MarkedSquare[]; //Array of marked squares to display on the board
   bestMove?: Chess.Move; //Best move to display on the board
+  showBestMoveArrow?: boolean; //Whether or not to show the best move
   hint?: Chess.Square | null; //Hint to display on the board
   onArrow?: (arrow: Arrow) => void; //Callback to execute when an arrow is drawn
   onMarkSquare?: (markedSquare: MarkedSquare) => void; //Callback to execute when a square is marked
@@ -120,6 +121,8 @@ const Board = React.forwardRef<BoardHandle, Props>(
       editMode,
       pieceCursor,
       hint,
+      bestMove,
+      showBestMoveArrow,
     }: Props,
     ref
   ) => {
@@ -328,6 +331,15 @@ const Board = React.forwardRef<BoardHandle, Props>(
         board.removeEventListener("mouseup", mouseUpHandler);
       };
     }, []);
+    const bestMoveArrow = useMemo<Arrow | undefined>(() => {
+      if (!bestMove || !showBestMoveArrow) return;
+      return {
+        start: bestMove.start,
+        end: bestMove.end,
+        color: "G",
+      };
+    }, [bestMove, showBestMoveArrow]);
+
     return (
       <>
         <BoardArrows
@@ -336,6 +348,7 @@ const Board = React.forwardRef<BoardHandle, Props>(
           squareIdPrefix={squareIdPrefix}
           arrows={arrows || (overrideArrows ? [] : localArrows.arrows)}
           pendingArrow={currentArrow}
+          bestMoveArrow={bestMoveArrow}
         >
           <div
             id={id}

@@ -6,6 +6,7 @@ import User, { SessionUser } from "../../lib/db/entities/User";
 //Middleware
 import verifyUser from "../middleware/verifyUser";
 import User_Game from "../../lib/db/entities/User_Game";
+import { profile } from "console";
 
 const router = express.Router();
 
@@ -151,6 +152,40 @@ router.get("/rating-history", verifyUser, async function (req, res) {
   if (user.type === "guest") return res.status(401);
   const ratingHistory = await User_Game.getRatingHistory(user.id, "rapid");
   res.status(200).json(ratingHistory);
+});
+
+router.get("/settings", verifyUser, async function (req, res) {
+  const sessionUser: SessionUser | undefined = req.user;
+  if (!sessionUser) return res.status(401);
+  if (sessionUser.type === "guest") return res.status(401);
+  const user = await User.findOne({
+    relations: {
+      profile: true,
+    },
+    where: { id: sessionUser.id },
+  });
+  if (!user) return res.status(400);
+  if (!user.profile) return res.status(404);
+  res.status(200).json(user.profile.settings);
+});
+
+router.patch("/settings", verifyUser, async function (req, res) {
+  const sessionUser: SessionUser | undefined = req.user;
+  if (!sessionUser) return res.status(401);
+  if (sessionUser.type === "guest") return res.status(401);
+  const user = await User.findOne({
+    relations: {
+      profile: true,
+    },
+    where: { id: sessionUser.id },
+  });
+  if (!user) return res.status(400);
+  if (!user.profile) return res.status(404);
+  const settings = req.body;
+  const newSettings = { ...user.profile.settings, ...settings };
+  user.profile.settings = newSettings;
+  await user.save();
+  res.status(200).json(user.profile.settings);
 });
 
 router.post("/delete-account", verifyUser, async function (req, res) {

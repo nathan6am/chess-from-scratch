@@ -91,6 +91,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
     currentNode,
     markupControls,
     pgn,
+    options: { showEvalBar, showBestMoveArrow },
     tagData,
   } = analysis;
   const boardRef = useRef<BoardHandle>(null);
@@ -308,8 +309,8 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           <MenuWrapper>
             <MenuButton>Edit</MenuButton>
             <MenuItems>
-              <MenuItem onClick={() => {}}>Undo</MenuItem>
-              <MenuItem onClick={() => {}}>Redo</MenuItem>
+              {/* <MenuItem onClick={() => {}}>Undo</MenuItem>
+              <MenuItem onClick={() => {}}>Redo</MenuItem> */}
               <MenuItem
                 onClick={() => {
                   if (currentNode) analysis.tree.deleteVariation(currentNode?.key);
@@ -393,6 +394,8 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
               onMove={onMove}
               markupColor={markupControls.arrowColor}
               onPremove={() => {}}
+              bestMove={evalEnabled ? analysis.bestMove || undefined : undefined}
+              showBestMoveArrow={showBestMoveArrow}
               disableArrows={editMode}
               editMode={editMode}
               onMovePiece={editor.onMovePiece}
@@ -403,7 +406,7 @@ export default function AnalysisBoard({ initialId, sourceGameId, sourceGameType 
           </BoardContainer>
 
           <>
-            {evalEnabled && (
+            {evalEnabled && showEvalBar && (
               <EvalBar
                 scoreType={evaler.currentScore.type}
                 value={evaler.currentScore.value}
