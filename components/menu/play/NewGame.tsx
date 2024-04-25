@@ -70,7 +70,10 @@ function Friend() {
   const socket = useContext(SocketContext);
 
   const [rated, setRated] = useState(true);
-  const [timeControl, setTimeControl] = useState<TimeControl | undefined>();
+  const [timeControl, setTimeControl] = useState<TimeControl | undefined>({
+    timeSeconds: 60,
+    incrementSeconds: 0,
+  });
   const [color, setColor] = useState<Chess.Color | "random">("random");
   const options = useMemo<LobbyOptions>(() => {
     return {

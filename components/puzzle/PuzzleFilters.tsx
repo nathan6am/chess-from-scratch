@@ -362,20 +362,16 @@ const CATEGORIES = [
 
 interface Props {
   selectedThemes: string[];
-  setSelectedThemes: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedThemes: (themes: string[]) => void;
   disabled?: boolean;
 }
 export default function PuzzleFilters({ selectedThemes, setSelectedThemes, disabled }: Props) {
   const addThemes = (themes: string[]) => {
-    setSelectedThemes((current) => {
-      return Array.from(new Set([...current, ...themes]).values());
-    });
+    setSelectedThemes(Array.from(new Set([...selectedThemes, ...themes]).values()));
   };
 
   const removeThemes = (themes: string[]) => {
-    setSelectedThemes((current) => {
-      return current.filter((theme) => !themes.includes(theme));
-    });
+    setSelectedThemes(selectedThemes.filter((theme) => !themes.includes(theme)));
   };
   return (
     <div className="px-2">

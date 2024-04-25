@@ -17,18 +17,16 @@ import { ClipLoader } from "react-spinners";
 import { Toggle, RangeSlider } from "@/components/base";
 import { Label } from "../base/Typography";
 import { FaFire } from "react-icons/fa";
+import useSettings from "@/hooks/useSettings";
 export default function PuzzleSolver() {
-  const [filterByTheme, setFilterByTheme] = useState(false);
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const [minRating, setMinRating] = useState(500);
-  const [maxRating, setMaxRating] = useState(3000);
+  const { settings, updateSettings } = useSettings();
+  const { filterByTheme, minRating, maxRating, selectedThemes } = settings.puzzles;
   const { puzzle, history, next, streak, loading } = usePuzzleQueue({
     themes: filterByTheme ? selectedThemes : null,
     minRating,
     maxRating,
   });
 
-  const { settings } = useContext(SettingsContext);
   const currentGame = puzzle.currentGame;
   const hidePiecesRef = React.useRef<boolean>(true);
   useEffect(() => {
@@ -97,12 +95,18 @@ export default function PuzzleSolver() {
                     max={3000}
                     step={100}
                     onChange={([min, max]) => {
-                      setMinRating(min);
-                      setMaxRating(max);
+                      updateSettings({ puzzles: { ...settings.puzzles, minRating: min, maxRating: max } });
                     }}
                   />
                 </div>
-                <Toggle label="Filter by Theme" checked={filterByTheme} onChange={setFilterByTheme} reverse />
+                <Toggle
+                  label="Filter by Theme"
+                  checked={filterByTheme}
+                  onChange={(enabled) => {
+                    updateSettings({ puzzles: { ...settings.puzzles, filterByTheme: enabled } });
+                  }}
+                  reverse
+                />
               </div>
               <div className="bg-elevation-3 text-sm px-4 py-[4px] shadow">
                 <p className="text-gold-200">Puzzle Themes</p>
@@ -111,7 +115,9 @@ export default function PuzzleSolver() {
                 <ScrollContainer>
                   <PuzzleFilters
                     selectedThemes={selectedThemes}
-                    setSelectedThemes={setSelectedThemes}
+                    setSelectedThemes={(themes) =>
+                      updateSettings({ puzzles: { ...settings.puzzles, selectedThemes: themes } })
+                    }
                     disabled={!filterByTheme}
                   />
                 </ScrollContainer>

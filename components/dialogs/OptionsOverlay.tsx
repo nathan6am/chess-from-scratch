@@ -47,7 +47,7 @@ export default function OptionsOverlay({ isOpen, closeModal }: Props) {
                     </PanelHeader>
                   </Dialog.Title>
                   <IconButton className="absolute top-2 right-2" icon={MdClose} onClick={closeModal} />
-                  <div className="flex flex-1 h-full">
+                  <div className="flex flex-1 h-full flex-col">
                     <PreferencesTabs />
                   </div>
                 </Dialog.Panel>

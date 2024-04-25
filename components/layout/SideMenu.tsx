@@ -167,10 +167,10 @@ export default function SideMenu({ toggle, collapse, pages }: SidebarProps) {
           />
 
           <IconButton
-            data-tooltip-content="User Preferences"
-            data-tooltip-delay-show={300}
-            data-tooltip-place={collapse ? "right" : "top"}
-            data-tooltip-id="my-tooltip"
+            // data-tooltip-content="User Preferences"
+            // data-tooltip-delay-show={300}
+            // data-tooltip-place={collapse ? "right" : "top"}
+            // data-tooltip-id="my-tooltip"
             icon={IoMdOptions}
             onClick={() => {
               setShowOptions(true);

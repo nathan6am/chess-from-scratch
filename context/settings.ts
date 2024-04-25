@@ -51,8 +51,8 @@ export const defaultSettings: AppSettings = {
   puzzles: {
     filterByTheme: false,
     selectedThemes: [],
-    minRating: 100,
-    maxRating: 3500,
+    minRating: 500,
+    maxRating: 3000,
   },
 
   sound: {

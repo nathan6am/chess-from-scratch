@@ -1,10 +1,8 @@
 import { useLocalStorage } from "usehooks-ts";
 import useAuth from "./queries/useAuth";
-import useDebounce from "./utils/useDebounce";
 import useDebouncedCallback from "./useDebouncedCallback";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import _ from "lodash";
-import { useState } from "react";
 import { defaultSettings, AppSettings } from "@/context/settings";
 import axios from "axios";
 export default function useSyncSettings() {
@@ -24,7 +22,10 @@ export default function useSyncSettings() {
     },
     onSuccess(data) {
       //Overwrite local settings with remote settings
-      setLocalSettings(data);
+      setLocalSettings({
+        ...defaultSettings,
+        ...data,
+      });
     },
     //Only fetch if user is logged in and not a guest
     enabled: shouldSync,

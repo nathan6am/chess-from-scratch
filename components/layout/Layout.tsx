@@ -1,12 +1,12 @@
 import { Tooltip } from "react-tooltip";
 
 import { UserContext } from "@/context/user";
-import { AppSettings, defaultSettings, SettingsContext } from "@/context/settings";
+import { SettingsContext } from "@/context/settings";
 import useSyncSettings from "@/hooks/useSyncSettings";
 import React from "react";
 import type { ReactElement, ReactNode } from "react";
 import type { NextPage } from "next";
-import { useLocalStorage } from "usehooks-ts";
+
 import useAuth from "@/hooks/queries/useAuth";
 import { Inter, Open_Sans } from "next/font/google";
 

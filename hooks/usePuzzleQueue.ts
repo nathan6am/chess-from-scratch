@@ -33,7 +33,6 @@ const defaultOptions = {
   allowHints: false,
 };
 import useDebounce from "./utils/useDebounce";
-import s from "connect-redis";
 import { notEmpty } from "@/util/misc";
 export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {}) {
   const options = useMemo(
@@ -134,6 +133,7 @@ export default function usePuzzleQueue(_options: Partial<PuzzleQueueOptions> = {
     }
   }, [queue, currentPuzzle, next, isLoading, loading]);
   return {
+    error,
     streak,
     loading,
     next,
