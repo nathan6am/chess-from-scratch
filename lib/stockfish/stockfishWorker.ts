@@ -30,7 +30,7 @@ let config: EngineGameConfig = {
   timeControl: null,
   playerColor: "w",
   stockfishOptions: defaultOptions,
-  depth: "auto",
+  depth: 10,
 };
 
 export interface Message {
@@ -107,7 +107,7 @@ self.onmessage = (event: MessageEvent<Message>) => {
         const binc = (config.timeControl?.incrementSeconds || 0) * 1000;
         stockfish.postMessage(`go wtime ${wtime} btime ${btime} winc ${winc} binc ${binc}`);
       } else {
-        stockfish.postMessage(`go depth 18`);
+        stockfish.postMessage(`go depth 10`);
       }
     } else {
       stockfish.postMessage(`go depth ${config.depth}`);
