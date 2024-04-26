@@ -1,13 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useCallback } from "react";
+import { encodeGameToPgn } from "@/util/parsers/pgnParser";
 import { GameContext } from "../GameOnline";
 import { FaHandshake, FaCheck } from "react-icons/fa";
-import { MdClose } from "react-icons/md";
+import { MdClose, MdAnalytics } from "react-icons/md";
 import { GameControls as IGameControls } from "@/hooks/useChessOnline";
 import { FiRepeat, FiFlag } from "react-icons/fi";
 import { Button } from "../base";
 import { useRouter } from "next/router";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { useState } from "react";
+import useGameCache from "@/hooks/cache/useGameCache";
 interface Props {
   gameControls: IGameControls;
   flipBoard: () => void;
@@ -33,9 +35,16 @@ export default function GameControls({}: Props) {
 function PostGameControls() {
   const router = useRouter();
   const { onlineGame } = useContext(GameContext);
+  const { cacheGame } = useGameCache();
   const { gameControls, drawOfferRecieved, drawOfferSent, gameStatus, currentGame, rematchOffer } = onlineGame;
   const gameid = currentGame?.id;
   const [declined, setDeclined] = useState(false);
+  const onAnalyze = useCallback(() => {
+    if (!currentGame) return;
+    const pgn = encodeGameToPgn(currentGame);
+    cacheGame(pgn, "1");
+    router.push("/study/analyze?gameId=1&sourceType=last");
+  }, [router, cacheGame, currentGame, encodeGameToPgn]);
   return (
     <>
       {rematchOffer === "recieved" && !declined ? (
@@ -69,11 +78,9 @@ function PostGameControls() {
           {" "}
           <Button
             variant="neutral"
-            onClick={() => {
-              router.push(`/study/analyze?${gameid}&sourceType=nextChess`);
-            }}
+            onClick={onAnalyze}
             label="Analyze Game"
-            icon={MdClose}
+            icon={MdAnalytics}
             iconClassName="mr-1"
           ></Button>
           {rematchOffer === "offered" ? (
