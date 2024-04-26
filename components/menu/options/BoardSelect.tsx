@@ -53,6 +53,11 @@ const THEMES: BoardTheme[] = [
     value: "marble-2",
     previewClass: "board-preview-marble-2",
   },
+  {
+    label: "Newspaper",
+    value: "newspaper",
+    previewClass: "board-preview-newspaper",
+  },
 ];
 interface Props {
   value: string;

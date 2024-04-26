@@ -1,0 +1,32 @@
+.square-light {
+  background-color: transparent;
+}
+
+.square-dark {
+  background-color: transparent;
+}
+
+.board-bg {
+  background-image: url("/assets/boards/newspaper.jpg");
+  background-size: contain;
+}
+
+.selected-highlight {
+  background-color: rgba(255, 3, 62, 0.3);
+}
+
+.lastmove-highlight {
+  background-color: rgba(17, 192, 255, 0.2);
+}
+
+.target-hover-highlight {
+  background-color: rgba(255, 229, 59, 0.3);
+}
+
+.on-light {
+  color: #121212;
+}
+
+.on-dark {
+  color: #ffffff;
+}

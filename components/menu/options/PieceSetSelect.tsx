@@ -28,6 +28,11 @@ const PIECESETS: PieceSet[] = [
     value: "fresca",
     previewClass: "wn-fresca",
   },
+  {
+    label: "Newspaper",
+    value: "newspaper",
+    previewClass: "wn-newspaper",
+  },
 ];
 interface Props {
   value: string;
