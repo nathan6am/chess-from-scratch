@@ -554,6 +554,10 @@ function getCastles(game: GameState, opponentControlledSquares: Array<Square>): 
     return moves;
   }
 
+  if (containsCheck(position, activeColor === "w" ? "b" : "w")) {
+    return moves;
+  }
+
   if (
     kingSide &&
     squares.k.every((square) => {

@@ -90,7 +90,7 @@ function PostGameControls() {
               </p>
             </div>
           ) : (
-            <Button
+            <Button 
               variant="neutral"
               onClick={() => {
                 gameControls.requestRematch();
